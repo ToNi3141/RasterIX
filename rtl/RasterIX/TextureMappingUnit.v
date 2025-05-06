@@ -24,6 +24,7 @@ module TextureMappingUnit
 #(
     parameter USER_WIDTH  = 1,
     parameter SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
 
     parameter ENABLE_LOD_CALC = 1,
 
@@ -214,7 +215,8 @@ module TextureMappingUnit
     wire [USER_WIDTH - 1 : 0]   step2_user;
 
     TextureFilter #(
-        .USER_WIDTH((2 * PIXEL_WIDTH) + USER_WIDTH)
+        .USER_WIDTH((2 * PIXEL_WIDTH) + USER_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) texFilter (
         .aclk(aclk),
         .resetn(resetn),
@@ -258,7 +260,8 @@ module TextureMappingUnit
 
     TexEnv #(
         .USER_WIDTH(PIXEL_WIDTH + USER_WIDTH),
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) texEnv (
         .aclk(aclk),
         .resetn(resetn),

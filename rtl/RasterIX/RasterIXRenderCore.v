@@ -68,6 +68,7 @@ module RasterIXRenderCore #(
 
     // The size of a sub pixel
     localparam SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
 
     // The number of sub pixel used for a pixel
     localparam NUMBER_OF_SUB_PIXELS = 4,
@@ -1259,6 +1260,7 @@ module RasterIXRenderCore #(
     );
     defparam pixelPipeline.INDEX_WIDTH = INDEX_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+    defparam pixelPipeline.SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_CALC_PRECISION;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
@@ -1384,6 +1386,7 @@ module RasterIXRenderCore #(
     defparam perFragmentPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam perFragmentPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam perFragmentPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+    defparam perFragmentPipeline.SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_CALC_PRECISION;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7

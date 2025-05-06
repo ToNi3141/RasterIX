@@ -29,6 +29,7 @@ module PixelPipeline
     parameter INDEX_WIDTH = 14,
 
     parameter SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
     localparam FLOAT_SIZE = 32,
@@ -152,6 +153,7 @@ module PixelPipeline
     TextureMappingUnit #(
         .USER_WIDTH(INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + 32 + FLOAT_SIZE + KEEP_WIDTH + 1 + (4 * 32) + PIXEL_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
         .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
     ) tmu0 (
         .aclk(aclk),
@@ -236,6 +238,7 @@ module PixelPipeline
             TextureMappingUnit #(
                 .USER_WIDTH(INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + 32 + FLOAT_SIZE + KEEP_WIDTH + 1),
                 .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+                .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
                 .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
             ) tmu1 (
                 .aclk(aclk),
@@ -325,7 +328,8 @@ module PixelPipeline
 
     Fog #(
         .USER_WIDTH(INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + 32 + KEEP_WIDTH + 1),
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) fog (
         .aclk(aclk),
         .resetn(resetn),

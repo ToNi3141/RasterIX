@@ -33,6 +33,7 @@ module PerFragmentPipeline
     parameter SUB_PIXEL_WIDTH = 8,
     localparam NUMBER_OF_SUB_PIXELS = 4,
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
 
     localparam FLOAT_SIZE = 32,
 
@@ -164,7 +165,8 @@ module PerFragmentPipeline
     );
 
     ColorBlender #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) colorBlender (
         .aclk(aclk),
         .resetn(resetn),

@@ -22,6 +22,7 @@
 module TextureFilter #(
     parameter USER_WIDTH = 1,
     localparam SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * 4
 ) 
 (
@@ -60,7 +61,9 @@ module TextureFilter #(
     assign intensityS = 16'hffff - s_texelSubCoordS;
     assign intensityT = 16'hffff - s_texelSubCoordT;
 
-    ColorInterpolator interpolatorS0 (
+    ColorInterpolator #(
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
+    ) interpolatorS0 (
         .aclk(aclk),
         .resetn(resetn),
         .ce(ce),
@@ -71,7 +74,9 @@ module TextureFilter #(
         .mixedColor(mixedColorS0)
     );
 
-    ColorInterpolator interpolatorS1 (
+    ColorInterpolator #(
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
+    ) interpolatorS1 (
         .aclk(aclk),
         .resetn(resetn),
         .ce(ce),
@@ -82,7 +87,9 @@ module TextureFilter #(
         .mixedColor(mixedColorS1)
     );
 
-    ColorInterpolator interpolatorT (
+    ColorInterpolator #(
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
+    ) interpolatorT (
         .aclk(aclk),
         .resetn(resetn),
         .ce(ce),
