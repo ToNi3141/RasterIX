@@ -27,6 +27,7 @@ module TextureMappingUnit
     parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
 
     parameter ENABLE_LOD_CALC = 1,
+    parameter ENABLE_TEXTURE_FILTERING = 1,
 
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
@@ -163,7 +164,7 @@ module TextureMappingUnit
 
         .textureSizeWidth(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_WIDTH_POS +: RENDER_CONFIG_TMU_TEXTURE_WIDTH_SIZE]),
         .textureSizeHeight(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),
-        .enableHalfPixelOffset(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]), 
+        .enableHalfPixelOffset(ENABLE_TEXTURE_FILTERING & confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]), 
 
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),
@@ -221,7 +222,7 @@ module TextureMappingUnit
         .aclk(aclk),
         .resetn(resetn),
 
-        .enable(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]),
+        .enable(ENABLE_TEXTURE_FILTERING & confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]),
 
         .s_valid(step1_valid),
         .s_ready(step1_ready),

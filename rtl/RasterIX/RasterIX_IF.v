@@ -35,10 +35,17 @@ module RasterIX_IF #(
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
 
+    // Enables the depth buffer
+    parameter ENABLE_DEPTH_BUFFER = 1,
+
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
+    parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TEXTURE_PAGE_SIZE = 4096,
+
+    // Enables the fog unit
+    parameter ENABLE_FOG = 1,
     
     // The maximum size of a texture
     parameter MAX_TEXTURE_SIZE = 256,
@@ -602,8 +609,11 @@ module RasterIX_IF #(
         .ID_WIDTH(ID_WIDTH_LOC),
         .DATA_WIDTH(DATA_WIDTH),
         .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
+        .ENABLE_DEPTH_BUFFER(ENABLE_DEPTH_BUFFER),
         .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
+        .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
+        .ENABLE_FOG(ENABLE_FOG),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
         .TMU_COUNT(TMU_COUNT),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),

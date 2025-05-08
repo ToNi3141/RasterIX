@@ -31,8 +31,12 @@ module RasterIXRenderCore #(
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
+    parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TMU_MEMORY_WIDTH = 64,
     parameter TEXTURE_PAGE_SIZE = 2048,
+
+    // Enables the fogging unit
+    parameter ENABLE_FOG = 1,
     
     // The bit width of the command stream interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -1264,6 +1268,8 @@ module RasterIXRenderCore #(
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
+    defparam pixelPipeline.ENABLE_TEXTURE_FILTERING = ENABLE_TEXTURE_FILTERING;
+    defparam pixelPipeline.ENABLE_FOG = ENABLE_FOG;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 5

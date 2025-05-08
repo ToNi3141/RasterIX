@@ -40,10 +40,17 @@ module RasterIXCoreEF #(
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
 
+    // Enables the depth buffer
+    parameter ENABLE_DEPTH_BUFFER = 1,
+
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
+    parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TEXTURE_PAGE_SIZE = 2048,
+
+    // Enables the fog unit
+    parameter ENABLE_FOG = 1,
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -369,91 +376,104 @@ module RasterIXCoreEF #(
 
     assign fb_addr = colorBufferAddr;
 
-    StreamFramebuffer #(
-        .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .ID_WIDTH(ID_WIDTH),
-        .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
-        .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
-        .PIXEL_WIDTH(DEPTH_WIDTH),
-        .STRB_WIDTH(STRB_WIDTH)
-    ) depthBuffer (
-        .aclk(aclk),
-        .resetn(resetn),
+    generate
+        if (ENABLE_DEPTH_BUFFER)
+        begin
+            StreamFramebuffer #(
+                .DATA_WIDTH(DATA_WIDTH),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .ID_WIDTH(ID_WIDTH),
+                .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
+                .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
+                .PIXEL_WIDTH(DEPTH_WIDTH),
+                .STRB_WIDTH(STRB_WIDTH)
+            ) depthBuffer (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .confAddr(depthBufferAddr),
-        .confEnableScissor(framebufferParamEnableScissor),
-        .confScissorStartX(framebufferParamScissorStartX),
-        .confScissorStartY(framebufferParamScissorStartY),
-        .confScissorEndX(framebufferParamScissorEndX),
-        .confScissorEndY(framebufferParamScissorEndY),
-        .confXResolution(framebufferParamXResolution),
-        .confYResolution(framebufferParamYResolution),
-        .confMask({ depthBufferMask, depthBufferMask }),
-        .confClearColor(depthBufferClearDepth),
+                .confAddr(depthBufferAddr),
+                .confEnableScissor(framebufferParamEnableScissor),
+                .confScissorStartX(framebufferParamScissorStartX),
+                .confScissorStartY(framebufferParamScissorStartY),
+                .confScissorEndX(framebufferParamScissorEndX),
+                .confScissorEndY(framebufferParamScissorEndY),
+                .confXResolution(framebufferParamXResolution),
+                .confYResolution(framebufferParamYResolution),
+                .confMask({ depthBufferMask, depthBufferMask }),
+                .confClearColor(depthBufferClearDepth),
 
-        .apply(depthBufferApply & depthBufferCmdMemset),
-        .applied(depthBufferApplied),
+                .apply(depthBufferApply & depthBufferCmdMemset),
+                .applied(depthBufferApplied),
 
-        .s_fetch_arvalid(m_depth_arvalid),
-        .s_fetch_arlast(m_depth_arlast),
-        .s_fetch_arready(m_depth_arready),
-        .s_fetch_araddr(m_depth_araddr),
+                .s_fetch_arvalid(m_depth_arvalid),
+                .s_fetch_arlast(m_depth_arlast),
+                .s_fetch_arready(m_depth_arready),
+                .s_fetch_araddr(m_depth_araddr),
 
-        .s_frag_rvalid(m_depth_rvalid),
-        .s_frag_rready(m_depth_rready),
-        .s_frag_rdata(m_depth_rdata),
-        .s_frag_rlast(m_depth_rlast),
+                .s_frag_rvalid(m_depth_rvalid),
+                .s_frag_rready(m_depth_rready),
+                .s_frag_rdata(m_depth_rdata),
+                .s_frag_rlast(m_depth_rlast),
 
-        .s_frag_wvalid(m_depth_wvalid),
-        .s_frag_wlast(m_depth_wlast),
-        .s_frag_wready(m_depth_wready),
-        .s_frag_wdata(m_depth_wdata),
-        .s_frag_wstrb(m_depth_wstrb),
-        .s_frag_waddr(m_depth_waddr),
-        .s_frag_wxpos(m_depth_wscreenPosX),
-        .s_frag_wypos(m_depth_wscreenPosY),
+                .s_frag_wvalid(m_depth_wvalid),
+                .s_frag_wlast(m_depth_wlast),
+                .s_frag_wready(m_depth_wready),
+                .s_frag_wdata(m_depth_wdata),
+                .s_frag_wstrb(m_depth_wstrb),
+                .s_frag_waddr(m_depth_waddr),
+                .s_frag_wxpos(m_depth_wscreenPosX),
+                .s_frag_wypos(m_depth_wscreenPosY),
 
-        .m_mem_axi_awid(m_depth_axi_awid),
-        .m_mem_axi_awaddr(m_depth_axi_awaddr),
-        .m_mem_axi_awlen(m_depth_axi_awlen), 
-        .m_mem_axi_awsize(m_depth_axi_awsize), 
-        .m_mem_axi_awburst(m_depth_axi_awburst), 
-        .m_mem_axi_awlock(m_depth_axi_awlock), 
-        .m_mem_axi_awcache(m_depth_axi_awcache), 
-        .m_mem_axi_awprot(m_depth_axi_awprot), 
-        .m_mem_axi_awvalid(m_depth_axi_awvalid),
-        .m_mem_axi_awready(m_depth_axi_awready),
+                .m_mem_axi_awid(m_depth_axi_awid),
+                .m_mem_axi_awaddr(m_depth_axi_awaddr),
+                .m_mem_axi_awlen(m_depth_axi_awlen), 
+                .m_mem_axi_awsize(m_depth_axi_awsize), 
+                .m_mem_axi_awburst(m_depth_axi_awburst), 
+                .m_mem_axi_awlock(m_depth_axi_awlock), 
+                .m_mem_axi_awcache(m_depth_axi_awcache), 
+                .m_mem_axi_awprot(m_depth_axi_awprot), 
+                .m_mem_axi_awvalid(m_depth_axi_awvalid),
+                .m_mem_axi_awready(m_depth_axi_awready),
 
-        .m_mem_axi_wdata(m_depth_axi_wdata),
-        .m_mem_axi_wstrb(m_depth_axi_wstrb),
-        .m_mem_axi_wlast(m_depth_axi_wlast),
-        .m_mem_axi_wvalid(m_depth_axi_wvalid),
-        .m_mem_axi_wready(m_depth_axi_wready),
+                .m_mem_axi_wdata(m_depth_axi_wdata),
+                .m_mem_axi_wstrb(m_depth_axi_wstrb),
+                .m_mem_axi_wlast(m_depth_axi_wlast),
+                .m_mem_axi_wvalid(m_depth_axi_wvalid),
+                .m_mem_axi_wready(m_depth_axi_wready),
 
-        .m_mem_axi_bid(m_depth_axi_bid),
-        .m_mem_axi_bresp(m_depth_axi_bresp),
-        .m_mem_axi_bvalid(m_depth_axi_bvalid),
-        .m_mem_axi_bready(m_depth_axi_bready),
+                .m_mem_axi_bid(m_depth_axi_bid),
+                .m_mem_axi_bresp(m_depth_axi_bresp),
+                .m_mem_axi_bvalid(m_depth_axi_bvalid),
+                .m_mem_axi_bready(m_depth_axi_bready),
 
-        .m_mem_axi_arid(m_depth_axi_arid),
-        .m_mem_axi_araddr(m_depth_axi_araddr),
-        .m_mem_axi_arlen(m_depth_axi_arlen),
-        .m_mem_axi_arsize(m_depth_axi_arsize),
-        .m_mem_axi_arburst(m_depth_axi_arburst),
-        .m_mem_axi_arlock(m_depth_axi_arlock),
-        .m_mem_axi_arcache(m_depth_axi_arcache),
-        .m_mem_axi_arprot(m_depth_axi_arprot),
-        .m_mem_axi_arvalid(m_depth_axi_arvalid),
-        .m_mem_axi_arready(m_depth_axi_arready),
+                .m_mem_axi_arid(m_depth_axi_arid),
+                .m_mem_axi_araddr(m_depth_axi_araddr),
+                .m_mem_axi_arlen(m_depth_axi_arlen),
+                .m_mem_axi_arsize(m_depth_axi_arsize),
+                .m_mem_axi_arburst(m_depth_axi_arburst),
+                .m_mem_axi_arlock(m_depth_axi_arlock),
+                .m_mem_axi_arcache(m_depth_axi_arcache),
+                .m_mem_axi_arprot(m_depth_axi_arprot),
+                .m_mem_axi_arvalid(m_depth_axi_arvalid),
+                .m_mem_axi_arready(m_depth_axi_arready),
 
-        .m_mem_axi_rid(m_depth_axi_rid),
-        .m_mem_axi_rdata(m_depth_axi_rdata),
-        .m_mem_axi_rresp(m_depth_axi_rresp),
-        .m_mem_axi_rlast(m_depth_axi_rlast),
-        .m_mem_axi_rvalid(m_depth_axi_rvalid),
-        .m_mem_axi_rready(m_depth_axi_rready)
-    );
+                .m_mem_axi_rid(m_depth_axi_rid),
+                .m_mem_axi_rdata(m_depth_axi_rdata),
+                .m_mem_axi_rresp(m_depth_axi_rresp),
+                .m_mem_axi_rlast(m_depth_axi_rlast),
+                .m_mem_axi_rvalid(m_depth_axi_rvalid),
+                .m_mem_axi_rready(m_depth_axi_rready)
+            );
+        end
+        else
+        begin
+            assign m_depth_arready = 1;
+            assign m_depth_rvalid = 1;
+            assign m_depth_rdata = 16'hffff;
+            assign m_depth_wready = 1;
+            assign depthBufferApplied = 1;
+        end
+    endgenerate
 
     StreamFramebuffer #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -647,6 +667,8 @@ module RasterIXCoreEF #(
         .ID_WIDTH(ID_WIDTH),
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
+        .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
+        .ENABLE_FOG(ENABLE_FOG),
         .TMU_MEMORY_WIDTH(DATA_WIDTH),
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ENABLE_WRITE_FIFO(0),
