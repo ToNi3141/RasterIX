@@ -24,6 +24,11 @@ With a typical configuration, the core requires __around 11k LUTs__ on a Xilinx 
   - 256px textures
   - 1 TMU
   - mip mapping
+  - depth buffer
+  - stencil buffer
+  - fog
+  - texture filtering
+  - RGB666
   - fix point interpolation with 25 bit multipliers
   - internal framebuffer (RasterIX_IF)
 
@@ -32,8 +37,26 @@ The core can blow up to __around 36k LUTs__ on a Xilinx Series 7 device when eve
   - 256px textures
   - 2 TMUs
   - mip mapping
+  - depth buffer
+  - stencil buffer
+  - fog
+  - texture filtering
+  - RGB666
   - float interpolation with 32 bit floats
   - external frame buffer (RasterIX_EF)
+
+A minimal configuration can get the utilization down to __around 4.5k LUTs__ on a Xilinx Series 7 device:
+  - 32bit memory bus
+  - 128px textures
+  - 1 TMU
+  - no mip mapping
+  - no depth buffer
+  - no stencil buffer
+  - no fog
+  - no texture filtering
+  - RGB555
+  - fix point interpolation with 25bit multipliers
+  - internal framebuffer (RasterIX_IF)
 
 Note: The float interpolation has the highest impact on the utilization and is usually not needed. Both configurations have the same behavior via the OpenGL API.
 
@@ -120,11 +143,14 @@ Note: Bold options are required to be equal to the software counterparts.
 | __FRAMEBUFFER_SIZE_IN_PIXEL_LG__          | if      | The size of the internal framebuffer (in power of two). <br> Depth buffer word size: 16 bit. <br> Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3). |
 | FRAMEBUFFER_SUB_PIXEL_WIDTH               | if      | Sub pixel width in the internal framebuffer. |
 | FRAMEBUFFER_ENABLE_ALPHA_CHANNEL          | if      | Enables the alpha channel in the framebuffer. |
-| __ENABLE_STENCIL_BUFFER__                 | if/ef   | Enables the stencil buffer. |
+| ENABLE_STENCIL_BUFFER                     | if/ef   | Enables the stencil buffer unit. |
+| ENABLE_DEPTH_BUFFER                       | if/ef   | Enables the depth buffer unit. |
 | __TMU_COUNT__                             | if/ef   | Number of TMU the hardware shall contain. Valid values are 1 and 2. |
 | __TEXTURE_PAGE_SIZE__                     | if/ef   | The page size of the texture memory. |
-| __ENABLE_MIPMAPPING__                     | if/ef   | Enables the mip mapping. |
+| __ENABLE_MIPMAPPING__                     | if/ef   | Enables the mip map unit. |
 | __MAX_TEXTURE_SIZE__                      | if/ef   | Size of the texture buffer. Valid values: 256, 128, 64, 32. For instance, a 256 texture requires 256 * 256 * 2 bytes of FPGA RAM. Additional RAM is required when __ENABLE_MIPMAPPING__ is selected |
+| ENABLE_TEXTURE_FILTERING                  | if/ef   | Enables the texture filter unit. |
+| ENABLE_FOG                                | if/ef   | Enables the fog unit. |
 | ADDR_WIDTH                                | if/ef   | Width of the AXI address channel. |
 | ID_WIDTH                                  | if/ef   | Width of the AXI id property. Should be at least 4. |
 | DATA_WIDTH                                | if/ef   | Width of the AXI data property. |
