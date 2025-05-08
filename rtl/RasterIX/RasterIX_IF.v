@@ -712,20 +712,4 @@ module RasterIX_IF #(
     assign xbar_axi_wlast[2 * 1 +: 1] = tmpZero;
     assign xbar_axi_wvalid[2 * 1 +: 1] = tmpZero;
     assign xbar_axi_bready[2 * 1 +: 1] = tmpZero;
-
-    generate
-        if (ENABLE_FRAMEBUFFER_STREAM) 
-        begin
-            assign xbar_axi_arid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC] = { ID_WIDTH_LOC { tmpZero } };
-            assign xbar_axi_araddr[3 * ADDR_WIDTH +: ADDR_WIDTH] = { ADDR_WIDTH { tmpZero } };
-            assign xbar_axi_arlen[3 * 8 +: 8] = { 8 { tmpZero } };
-            assign xbar_axi_arsize[3 * 3 +: 3] = { 3 { tmpZero } };
-            assign xbar_axi_arburst[3 * 2 +: 2] = { 2 { tmpZero } };
-            assign xbar_axi_arlock[3 * 1 +: 1] = tmpZero;
-            assign xbar_axi_arcache[3 * 4 +: 4] = { 4 { tmpZero } };
-            assign xbar_axi_arprot[3 * 3 +: 3] = { 3 { tmpZero } };
-            assign xbar_axi_arvalid[3 * 1 +: 1] = tmpZero;
-            assign xbar_axi_rready[3 * 1 +: 1] = tmpZero;
-        end
-    endgenerate
 endmodule
