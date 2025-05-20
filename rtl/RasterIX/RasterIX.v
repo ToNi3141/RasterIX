@@ -43,6 +43,9 @@ module RasterIX #(
     // IF only.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
 
+    // The precision of the sub pixel calculation in the shader. Must be between 5 and 8 
+    parameter SUB_PIXEL_CALC_PRECISION = 8,
+
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
 
@@ -155,6 +158,7 @@ module RasterIX #(
                 .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
                 .ENABLE_FRAMEBUFFER_STREAM(ENABLE_FRAMEBUFFER_STREAM),
                 .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
+                .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
                 .ENABLE_DEPTH_BUFFER(ENABLE_DEPTH_BUFFER),
                 .TMU_COUNT(TMU_COUNT),
@@ -230,6 +234,7 @@ module RasterIX #(
         if (VARIANT == "ef" || VARIANT == "EF")
         begin
             RasterIX_EF #(
+                .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
                 .ENABLE_DEPTH_BUFFER(ENABLE_DEPTH_BUFFER),
                 .ENABLE_FRAMEBUFFER_STREAM(ENABLE_FRAMEBUFFER_STREAM),

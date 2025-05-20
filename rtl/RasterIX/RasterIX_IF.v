@@ -29,6 +29,8 @@ module RasterIX_IF #(
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
     // Lower depth will result in color banding.
     parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 5,
+    // The internal calculation width of a sub pixel
+    parameter SUB_PIXEL_CALC_PRECISION = 8,
     // This enables the alpha channel of the framebuffer. Requires additional memory.
     parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
 
@@ -615,6 +617,7 @@ module RasterIX_IF #(
         .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
         .ENABLE_FOG(ENABLE_FOG),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
         .TMU_COUNT(TMU_COUNT),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),

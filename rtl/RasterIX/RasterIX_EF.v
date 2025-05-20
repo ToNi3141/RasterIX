@@ -16,6 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module RasterIX_EF #(
+    // The internal calculation width of a sub pixel
+    parameter SUB_PIXEL_CALC_PRECISION = 8,
+
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
 
@@ -570,6 +573,7 @@ module RasterIX_EF #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC),
         .DATA_WIDTH(DATA_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
         .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
         .ENABLE_DEPTH_BUFFER(ENABLE_DEPTH_BUFFER),
         .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),

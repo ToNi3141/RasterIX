@@ -158,6 +158,7 @@ Note: Bold options are required to be equal to the software counterparts.
 | __RASTERIZER_ENABLE_FLOAT_INTERPOLATION__ | if/ef   | `true` enables the floating point interpolation. `false` enables the fixed point interpolation. |
 | RASTERIZER_FIXPOINT_PRECISION             | if/ef   | Defines the width of the multipliers used in the fixed point interpolation. Valid range: 16-25. |
 | RASTERIZER_FLOAT_PRECISION                | if/ef   | Precision of the floating point arithmetic. Valid range: 20-32. |
+| SUB_PIXEL_CALC_PRECISION                  | if/ef   | Precision of the sub pixel calculations in the shader and texture filter. Higher values will improve the image quality but also occupy more logic. Valid range: 5-8. |
 
 # Variant
 The core comes in two pre configured variants, `RasterIX_IF` and `RasterIX_EF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations, they are completely equal.

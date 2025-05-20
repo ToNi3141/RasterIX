@@ -72,16 +72,6 @@ public:
         return m_rixDisplayListAssembler.getCommandSize(cmd);
     }
 
-    void saveSectionStart()
-    {
-        m_displayList.saveSectionStart();
-    }
-
-    void removeSection()
-    {
-        m_displayList.removeSection();
-    }
-
     template <typename TCommand>
     bool copyCommand(TDisplayList& src)
     {

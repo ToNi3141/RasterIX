@@ -43,8 +43,8 @@ module ColorMixerSigned #(
     // Colors will be saturated
     output reg  [PIXEL_WIDTH - 1 : 0]   mixedColor
 );
-    localparam SUB_PX_PRECISION_UNSIGNED_WIDTH = SUB_PIXEL_CALC_PRECISION - 1;
     localparam SIGN_WIDTH = 1;
+    localparam SUB_PX_PRECISION_UNSIGNED_WIDTH = SUB_PIXEL_CALC_PRECISION - SIGN_WIDTH;
     localparam SUB_PX_PRECISION_WIDTH_2X = (SUB_PX_PRECISION_UNSIGNED_WIDTH * 2) + SIGN_WIDTH;
     localparam SUB_PX_PRECISION_WIDTH_2X_WITH_CARRY = SUB_PX_PRECISION_WIDTH_2X + 1;
     localparam SUB_PX_PRECISION_WIDTH_DIFF = SUB_PIXEL_WIDTH - SUB_PIXEL_CALC_PRECISION;
@@ -142,16 +142,16 @@ module ColorMixerSigned #(
         cs1 = ReduceAndSaturateSigned(c1);
         cs0 = ReduceAndSaturateSigned(c0);
 
-        cd3 = { cs3, cs3[1 +: SUB_PIXEL_CALC_PRECISION - 1] };
-        cd2 = { cs2, cs2[1 +: SUB_PIXEL_CALC_PRECISION - 1] };
-        cd1 = { cs1, cs1[1 +: SUB_PIXEL_CALC_PRECISION - 1] };
-        cd0 = { cs0, cs0[1 +: SUB_PIXEL_CALC_PRECISION - 1] };
+        cd3 = { cs3, cs3[0 +: SUB_PIXEL_CALC_PRECISION - 1] }; // -1 is because of the sign. It is not used in the repetition
+        cd2 = { cs2, cs2[0 +: SUB_PIXEL_CALC_PRECISION - 1] };
+        cd1 = { cs1, cs1[0 +: SUB_PIXEL_CALC_PRECISION - 1] };
+        cd0 = { cs0, cs0[0 +: SUB_PIXEL_CALC_PRECISION - 1] };
 
         mixedColor <= {
-            cd3[SUB_PIXEL_CALC_PRECISION - SUB_PX_PRECISION_WIDTH_DIFF - 1 +: SUB_PIXEL_WIDTH],
-            cd2[SUB_PIXEL_CALC_PRECISION - SUB_PX_PRECISION_WIDTH_DIFF - 1 +: SUB_PIXEL_WIDTH],
-            cd1[SUB_PIXEL_CALC_PRECISION - SUB_PX_PRECISION_WIDTH_DIFF - 1 +: SUB_PIXEL_WIDTH],
-            cd0[SUB_PIXEL_CALC_PRECISION - SUB_PX_PRECISION_WIDTH_DIFF - 1 +: SUB_PIXEL_WIDTH]
+            cd3[((SUB_PIXEL_CALC_PRECISION * 2) - 1) - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+            cd2[((SUB_PIXEL_CALC_PRECISION * 2) - 1) - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+            cd1[((SUB_PIXEL_CALC_PRECISION * 2) - 1) - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH],
+            cd0[((SUB_PIXEL_CALC_PRECISION * 2) - 1) - SUB_PIXEL_WIDTH +: SUB_PIXEL_WIDTH]
         };
     end
 endmodule

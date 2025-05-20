@@ -35,7 +35,7 @@ module RasterIXCoreEF #(
     localparam DEPTH_WIDTH = 16,
 
     // The internal calculation width of a sub pixel
-    localparam SUB_PIXEL_CALC_PRECISION = 6,
+    parameter SUB_PIXEL_CALC_PRECISION = 8,
 
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,

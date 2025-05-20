@@ -72,7 +72,8 @@ module RasterIXRenderCore #(
 
     // The size of a sub pixel
     localparam SUB_PIXEL_WIDTH = 8,
-    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
+    // The precision of the sub pixel calculation in the shader. Must be between 5 and 8
+    parameter SUB_PIXEL_CALC_PRECISION = 8,
 
     // The number of sub pixel used for a pixel
     localparam NUMBER_OF_SUB_PIXELS = 4,
@@ -280,6 +281,11 @@ module RasterIXRenderCore #(
         begin
             $error("RASTERIZER_FIXPOINT_PRECISION must be between 16 and 25");
             $finish;
+        end
+
+        if ((SUB_PIXEL_CALC_PRECISION > 8) || (SUB_PIXEL_CALC_PRECISION < 5))
+        begin
+            $error("SUB_PIXEL_CALC_PRECISION must be between 5 and 8");
         end
     end
 

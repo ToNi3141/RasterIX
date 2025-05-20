@@ -101,16 +101,6 @@ public:
         return writePos;
     }
 
-    void saveSectionStart()
-    {
-        sectionStartPos = writePos;
-    }
-
-    void removeSection()
-    {
-        initArea(sectionStartPos, writePos - sectionStartPos);
-    }
-
     // Interface for reading the display list
 
     template <typename GET_TYPE>
