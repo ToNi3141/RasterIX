@@ -269,7 +269,6 @@ proc create_root_design { parentCell } {
    }
     set_property -dict [list \
     CONFIG.DATA_WIDTH {64} \
-    CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {6} \
     CONFIG.ID_WIDTH {6} \
     CONFIG.STRB_WIDTH {8} \
     CONFIG.TMU_COUNT {1} \
