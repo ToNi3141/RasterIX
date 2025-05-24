@@ -25,6 +25,7 @@ module TexEnv
 #(
     parameter USER_WIDTH = 1,
     parameter SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
 
     localparam NUMBER_OF_SUB_PIXEL = 4,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL
@@ -579,7 +580,9 @@ module TexEnv
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH_SIGNED - 1 : 0] step1_color;
     ColorMixerSigned #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH_SIGNED)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH_SIGNED),
+        // Add one additional bit to the calc precision, because the config itself does not include the sign bit
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION + 1) 
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),

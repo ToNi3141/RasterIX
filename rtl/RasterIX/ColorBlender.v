@@ -41,6 +41,7 @@
 module ColorBlender 
 #(
     parameter SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
     localparam NUMBER_OF_SUB_PIXEL = 4,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL
 )
@@ -250,7 +251,8 @@ module ColorBlender
     end
 
     ColorMixer #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),

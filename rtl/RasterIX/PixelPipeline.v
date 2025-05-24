@@ -29,6 +29,7 @@ module PixelPipeline
     parameter INDEX_WIDTH = 14,
 
     parameter SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
 
     localparam FLOAT_SIZE = 32,
@@ -37,6 +38,8 @@ module PixelPipeline
 
     parameter ENABLE_SECOND_TMU = 1,
     parameter ENABLE_LOD_CALC = 1,
+    parameter ENABLE_TEXTURE_FILTERING = 1,
+    parameter ENABLE_FOG = 1,
     
     parameter SCREEN_POS_WIDTH = 11,
 
@@ -152,7 +155,9 @@ module PixelPipeline
     TextureMappingUnit #(
         .USER_WIDTH(INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + 32 + FLOAT_SIZE + KEEP_WIDTH + 1 + (4 * 32) + PIXEL_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
-        .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
+        .ENABLE_LOD_CALC(ENABLE_LOD_CALC),
+        .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING)
     ) tmu0 (
         .aclk(aclk),
         .resetn(resetn),
@@ -236,7 +241,9 @@ module PixelPipeline
             TextureMappingUnit #(
                 .USER_WIDTH(INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + 32 + FLOAT_SIZE + KEEP_WIDTH + 1),
                 .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
-                .ENABLE_LOD_CALC(ENABLE_LOD_CALC)
+                .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
+                .ENABLE_LOD_CALC(ENABLE_LOD_CALC),
+                .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING)
             ) tmu1 (
                 .aclk(aclk),
                 .resetn(resetn),
@@ -323,46 +330,67 @@ module PixelPipeline
     wire [KEEP_WIDTH - 1 : 0]               step3_keep;
     wire                                    step3_last;
 
-    Fog #(
-        .USER_WIDTH(INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + 32 + KEEP_WIDTH + 1),
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
-    ) fog (
-        .aclk(aclk),
-        .resetn(resetn),
+    generate
+        if (ENABLE_FOG)
+        begin
+            Fog #(
+                .USER_WIDTH(INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + 32 + KEEP_WIDTH + 1),
+                .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+                .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
+            ) fog (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
-        .s_fog_lut_axis_tready(s_fog_lut_axis_tready),
-        .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
-        .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
+                .s_fog_lut_axis_tvalid(s_fog_lut_axis_tvalid),
+                .s_fog_lut_axis_tready(s_fog_lut_axis_tready),
+                .s_fog_lut_axis_tlast(s_fog_lut_axis_tlast),
+                .s_fog_lut_axis_tdata(s_fog_lut_axis_tdata),
 
-        .confFogColor(confFragmentPipelineFogColor),
-        .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_FOG_POS]),
+                .confFogColor(confFragmentPipelineFogColor),
+                .confEnable(ENABLE_FOG && confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_FOG_POS]),
 
-        .s_ready(step2_ready),
-        .s_valid(step2_valid),
-        .s_user({
-            step2_index,
-            step2_screenPosX,
-            step2_screenPosY,
-            step2_depth,
-            step2_keep,
-            step2_last
-        }),
-        .s_depth({ step2_depthWFloat, { (32 - FLOAT_SIZE) { 1'b0 } } }), // Fillup mantissa to cast back to 32 bit float
-        .s_texelColor(step2_fragmentColor),
+                .s_ready(step2_ready),
+                .s_valid(step2_valid),
+                .s_user({
+                    step2_index,
+                    step2_screenPosX,
+                    step2_screenPosY,
+                    step2_depth,
+                    step2_keep,
+                    step2_last
+                }),
+                .s_depth({ step2_depthWFloat, { (32 - FLOAT_SIZE) { 1'b0 } } }), // Fillup mantissa to cast back to 32 bit float
+                .s_texelColor(step2_fragmentColor),
 
-        .m_ready(step3_ready),
-        .m_valid(step3_valid),
-        .m_user({
-            step3_index,
-            step3_screenPosX,
-            step3_screenPosY,
-            step3_depth,
-            step3_keep,
-            step3_last
-        }),
-        .m_color(step3_fragmentColor)
-    );
+                .m_ready(step3_ready),
+                .m_valid(step3_valid),
+                .m_user({
+                    step3_index,
+                    step3_screenPosX,
+                    step3_screenPosY,
+                    step3_depth,
+                    step3_keep,
+                    step3_last
+                }),
+                .m_color(step3_fragmentColor)
+            );
+        end
+        else
+        begin
+            assign step3_index = step2_index;
+            assign step3_screenPosX = step2_screenPosX;
+            assign step3_screenPosY = step2_screenPosY;
+            assign step3_depth = step2_depth;
+            assign step3_keep = step2_keep;
+            assign step3_last = step2_last;
+            assign step3_valid = step2_valid;
+            assign step3_fragmentColor = step2_fragmentColor;
+
+            assign step2_ready = step3_ready;
+
+            assign s_fog_lut_axis_tready = 1;
+        end
+    endgenerate
 
     assign m_frag_tfragmentColor = step3_fragmentColor;
     assign m_frag_tindex = step3_index;

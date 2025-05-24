@@ -23,6 +23,7 @@
 // Depth: 2 cycles
 module ColorInterpolator #(
     parameter SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
     localparam NUMBER_OF_SUB_PIXEL = 4,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL
 )
@@ -42,10 +43,11 @@ module ColorInterpolator #(
     localparam SUB_PIXEL_2_POS = SUB_PIXEL_WIDTH * 2;
     localparam SUB_PIXEL_3_POS = SUB_PIXEL_WIDTH * 3;
 
-    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO = { SUB_PIXEL_WIDTH{1'b1} };
+    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_DOT_ZERO = { SUB_PIXEL_WIDTH { 1'b1 } };
 
     ColorMixer #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) colorMixer (
         .aclk(aclk),
         .resetn(resetn),

@@ -24,6 +24,7 @@ module Fog
 #(
     parameter USER_WIDTH = 1,
     parameter SUB_PIXEL_WIDTH = 8,
+    parameter SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_WIDTH,
     localparam NUMBER_OF_SUB_PIXEL = 4,
     localparam PIXEL_WIDTH = SUB_PIXEL_WIDTH * NUMBER_OF_SUB_PIXEL,
 
@@ -56,8 +57,6 @@ module Fog
     output wire [USER_WIDTH - 1 : 0]    m_user,
     output wire [PIXEL_WIDTH - 1 : 0]   m_color 
 );
-`include "RegisterAndDescriptorDefines.vh"
-
     wire ce;
     assign ce = m_ready;
     assign s_ready = m_ready;
@@ -131,7 +130,8 @@ module Fog
     );
 
     ColorInterpolator #(
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH)
+        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) fogInterpolator (
         .aclk(aclk),
         .resetn(resetn),
@@ -150,10 +150,10 @@ module Fog
     // Clocks: 0
     ////////////////////////////////////////////////////////////////////////////
     assign m_color = (confEnable) ? {
-            step1_mixedColor[COLOR_R_POS +: SUB_PIXEL_WIDTH],
-            step1_mixedColor[COLOR_G_POS +: SUB_PIXEL_WIDTH],
-            step1_mixedColor[COLOR_B_POS +: SUB_PIXEL_WIDTH],
-            step1_texelColor[COLOR_A_POS +: SUB_PIXEL_WIDTH] // Replace alpha, because it is specified that fog does not change the alpha value of a texel
+            step1_mixedColor[SUB_PIXEL_WIDTH * 3 +: SUB_PIXEL_WIDTH],
+            step1_mixedColor[SUB_PIXEL_WIDTH * 2 +: SUB_PIXEL_WIDTH],
+            step1_mixedColor[SUB_PIXEL_WIDTH * 1 +: SUB_PIXEL_WIDTH],
+            step1_texelColor[SUB_PIXEL_WIDTH * 0 +: SUB_PIXEL_WIDTH] // Replace alpha, because it is specified that fog does not change the alpha value of a texel
         } : step1_texelColor;
     assign m_user = step1_user;
     assign m_valid = step1_valid;

@@ -31,8 +31,12 @@ module RasterIXRenderCore #(
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
+    parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TMU_MEMORY_WIDTH = 64,
     parameter TEXTURE_PAGE_SIZE = 2048,
+
+    // Enables the fogging unit
+    parameter ENABLE_FOG = 1,
     
     // The bit width of the command stream interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -68,6 +72,8 @@ module RasterIXRenderCore #(
 
     // The size of a sub pixel
     localparam SUB_PIXEL_WIDTH = 8,
+    // The precision of the sub pixel calculation in the shader. Must be between 5 and 8
+    parameter SUB_PIXEL_CALC_PRECISION = 8,
 
     // The number of sub pixel used for a pixel
     localparam NUMBER_OF_SUB_PIXELS = 4,
@@ -275,6 +281,11 @@ module RasterIXRenderCore #(
         begin
             $error("RASTERIZER_FIXPOINT_PRECISION must be between 16 and 25");
             $finish;
+        end
+
+        if ((SUB_PIXEL_CALC_PRECISION > 8) || (SUB_PIXEL_CALC_PRECISION < 5))
+        begin
+            $error("SUB_PIXEL_CALC_PRECISION must be between 5 and 8");
         end
     end
 
@@ -1259,9 +1270,12 @@ module RasterIXRenderCore #(
     );
     defparam pixelPipeline.INDEX_WIDTH = INDEX_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+    defparam pixelPipeline.SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_CALC_PRECISION;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
+    defparam pixelPipeline.ENABLE_TEXTURE_FILTERING = ENABLE_TEXTURE_FILTERING;
+    defparam pixelPipeline.ENABLE_FOG = ENABLE_FOG;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 5
@@ -1384,6 +1398,7 @@ module RasterIXRenderCore #(
     defparam perFragmentPipeline.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam perFragmentPipeline.STENCIL_WIDTH = STENCIL_WIDTH;
     defparam perFragmentPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
+    defparam perFragmentPipeline.SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_CALC_PRECISION;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7

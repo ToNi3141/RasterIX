@@ -34,6 +34,8 @@ module RasterIXCoreIF #(
     // The sub pixel with in the framebuffer
     localparam PIXEL_WIDTH_FRAMEBUFFER = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS * FRAMEBUFFER_SUB_PIXEL_WIDTH,
 
+    parameter SUB_PIXEL_CALC_PRECISION = 8,
+
     // The width of the stencil buffer
     localparam STENCIL_WIDTH = 4,
 
@@ -43,10 +45,17 @@ module RasterIXCoreIF #(
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
 
+    // Enables the stencil buffer
+    parameter ENABLE_DEPTH_BUFFER = 1,
+
     // Number of TMUs. Currently supported values: 1 and 2
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
+    parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TEXTURE_PAGE_SIZE = 2048,
+
+    // Enables the fog unit
+    parameter ENABLE_FOG = 1,
     
     // The bit width of the command stream interface and memory interface
     // Allowed values: 32, 64, 128, 256 bit
@@ -240,53 +249,66 @@ module RasterIXCoreIF #(
     wire [SCREEN_POS_WIDTH - 1 : 0]                  m_stencil_wscreenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  m_stencil_wscreenPosY;
 
-    FrameBuffer depthBuffer (  
-        .clk(aclk),
-        .reset(!resetn),
+    generate
+        if (ENABLE_DEPTH_BUFFER)
+        begin
+            FrameBuffer depthBuffer (  
+                .clk(aclk),
+                .reset(!resetn),
 
-        .confEnable(depthBufferEnable),
-        .confClearColor(depthBufferClearDepth),
-        .confEnableScissor(framebufferParamEnableScissor),
-        .confScissorStartX(framebufferParamScissorStartX),
-        .confScissorStartY(framebufferParamScissorStartY),
-        .confScissorEndX(framebufferParamScissorEndX),
-        .confScissorEndY(framebufferParamScissorEndY),
-        .confYOffset(framebufferParamYOffset),
-        .confXResolution(framebufferParamXResolution),
-        .confYResolution(framebufferParamYResolution),
-        .confMask(depthBufferMask),
+                .confEnable(depthBufferEnable),
+                .confClearColor(depthBufferClearDepth),
+                .confEnableScissor(framebufferParamEnableScissor),
+                .confScissorStartX(framebufferParamScissorStartX),
+                .confScissorStartY(framebufferParamScissorStartY),
+                .confScissorEndX(framebufferParamScissorEndX),
+                .confScissorEndY(framebufferParamScissorEndY),
+                .confYOffset(framebufferParamYOffset),
+                .confXResolution(framebufferParamXResolution),
+                .confYResolution(framebufferParamYResolution),
+                .confMask(depthBufferMask),
 
-        .araddr(m_depth_araddr),
-        .arvalid(m_depth_arvalid),
-        .arlast(m_depth_arlast),
-        .rvalid(m_depth_rvalid),
-        .rlast(m_depth_rlast),
-        .rdata(m_depth_rdata),
-        .waddr(m_depth_waddr),
-        .wdata(m_depth_wdata),
-        .wvalid(m_depth_wvalid),
-        .wstrb(m_depth_wstrb),
-        .wscreenPosX(m_depth_wscreenPosX),
-        .wscreenPosY(m_depth_wscreenPosY),
+                .araddr(m_depth_araddr),
+                .arvalid(m_depth_arvalid),
+                .arlast(m_depth_arlast),
+                .rvalid(m_depth_rvalid),
+                .rlast(m_depth_rlast),
+                .rdata(m_depth_rdata),
+                .waddr(m_depth_waddr),
+                .wdata(m_depth_wdata),
+                .wvalid(m_depth_wvalid),
+                .wstrb(m_depth_wstrb),
+                .wscreenPosX(m_depth_wscreenPosX),
+                .wscreenPosY(m_depth_wscreenPosY),
 
-        .apply(depthBufferApply),
-        .applied(depthBufferApplied),
-        .cmdCommit(depthBufferCmdCommit),
-        .cmdMemset(depthBufferCmdMemset),
-        .cmdSize(depthBufferSize),
+                .apply(depthBufferApply),
+                .applied(depthBufferApplied),
+                .cmdCommit(depthBufferCmdCommit),
+                .cmdMemset(depthBufferCmdMemset),
+                .cmdSize(depthBufferSize),
 
-        .m_axis_tvalid(),
-        .m_axis_tready(1'b1),
-        .m_axis_tlast(),
-        .m_axis_tdata()
-    );
-    defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
-    defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
-    defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
-    defparam depthBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
-    defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-    defparam depthBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
-    defparam depthBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
+                .m_axis_tvalid(),
+                .m_axis_tready(1'b1),
+                .m_axis_tlast(),
+                .m_axis_tdata()
+            );
+            defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
+            defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
+            defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
+            defparam depthBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
+            defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
+            defparam depthBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
+            defparam depthBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
+        end
+        else
+        begin
+            assign m_depth_arready = 1;
+            assign m_depth_rvalid = 1;
+            assign m_depth_rdata = 16'hffff;
+            assign m_depth_arlast = 0;
+            assign depthBufferApplied = 1;
+        end
+    endgenerate
 
     wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0] framebuffer_unconverted_axis_tdata;
     FrameBuffer colorBuffer (  
@@ -405,8 +427,10 @@ module RasterIXCoreIF #(
         end
         else
         begin
+            assign m_stencil_arready = 1;
+            assign m_stencil_rvalid = 1;
             assign m_stencil_rdata = 0;
-            assign m_stencil_arlast = 0;
+            assign m_stencil_wready = 1;
             assign stencilBufferApplied = 1;
         end
     endgenerate
@@ -418,13 +442,16 @@ module RasterIXCoreIF #(
         .ID_WIDTH(ID_WIDTH),
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
+        .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
+        .ENABLE_FOG(ENABLE_FOG),
         .TMU_MEMORY_WIDTH(DATA_WIDTH),
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ENABLE_WRITE_FIFO(0),
         .ENABLE_READ_FIFO(1), // Requires read FIFOs because the internal RAM does not have flow control
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
-        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
+        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
+        .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) graphicCore (
         .aclk(aclk),
         .resetn(resetn),

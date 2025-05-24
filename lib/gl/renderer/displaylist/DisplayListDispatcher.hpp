@@ -137,22 +137,6 @@ public:
         }
     }
 
-    void saveSectionStart()
-    {
-        for (std::size_t i = 0; i < m_displayLines; i++)
-        {
-            m_displayListAssembler[i].saveSectionStart();
-        }
-    }
-
-    void removeSection()
-    {
-        for (std::size_t i = 0; i < m_displayLines; i++)
-        {
-            m_displayListAssembler[i].removeSection();
-        }
-    }
-
     void clearDisplayListAssembler()
     {
         for (std::size_t i = 0; i < m_displayLines; i++)
