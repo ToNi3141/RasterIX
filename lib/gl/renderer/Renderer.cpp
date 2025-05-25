@@ -285,7 +285,7 @@ bool Renderer::setScissorBox(const int32_t x, const int32_t y, const uint32_t wi
     m_scissorYStart = y;
     m_scissorYEnd = y + height;
 
-    m_rasterizer.setScissorBox(x, y, width, height);
+    m_rasterizer.setScissorBox(x, y, x + width, y + height);
 
     return ret;
 }
