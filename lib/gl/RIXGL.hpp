@@ -42,13 +42,15 @@ public:
 
     /// @brief Creates a new render context
     /// @param busConnector Driver to access the RasterIX hardware
-    /// @param runner Runner to run some parts of the renderer in an own thread.
+    /// @param workerThread Runner to run some parts of the renderer in an own thread.
     ///     This project contains already two sample runners, one MultiThreadRunner for systems which
     ///     implement std::async and a SingleThreadRunner with no thread logic. If you have an multi core
     ///     system like the rppico, an own runner needs to be implemented to offload work to other cores.
+    /// @param uploadThread Runner to run the upload in a thread. A real thread implementation here is only
+    ///     required when multiple display lists are used (see RasterIX_IF).
     /// @return true if the creation was successful. This function currently uses heap memory. A false
     ///     can occur when the memory allocation fails.
-    static bool createInstance(IBusConnector& busConnector, IThreadRunner& runner);
+    static bool createInstance(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread);
 
     /// @brief  Destroys the current context, switches the framebuffer to the system framebuffer and
     ///     and frees all allocated memory.
@@ -97,7 +99,7 @@ public:
     void enableVSync(const bool enable);
 
 private:
-    RIXGL(IBusConnector& busConnector, IThreadRunner& runner);
+    RIXGL(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread);
     ~RIXGL();
     RenderDevice* m_renderDevice { nullptr };
 

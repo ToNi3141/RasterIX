@@ -52,19 +52,6 @@ public:
     }
 
     template <typename TCommand>
-    bool copyCommand(TDisplayList& srcList)
-    {
-        const typename TCommand::CommandType& op = *(srcList.template lookAhead<typename TCommand::CommandType>());
-        const std::size_t payloadSize = TCommand::getNumberOfElementsInPayloadByCommand(op);
-        if (getCommandSize<TCommand>(payloadSize) >= m_displayList.getFreeSpace())
-        {
-            return false;
-        }
-        copyFromDisplayList<TCommand>(srcList);
-        return true;
-    }
-
-    template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
         if (getCommandSize<TCommand>(cmd) >= m_displayList.getFreeSpace())
@@ -89,20 +76,6 @@ private:
         for (auto& a : payload)
         {
             *(m_displayList.template create<typename TPayloadType::value_type>()) = a;
-        }
-    }
-
-    template <typename TCommand>
-    void copyFromDisplayList(displaylist::DisplayList& srcList)
-    {
-        using CommandType = typename TCommand::CommandType;
-        using PayloadType = typename TCommand::PayloadType::value_type;
-        const CommandType& op = *(srcList.template getNext<CommandType>());
-        const std::size_t payloadSize = TCommand::getNumberOfElementsInPayloadByCommand(op);
-        *(m_displayList.template create<CommandType>()) = op;
-        for (std::size_t i = 0; i < payloadSize; i++)
-        {
-            *(m_displayList.template create<PayloadType>()) = *(srcList.template getNext<PayloadType>());
         }
     }
 

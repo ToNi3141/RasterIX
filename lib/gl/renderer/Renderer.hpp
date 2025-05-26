@@ -74,10 +74,6 @@ public:
 
     ~Renderer();
 
-    /// @brief Will render a triangle which is constructed with the given parameters
-    /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
-    bool drawTriangle(const TransformedTriangle& triangle);
-
     /// @brief Sets a new vertex context
     /// @param ctx The vertex context with transformation matrices, light configs and others.
     void setVertexContext(const vertextransforming::VertexTransformingData& ctx);
@@ -237,10 +233,12 @@ public:
 
 private:
     using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList>;
-    using DisplayListAssemblerArrayType = std::array<DisplayListAssemblerType, RenderConfig::getDisplayLines()>;
     using TextureManagerType = TextureMemoryManager<RenderConfig>;
-    using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, DisplayListAssemblerArrayType>;
-    using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType>;
+    using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListAssemblerType>;
+
+    /// @brief Will render a triangle which is constructed with the given parameters
+    /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
+    bool drawTriangle(const TransformedTriangle& triangle);
 
     template <typename TArg>
     bool writeReg(const TArg& regVal)
@@ -252,7 +250,7 @@ private:
     bool addCommand(const Command& cmd)
     {
         bool ret = m_displayListBuffer.getBack().addCommand(cmd);
-        if (!ret && m_displayListBuffer.getBack().singleList())
+        if (!ret)
         {
             intermediateUpload();
             ret = m_displayListBuffer.getBack().addCommand(cmd);
@@ -260,103 +258,23 @@ private:
         return ret;
     }
 
-    template <typename Command>
-    bool addLastCommand(const Command& cmd)
-    {
-        return m_displayListBuffer.getBack().addLastCommand(cmd);
-    }
-
-    template <typename Factory>
-    bool addLastCommandWithFactory(const Factory& commandFactory)
-    {
-        return m_displayListBuffer.getBack().addLastCommandWithFactory_if(commandFactory,
-            [](std::size_t, std::size_t, std::size_t, std::size_t)
-            { return true; });
-    }
-
-    template <typename Factory>
-    bool addCommandWithFactory(const Factory& commandFactory)
-    {
-        return addCommandWithFactory_if(commandFactory,
-            [](std::size_t, std::size_t, std::size_t, std::size_t)
-            { return true; });
-    }
-
-    template <typename Factory, typename Pred>
-    bool addCommandWithFactory_if(const Factory& commandFactory, const Pred& pred)
-    {
-        return m_displayListBuffer.getBack().addCommandWithFactory_if(commandFactory, pred);
-    }
-
-    template <typename Function>
-    bool displayListLooper(const Function& func)
-    {
-        return m_displayListBuffer.getBack().displayListLooper(func);
-    }
-
     void clearDisplayListAssembler()
     {
-        m_displayListBuffer.getBack().clearDisplayListAssembler();
+        m_displayListBuffer.getBack().clearAssembler();
     }
 
     void switchDisplayLists()
     {
         m_displayListUploaderThread.wait();
+        while (!m_device.clearToSend())
+            ;
         m_displayListBuffer.swap();
-    }
-
-    template <typename TriangleCmd>
-    bool addMultiListTriangle(TriangleCmd& triangleCmd)
-    {
-        const auto factory = [&triangleCmd](DisplayListDispatcherType& dispatcher, const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
-        {
-            const std::size_t currentScreenPositionStart = i * resY;
-            const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
-            if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
-            {
-                // The floating point rasterizer can automatically increment all attributes
-                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
-                {
-                    return dispatcher.addCommand(i, triangleCmd);
-                }
-                else
-                {
-                    return dispatcher.addCommand(i, triangleCmd.getIncremented(currentScreenPositionStart, currentScreenPositionEnd));
-                }
-            }
-            return true;
-        };
-        return displayListLooper(factory);
-    }
-
-    template <typename TriangleCmd>
-    bool addTriangleCmd(TriangleCmd& triangleCmd)
-    {
-        if (!triangleCmd.isVisible())
-        {
-            return true;
-        }
-
-        if constexpr (DisplayListDispatcherType::singleList())
-        {
-            return addCommand(triangleCmd);
-        }
-        else
-        {
-            return addMultiListTriangle(triangleCmd);
-        }
-        return true;
     }
 
     // Inlining this function enables the return code optimization from the start of the chain to the transformation
     bool pushVertexImpl(const VertexParameter& vertex)
     {
-        if constexpr (!RenderConfig::THREADED_RASTERIZATION || (RenderConfig::getDisplayLines() > 1))
-        {
-            return m_vertexTransform.pushVertex(vertex);
-        }
-
-        if constexpr (RenderConfig::THREADED_RASTERIZATION && (RenderConfig::getDisplayLines() == 1))
+        if constexpr (RenderConfig::THREADED_RASTERIZATION)
         {
             if (!addCommand(PushVertexCmd { vertex }))
             {
@@ -364,6 +282,10 @@ private:
                 return false;
             }
             return true;
+        }
+        else
+        {
+            return m_vertexTransform.pushVertex(vertex);
         }
     }
 
@@ -376,7 +298,6 @@ private:
     void intermediateUpload();
     void setYOffset();
     void initDisplayLists();
-    void addLineColorBufferAddresses();
     void addCommitFramebufferCommand();
     void addColorBufferAddressOfTheScreen();
     void swapScreenToNewColorBuffer();
@@ -385,10 +306,8 @@ private:
     bool m_selectedColorBuffer { true };
     bool m_enableVSync { RenderConfig::ENABLE_VSYNC };
 
-    // Optimization for the scissor test to filter unecessary clean calls
-    bool m_scissorEnabled { false };
-    int32_t m_scissorYStart { 0 };
-    int32_t m_scissorYEnd { 0 };
+    std::size_t m_resolutionX { 640 };
+    std::size_t m_resolutionY { 480 };
 
     IDevice& m_device;
     IThreadRunner& m_displayListUploaderThread;
@@ -407,9 +326,8 @@ private:
     };
 
     // Instantiation of the displaylist assemblers
-    std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};
-    std::array<DisplayListDispatcherType, 2> m_displayListDispatcher { m_displayListAssembler[0], m_displayListAssembler[1] };
-    DisplayListDoubleBufferType m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };
+    std::array<DisplayListAssemblerType, 2> m_displayListAssembler {};
+    DisplayListDoubleBufferType m_displayListBuffer { m_displayListAssembler[0], m_displayListAssembler[1] };
 };
 
 } // namespace rr

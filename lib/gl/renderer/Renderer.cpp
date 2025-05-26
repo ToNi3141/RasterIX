@@ -22,8 +22,8 @@ Renderer::Renderer(IDevice& device, IThreadRunner& runner)
     : m_device { device }
     , m_displayListUploaderThread { runner }
 {
-    m_displayListBuffer.getBack().clearDisplayListAssembler();
-    m_displayListBuffer.getFront().clearDisplayListAssembler();
+    m_displayListBuffer.getBack().clearAssembler();
+    m_displayListBuffer.getFront().clearAssembler();
 
     initDisplayLists();
 
@@ -57,21 +57,24 @@ Renderer::~Renderer()
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
-    if constexpr (RenderConfig::THREADED_RASTERIZATION)
+    TriangleStreamCmd triangleCmd { m_rasterizer, triangle };
+    if (!triangleCmd.isVisible())
     {
-        RegularTriangleCmd triangleCmd { triangle };
-        return addTriangleCmd(triangleCmd);
+        return true;
     }
-    else
-    {
-        TriangleStreamCmd triangleCmd { m_rasterizer, triangle };
-        return addTriangleCmd(triangleCmd);
-    }
+    return addCommand(triangleCmd);
 }
 
 void Renderer::setVertexContext(const vertextransforming::VertexTransformingData& ctx)
 {
-    if constexpr (!RenderConfig::THREADED_RASTERIZATION || (RenderConfig::getDisplayLines() > 1))
+    if constexpr (RenderConfig::THREADED_RASTERIZATION)
+    {
+        if (!addCommand(SetVertexCtxCmd { ctx }))
+        {
+            SPDLOG_CRITICAL("Cannot push vertex context into queue. This may brake the rendering.");
+        }
+    }
+    else
     {
         new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
             ctx,
@@ -79,43 +82,24 @@ void Renderer::setVertexContext(const vertextransforming::VertexTransformingData
             setStencilBufferConfigLambda,
         };
     }
-
-    if constexpr (RenderConfig::THREADED_RASTERIZATION && (RenderConfig::getDisplayLines() == 1))
-    {
-        if (!addCommand(SetVertexCtxCmd { ctx }))
-        {
-            SPDLOG_CRITICAL("Cannot push vertex context into queue. This may brake the rendering.");
-        }
-    }
 }
 
 void Renderer::initDisplayLists()
 {
-    for (std::size_t i = 0, buffId = 0; i < m_displayListAssembler[0].size(); i++)
-    {
-        m_displayListAssembler[0][i].setBuffer(m_device.requestDisplayListBuffer(buffId), buffId);
-        buffId++;
-        m_displayListAssembler[1][i].setBuffer(m_device.requestDisplayListBuffer(buffId), buffId);
-        buffId++;
-    }
+    m_displayListAssembler[0].setBuffer(m_device.requestDisplayListBuffer(0), 0);
+    m_displayListAssembler[1].setBuffer(m_device.requestDisplayListBuffer(1), 1);
 }
 
 void Renderer::intermediateUpload()
 {
-    // It can only work for single lists. Loading of partial framebuffers in the rixif config
-    // is not supported which is a requirement to get it to work.
-    if (m_displayListBuffer.getBack().singleList())
-    {
-        switchDisplayLists();
-        uploadTextures();
-        clearDisplayListAssembler();
-        uploadDisplayList();
-    }
+    switchDisplayLists();
+    uploadTextures();
+    clearDisplayListAssembler();
+    uploadDisplayList();
 }
 
 void Renderer::swapDisplayList()
 {
-    addLineColorBufferAddresses();
     addCommitFramebufferCommand();
     addColorBufferAddressOfTheScreen();
     swapScreenToNewColorBuffer();
@@ -126,117 +110,60 @@ void Renderer::swapDisplayList()
     swapFramebuffer();
 }
 
-void Renderer::addLineColorBufferAddresses()
-{
-    addCommandWithFactory(
-        [this](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
-        {
-            const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-            const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
-            return WriteRegisterCmd { ColorBufferAddrReg { addr } };
-        });
-}
-
 void Renderer::addCommitFramebufferCommand()
 {
-    addCommandWithFactory(
-        [](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
-        {
-            // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
-            // to flush the pipeline. This is the easiest way to solve WAR conflicts.
-            // This command is required for the IF config.
-            const uint32_t screenSize = resY * resX;
-            FramebufferCmd cmd { true, true, true, screenSize };
-            cmd.commitFramebuffer();
-            return cmd;
-        });
+    // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
+    // to flush the pipeline. This is the easiest way to solve WAR conflicts.
+    // This command is required for the IF config.
+    const uint32_t screenSize = m_resolutionX * m_resolutionY;
+    FramebufferCmd cmd { true, true, true, screenSize };
+    cmd.commitFramebuffer();
+    addCommand(cmd);
 }
 
 void Renderer::addColorBufferAddressOfTheScreen()
 {
-    // The last list is responsible for the overall system state
-    addLastCommand(WriteRegisterCmd { ColorBufferAddrReg { m_colorBufferAddr } });
+    writeReg(ColorBufferAddrReg { m_colorBufferAddr });
 }
 
 void Renderer::swapScreenToNewColorBuffer()
 {
-    addLastCommandWithFactory(
-        [this](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
-        {
-            const std::size_t screenSize = resY * resX;
-            FramebufferCmd cmd { false, false, false, screenSize };
-            cmd.selectColorBuffer();
-            cmd.swapFramebuffer();
-            if (m_enableVSync)
-            {
-                cmd.enableVSync();
-            }
-            return cmd;
-        });
+    const std::size_t screenSize = m_resolutionX * m_resolutionY;
+    FramebufferCmd cmd { false, false, false, screenSize };
+    cmd.selectColorBuffer();
+    cmd.swapFramebuffer();
+    if (m_enableVSync)
+    {
+        cmd.enableVSync();
+    }
+    addCommand(cmd);
 }
 
 void Renderer::setYOffset()
 {
-    addCommandWithFactory(
-        [](const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
-        {
-            const uint16_t yOffset = i * resY;
-            return WriteRegisterCmd<YOffsetReg> { YOffsetReg { 0, yOffset } };
-        });
+    // In a single list case, this is always zero. It is required for the threaded renderer and the multi list support
+    writeReg(YOffsetReg { 0, 0 });
 }
 
 void Renderer::uploadDisplayList()
 {
     const std::function<bool()> uploader = [this]()
     {
-        return m_displayListBuffer.getFront().displayListLooper(
-            [this](
-                DisplayListDispatcherType& dispatcher,
-                const std::size_t i,
-                const std::size_t,
-                const std::size_t,
-                const std::size_t)
-            {
-                while (!m_device.clearToSend())
-                    ;
-                m_device.streamDisplayList(
-                    dispatcher.getDisplayListBufferId(i),
-                    dispatcher.getDisplayListSize(i));
-                return true;
-            });
+        while (!m_device.clearToSend())
+            ;
+        m_device.streamDisplayList(
+            m_displayListBuffer.getFront().getDisplayListBufferId(),
+            m_displayListBuffer.getFront().getDisplayListSize());
+        return true;
     };
     m_displayListUploaderThread.run(uploader);
 }
 
 bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer)
 {
-    return addCommandWithFactory_if(
-        [&](const std::size_t, const std::size_t, const std::size_t x, const std::size_t y)
-        {
-            FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer, x * y };
-            cmd.enableMemset();
-            return cmd;
-        },
-        [&](const std::size_t i, const std::size_t, const std::size_t x, const std::size_t y)
-        {
-            FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer, x * y };
-            cmd.enableMemset();
-            if (m_scissorEnabled)
-            {
-                const std::size_t currentScreenPositionStart = i * y;
-                const std::size_t currentScreenPositionEnd = (i + 1) * y;
-                if ((static_cast<int32_t>(currentScreenPositionEnd) >= m_scissorYStart)
-                    && (static_cast<int32_t>(currentScreenPositionStart) < m_scissorYEnd))
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                return true;
-            }
-            return false;
-        });
+    FramebufferCmd cmd { colorBuffer, depthBuffer, stencilBuffer, m_resolutionX * m_resolutionY };
+    cmd.enableMemset();
+    return addCommand(cmd);
 }
 
 bool Renderer::useTexture(const std::size_t tmu, const uint16_t texId)
@@ -259,7 +186,6 @@ bool Renderer::useTexture(const std::size_t tmu, const uint16_t texId)
 
 bool Renderer::setFeatureEnableConfig(const FeatureEnableReg& featureEnable)
 {
-    m_scissorEnabled = featureEnable.getEnableScissor();
     m_rasterizer.enableScissor(featureEnable.getEnableScissor());
     m_rasterizer.enableTmu(0, featureEnable.getEnableTmu(0));
     if constexpr (RenderConfig::TMU_COUNT == 2)
@@ -281,9 +207,6 @@ bool Renderer::setScissorBox(const int32_t x, const int32_t y, const uint32_t wi
 
     ret = ret && writeReg(regStart);
     ret = ret && writeReg(regEnd);
-
-    m_scissorYStart = y;
-    m_scissorYEnd = y + height;
 
     m_rasterizer.setScissorBox(x, y, x + width, y + height);
 
@@ -316,16 +239,12 @@ bool Renderer::enableTextureMinFiltering(const std::size_t tmu, const uint16_t t
 
 bool Renderer::setRenderResolution(const std::size_t x, const std::size_t y)
 {
-    // The resolution must be set on both displaylists
-    if (!m_displayListBuffer.getBack().setResolution(x, y)
-        || !m_displayListBuffer.getFront().setResolution(x, y))
-    {
-        return false;
-    }
+    m_resolutionX = x;
+    m_resolutionY = y;
 
     RenderResolutionReg reg;
     reg.setX(x);
-    reg.setY(m_displayListBuffer.getBack().getYLineResolution());
+    reg.setY(y);
     return writeReg(reg);
 }
 

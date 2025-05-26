@@ -43,9 +43,9 @@ RIXGL& RIXGL::getInstance()
 class WithThreadedRasterization
 {
 public:
-    WithThreadedRasterization(IBusConnector& busConnector)
+    WithThreadedRasterization(IBusConnector& busConnector, IThreadRunner& uploadThread)
         : dmaStreamEngine { busConnector }
-        , device { dmaStreamEngine }
+        , device { dmaStreamEngine, uploadThread }
     {
     }
 
@@ -59,7 +59,7 @@ public:
 class OnlyDse
 {
 public:
-    OnlyDse(IBusConnector& busConnector)
+    OnlyDse(IBusConnector& busConnector, IThreadRunner&)
         : device { busConnector }
     {
     }
@@ -70,9 +70,9 @@ public:
 class RenderDevice
 {
 public:
-    RenderDevice(IBusConnector& busConnector, IThreadRunner& runner)
-        : device { busConnector }
-        , pixelPipeline { device.device, runner }
+    RenderDevice(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
+        : device { busConnector, uploadThread }
+        , pixelPipeline { device.device, workerThread }
         , vertexPipeline { pixelPipeline }
     {
     }
@@ -86,13 +86,13 @@ public:
     VertexArray vertexArray {};
 };
 
-bool RIXGL::createInstance(IBusConnector& busConnector, IThreadRunner& runner)
+bool RIXGL::createInstance(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
 {
     if (instance)
     {
         delete instance;
     }
-    instance = new RIXGL { busConnector, runner };
+    instance = new RIXGL { busConnector, workerThread, uploadThread };
     return instance != nullptr;
 }
 
@@ -105,8 +105,8 @@ void RIXGL::destroy()
     }
 }
 
-RIXGL::RIXGL(IBusConnector& busConnector, IThreadRunner& runner)
-    : m_renderDevice { new RenderDevice { busConnector, runner } }
+RIXGL::RIXGL(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
+    : m_renderDevice { new RenderDevice { busConnector, workerThread, uploadThread } }
 {
     // Register Open GL 1.0 procedures
     addLibProcedure("glAccum", ADDRESS_OF(impl_glAccum));

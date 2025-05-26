@@ -60,7 +60,8 @@ private:
     rr::FT60XBusConnector m_busConnector;
 #endif
 
-    rr::SingleThreadRunner m_runner{};
+    rr::SingleThreadRunner m_workerThread{};
+    rr::SingleThreadRunner m_uploadThread{};
 
     Ui::MainWindow *ui;
 
