@@ -3,9 +3,9 @@
 #include <Arduino.h>
 #include <IBusConnector.hpp>
 #include <Minimal.hpp>
+#include <NoThreadRunner.hpp>
 #include <RIXGL.hpp>
 #include <SPI.h>
-#include <NoThreadRunner.hpp>
 #include <StencilShadow.hpp>
 
 // Create a connector for the rix library. This is a wrapper around the arduino SPI interface.

@@ -1,5 +1,5 @@
-#include "RIXGL.hpp"
 #include "NoThreadRunner.hpp"
+#include "RIXGL.hpp"
 #include "gl.h"
 #include "glu.h"
 

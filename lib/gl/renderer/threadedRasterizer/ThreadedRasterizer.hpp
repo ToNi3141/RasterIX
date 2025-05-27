@@ -81,7 +81,9 @@ public:
     {
         m_uploadThread.wait();
         waitTillBusIsFree();
-        m_device.writeToDeviceMemory(data, addr);
+        tcb::span<uint8_t> dlb = m_device.requestDisplayListBuffer(m_device.getDisplayListBufferCount() - 1);
+        std::copy(data.begin(), data.end(), dlb.begin());
+        m_device.writeToDeviceMemory(dlb.subspan(0, data.size()), addr);
     }
 
     bool clearToSend() override
@@ -297,11 +299,12 @@ private:
             return addLastCommandWithFactory(
                 [&cmd](const std::size_t, const std::size_t displayLines, const std::size_t resX, const std::size_t resY)
                 {
-                    const std::size_t screenSize = resY * resX; // testen ob es auch mit geht: * m_displayLines;
+                    const std::size_t screenSize = resX * resY * displayLines;
                     cmd.setFramebufferSizeInPixel(screenSize);
                     return cmd;
                 });
         }
+
         addLineColorBufferAddresses();
         // Clear
         if (cmd.getEnableMemset())
@@ -309,7 +312,7 @@ private:
             return addCommandWithFactory_if(
                 [&cmd](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
                 {
-                    const uint32_t screenSize = resY * resX;
+                    const uint32_t screenSize = resX * resY;
                     cmd.setFramebufferSizeInPixel(screenSize);
                     return cmd;
                 },
@@ -333,16 +336,20 @@ private:
                 });
         }
         // Commit
-        return addCommandWithFactory(
-            [&cmd](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
-            {
-                // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
-                // to flush the pipeline. This is the easiest way to solve WAR conflicts.
-                // This command is required for the IF config.
-                const uint32_t screenSize = resY * resX;
-                cmd.setFramebufferSizeInPixel(screenSize);
-                return cmd;
-            });
+        if (cmd.getCommitFramebuffer())
+        {
+            return addCommandWithFactory(
+                [&cmd](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
+                {
+                    // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
+                    // to flush the pipeline. This is the easiest way to solve WAR conflicts.
+                    // This command is required for the IF config.
+                    const uint32_t screenSize = resX * resY;
+                    cmd.setFramebufferSizeInPixel(screenSize);
+                    return cmd;
+                });
+        }
+        return true;
     }
 
     void addLineColorBufferAddresses()
@@ -395,7 +402,7 @@ private:
         {
             ColorBufferAddrReg reg {};
             reg.deserialize(regData);
-            m_colorBufferAddr = reg.getValue();
+            m_colorBufferAddr = reg.getValue() - RenderConfig::GRAM_MEMORY_LOC;
             return copyCmd<WriteRegisterCmd<ColorBufferAddrReg>>(src);
         }
         break;

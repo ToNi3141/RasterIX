@@ -48,6 +48,11 @@ DMAProxyBusConnector::DMAProxyBusConnector()
 
 void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
 {
+    if (index >= BUFFER_COUNT)
+    {
+        SPDLOG_ERROR("Index {} out of bounds.", index);
+        return;
+    }
     waitForDma();
     int buffer_id = index;
     m_txChannel.buf_ptr[buffer_id].length = size;

@@ -42,8 +42,8 @@ struct RenderConfig
 
     // Misc
     static constexpr bool THREADED_RASTERIZATION { RIX_CORE_THREADED_RASTERIZATION };
-    static constexpr std::size_t THREADED_RASTERIZATION_BUFFER_COUNT { 20 };
-    static constexpr std::size_t THREADED_RASTERIZATION_BUFFER_SIZE { 1024 * 1024 };
+    static constexpr std::size_t THREADED_RASTERIZATION_BUFFER_COUNT { 3 };
+    static constexpr std::size_t THREADED_RASTERIZATION_BUFFER_SIZE { 1024 * 1024 * 4 };
     static constexpr bool ENABLE_VSYNC { RIX_CORE_ENABLE_VSYNC };
 
     static constexpr std::size_t getDisplayLines()
