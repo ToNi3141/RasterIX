@@ -13,7 +13,7 @@ public:
     Runner()
     {
         spdlog::set_level(spdlog::level::trace);
-        rr::RIXGL::createInstance(m_busConnector, m_runner);
+        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
         rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
@@ -37,6 +37,7 @@ private:
     static constexpr uint32_t RESOLUTION_H = 600;
     static constexpr uint32_t RESOLUTION_W = 1024;
     rr::FT60XBusConnector m_busConnector {};
-    rr::MultiThreadRunner m_runner {};
+    rr::MultiThreadRunner m_workerThread {};
+    rr::MultiThreadRunner m_uploadThread {};
     Scene m_scene {};
 };

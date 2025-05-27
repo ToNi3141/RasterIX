@@ -5,7 +5,7 @@
 #include <Minimal.hpp>
 #include <RIXGL.hpp>
 #include <SPI.h>
-#include <SingleThreadRunner.hpp>
+#include <NoThreadRunner.hpp>
 #include <StencilShadow.hpp>
 
 // Create a connector for the rix library. This is a wrapper around the arduino SPI interface.
@@ -101,7 +101,7 @@ static constexpr uint32_t RESOLUTION_W = 320;
 static constexpr uint LED_PIN = 25;
 bool state { false };
 
-static rr::SingleThreadRunner m_runner {};
+static rr::NoThreadRunner m_runner {};
 
 // Select a demo
 static Minimal m_scene {};

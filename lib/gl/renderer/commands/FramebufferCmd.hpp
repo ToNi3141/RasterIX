@@ -126,7 +126,7 @@ public:
     {
         return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT;
     }
-    std::size_t getFramebufferSizeInPixel(const std::size_t size) const
+    std::size_t getFramebufferSizeInPixel() const
     {
         return static_cast<std::size_t>(((m_op & ~OP_MASK) >> OP_FRAMEBUFFER_SIZE_POS) & OP_FRAMEBUFFER_SIZE_MASK);
     }
@@ -135,7 +135,7 @@ public:
         return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC;
     }
 
-    const PayloadType payload() const { return {}; }
+    PayloadType payload() const { return {}; }
     CommandType command() const { return m_op; }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }

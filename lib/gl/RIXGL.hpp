@@ -44,7 +44,7 @@ public:
     /// @param busConnector Driver to access the RasterIX hardware
     /// @param workerThread Runner to run some parts of the renderer in an own thread.
     ///     This project contains already two sample runners, one MultiThreadRunner for systems which
-    ///     implement std::async and a SingleThreadRunner with no thread logic. If you have an multi core
+    ///     implement std::async and a NoThreadRunner with no thread logic. If you have an multi core
     ///     system like the rppico, an own runner needs to be implemented to offload work to other cores.
     /// @param uploadThread Runner to run the upload in a thread. A real thread implementation here is only
     ///     required when multiple display lists are used (see RasterIX_IF).

@@ -1,5 +1,5 @@
 #include "RIXGL.hpp"
-#include "SingleThreadRunner.hpp"
+#include "NoThreadRunner.hpp"
 #include "gl.h"
 #include "glu.h"
 
@@ -117,7 +117,7 @@ public:
         gpio_init(LED_PIN);
         gpio_set_dir(LED_PIN, GPIO_OUT);
         m_busConnector.init();
-        rr::RIXGL::createInstance(m_busConnector, m_runner);
+        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
         rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
@@ -144,7 +144,8 @@ private:
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
     BusConnector<> m_busConnector {};
-    rr::SingleThreadRunner m_runner {};
+    rr::NoThreadRunner m_workerThread {};
+    rr::NoThreadRunner m_uploadThread {};
     bool led = false;
     Scene m_scene {};
 };

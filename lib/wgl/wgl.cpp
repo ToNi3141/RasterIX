@@ -33,7 +33,7 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
-        rr::RIXGL::createInstance(m_busConnector, m_runner);
+        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
         rr::RIXGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
         rr::RIXGL::getInstance().addLibExtension("WGL_ARB_render_texture");
@@ -65,7 +65,8 @@ public:
     }
 
 private:
-    rr::MultiThreadRunner m_runner {};
+    rr::MultiThreadRunner m_workerThread {};
+    rr::MultiThreadRunner m_uploadThread {};
 } guard;
 
 // Wiggle API
