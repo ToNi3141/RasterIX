@@ -43,9 +43,9 @@ RIXGL& RIXGL::getInstance()
 class WithThreadedRasterization
 {
 public:
-    WithThreadedRasterization(IBusConnector& busConnector, IThreadRunner& uploadThread)
+    WithThreadedRasterization(IBusConnector& busConnector, IThreadRunner& uploadThread, IThreadRunner& workerThread)
         : dmaStreamEngine { busConnector }
-        , device { dmaStreamEngine, uploadThread }
+        , device { dmaStreamEngine, uploadThread, workerThread }
     {
     }
 
@@ -59,7 +59,7 @@ public:
 class OnlyDse
 {
 public:
-    OnlyDse(IBusConnector& busConnector, IThreadRunner&)
+    OnlyDse(IBusConnector& busConnector, IThreadRunner&, IThreadRunner&)
         : device { busConnector }
     {
     }
@@ -71,8 +71,8 @@ class RenderDevice
 {
 public:
     RenderDevice(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
-        : device { busConnector, uploadThread }
-        , pixelPipeline { device.device, workerThread }
+        : device { busConnector, uploadThread, workerThread }
+        , pixelPipeline { device.device }
         , vertexPipeline { pixelPipeline }
     {
     }

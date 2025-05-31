@@ -33,7 +33,7 @@ namespace rr
 class PixelPipeline
 {
 public:
-    PixelPipeline(IDevice& device, IThreadRunner& runner);
+    PixelPipeline(IDevice& device);
 
     // Drawing
     void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }

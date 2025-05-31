@@ -18,9 +18,8 @@
 
 namespace rr
 {
-Renderer::Renderer(IDevice& device, IThreadRunner& runner)
+Renderer::Renderer(IDevice& device)
     : m_device { device }
-    , m_displayListUploaderThread { runner }
 {
     m_displayListBuffer.getBack().clearAssembler();
     m_displayListBuffer.getFront().clearAssembler();
@@ -52,7 +51,7 @@ Renderer::~Renderer()
     swapScreenToNewColorBuffer();
     switchDisplayLists();
     uploadDisplayList();
-    m_displayListUploaderThread.wait();
+    m_device.waitTillDeviceIsIdle();
 }
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
@@ -147,16 +146,10 @@ void Renderer::setYOffset()
 
 void Renderer::uploadDisplayList()
 {
-    const std::function<bool()> uploader = [this]()
-    {
-        while (!m_device.clearToSend())
-            ;
-        m_device.streamDisplayList(
-            m_displayListBuffer.getFront().getDisplayListBufferId(),
-            m_displayListBuffer.getFront().getDisplayListSize());
-        return true;
-    };
-    m_displayListUploaderThread.run(uploader);
+    m_device.waitTillDeviceIsIdle();
+    m_device.streamDisplayList(
+        m_displayListBuffer.getFront().getDisplayListBufferId(),
+        m_displayListBuffer.getFront().getDisplayListSize());
 }
 
 bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer)
@@ -262,12 +255,10 @@ bool Renderer::setColorBufferAddress(const uint32_t addr)
 
 void Renderer::uploadTextures()
 {
-    m_displayListUploaderThread.wait();
+    m_device.waitTillDeviceIsIdle();
     m_textureManager.uploadTextures(
         [&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {
-            while (!m_device.clearToSend())
-                ;
             m_device.writeToDeviceMemory(data, gramAddr);
             return true;
         });

@@ -70,7 +70,7 @@ namespace rr
 class Renderer
 {
 public:
-    Renderer(IDevice& device, IThreadRunner& runner);
+    Renderer(IDevice& device);
 
     ~Renderer();
 
@@ -265,9 +265,7 @@ private:
 
     void switchDisplayLists()
     {
-        m_displayListUploaderThread.wait();
-        while (!m_device.clearToSend())
-            ;
+        m_device.waitTillDeviceIsIdle();
         m_displayListBuffer.swap();
     }
 
@@ -310,7 +308,6 @@ private:
     std::size_t m_resolutionY { 480 };
 
     IDevice& m_device;
-    IThreadRunner& m_displayListUploaderThread;
     TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 

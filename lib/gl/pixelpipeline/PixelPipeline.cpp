@@ -19,8 +19,8 @@
 
 namespace rr
 {
-PixelPipeline::PixelPipeline(IDevice& device, IThreadRunner& runner)
-    : m_renderer { device, runner }
+PixelPipeline::PixelPipeline(IDevice& device)
+    : m_renderer { device }
 {
 }
 

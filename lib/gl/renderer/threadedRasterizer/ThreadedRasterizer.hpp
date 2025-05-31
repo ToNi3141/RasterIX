@@ -52,43 +52,56 @@ template <std::size_t BUFFER_COUNT, std::size_t BUFFER_SIZE>
 class ThreadedRasterizer : public IDevice
 {
 public:
-    ThreadedRasterizer(IDevice& device, IThreadRunner& uploadThread)
+    ThreadedRasterizer(IDevice& device, IThreadRunner& uploadThread, IThreadRunner& workerThread)
         : m_device { device }
         , m_uploadThread { uploadThread }
+        , m_workerThread { workerThread }
     {
         initDisplayLists();
         SPDLOG_INFO("Treaded rasterization enabled");
     }
 
+    virtual ~ThreadedRasterizer()
+    {
+        m_workerThread.wait();
+        m_uploadThread.wait();
+        m_device.waitTillDeviceIsIdle();
+    }
+
     void streamDisplayList(const uint8_t index, const uint32_t size) override
     {
-        displaylist::DisplayList srcList {};
-        srcList.setBuffer(requestDisplayListBuffer(index));
-        srcList.resetGet();
-        srcList.setCurrentSize(size);
-
-        while (!srcList.atEnd())
+        const std::function<bool()> compute = [this, index, size]()
         {
-            if (!decodeAndCopyCommand(srcList))
+            displaylist::DisplayList srcList {};
+            srcList.setBuffer(requestDisplayListBuffer(index));
+            srcList.resetGet();
+            srcList.setCurrentSize(size);
+
+            while (!srcList.atEnd())
             {
-                SPDLOG_CRITICAL("Decoding of displaylist failed.");
+                if (!decodeAndCopyCommand(srcList))
+                {
+                    SPDLOG_CRITICAL("Decoding of displaylist failed.");
+                }
             }
-        }
-        swapAndUploadDisplayLists();
+            swapAndUploadDisplayLists();
+            return true;
+        };
+        m_workerThread.wait();
+        m_workerThread.run(compute);
     }
 
     void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
     {
+        m_workerThread.wait();
         m_uploadThread.wait();
-        waitTillBusIsFree();
-        tcb::span<uint8_t> dlb = m_device.requestDisplayListBuffer(m_device.getDisplayListBufferCount() - 1);
-        std::copy(data.begin(), data.end(), dlb.begin());
-        m_device.writeToDeviceMemory(dlb.subspan(0, data.size()), addr);
+        m_device.waitTillDeviceIsIdle();
+        m_device.writeToDeviceMemory(data, addr);
     }
 
-    bool clearToSend() override
+    void waitTillDeviceIsIdle() override
     {
-        return true;
+        m_workerThread.wait();
     }
 
     tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index) override
@@ -132,7 +145,7 @@ private:
                     const std::size_t,
                     const std::size_t)
                 {
-                    waitTillBusIsFree();
+                    m_device.waitTillDeviceIsIdle();
                     if (dispatcher.getDisplayListSize(i) > 0)
                     {
                         m_device.streamDisplayList(
@@ -241,7 +254,7 @@ private:
     void switchDisplayLists()
     {
         m_uploadThread.wait();
-        waitTillBusIsFree();
+        m_device.waitTillDeviceIsIdle();
         m_displayListBuffer.swap();
         m_displayListBuffer.getBack().clearDisplayListAssembler();
     }
@@ -490,12 +503,6 @@ private:
         return ret;
     }
 
-    void waitTillBusIsFree()
-    {
-        while (!m_device.clearToSend())
-            ;
-    }
-
     void swapAndUploadDisplayLists()
     {
         switchDisplayLists();
@@ -519,6 +526,7 @@ private:
 
     IDevice& m_device;
     IThreadRunner& m_uploadThread;
+    IThreadRunner& m_workerThread;
     std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};
     std::array<DisplayListDispatcherType, 2> m_displayListDispatcher { m_displayListAssembler[0], m_displayListAssembler[1] };
     DisplayListDoubleBufferType m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };

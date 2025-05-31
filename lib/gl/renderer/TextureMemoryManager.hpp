@@ -237,6 +237,7 @@ public:
     {
         if (!m_textureUpdateRequired)
             return true;
+        m_textureUpdateRequired = false;
 
         // Upload textures
         for (std::size_t i = 0; i < RenderConfig::NUMBER_OF_TEXTURES; i++)
