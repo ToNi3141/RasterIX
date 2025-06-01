@@ -55,7 +55,7 @@ public:
         m_op = OP_TEXTURE_STREAM | texSize | tmuShifted;
     }
 
-    TextureStreamCmd(const CommandType op, const PayloadType& payload, const bool) // TODO: Find another way to make in unambiguous
+    TextureStreamCmd(const CommandType op, const PayloadType& payload, const bool)
     {
         m_op = op;
         const std::size_t texSize = payload.size();

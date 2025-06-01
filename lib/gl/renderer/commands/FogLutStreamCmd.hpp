@@ -65,7 +65,7 @@ public:
         m_payload = { m_lut };
     }
 
-    FogLutStreamCmd(const CommandType, const PayloadType& payload, const bool) // TODO: Find another way to make in unambiguous
+    FogLutStreamCmd(const CommandType, const PayloadType& payload, const bool)
     {
         const std::size_t texSize = payload.size();
         for (std::size_t i = 0; i < texSize; i++)

@@ -289,16 +289,17 @@ private:
 
     bool setDepthBufferAddress(const uint32_t addr) { return writeReg(DepthBufferAddrReg { addr }); }
     bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr }); }
-    bool writeToTextureConfig(const std::size_t tmu, const uint16_t texId, TmuTextureReg tmuConfig);
+    bool writeToTextureConfig(const std::size_t tmu, TmuTextureReg tmuConfig);
     bool setColorBufferAddress(const uint32_t addr);
     void uploadTextures();
     void swapFramebuffer();
     void intermediateUpload();
-    void setYOffset();
     void initDisplayLists();
     void addCommitFramebufferCommand();
-    void addColorBufferAddressOfTheScreen();
+    void addColorBufferAddressOfTheScreen() { writeReg(ColorBufferAddrReg { m_colorBufferAddr }); }
     void swapScreenToNewColorBuffer();
+    // In a single list case, this is always zero. It is required for the threaded renderer and the multi list support
+    void setYOffset() { writeReg(YOffsetReg { 0, 0 }); }
 
     uint32_t m_colorBufferAddr {};
     bool m_selectedColorBuffer { true };

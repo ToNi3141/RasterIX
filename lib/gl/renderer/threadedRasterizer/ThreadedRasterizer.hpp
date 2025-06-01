@@ -202,6 +202,8 @@ private:
                 src.getNext<PayloadType>();
             }
         }
+        // The third argument exists because sometimes (TextureStreamCmd) the constructors are ambiguous.
+        // The bool enforces the correct constructor
         TCmd cmd { *op, { pl, numberOfElements }, true };
         return addCommand(cmd);
     }
@@ -305,7 +307,7 @@ private:
     bool handleFramebufferCmd(displaylist::DisplayList& src)
     {
         const FramebufferCmd::CommandType* op = src.getNext<typename FramebufferCmd::CommandType>();
-        FramebufferCmd cmd { *op };
+        FramebufferCmd cmd { *op, {}, true };
         if (cmd.getSwapFramebuffer())
         {
             addLastCommand(WriteRegisterCmd { ColorBufferAddrReg { m_colorBufferAddr } });

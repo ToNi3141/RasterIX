@@ -87,9 +87,6 @@ public:
     primitiveassembler::PrimitiveAssemblerSetter& getPrimitiveAssembler() { return m_primitiveAssembler; }
 
 private:
-    void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }
-    bool pushVertex(VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
-    bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle); // Entfernen?
     VertexParameter fetch(const RenderObj& obj, std::size_t i);
     bool updatePipeline();
 

@@ -64,7 +64,7 @@ public:
         setFramebufferSizeInPixel(sizeInPixel);
     }
 
-    FramebufferCmd(const CommandType& cmd)
+    FramebufferCmd(const CommandType& cmd, const PayloadType&, const bool)
         : m_op { cmd }
     {
     }

@@ -36,7 +36,7 @@ public:
 
     // Interface for writing the display list
 
-    void* __restrict alloc(const std::size_t size)
+    void* alloc(const std::size_t size)
     {
         if ((size + writePos) <= mem.size())
         {
@@ -48,7 +48,7 @@ public:
     }
 
     template <typename GET_TYPE>
-    GET_TYPE* __restrict create()
+    GET_TYPE* create()
     {
         static constexpr std::size_t size = sizeOf<GET_TYPE>();
         return reinterpret_cast<GET_TYPE* __restrict>(alloc(size));
@@ -104,7 +104,7 @@ public:
     // Interface for reading the display list
 
     template <typename GET_TYPE>
-    const GET_TYPE* __restrict lookAhead(const std::size_t token = 1) const
+    const GET_TYPE* lookAhead(const std::size_t token = 1) const
     {
         static constexpr std::size_t size = sizeOf<GET_TYPE>();
         if (((size * token) + readPos) <= writePos)
@@ -115,7 +115,7 @@ public:
     }
 
     template <typename GET_TYPE>
-    const GET_TYPE* __restrict getNext()
+    const GET_TYPE* getNext()
     {
         static constexpr std::size_t size = sizeOf<GET_TYPE>();
         if ((size + readPos) <= writePos)

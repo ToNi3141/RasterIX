@@ -34,9 +34,7 @@ public:
     using PayloadType = tcb::span<const uint8_t>;
     using CommandType = uint32_t;
     NopCmd() = default;
-    NopCmd(const CommandType, const PayloadType&, const bool) // TODO: Find another way to make in unambiguous
-    {
-    }
+    NopCmd(const CommandType, const PayloadType&, const bool) { }
 
     const PayloadType& payload() const { return m_payload; }
     CommandType command() const { return OP_NOP; }

@@ -43,7 +43,7 @@ public:
         m_payload = { m_val };
     }
 
-    WriteRegisterCmd(const CommandType op, const PayloadType& payload, const bool) // TODO: Find another way to make in unambiguous
+    WriteRegisterCmd(const CommandType op, const PayloadType& payload, const bool)
     {
         m_op = op;
         m_val[0] = payload[0];
