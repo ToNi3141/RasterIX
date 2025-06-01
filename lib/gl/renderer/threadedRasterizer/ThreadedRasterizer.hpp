@@ -417,7 +417,7 @@ private:
         {
             ColorBufferAddrReg reg {};
             reg.deserialize(regData);
-            m_colorBufferAddr = reg.getValue() - RenderConfig::GRAM_MEMORY_LOC;
+            m_colorBufferAddr = reg.getValue();
             return copyCmd<WriteRegisterCmd<ColorBufferAddrReg>>(src);
         }
         break;
