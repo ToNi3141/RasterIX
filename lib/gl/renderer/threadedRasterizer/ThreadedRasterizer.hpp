@@ -364,6 +364,7 @@ private:
                     return cmd;
                 });
         }
+        SPDLOG_CRITICAL("FramebufferCmd was not correctly handled and is ignored. This might cause the renderer to crash ...");
         return true;
     }
 
