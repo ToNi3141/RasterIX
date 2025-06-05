@@ -34,8 +34,7 @@ public:
     {
     }
 
-    void deinit()
-    {}
+    void deinit() { }
 
     void streamDisplayList(const uint8_t index, uint32_t size) override
     {

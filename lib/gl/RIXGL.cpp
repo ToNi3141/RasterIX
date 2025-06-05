@@ -75,7 +75,6 @@ public:
         device.deinit();
     }
 
-
     DSEC::DmaStreamEngine device;
 };
 
