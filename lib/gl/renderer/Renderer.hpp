@@ -72,7 +72,6 @@ class Renderer
 public:
     Renderer(IDevice& device);
 
-    ~Renderer();
     void deinit();
 
     /// @brief Sets a new vertex context
