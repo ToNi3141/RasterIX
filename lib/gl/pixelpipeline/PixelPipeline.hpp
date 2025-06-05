@@ -34,6 +34,7 @@ class PixelPipeline
 {
 public:
     PixelPipeline(IDevice& device);
+    void deinit();
 
     // Drawing
     void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }

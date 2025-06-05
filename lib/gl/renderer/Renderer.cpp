@@ -44,7 +44,7 @@ Renderer::Renderer(IDevice& device)
     setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
 }
 
-Renderer::~Renderer()
+void Renderer::deinit()
 {
     clearDisplayListAssembler();
     setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_0);

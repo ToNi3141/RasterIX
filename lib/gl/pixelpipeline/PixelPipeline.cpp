@@ -24,6 +24,11 @@ PixelPipeline::PixelPipeline(IDevice& device)
 {
 }
 
+void PixelPipeline::deinit()
+{
+    m_renderer.deinit();
+}
+
 bool PixelPipeline::updatePipeline()
 {
     bool ret { true };

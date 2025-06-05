@@ -18,6 +18,7 @@
 #include "wgl.h"
 #include "FT60XBusConnector.hpp"
 #include "MultiThreadRunner.hpp"
+#include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -54,6 +55,10 @@ public:
 #undef ADDRESS_OF
     }
     ~GLInitGuard()
+    {
+    }
+
+    void deinit()
     {
         rr::RIXGL::destroy();
     }
@@ -108,6 +113,7 @@ GLAPI HGLRC APIENTRY impl_wglCreateLayerContext(HDC hdc, int iLayerPlane)
 GLAPI BOOL APIENTRY impl_wglDeleteContext(HGLRC hglrc)
 {
     SPDLOG_DEBUG("wglDeleteContext called");
+    guard.deinit();
     return TRUE;
 }
 

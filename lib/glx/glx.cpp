@@ -44,6 +44,10 @@ public:
     }
     ~GLInitGuard()
     {
+    }
+
+    void deinit()
+    {
         rr::RIXGL::getInstance().destroy();
     }
 
@@ -113,7 +117,8 @@ GLAPI GLXContext APIENTRY glXCreateContext(Display* dpy, XVisualInfo* vis,
 
 GLAPI void APIENTRY glXDestroyContext(Display* dpy, GLXContext ctx)
 {
-    SPDLOG_WARN("glXDestroyContext not implemented");
+    SPDLOG_DEBUG("glXDestroyContext called");
+    guard.deinit();
 }
 
 GLAPI Bool APIENTRY glXMakeCurrent(Display* dpy, GLXDrawable drawable,

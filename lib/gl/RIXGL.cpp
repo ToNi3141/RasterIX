@@ -49,6 +49,12 @@ public:
     {
     }
 
+    void deinit()
+    {
+        device.deinit();
+        dmaStreamEngine.deinit();
+    }
+
     DSEC::DmaStreamEngine dmaStreamEngine;
     ThreadedRasterizer<
         RenderConfig::THREADED_RASTERIZATION_BUFFER_COUNT,
@@ -64,6 +70,12 @@ public:
     {
     }
 
+    void deinit()
+    {
+        device.deinit();
+    }
+
+
     DSEC::DmaStreamEngine device;
 };
 
@@ -75,6 +87,13 @@ public:
         , pixelPipeline { device.device }
         , vertexPipeline { pixelPipeline }
     {
+    }
+
+    void deinit()
+    {
+        vertexPipeline.deinit();
+        pixelPipeline.deinit();
+        device.deinit();
     }
 
     using Device = std::conditional<RenderConfig::THREADED_RASTERIZATION, WithThreadedRasterization, OnlyDse>::type;
@@ -100,6 +119,7 @@ void RIXGL::destroy()
 {
     if (instance)
     {
+        instance->m_renderDevice->deinit();
         delete instance;
         instance = nullptr;
     }

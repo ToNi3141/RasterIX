@@ -40,6 +40,8 @@ class VertexPipeline
 public:
     VertexPipeline(PixelPipeline& renderer);
 
+    void deinit(){}
+
     // Drawing
     bool drawObj(const RenderObj& obj);
 

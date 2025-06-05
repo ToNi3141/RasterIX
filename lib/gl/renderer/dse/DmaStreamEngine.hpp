@@ -34,6 +34,9 @@ public:
     {
     }
 
+    void deinit()
+    {}
+
     void streamDisplayList(const uint8_t index, uint32_t size) override
     {
         size = fillWhenDataIsTooSmall(index, size);

@@ -61,7 +61,7 @@ public:
         SPDLOG_INFO("Treaded rasterization enabled");
     }
 
-    virtual ~ThreadedRasterizer()
+    void deinit()
     {
         m_workerThread.wait();
         m_uploadThread.wait();

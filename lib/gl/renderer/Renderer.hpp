@@ -73,6 +73,7 @@ public:
     Renderer(IDevice& device);
 
     ~Renderer();
+    void deinit();
 
     /// @brief Sets a new vertex context
     /// @param ctx The vertex context with transformation matrices, light configs and others.
