@@ -30,7 +30,7 @@ public:
     virtual ~IDevice() = default;
     virtual void streamDisplayList(const uint8_t index, const uint32_t size) = 0;
     virtual void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) = 0;
-    virtual bool clearToSend() = 0;
+    virtual void waitTillDeviceIsIdle() = 0;
     virtual tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index) = 0;
     virtual uint8_t getDisplayListBufferCount() const = 0;
 };

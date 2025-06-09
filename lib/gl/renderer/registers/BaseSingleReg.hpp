@@ -35,7 +35,7 @@ public:
     uint32_t getValue() const { return m_regVal; }
 
     uint32_t serialize() const { return m_regVal; }
-    void deserialize(const uint32_t data) const { m_regVal = data; }
+    void deserialize(const uint32_t data) { m_regVal = data; }
 
 private:
     uint32_t m_regVal { 0 };

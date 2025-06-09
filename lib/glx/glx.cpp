@@ -30,7 +30,7 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
-        rr::RIXGL::createInstance(m_busConnector, m_runner);
+        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
         rr::RIXGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
         rr::RIXGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
@@ -43,6 +43,11 @@ public:
 #undef ADDRESS_OF
     }
     ~GLInitGuard()
+    {
+        deinit();
+    }
+
+    void deinit()
     {
         rr::RIXGL::getInstance().destroy();
     }
@@ -60,7 +65,8 @@ public:
 
 private:
     rr::DMAProxyBusConnector m_busConnector {};
-    rr::MultiThreadRunner m_runner {};
+    rr::MultiThreadRunner m_workerThread {};
+    rr::MultiThreadRunner m_uploadThread {};
 } guard;
 
 GLAPI XVisualInfo* APIENTRY glXChooseVisual(Display* dpy, int screen,

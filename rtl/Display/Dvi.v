@@ -148,7 +148,7 @@ module Dvi #(
             addrMuxReg <= 0;
             swapped <= 1;
             m_mem_axi_arvalid <= 0;
-            mem_axi_arready <= 0;
+            mem_axi_arready <= 1;
             arvalidSkid <= 0;
         end
         else 

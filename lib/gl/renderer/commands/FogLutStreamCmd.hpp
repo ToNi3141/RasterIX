@@ -32,6 +32,9 @@ class FogLutStreamCmd
     static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
+    using PayloadType = tcb::span<const uint32_t>;
+    using CommandType = uint32_t;
+
     FogLutStreamCmd() = default;
     FogLutStreamCmd(const std::array<float, 33>& fogLut, const float start, const float end)
     {
@@ -58,14 +61,24 @@ public:
 
             setLutValue(i, m, b);
         }
+
+        m_payload = { m_lut };
     }
 
-    using PayloadType = std::array<uint32_t, LUT_SIZE>;
-    const PayloadType& payload() const { return m_lut; }
-    using CommandType = uint32_t;
+    FogLutStreamCmd(const CommandType, const PayloadType& payload, const bool)
+    {
+        const std::size_t texSize = payload.size();
+        for (std::size_t i = 0; i < texSize; i++)
+        {
+            m_lut[i] = payload[i];
+        }
+        m_payload = { m_lut };
+    }
+
+    const PayloadType& payload() const { return m_payload; }
     static constexpr CommandType command() { return FOG_LUT_STREAM; }
 
-    static std::size_t getNumberOfElementsInPayloadByCommand(const CommandType) { return std::tuple_size<PayloadType> {}; }
+    static std::size_t getNumberOfElementsInPayloadByCommand(const CommandType) { return LUT_SIZE; }
     static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == FOG_LUT_STREAM; }
 
 private:
@@ -82,6 +95,7 @@ private:
     }
 
     std::array<uint32_t, LUT_SIZE> m_lut;
+    PayloadType m_payload;
 };
 
 } // namespace rr

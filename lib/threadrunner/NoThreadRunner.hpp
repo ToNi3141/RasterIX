@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SINGLETHREADRUNNER_HPP
-#define SINGLETHREADRUNNER_HPP
+#ifndef NOTHREADRUNNER_HPP
+#define NOTHREADRUNNER_HPP
 
 #include "IThreadRunner.hpp"
 #include <future>
@@ -24,10 +24,10 @@
 namespace rr
 {
 
-class SingleThreadRunner : public IThreadRunner
+class NoThreadRunner : public IThreadRunner
 {
 public:
-    SingleThreadRunner()
+    NoThreadRunner()
     {
     }
 
@@ -43,4 +43,4 @@ public:
 
 } // namespace rr
 
-#endif // SINGLETHREADRUNNER_HPP
+#endif // NOTHREADRUNNER_HPP

@@ -33,10 +33,10 @@ namespace rr
 class PixelPipeline
 {
 public:
-    PixelPipeline(IDevice& device, IThreadRunner& runner);
+    PixelPipeline(IDevice& device);
+    void deinit();
 
     // Drawing
-    bool drawTriangle(const TransformedTriangle& triangle) { return m_renderer.drawTriangle(triangle); }
     void setVertexContext(const vertextransforming::VertexTransformingData& ctx) { m_renderer.setVertexContext(ctx); }
     bool pushVertex(const VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
 

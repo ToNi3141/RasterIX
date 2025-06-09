@@ -73,12 +73,6 @@ public:
     }
 
     template <typename TCommand>
-    bool copyCommand(TDisplayList& src)
-    {
-        return m_rixDisplayListAssembler.template copyCommand<TCommand>(src);
-    }
-
-    template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
         if constexpr (Optimize)

@@ -18,6 +18,7 @@
 #include "wgl.h"
 #include "FT60XBusConnector.hpp"
 #include "MultiThreadRunner.hpp"
+#include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -33,7 +34,7 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
-        rr::RIXGL::createInstance(m_busConnector, m_runner);
+        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
         rr::RIXGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
         rr::RIXGL::getInstance().addLibExtension("WGL_ARB_render_texture");
@@ -55,6 +56,10 @@ public:
     }
     ~GLInitGuard()
     {
+    }
+
+    void deinit()
+    {
         rr::RIXGL::destroy();
     }
 
@@ -65,7 +70,8 @@ public:
     }
 
 private:
-    rr::MultiThreadRunner m_runner {};
+    rr::MultiThreadRunner m_workerThread {};
+    rr::MultiThreadRunner m_uploadThread {};
 } guard;
 
 // Wiggle API
@@ -107,6 +113,7 @@ GLAPI HGLRC APIENTRY impl_wglCreateLayerContext(HDC hdc, int iLayerPlane)
 GLAPI BOOL APIENTRY impl_wglDeleteContext(HGLRC hglrc)
 {
     SPDLOG_DEBUG("wglDeleteContext called");
+    guard.deinit();
     return TRUE;
 }
 

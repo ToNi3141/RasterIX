@@ -30,9 +30,9 @@ namespace rr::primitiveassembler
 
 struct PrimitiveAssemblerData
 {
-    DrawMode mode;
-    std::size_t primitiveCount;
-    float lineWidth;
+    DrawMode mode { DrawMode::TRIANGLES };
+    std::size_t primitiveCount {};
+    float lineWidth { 1.0f };
 };
 
 class PrimitiveAssemblerCalc

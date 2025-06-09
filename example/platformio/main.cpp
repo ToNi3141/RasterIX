@@ -3,9 +3,9 @@
 #include <Arduino.h>
 #include <IBusConnector.hpp>
 #include <Minimal.hpp>
+#include <NoThreadRunner.hpp>
 #include <RIXGL.hpp>
 #include <SPI.h>
-#include <SingleThreadRunner.hpp>
 #include <StencilShadow.hpp>
 
 // Create a connector for the rix library. This is a wrapper around the arduino SPI interface.
@@ -101,7 +101,8 @@ static constexpr uint32_t RESOLUTION_W = 320;
 static constexpr uint LED_PIN = 25;
 bool state { false };
 
-static rr::SingleThreadRunner m_runner {};
+static rr::NoThreadRunner m_workerThread {};
+static rr::NoThreadRunner m_uploadThread {};
 
 // Select a demo
 static Minimal m_scene {};
@@ -113,7 +114,7 @@ void setup()
     // Initialize the connector
     m_busConnector.init();
     // Create a instance with the current connector. This will also initialize the library.
-    rr::RIXGL::createInstance(m_busConnector, m_runner);
+    rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
     // Set the display resolution
     rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     // Initialize the scene

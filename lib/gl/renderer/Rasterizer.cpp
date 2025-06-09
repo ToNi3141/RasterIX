@@ -299,8 +299,8 @@ void Rasterizer::setScissorBox(const int32_t x, const int32_t y, const uint32_t 
 {
     m_scissorStartX = x << EDGE_FUNC_SIZE;
     m_scissorStartY = y << EDGE_FUNC_SIZE;
-    m_scissorEndX = (width << EDGE_FUNC_SIZE) + m_scissorStartX;
-    m_scissorEndY = (height << EDGE_FUNC_SIZE) + m_scissorStartY;
+    m_scissorEndX = (width << EDGE_FUNC_SIZE);
+    m_scissorEndY = (height << EDGE_FUNC_SIZE);
 }
 
 } // namespace rr

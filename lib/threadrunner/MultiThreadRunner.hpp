@@ -19,7 +19,7 @@
 #define MULTITHREADRUNNER_HPP
 
 #include "IThreadRunner.hpp"
-#include <future>
+#include <thread>
 
 namespace rr
 {
@@ -30,26 +30,34 @@ public:
     MultiThreadRunner()
     {
         // Initialize the render thread by running it once
-        m_renderThread = std::async(
+        m_renderThread = std::thread(
             [&]()
             { return true; });
     }
 
     void wait() override
     {
-        if (m_renderThread.valid())
+        if (m_renderThread.joinable())
         {
-            m_renderThread.get();
+            m_renderThread.join();
         }
     }
 
     void run(const std::function<bool()>& operation) override
     {
-        m_renderThread = std::async(operation);
+        m_renderThread = std::thread(operation);
+#ifdef WIN32
+        SetThreadPriority(m_renderThread.native_handle(), 2);
+#else
+        sched_param sch_params;
+        sch_params.sched_priority = 2;
+        pthread_setschedparam(m_renderThread.native_handle(), SCHED_RR, &sch_params);
+#endif
+        std::this_thread::yield();
     }
 
 private:
-    std::future<bool> m_renderThread;
+    std::thread m_renderThread;
 };
 
 } // namespace rr

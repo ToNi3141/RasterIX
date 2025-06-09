@@ -34,6 +34,8 @@ public:
     {
     }
 
+    void deinit() { }
+
     void streamDisplayList(const uint8_t index, uint32_t size) override
     {
         size = fillWhenDataIsTooSmall(index, size);
@@ -50,9 +52,10 @@ public:
         m_busConnector.writeData(getStoreBufferIndex(), commandSize + data.size());
     }
 
-    bool clearToSend() override
+    void waitTillDeviceIsIdle() override
     {
-        return m_busConnector.clearToSend();
+        while (!m_busConnector.clearToSend())
+            ;
     }
 
     tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index) override

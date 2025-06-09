@@ -47,6 +47,7 @@ HEADERS  += mainwindow.h \
     $${RIXGL_PATH}/pixelpipeline/*.hpp \
     $${RIXGL_PATH}/math/*.hpp \
     $${RIXGL_PATH}/renderer/*.hpp \
+    $${RIXGL_PATH}/transform/*.hpp \
     $${RIXGL_PATH}/*.h \
     $${RIXGL_PATH}/renderer/registers/* \
     $${RIXGL_PATH}/renderer/dse/* \

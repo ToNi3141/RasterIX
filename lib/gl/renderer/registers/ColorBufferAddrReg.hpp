@@ -26,10 +26,15 @@ namespace rr
 class ColorBufferAddrReg : public BaseSingleReg<0xffffffff>
 {
 public:
-    ColorBufferAddrReg(const uint32_t addr)
+    ColorBufferAddrReg(const uint32_t addr = 0)
         : BaseSingleReg<0xffffffff> { addr + RenderConfig::GRAM_MEMORY_LOC }
     {
     }
+
+    uint32_t getValue() const
+    {
+        return BaseSingleReg<0xffffffff>::getValue() - RenderConfig::GRAM_MEMORY_LOC;
+    };
 
     static constexpr uint32_t getAddr() { return 16; }
 };

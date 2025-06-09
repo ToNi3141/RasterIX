@@ -32,11 +32,17 @@ class NopCmd
 
 public:
     using PayloadType = tcb::span<const uint8_t>;
-    const PayloadType payload() const { return {}; }
     using CommandType = uint32_t;
+    NopCmd() = default;
+    NopCmd(const CommandType, const PayloadType&, const bool) { }
+
+    const PayloadType& payload() const { return m_payload; }
     CommandType command() const { return OP_NOP; }
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }
     static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_NOP; }
+
+private:
+    PayloadType m_payload {};
 };
 
 } // namespace rr

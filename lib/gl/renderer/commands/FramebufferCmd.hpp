@@ -40,6 +40,9 @@ class FramebufferCmd
     static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
+    using PayloadType = tcb::span<const uint8_t>;
+    using CommandType = uint32_t;
+
     FramebufferCmd() = default;
     FramebufferCmd(const bool selColorBuffer,
         const bool selDepthBuffer,
@@ -61,11 +64,15 @@ public:
         setFramebufferSizeInPixel(sizeInPixel);
     }
 
+    FramebufferCmd(const CommandType& cmd, const PayloadType&, const bool)
+        : m_op { cmd }
+    {
+    }
+
     void swapFramebuffer()
     {
         m_op |= OP_FRAMEBUFFER_SWAP;
     }
-
     void commitFramebuffer()
     {
         m_op |= OP_FRAMEBUFFER_COMMIT;
@@ -88,6 +95,7 @@ public:
     }
     void setFramebufferSizeInPixel(const std::size_t size)
     {
+        m_op &= ~(OP_FRAMEBUFFER_SIZE_MASK << OP_FRAMEBUFFER_SIZE_POS);
         m_op |= (static_cast<uint32_t>(size) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
     }
     void enableVSync()
@@ -95,9 +103,40 @@ public:
         m_op |= OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC;
     }
 
-    using PayloadType = tcb::span<const uint8_t>;
-    const PayloadType payload() const { return {}; }
-    using CommandType = uint32_t;
+    bool getSwapFramebuffer() const
+    {
+        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_SWAP;
+    }
+    bool getCommitFramebuffer() const
+    {
+        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_COMMIT;
+    }
+    bool getEnableMemset() const
+    {
+        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_MEMSET;
+    }
+    bool getSelectColorBuffer() const
+    {
+        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
+    }
+    bool setSelectDepthBuffer() const
+    {
+        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT;
+    }
+    bool getSelectStencilBuffer() const
+    {
+        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT;
+    }
+    std::size_t getFramebufferSizeInPixel() const
+    {
+        return static_cast<std::size_t>(((m_op & ~OP_MASK) >> OP_FRAMEBUFFER_SIZE_POS) & OP_FRAMEBUFFER_SIZE_MASK);
+    }
+    bool getEnableVSync() const
+    {
+        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC;
+    }
+
+    PayloadType payload() const { return {}; }
     CommandType command() const { return m_op; }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }
