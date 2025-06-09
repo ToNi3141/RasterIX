@@ -44,6 +44,7 @@ public:
     }
     ~GLInitGuard()
     {
+        deinit();
     }
 
     void deinit()
@@ -117,8 +118,7 @@ GLAPI GLXContext APIENTRY glXCreateContext(Display* dpy, XVisualInfo* vis,
 
 GLAPI void APIENTRY glXDestroyContext(Display* dpy, GLXContext ctx)
 {
-    SPDLOG_DEBUG("glXDestroyContext called");
-    guard.deinit();
+    SPDLOG_WARN("glXDestroyContext not implemented");
 }
 
 GLAPI Bool APIENTRY glXMakeCurrent(Display* dpy, GLXDrawable drawable,
