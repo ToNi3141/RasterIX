@@ -87,9 +87,6 @@ public:
     /// the framebuffers
     void swapDisplayList();
 
-    /// @brief Uploads the display list to the hardware
-    void uploadDisplayList();
-
     /// @brief Creates a new texture
     /// @return pair with the first value to indicate if the operation succeeded (true) and the second value with the id
     std::pair<bool, uint16_t> createTexture() { return m_textureManager.createTexture(); }
@@ -240,6 +237,9 @@ private:
     /// @return true if the triangle was rendered, otherwise the display list was full and the triangle can't be added
     bool drawTriangle(const TransformedTriangle& triangle);
 
+    /// @brief Uploads the display list to the hardware
+    void uploadDisplayList();
+
     template <typename TArg>
     bool writeReg(const TArg& regVal)
     {
@@ -265,7 +265,6 @@ private:
 
     void switchDisplayLists()
     {
-        m_device.waitTillDeviceIsIdle();
         m_displayListBuffer.swap();
     }
 

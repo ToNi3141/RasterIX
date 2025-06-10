@@ -54,8 +54,7 @@ public:
 
     void waitTillDeviceIsIdle() override
     {
-        while (!m_busConnector.clearToSend())
-            ;
+        m_busConnector.waitTillWriteIsDone();
     }
 
     tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index) override

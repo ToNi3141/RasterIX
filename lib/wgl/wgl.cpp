@@ -66,7 +66,6 @@ public:
     void render()
     {
         rr::RIXGL::getInstance().swapDisplayList();
-        rr::RIXGL::getInstance().uploadDisplayList();
     }
 
 private:

@@ -30,11 +30,12 @@ public:
     /// @brief Uploads a chunk of data
     /// @param index The index of the buffer to upload
     /// @param size How many bytes of this buffer to upload
+    /// @note: A new transfer is started when the previous one is finished.
+    ///     As long as the previous one is ongoing, this function blocks.
     virtual void writeData(const uint8_t index, const uint32_t size) = 0;
 
     /// @brief Signals if the FIFO of the target is empty and is able to receive the next chunk of data
-    /// @return true if the FIFO is empty
-    virtual bool clearToSend() = 0;
+    virtual void waitTillWriteIsDone() = 0;
 
     /// @brief Requests a buffer which supports the requirements for the given device (for instance DMA capabilities).
     /// @param index The index of the requested buffer

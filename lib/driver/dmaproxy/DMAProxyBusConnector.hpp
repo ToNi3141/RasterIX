@@ -27,12 +27,12 @@ namespace rr
 class DMAProxyBusConnector : public IBusConnector
 {
 public:
-    virtual ~DMAProxyBusConnector() = default;
+    virtual ~DMAProxyBusConnector();
 
     DMAProxyBusConnector();
 
     virtual void writeData(const uint8_t index, const uint32_t size) override;
-    virtual bool clearToSend() override;
+    virtual void waitTillWriteIsDone() override;
     virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override;
     virtual uint8_t getBufferCount() const override;
 

@@ -30,8 +30,7 @@ public:
         uint32_t counter = 0;
         while (dataToSend != 0)
         {
-            while (!clearToSend())
-                ;
+            waitTillWriteIsDone();
             // SPI has no flow control. Therefore the flow control must be implemented in software.
             // Divide the data into smaller chunks. Check after each chunk, if the fifo has enough space
             // before sending the next chunk.
@@ -49,9 +48,10 @@ public:
         }
     }
 
-    virtual bool clearToSend() override
+    virtual void waitTillWriteIsDone() override
     {
-        return !dma_channel_is_busy(dma_tx) && gpio_get(CTS);
+        while (dma_channel_is_busy(dma_tx) || !gpio_get(CTS))
+            ;
     }
 
     virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override
@@ -135,7 +135,6 @@ public:
             led = !led;
             m_scene.draw();
             rr::RIXGL::getInstance().swapDisplayList();
-            rr::RIXGL::getInstance().uploadDisplayList();
         }
     }
 

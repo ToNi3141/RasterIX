@@ -50,9 +50,8 @@ public:
         m_top.s_cmd_axis_tvalid = 0;
     }
 
-    virtual bool clearToSend() override
+    virtual void waitTillWriteIsDone() override
     {
-        return true;
     }
 
     void clk()

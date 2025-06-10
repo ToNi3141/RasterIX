@@ -34,9 +34,8 @@ void FT60XBusConnector::writeData(const uint8_t index, const uint32_t size)
     FT_WritePipe(fthandle, 0x2, (PUCHAR)(this->m_dlMem[index].data()), size, &transferred, NULL);
 }
 
-bool FT60XBusConnector::clearToSend()
+void FT60XBusConnector::waitTillWriteIsDone()
 {
-    return true;
 }
 
 } // namespace rr

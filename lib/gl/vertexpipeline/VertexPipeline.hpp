@@ -54,7 +54,6 @@ public:
 
     // Switching and uploading of display lists
     void swapDisplayList() { m_renderer.swapDisplayList(); }
-    void uploadDisplayList() { m_renderer.uploadDisplayList(); }
 
     // General configs
     bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }

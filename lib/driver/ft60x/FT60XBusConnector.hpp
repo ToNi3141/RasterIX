@@ -22,7 +22,7 @@ public:
     FT60XBusConnector();
 
     virtual void writeData(const uint8_t index, const uint32_t size) override;
-    virtual bool clearToSend() override;
+    virtual void waitTillWriteIsDone() override;
 
 private:
     FT_HANDLE fthandle;

@@ -137,7 +137,7 @@ private:
     {
         const std::function<bool()> uploader = [this]()
         {
-            return m_displayListBuffer.getFront().displayListLooper(
+            const bool ret =  m_displayListBuffer.getFront().displayListLooper(
                 [this](
                     DisplayListDispatcherType& dispatcher,
                     const std::size_t i,
@@ -145,7 +145,6 @@ private:
                     const std::size_t,
                     const std::size_t)
                 {
-                    m_device.waitTillDeviceIsIdle();
                     if (dispatcher.getDisplayListSize(i) > 0)
                     {
                         m_device.streamDisplayList(
@@ -154,6 +153,8 @@ private:
                     }
                     return true;
                 });
+            m_device.waitTillDeviceIsIdle();
+            return ret;
         };
         m_uploadThread.run(uploader);
     }
@@ -256,7 +257,6 @@ private:
     void switchDisplayLists()
     {
         m_uploadThread.wait();
-        m_device.waitTillDeviceIsIdle();
         m_displayListBuffer.swap();
         m_displayListBuffer.getBack().clearDisplayListAssembler();
     }

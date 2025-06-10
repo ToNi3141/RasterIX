@@ -46,6 +46,11 @@ DMAProxyBusConnector::DMAProxyBusConnector()
     }
 }
 
+DMAProxyBusConnector::~DMAProxyBusConnector()
+{
+    waitTillWriteIsDone();
+}
+
 void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
 {
     if (index >= BUFFER_COUNT)
@@ -53,7 +58,7 @@ void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
         SPDLOG_ERROR("Index {} out of bounds.", index);
         return;
     }
-    waitForDma();
+    waitTillWriteIsDone();
     int buffer_id = index;
     m_txChannel.buf_ptr[buffer_id].length = size;
     ioctl(m_txChannel.fd, START_XFER, &buffer_id);
@@ -64,10 +69,9 @@ void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
     m_busyBufferId = index;
 }
 
-bool DMAProxyBusConnector::clearToSend()
+void DMAProxyBusConnector::waitTillWriteIsDone()
 {
     waitForDma();
-    return true;
 }
 
 tcb::span<uint8_t> DMAProxyBusConnector::requestBuffer(const uint8_t index)
