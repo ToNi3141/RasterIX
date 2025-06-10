@@ -27,7 +27,7 @@ class IThreadRunner
 {
 public:
     virtual void wait() = 0;
-    virtual void run(const std::function<bool()>& operation) = 0;
+    virtual void run(const std::function<void()>& operation) = 0;
 };
 
 } // namespace rr

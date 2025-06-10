@@ -30,9 +30,7 @@ public:
     MultiThreadRunner()
     {
         // Initialize the render thread by running it once
-        m_renderThread = std::thread(
-            [&]()
-            { return true; });
+        m_renderThread = std::thread([]() {});
     }
 
     void wait() override
@@ -43,7 +41,7 @@ public:
         }
     }
 
-    void run(const std::function<bool()>& operation) override
+    void run(const std::function<void()>& operation) override
     {
         m_renderThread = std::thread(operation);
 #ifdef WIN32

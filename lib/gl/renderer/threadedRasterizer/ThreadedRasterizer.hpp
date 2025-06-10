@@ -70,7 +70,7 @@ public:
 
     void streamDisplayList(const uint8_t index, const uint32_t size) override
     {
-        const std::function<bool()> compute = [this, index, size]()
+        const std::function<void()> compute = [this, index, size]()
         {
             displaylist::DisplayList srcList {};
             srcList.setBuffer(requestDisplayListBuffer(index));
@@ -85,7 +85,6 @@ public:
                 }
             }
             swapAndUploadDisplayLists();
-            return true;
         };
         m_workerThread.wait();
         m_workerThread.run(compute);
@@ -135,9 +134,9 @@ private:
 
     void uploadDisplayList()
     {
-        const std::function<bool()> uploader = [this]()
+        const std::function<void()> uploader = [this]()
         {
-            const bool ret =  m_displayListBuffer.getFront().displayListLooper(
+            m_displayListBuffer.getFront().displayListLooper(
                 [this](
                     DisplayListDispatcherType& dispatcher,
                     const std::size_t i,
@@ -154,7 +153,6 @@ private:
                     return true;
                 });
             m_device.waitTillDeviceIsIdle();
-            return ret;
         };
         m_uploadThread.run(uploader);
     }
