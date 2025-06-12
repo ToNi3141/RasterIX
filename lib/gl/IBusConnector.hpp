@@ -34,8 +34,9 @@ public:
     ///     As long as the previous one is ongoing, this function blocks.
     virtual void writeData(const uint8_t index, const uint32_t size) = 0;
 
-    /// @brief Signals if the FIFO of the target is empty and is able to receive the next chunk of data
-    virtual void waitTillWriteIsDone() = 0;
+    /// @brief Blocks until a new writeData() can be called without blocking.
+    ///     This also implies that the currently transferred buffer is free for reuse.
+    virtual void blockUntilWriteComplete() = 0;
 
     /// @brief Requests a buffer which supports the requirements for the given device (for instance DMA capabilities).
     /// @param index The index of the requested buffer

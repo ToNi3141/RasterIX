@@ -34,7 +34,7 @@ void FT60XBusConnector::writeData(const uint8_t index, const uint32_t size)
     FT_WritePipe(fthandle, 0x2, (PUCHAR)(this->m_dlMem[index].data()), size, &transferred, NULL);
 }
 
-void FT60XBusConnector::waitTillWriteIsDone()
+void FT60XBusConnector::blockUntilWriteComplete()
 {
 }
 

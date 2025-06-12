@@ -50,7 +50,7 @@ public:
         m_top.s_cmd_axis_tvalid = 0;
     }
 
-    virtual void waitTillWriteIsDone() override
+    virtual void blockUntilWriteComplete() override
     {
     }
 

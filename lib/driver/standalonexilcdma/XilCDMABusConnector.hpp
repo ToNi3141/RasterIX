@@ -61,7 +61,7 @@ public:
         waitForDma();
     }
 
-    virtual void waitTillWriteIsDone()
+    virtual void blockUntilWriteComplete()
     {
         waitForDma();
     }

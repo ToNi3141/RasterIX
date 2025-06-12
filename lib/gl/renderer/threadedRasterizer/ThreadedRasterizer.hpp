@@ -65,7 +65,7 @@ public:
     {
         m_workerThread.wait();
         m_uploadThread.wait();
-        m_device.waitTillDeviceIsIdle();
+        m_device.blockUntilDeviceIsIdle();
     }
 
     void streamDisplayList(const uint8_t index, const uint32_t size) override
@@ -94,11 +94,11 @@ public:
     {
         m_workerThread.wait();
         m_uploadThread.wait();
-        m_device.waitTillDeviceIsIdle();
+        m_device.blockUntilDeviceIsIdle();
         m_device.writeToDeviceMemory(data, addr);
     }
 
-    void waitTillDeviceIsIdle() override
+    void blockUntilDeviceIsIdle() override
     {
         m_workerThread.wait();
     }
@@ -152,7 +152,7 @@ private:
                     }
                     return true;
                 });
-            m_device.waitTillDeviceIsIdle();
+            m_device.blockUntilDeviceIsIdle();
         };
         m_uploadThread.run(uploader);
     }

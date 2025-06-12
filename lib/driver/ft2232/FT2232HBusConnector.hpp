@@ -84,7 +84,7 @@ public:
         FT_Write(fthandle, (LPVOID*)(data.data()), data.size(), &data_written);
     }
 
-    virtual void waitTillWriteIsDone() override
+    virtual void blockUntilWriteComplete() override
     {
     }
 

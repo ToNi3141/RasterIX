@@ -28,10 +28,30 @@ class IDevice
 {
 public:
     virtual ~IDevice() = default;
+
+    /// @brief Streams a display list to the device.
+    ///
+    /// @param index The index of the display list in the device's memory.
+    /// @param size The size of the display list in bytes.
     virtual void streamDisplayList(const uint8_t index, const uint32_t size) = 0;
+
+    /// @brief Writes data to a specific address in the device's memory.
+    ///
+    /// @param data The data to write.
+    /// @param addr The address to write to.
     virtual void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) = 0;
-    virtual void waitTillDeviceIsIdle() = 0;
+
+    /// @brief Waits until the device is idle and ready for new commands.
+    ///     When this method returns, the buffer used in streamDisplayList can be safely reused.
+    ///     Same is true for the buffer in writeToDeviceMemory.
+    virtual void blockUntilDeviceIsIdle() = 0;
+
+    /// @brief Requests a buffer to write display lists into.
+    ///
+    /// @param index The index of the buffer to request.
     virtual tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index) = 0;
+
+    /// @brief Gets the number of display list buffers available on this device.
     virtual uint8_t getDisplayListBufferCount() const = 0;
 };
 

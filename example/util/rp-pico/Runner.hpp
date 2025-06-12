@@ -30,7 +30,7 @@ public:
         uint32_t counter = 0;
         while (dataToSend != 0)
         {
-            waitTillWriteIsDone();
+            blockUntilWriteComplete();
             // SPI has no flow control. Therefore the flow control must be implemented in software.
             // Divide the data into smaller chunks. Check after each chunk, if the fifo has enough space
             // before sending the next chunk.
@@ -48,7 +48,7 @@ public:
         }
     }
 
-    virtual void waitTillWriteIsDone() override
+    virtual void blockUntilWriteComplete() override
     {
         while (dma_channel_is_busy(dma_tx) || !gpio_get(CTS))
             ;
