@@ -35,7 +35,7 @@ public:
     {
     }
 
-    void run(const std::function<bool()>& operation) override
+    void run(const std::function<void()>& operation) override
     {
         operation();
     }

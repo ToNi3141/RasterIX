@@ -33,8 +33,7 @@ public:
         uint32_t counter = 0;
         while (dataToSend != 0)
         {
-            while (!clearToSend())
-                ;
+            blockUntilWriteComplete();
             // SPI has no flow control. Therefore the flow control must be implemented in software.
             // Divide the data into smaller chunks. Check after each chunk, if the fifo has enough space
             // before sending the next chunk.
@@ -45,10 +44,12 @@ public:
         }
     }
 
-    virtual bool clearToSend() override
+    virtual void blockUntilWriteComplete() override
     {
-        return digitalRead(CTS);
+        while (!digitalRead(CTS))
+            ;
     }
+
     virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override
     {
         switch (index)
@@ -127,9 +128,6 @@ void loop()
     m_scene.draw();
     // Swap to a new display list
     rr::RIXGL::getInstance().swapDisplayList();
-    // Upload the finished display list. To improve performance, this can run in a second thread.
-    rr::RIXGL::getInstance().uploadDisplayList();
-
     // Use LED as a heartbeat
     digitalWrite(LED_PIN, state);
     state = !state;

@@ -64,7 +64,6 @@ public:
     VertexArray& vertexArray();
 
     void swapDisplayList();
-    void uploadDisplayList();
 
     const char* getLibExtensions() const;
     const void* getLibProcedure(std::string name) const;

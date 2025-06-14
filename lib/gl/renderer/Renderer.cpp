@@ -49,9 +49,8 @@ void Renderer::deinit()
     clearDisplayListAssembler();
     setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_0);
     swapScreenToNewColorBuffer();
-    switchDisplayLists();
     uploadDisplayList();
-    m_device.waitTillDeviceIsIdle();
+    switchDisplayLists();
 }
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
@@ -91,10 +90,10 @@ void Renderer::initDisplayLists()
 
 void Renderer::intermediateUpload()
 {
-    switchDisplayLists();
     uploadTextures();
-    clearDisplayListAssembler();
     uploadDisplayList();
+    switchDisplayLists();
+    clearDisplayListAssembler();
 }
 
 void Renderer::swapDisplayList()
@@ -102,8 +101,9 @@ void Renderer::swapDisplayList()
     addCommitFramebufferCommand();
     addColorBufferAddressOfTheScreen();
     swapScreenToNewColorBuffer();
-    switchDisplayLists();
     uploadTextures();
+    uploadDisplayList();
+    switchDisplayLists();
     clearDisplayListAssembler();
     setYOffset();
     swapFramebuffer();
@@ -135,10 +135,9 @@ void Renderer::swapScreenToNewColorBuffer()
 
 void Renderer::uploadDisplayList()
 {
-    m_device.waitTillDeviceIsIdle();
     m_device.streamDisplayList(
-        m_displayListBuffer.getFront().getDisplayListBufferId(),
-        m_displayListBuffer.getFront().getDisplayListSize());
+        m_displayListBuffer.getBack().getDisplayListBufferId(),
+        m_displayListBuffer.getBack().getDisplayListSize());
 }
 
 bool Renderer::clear(const bool colorBuffer, const bool depthBuffer, const bool stencilBuffer)
@@ -244,7 +243,6 @@ bool Renderer::setColorBufferAddress(const uint32_t addr)
 
 void Renderer::uploadTextures()
 {
-    m_device.waitTillDeviceIsIdle();
     m_textureManager.uploadTextures(
         [&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {

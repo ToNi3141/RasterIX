@@ -29,7 +29,6 @@ public:
         {
             m_scene.draw();
             rr::RIXGL::getInstance().swapDisplayList();
-            rr::RIXGL::getInstance().uploadDisplayList();
         }
     }
 

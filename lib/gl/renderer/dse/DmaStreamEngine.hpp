@@ -52,10 +52,9 @@ public:
         m_busConnector.writeData(getStoreBufferIndex(), commandSize + data.size());
     }
 
-    void waitTillDeviceIsIdle() override
+    void blockUntilDeviceIsIdle() override
     {
-        while (!m_busConnector.clearToSend())
-            ;
+        m_busConnector.blockUntilWriteComplete();
     }
 
     tcb::span<uint8_t> requestDisplayListBuffer(const uint8_t index) override

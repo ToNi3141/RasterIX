@@ -33,7 +33,6 @@ void MainWindow::newFrame()
      m_testScene.draw();
 
     rr::RIXGL::getInstance().swapDisplayList();
-    rr::RIXGL::getInstance().uploadDisplayList();
 
 #if USE_SIMULATION
     for (uint32_t i = 0; i < RESOLUTION_H; i++)

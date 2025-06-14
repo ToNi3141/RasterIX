@@ -600,12 +600,6 @@ void RIXGL::swapDisplayList()
     m_renderDevice->pixelPipeline.swapDisplayList();
 }
 
-void RIXGL::uploadDisplayList()
-{
-    SPDLOG_INFO("uploadDisplayList called");
-    m_renderDevice->pixelPipeline.uploadDisplayList();
-}
-
 const char* RIXGL::getLibExtensions() const
 {
     return m_glExtensions.c_str();

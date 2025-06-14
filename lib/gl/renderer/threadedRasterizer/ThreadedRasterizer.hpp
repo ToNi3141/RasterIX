@@ -65,12 +65,12 @@ public:
     {
         m_workerThread.wait();
         m_uploadThread.wait();
-        m_device.waitTillDeviceIsIdle();
+        m_device.blockUntilDeviceIsIdle();
     }
 
     void streamDisplayList(const uint8_t index, const uint32_t size) override
     {
-        const std::function<bool()> compute = [this, index, size]()
+        const std::function<void()> compute = [this, index, size]()
         {
             displaylist::DisplayList srcList {};
             srcList.setBuffer(requestDisplayListBuffer(index));
@@ -85,7 +85,6 @@ public:
                 }
             }
             swapAndUploadDisplayLists();
-            return true;
         };
         m_workerThread.wait();
         m_workerThread.run(compute);
@@ -95,11 +94,11 @@ public:
     {
         m_workerThread.wait();
         m_uploadThread.wait();
-        m_device.waitTillDeviceIsIdle();
+        m_device.blockUntilDeviceIsIdle();
         m_device.writeToDeviceMemory(data, addr);
     }
 
-    void waitTillDeviceIsIdle() override
+    void blockUntilDeviceIsIdle() override
     {
         m_workerThread.wait();
     }
@@ -135,9 +134,9 @@ private:
 
     void uploadDisplayList()
     {
-        const std::function<bool()> uploader = [this]()
+        const std::function<void()> uploader = [this]()
         {
-            return m_displayListBuffer.getFront().displayListLooper(
+            m_displayListBuffer.getFront().displayListLooper(
                 [this](
                     DisplayListDispatcherType& dispatcher,
                     const std::size_t i,
@@ -145,7 +144,6 @@ private:
                     const std::size_t,
                     const std::size_t)
                 {
-                    m_device.waitTillDeviceIsIdle();
                     if (dispatcher.getDisplayListSize(i) > 0)
                     {
                         m_device.streamDisplayList(
@@ -154,6 +152,7 @@ private:
                     }
                     return true;
                 });
+            m_device.blockUntilDeviceIsIdle();
         };
         m_uploadThread.run(uploader);
     }
@@ -256,7 +255,6 @@ private:
     void switchDisplayLists()
     {
         m_uploadThread.wait();
-        m_device.waitTillDeviceIsIdle();
         m_displayListBuffer.swap();
         m_displayListBuffer.getBack().clearDisplayListAssembler();
     }

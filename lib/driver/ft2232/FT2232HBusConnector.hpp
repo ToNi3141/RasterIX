@@ -84,12 +84,7 @@ public:
         FT_Write(fthandle, (LPVOID*)(data.data()), data.size(), &data_written);
     }
 
-    virtual bool clearToSend() override
-    {
-        return true;
-    }
-
-    virtual void startColorBufferTransfer(const uint8_t) override
+    virtual void blockUntilWriteComplete() override
     {
     }
 

@@ -42,6 +42,11 @@ public:
             XAXIDMA_DMA_TO_DEVICE);
     }
 
+    ~XilCDMABusConnector()
+    {
+        waitForDma();
+    }
+
     virtual void writeData(const uint8_t index, const uint32_t size)
     {
         int Status;
@@ -52,7 +57,21 @@ public:
         Xil_L1DCacheFlush();
 
         Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR)(m_dlMem[index].data()), size, XAXIDMA_DMA_TO_DEVICE);
-        // Wait till tranfer is done or 1usec * 10^6 iterations of timeout occurs
+        // Wait till transfer is done or 1usec * 10^6 iterations of timeout occurs
+        waitForDma();
+    }
+
+    virtual void blockUntilWriteComplete()
+    {
+        waitForDma();
+    }
+
+    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) { return { m_dlMem[index] }; }
+    virtual uint8_t getBufferCount() const { return m_dlMem.size(); }
+
+protected:
+    void waitForDma()
+    {
         while (true)
         {
             if (!(XAxiDma_Busy(&AxiDma, XAXIDMA_DMA_TO_DEVICE)))
@@ -63,15 +82,6 @@ public:
         }
     }
 
-    virtual bool clearToSend()
-    {
-        return true;
-    }
-
-    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) { return { m_dlMem[index] }; }
-    virtual uint8_t getBufferCount() const { return m_dlMem.size(); }
-
-protected:
     std::array<std::array<uint8_t, 64 * 1024>, 4> m_dlMem {};
     XAxiDma AxiDma;
 };
