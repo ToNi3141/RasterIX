@@ -58,12 +58,7 @@ public:
     TextureStreamCmd(const CommandType op, const PayloadType& payload, const bool)
     {
         m_op = op;
-        const std::size_t texSize = payload.size();
-        for (std::size_t i = 0; i < texSize; i++)
-        {
-            m_pages[i] = payload[i];
-        }
-        m_payload = { m_pages.data(), texSize };
+        m_payload = payload;
     }
 
     std::size_t getTmu() const { return (m_op >> TEXTURE_STREAM_TMU_NR_POS) & TEXTURE_STREAM_TMU_NR_MASK; }

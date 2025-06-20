@@ -40,7 +40,6 @@
 #include "commands/FramebufferCmd.hpp"
 #include "commands/NopCmd.hpp"
 #include "commands/PushVertexCmd.hpp"
-#include "commands/RegularTriangleCmd.hpp"
 #include "commands/SetVertexCtxCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/TriangleStreamCmd.hpp"

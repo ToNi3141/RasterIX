@@ -82,10 +82,11 @@ public:
     uint8_t getShiftRgb() const { return m_regVal.fields.shiftRgb; }
     uint8_t getShiftAlpha() const { return m_regVal.fields.shiftAlpha; }
 
-    void setTmu(const std::size_t tmu) { m_offset = tmu * TMU_OFFSET; }
+    void setTmu(const std::size_t tmu) { m_tmu = tmu; }
     uint32_t serialize() const { return m_regVal.data; }
     void deserialize(const uint32_t data) { m_regVal.data = data; }
-    uint32_t getAddr() const { return 0xA + m_offset; }
+    uint32_t getAddr() const { return getAddr(m_tmu); }
+    static constexpr uint32_t getAddr(std::size_t tmu) { return 0xA + (tmu * TMU_OFFSET); }
 
 private:
     static constexpr std::size_t TMU_OFFSET { 3 };
@@ -134,7 +135,7 @@ private:
         uint32_t data;
 #pragma pack(pop)
     } m_regVal;
-    uint8_t m_offset { 0 };
+    uint8_t m_tmu { 0 };
 };
 
 } // namespace rr

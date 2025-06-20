@@ -149,7 +149,7 @@ public:
     }
 
 private:
-    std::array<T, VecSize> vec;
+    std::array<T, VecSize> vec {};
 };
 
 using VecInt = int32_t;

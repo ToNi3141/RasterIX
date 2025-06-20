@@ -53,6 +53,7 @@ HEADERS  += mainwindow.h \
     $${RIXGL_PATH}/renderer/dse/* \
     $${RIXGL_PATH}/renderer/threadedRasterizer/* \
     $${RIXGL_PATH}/renderer/commands/* \
+    $${RIXGL_PATH}/renderer/displaylist/*.hpp \
     $${RIXGL_PATH}/../threadrunner/*.hpp
 
 
