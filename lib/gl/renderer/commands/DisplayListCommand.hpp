@@ -1,0 +1,30 @@
+#ifndef DISPLAYLIST_COMAND_HPP_
+#define DISPLAYLIST_COMAND_HPP_
+
+#include "renderer/commands/FogLutStreamCmd.hpp"
+#include "renderer/commands/FramebufferCmd.hpp"
+#include "renderer/commands/NopCmd.hpp"
+#include "renderer/commands/PushVertexCmd.hpp"
+#include "renderer/commands/SetVertexCtxCmd.hpp"
+#include "renderer/commands/TextureStreamCmd.hpp"
+#include "renderer/commands/TriangleStreamCmd.hpp"
+#include "renderer/commands/WriteRegisterCmd.hpp"
+
+#include "renderer/registers/BaseColorReg.hpp"
+
+#include <variant>
+
+namespace rr
+{
+using DisplayListCommand = std::variant<
+    FramebufferCmd,
+    FogLutStreamCmd,
+    NopCmd,
+    PushVertexCmd,
+    SetVertexCtxCmd,
+    TextureStreamCmd,
+    TriangleStreamCmd,
+    WriteRegisterCmd<BaseColorReg>>;
+} // namespace rr
+
+#endif // DISPLAYLIST_COMAND_HPP_

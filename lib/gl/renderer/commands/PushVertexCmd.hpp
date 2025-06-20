@@ -43,24 +43,32 @@ public:
 #pragma pack(pop)
         Vertex& operator=(const Vertex&) = default;
     };
+    using PayloadType = tcb::span<const Vertex>;
+    using CommandType = uint32_t;
 
     PushVertexCmd() = default;
     PushVertexCmd(const VertexParameter& vertex)
     {
-        m_desc[0].vertex = vertex;
+        m_buffer[0].vertex = vertex;
+        m_desc = { m_buffer };
     }
 
-    using PayloadType = std::array<Vertex, 1>;
-    const PayloadType& payload() const { return m_desc; }
-    using CommandType = uint32_t;
+    PushVertexCmd(const CommandType, const PayloadType& payload, const bool)
+    {
+        m_desc = payload;
+    }
+
+    PayloadType payload() const { return m_desc; }
     static constexpr CommandType command() { return PUSH_VERTEX | (displaylist::DisplayList::template sizeOf<Vertex>()); }
 
-    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadType> {}; }
+    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadBuffer> {}; }
     static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == PUSH_VERTEX; }
 
     PushVertexCmd& operator=(const PushVertexCmd&) = default;
 
 private:
+    using PayloadBuffer = std::array<Vertex, 1>;
+    PayloadBuffer m_buffer;
     PayloadType m_desc;
 };
 

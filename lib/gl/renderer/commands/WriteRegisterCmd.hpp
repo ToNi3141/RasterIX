@@ -46,8 +46,7 @@ public:
     WriteRegisterCmd(const CommandType op, const PayloadType& payload, const bool)
     {
         m_op = op;
-        m_val[0] = payload[0];
-        m_payload = { m_val };
+        m_payload = payload;
     }
 
     const PayloadType& payload() const { return m_payload; }
@@ -56,6 +55,7 @@ public:
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 1; }
     static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_RENDER_CONFIG; }
     static uint32_t getRegAddr(const CommandType cmd) { return cmd & ~OP_MASK; };
+    uint32_t getRegAddr() const { return getRegAddr(m_op); }
 
 private:
     CommandType m_op {};
