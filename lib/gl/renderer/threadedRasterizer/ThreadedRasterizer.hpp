@@ -30,7 +30,6 @@
 #include "renderer/commands/FramebufferCmd.hpp"
 #include "renderer/commands/NopCmd.hpp"
 #include "renderer/commands/PushVertexCmd.hpp"
-#include "renderer/commands/RegularTriangleCmd.hpp"
 #include "renderer/commands/SetVertexCtxCmd.hpp"
 #include "renderer/commands/TextureStreamCmd.hpp"
 #include "renderer/commands/TriangleStreamCmd.hpp"
@@ -206,6 +205,7 @@ private:
         TCmd cmd { *op, { pl, numberOfElements }, true };
         return addCommand(cmd);
     }
+
     template <typename Command>
     bool addCommand(const Command& cmd)
     {
@@ -485,11 +485,6 @@ private:
         else if (FogLutStreamCmd::isThis(op))
         {
             ret = copyCmd<FogLutStreamCmd>(srcList);
-        }
-        else if (RegularTriangleCmd::isThis(op))
-        {
-            SPDLOG_CRITICAL("RegularTriangleCmd not allowed in ThreadedRasterizer. This might cause the renderer to crash ...");
-            ret = false;
         }
         else if (TriangleStreamCmd::isThis(op))
         {

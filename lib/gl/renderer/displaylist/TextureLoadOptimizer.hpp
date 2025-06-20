@@ -19,7 +19,6 @@
 #define TEXTURELOADOPTIMIZER_HPP
 
 #include "RIXDisplayListAssembler.hpp"
-#include "renderer/commands/RegularTriangleCmd.hpp"
 #include "renderer/commands/SetVertexCtxCmd.hpp"
 #include "renderer/commands/TextureStreamCmd.hpp"
 #include "renderer/commands/TriangleStreamCmd.hpp"
@@ -60,7 +59,6 @@ private:
     void markTriangleCommand()
     {
         if constexpr (std::is_same<TCommand, TriangleStreamCmd>::value
-            || std::is_same<TCommand, RegularTriangleCmd>::value
             || std::is_same<TCommand, SetVertexCtxCmd>::value)
         {
             m_textureCommandFlag.reset();
