@@ -29,13 +29,9 @@
 #include "renderer/commands/DisplayListCommand.hpp"
 
 #include "renderer/Rasterizer.hpp"
-#include "renderer/registers/BaseColorReg.hpp"
-
-#include "renderer/registers/FeatureEnableReg.hpp"
-#include "renderer/registers/ScissorEndReg.hpp"
-#include "renderer/registers/ScissorStartReg.hpp"
-
 #include "renderer/displaylist/DisplayListDisassembler.hpp"
+#include "renderer/registers/BaseColorReg.hpp"
+#include "renderer/registers/RegisterVariant.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -366,77 +362,121 @@ private:
         return addCommand(cmd);
     }
 
-    bool handleCommand(const WriteRegisterCmd<BaseColorReg>& cmd)
+    bool handleCommand(const WriteRegisterCmd& cmd)
     {
-        const uint32_t regData = cmd.payload()[0];
-        switch (cmd.getRegAddr())
-        {
-        case FeatureEnableReg::getAddr():
-        {
-            FeatureEnableReg reg {};
-            reg.deserialize(regData);
-            m_rasterizer.enableScissor(reg.getEnableScissor());
-            m_rasterizer.enableTmu(0, reg.getEnableTmu(0));
-            m_rasterizer.enableTmu(1, reg.getEnableTmu(1));
-            m_scissorEnabled = reg.getEnableScissor();
-            return addCommand(cmd);
-        }
-        break;
-        case ScissorStartReg::getAddr():
-        {
-            ScissorStartReg reg {};
-            reg.deserialize(regData);
-            m_rasterizer.setScissorStart(reg.getX(), reg.getY());
-            m_scissorYStart = reg.getY();
-            return addCommand(cmd);
-        }
-        break;
-        case ScissorEndReg::getAddr():
-        {
-            ScissorEndReg reg {};
-            reg.deserialize(regData);
-            m_rasterizer.setScissorEnd(reg.getX(), reg.getY());
-            m_scissorYEnd = reg.getY();
-            return addCommand(cmd);
-        }
-        break;
-        case ColorBufferAddrReg::getAddr():
-        {
-            ColorBufferAddrReg reg {};
-            reg.deserialize(regData);
-            m_colorBufferAddr = reg.getValue();
-            return addCommand(cmd);
-        }
-        break;
-        case YOffsetReg::getAddr():
-        {
-            return addCommandWithFactory(
-                [](const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
-                {
-                    const uint16_t yOffset = i * resY;
-                    return WriteRegisterCmd<YOffsetReg> { YOffsetReg { 0, yOffset } };
-                });
-        }
-        break;
-        case RenderResolutionReg::getAddr():
-        {
-            RenderResolutionReg reg {};
-            reg.deserialize(regData);
-            if (!m_displayListBuffer.getBack().setResolution(reg.getX(), reg.getY())
-                || !m_displayListBuffer.getFront().setResolution(reg.getX(), reg.getY()))
+        return std::visit(
+            [this](const auto& reg)
             {
-                SPDLOG_ERROR("Invalid resolution set in RenderResolutionReg: {}x{}",
-                    reg.getX(), reg.getY());
-                return false;
-            }
-            reg.setY(m_displayListBuffer.getBack().getYLineResolution());
-            return writeReg(reg);
+                return handleRegister(reg);
+            },
+            cmd.getRegister());
+    }
+
+    bool handleRegister(const ColorBufferAddrReg& reg)
+    {
+        m_colorBufferAddr = reg.getValue();
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const ColorBufferClearColorReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const DepthBufferAddrReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const DepthBufferClearDepthReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const FeatureEnableReg& reg)
+    {
+        m_rasterizer.enableScissor(reg.getEnableScissor());
+        m_rasterizer.enableTmu(0, reg.getEnableTmu(0));
+        m_rasterizer.enableTmu(1, reg.getEnableTmu(1));
+        m_scissorEnabled = reg.getEnableScissor();
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const FogColorReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const FragmentPipelineReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const RegisterVariant& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(RenderResolutionReg reg)
+    {
+        if (!m_displayListBuffer.getBack().setResolution(reg.getX(), reg.getY())
+            || !m_displayListBuffer.getFront().setResolution(reg.getX(), reg.getY()))
+        {
+            SPDLOG_ERROR("Invalid resolution set in RenderResolutionReg: {}x{}",
+                reg.getX(), reg.getY());
+            return false;
         }
-        break;
-        default:
-            return addCommand(cmd);
-        }
-        return false;
+        reg.setY(m_displayListBuffer.getBack().getYLineResolution());
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const ScissorEndReg& reg)
+    {
+        m_rasterizer.setScissorEnd(reg.getX(), reg.getY());
+        m_scissorYEnd = reg.getY();
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const ScissorStartReg& reg)
+    {
+        m_rasterizer.setScissorStart(reg.getX(), reg.getY());
+        m_scissorYStart = reg.getY();
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const StencilBufferAddrReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const StencilReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const TexEnvColorReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const TexEnvReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const TmuTextureReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const YOffsetReg&)
+    {
+        return addCommandWithFactory(
+            [](const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
+            {
+                const uint16_t yOffset = i * resY;
+                return WriteRegisterCmd { YOffsetReg { 0, yOffset } };
+            });
     }
 
     void swapAndUploadDisplayLists()
@@ -455,7 +495,7 @@ private:
 
     bool setStencilBufferConfig(const StencilReg& stencilConf)
     {
-        return m_displayListBuffer.getBack().addCommand(WriteRegisterCmd<StencilReg> { stencilConf });
+        return m_displayListBuffer.getBack().addCommand(WriteRegisterCmd { stencilConf });
     }
 
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;

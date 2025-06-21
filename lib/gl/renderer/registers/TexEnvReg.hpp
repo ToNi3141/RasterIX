@@ -83,10 +83,11 @@ public:
     uint8_t getShiftAlpha() const { return m_regVal.fields.shiftAlpha; }
 
     void setTmu(const std::size_t tmu) { m_tmu = tmu; }
+    static constexpr uint32_t getAddr(std::size_t tmu) { return 0xA + (tmu * TMU_OFFSET); }
+    uint32_t getAddr() const { return getAddr(m_tmu); }
+
     uint32_t serialize() const { return m_regVal.data; }
     void deserialize(const uint32_t data) { m_regVal.data = data; }
-    uint32_t getAddr() const { return getAddr(m_tmu); }
-    static constexpr uint32_t getAddr(std::size_t tmu) { return 0xA + (tmu * TMU_OFFSET); }
 
 private:
     static constexpr std::size_t TMU_OFFSET { 3 };

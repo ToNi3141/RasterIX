@@ -44,9 +44,9 @@ private:
         {
             return deserializeCommand<SetVertexCtxCmd>(srcList);
         }
-        else if (WriteRegisterCmd<BaseColorReg>::isThis(op))
+        else if (WriteRegisterCmd::isThis(op))
         {
-            return deserializeCommand<WriteRegisterCmd<BaseColorReg>>(srcList);
+            return deserializeCommand<WriteRegisterCmd>(srcList);
         }
         else if (NopCmd::isThis(op))
         {

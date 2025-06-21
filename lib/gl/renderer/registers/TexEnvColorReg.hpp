@@ -25,18 +25,20 @@ namespace rr
 class TexEnvColorReg : public BaseColorReg
 {
 public:
+    TexEnvColorReg() = default;
     TexEnvColorReg(const std::size_t tmu, const Vec4i& color)
         : BaseColorReg { color }
     {
         setTmu(tmu);
     }
 
-    void setTmu(const std::size_t tmu) { m_offset = tmu * TMU_OFFSET; }
-    uint32_t getAddr() const { return 0xB + m_offset; }
+    void setTmu(const std::size_t tmu) { m_tmu = tmu; }
+    uint32_t getAddr() const { return getAddr(m_tmu); }
+    static constexpr uint32_t getAddr(const std::size_t tmu) { return 0xB + (tmu * TMU_OFFSET); }
 
 private:
     static constexpr std::size_t TMU_OFFSET { 3 };
-    std::size_t m_offset { 0 };
+    std::size_t m_tmu { 0 };
 };
 } // namespace rr
 

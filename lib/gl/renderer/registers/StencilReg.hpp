@@ -69,7 +69,7 @@ public:
 
     uint32_t serialize() const { return m_regVal.data; }
     void deserialize(const uint32_t data) { m_regVal.data = data; }
-    uint32_t getAddr() const { return 0x4; }
+    static constexpr uint32_t getAddr() { return 0x4; }
 
 private:
     union RegVal

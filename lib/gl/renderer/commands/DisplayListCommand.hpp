@@ -24,7 +24,7 @@ using DisplayListCommand = std::variant<
     SetVertexCtxCmd,
     TextureStreamCmd,
     TriangleStreamCmd,
-    WriteRegisterCmd<BaseColorReg>>;
+    WriteRegisterCmd>;
 } // namespace rr
 
 #endif // DISPLAYLIST_COMAND_HPP_
