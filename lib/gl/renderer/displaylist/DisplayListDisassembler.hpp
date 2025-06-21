@@ -1,7 +1,7 @@
 #ifndef DISPLAYLISTDISASSEMBLER_HPP_
 #define DISPLAYLISTDISASSEMBLER_HPP_
 
-#include "renderer/commands/DisplayListCommand.hpp"
+#include "renderer/commands/CommandVariant.hpp"
 #include "renderer/displaylist/DisplayList.hpp"
 #include <spdlog/spdlog.h>
 
@@ -16,11 +16,11 @@ public:
     {
     }
 
-    DisplayListCommand getNextCommand()
+    CommandVariant getNextCommand()
     {
         if (m_displayList.atEnd())
         {
-            return DisplayListCommand {};
+            return CommandVariant {};
         }
 
         return decodeCommand(m_displayList);
@@ -32,7 +32,7 @@ public:
     }
 
 private:
-    DisplayListCommand decodeCommand(DisplayList& srcList)
+    CommandVariant decodeCommand(DisplayList& srcList)
     {
         const uint32_t op = *(srcList.lookAhead<uint32_t>());
 
@@ -74,7 +74,7 @@ private:
     }
 
     template <typename TCmd>
-    DisplayListCommand deserializeCommand(DisplayList& src)
+    CommandVariant deserializeCommand(DisplayList& src)
     {
         using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(TCmd {}.payload()[0])>::type>::type;
         const typename TCmd::CommandType* op = src.getNext<typename TCmd::CommandType>();

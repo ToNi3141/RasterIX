@@ -26,7 +26,7 @@
 #include <cstdint>
 #include <tcb/span.hpp>
 
-#include "renderer/commands/DisplayListCommand.hpp"
+#include "renderer/commands/CommandVariant.hpp"
 
 #include "renderer/Rasterizer.hpp"
 #include "renderer/displaylist/DisplayListDisassembler.hpp"

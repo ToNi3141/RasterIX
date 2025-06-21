@@ -1,5 +1,5 @@
-#ifndef DISPLAYLIST_COMAND_HPP_
-#define DISPLAYLIST_COMAND_HPP_
+#ifndef COMMAND_VARIANT_HPP_
+#define COMMAND_VARIANT_HPP_
 
 #include "renderer/commands/FogLutStreamCmd.hpp"
 #include "renderer/commands/FramebufferCmd.hpp"
@@ -16,7 +16,7 @@
 
 namespace rr
 {
-using DisplayListCommand = std::variant<
+using CommandVariant = std::variant<
     FramebufferCmd,
     FogLutStreamCmd,
     NopCmd,
@@ -27,4 +27,4 @@ using DisplayListCommand = std::variant<
     WriteRegisterCmd>;
 } // namespace rr
 
-#endif // DISPLAYLIST_COMAND_HPP_
+#endif // COMMAND_VARIANT_HPP_
