@@ -42,11 +42,19 @@ public:
     // Therefore: Set the interpolation by default to float.
     static constexpr bool ENABLE_FLOAT_INTERPOLATION { true };
     using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleStreamTypes::TriangleDesc, TriangleStreamTypes::TriangleDescX>::type;
+    using PayloadType = tcb::span<const TrDesc>;
+    using CommandType = uint32_t;
 
     TriangleStreamCmd() = default;
     TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)
     {
-        m_visible = rasterizer.rasterize(m_desc[0], triangle);
+        m_visible = rasterizer.rasterize(m_buffer[0], triangle);
+        m_desc = { m_buffer };
+    }
+
+    TriangleStreamCmd(const CommandType, const PayloadType& payload, const bool)
+    {
+        m_desc = payload;
     }
 
     TriangleStreamCmd(const TriangleStreamCmd& c) { operator=(c); }
@@ -59,29 +67,30 @@ public:
     TriangleStreamCmd getIncremented(const std::size_t lineStart, const std::size_t lineEnd)
     {
         TriangleStreamCmd cmd = *this;
-        Rasterizer::increment(cmd.m_desc[0], lineStart, lineEnd);
+        Rasterizer::increment(cmd.m_buffer[0], lineStart, lineEnd);
         return cmd;
     }
 
     bool isVisible() const { return m_visible; };
 
-    using PayloadType = std::array<TriangleStreamTypes::TriangleDesc, 1>;
-    const PayloadType& payload() const { return m_desc; }
-    using CommandType = uint32_t;
+    PayloadType payload() const { return m_desc; }
     static constexpr CommandType command() { return TRIANGLE_STREAM | (displaylist::DisplayList::template sizeOf<TrDesc>()); }
 
     TriangleStreamCmd& operator=(const TriangleStreamCmd& rhs)
     {
-        m_desc = rhs.m_desc;
+        m_buffer = rhs.m_buffer;
+        m_desc = { m_buffer };
         m_visible = rhs.m_visible;
         return *this;
     }
 
-    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadType> {}; }
+    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadBuffer> {}; }
     static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == TRIANGLE_STREAM; }
 
 private:
-    std::array<TriangleStreamTypes::TriangleDesc, 1> m_desc;
+    using PayloadBuffer = std::array<TrDesc, 1>;
+    PayloadBuffer m_buffer {};
+    PayloadType m_desc {};
     bool m_visible { false };
 };
 

@@ -26,22 +26,12 @@
 #include <cstdint>
 #include <tcb/span.hpp>
 
-#include "renderer/commands/FogLutStreamCmd.hpp"
-#include "renderer/commands/FramebufferCmd.hpp"
-#include "renderer/commands/NopCmd.hpp"
-#include "renderer/commands/PushVertexCmd.hpp"
-#include "renderer/commands/RegularTriangleCmd.hpp"
-#include "renderer/commands/SetVertexCtxCmd.hpp"
-#include "renderer/commands/TextureStreamCmd.hpp"
-#include "renderer/commands/TriangleStreamCmd.hpp"
-#include "renderer/commands/WriteRegisterCmd.hpp"
+#include "renderer/commands/CommandVariant.hpp"
 
 #include "renderer/Rasterizer.hpp"
+#include "renderer/displaylist/DisplayListDisassembler.hpp"
 #include "renderer/registers/BaseColorReg.hpp"
-
-#include "renderer/registers/FeatureEnableReg.hpp"
-#include "renderer/registers/ScissorEndReg.hpp"
-#include "renderer/registers/ScissorStartReg.hpp"
+#include "renderer/registers/RegisterVariant.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -76,12 +66,16 @@ public:
             srcList.setBuffer(requestDisplayListBuffer(index));
             srcList.resetGet();
             srcList.setCurrentSize(size);
+            displaylist::DisplayListDisassembler disassembler { srcList };
 
-            while (!srcList.atEnd())
+            while (disassembler.hasNextCommand())
             {
-                if (!decodeAndCopyCommand(srcList))
+                const bool ret = std::visit([this](const auto& cmd)
+                    { return handleCommand(cmd); },
+                    disassembler.getNextCommand());
+                if (!ret)
                 {
-                    SPDLOG_CRITICAL("Decoding of displaylist failed.");
+                    SPDLOG_ERROR("Failed to handle command in display list. This might cause the renderer to crash ...");
                 }
             }
             swapAndUploadDisplayLists();
@@ -157,55 +151,12 @@ private:
         m_uploadThread.run(uploader);
     }
 
-    bool setVertexCtx(displaylist::DisplayList& src)
-    {
-        using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(SetVertexCtxCmd {}.payload()[0])>::type>::type;
-        src.getNext<typename SetVertexCtxCmd::CommandType>();
-        const PayloadType* t = src.getNext<PayloadType>();
-
-        new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
-            t->ctx,
-            drawTriangleLambda,
-            setStencilBufferConfigLambda,
-        };
-
-        return true;
-    }
-
-    bool pushVertex(displaylist::DisplayList& src)
-    {
-        using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(PushVertexCmd {}.payload()[0])>::type>::type;
-        src.getNext<typename PushVertexCmd::CommandType>();
-        return m_vertexTransform.pushVertex(src.getNext<PayloadType>()->vertex);
-    }
-
     template <typename TArg>
     bool writeReg(const TArg& regVal)
     {
         return addCommand(WriteRegisterCmd { regVal });
     }
 
-    template <typename TCmd>
-    bool copyCmd(displaylist::DisplayList& src)
-    {
-        using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(TCmd {}.payload()[0])>::type>::type;
-        const typename TCmd::CommandType* op = src.getNext<typename TCmd::CommandType>();
-        const PayloadType* pl = nullptr;
-        const std::size_t numberOfElements = TCmd::getNumberOfElementsInPayloadByCommand(*op);
-        if (numberOfElements > 0)
-        {
-            pl = src.getNext<PayloadType>(); // store start addr
-            // push display list to the end of the payload
-            for (std::size_t i = 0; i < numberOfElements - 1; i++)
-            {
-                src.getNext<PayloadType>();
-            }
-        }
-        // The third argument exists because sometimes (TextureStreamCmd) the constructors are ambiguous.
-        // The bool enforces the correct constructor
-        TCmd cmd { *op, { pl, numberOfElements }, true };
-        return addCommand(cmd);
-    }
     template <typename Command>
     bool addCommand(const Command& cmd)
     {
@@ -302,10 +253,19 @@ private:
         return true;
     }
 
-    bool handleFramebufferCmd(displaylist::DisplayList& src)
+    void addLineColorBufferAddresses()
     {
-        const FramebufferCmd::CommandType* op = src.getNext<typename FramebufferCmd::CommandType>();
-        FramebufferCmd cmd { *op, {}, true };
+        addCommandWithFactory(
+            [this](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
+            {
+                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+                const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
+                return WriteRegisterCmd { ColorBufferAddrReg { addr } };
+            });
+    }
+
+    bool handleCommand(FramebufferCmd cmd)
+    {
         if (cmd.getSwapFramebuffer())
         {
             addLastCommand(WriteRegisterCmd { ColorBufferAddrReg { m_colorBufferAddr } });
@@ -366,142 +326,157 @@ private:
         return true;
     }
 
-    void addLineColorBufferAddresses()
+    bool handleCommand(const FogLutStreamCmd& cmd)
     {
-        addCommandWithFactory(
-            [this](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
+        return addCommand(cmd);
+    }
+
+    bool handleCommand(const TriangleStreamCmd& cmd)
+    {
+        SPDLOG_CRITICAL("TriangleStreamCmd not allowed in ThreadedRasterizer. This might cause the renderer to crash ...");
+        return true;
+    }
+
+    bool handleCommand(const PushVertexCmd& cmd)
+    {
+        return m_vertexTransform.pushVertex(cmd.payload()[0].vertex);
+    }
+
+    bool handleCommand(const SetVertexCtxCmd& cmd)
+    {
+        new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
+            cmd.payload()[0].ctx,
+            drawTriangleLambda,
+            setStencilBufferConfigLambda,
+        };
+        return true;
+    }
+
+    bool handleCommand(const NopCmd& cmd)
+    {
+        return addCommand(cmd);
+    }
+
+    bool handleCommand(const TextureStreamCmd& cmd)
+    {
+        return addCommand(cmd);
+    }
+
+    bool handleCommand(const WriteRegisterCmd& cmd)
+    {
+        return std::visit(
+            [this](const auto& reg)
             {
-                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
-                const uint32_t addr = m_colorBufferAddr + (screenSize * (lines - i - 1));
-                return WriteRegisterCmd { ColorBufferAddrReg { addr } };
+                return handleRegister(reg);
+            },
+            cmd.getRegister());
+    }
+
+    bool handleRegister(const ColorBufferAddrReg& reg)
+    {
+        m_colorBufferAddr = reg.getValue();
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const ColorBufferClearColorReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const DepthBufferAddrReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const DepthBufferClearDepthReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const FeatureEnableReg& reg)
+    {
+        m_rasterizer.enableScissor(reg.getEnableScissor());
+        m_rasterizer.enableTmu(0, reg.getEnableTmu(0));
+        m_rasterizer.enableTmu(1, reg.getEnableTmu(1));
+        m_scissorEnabled = reg.getEnableScissor();
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const FogColorReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const FragmentPipelineReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const RegisterVariant& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(RenderResolutionReg reg)
+    {
+        if (!m_displayListBuffer.getBack().setResolution(reg.getX(), reg.getY())
+            || !m_displayListBuffer.getFront().setResolution(reg.getX(), reg.getY()))
+        {
+            SPDLOG_ERROR("Invalid resolution set in RenderResolutionReg: {}x{}",
+                reg.getX(), reg.getY());
+            return false;
+        }
+        reg.setY(m_displayListBuffer.getBack().getYLineResolution());
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const ScissorEndReg& reg)
+    {
+        m_rasterizer.setScissorEnd(reg.getX(), reg.getY());
+        m_scissorYEnd = reg.getY();
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const ScissorStartReg& reg)
+    {
+        m_rasterizer.setScissorStart(reg.getX(), reg.getY());
+        m_scissorYStart = reg.getY();
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const StencilBufferAddrReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const StencilReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const TexEnvColorReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const TexEnvReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const TmuTextureReg& reg)
+    {
+        return writeReg(reg);
+    }
+
+    bool handleRegister(const YOffsetReg&)
+    {
+        return addCommandWithFactory(
+            [](const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
+            {
+                const uint16_t yOffset = i * resY;
+                return WriteRegisterCmd { YOffsetReg { 0, yOffset } };
             });
-    }
-
-    bool handleWriteRegisterCmd(displaylist::DisplayList& src)
-    {
-        const uint32_t op = *(src.lookAhead<uint32_t>(1));
-        const uint32_t regData = *(src.lookAhead<uint32_t>(2));
-        switch (WriteRegisterCmd<BaseColorReg>::getRegAddr(op))
-        {
-        case FeatureEnableReg::getAddr():
-        {
-            FeatureEnableReg reg {};
-            reg.deserialize(regData);
-            m_rasterizer.enableScissor(reg.getEnableScissor());
-            m_rasterizer.enableTmu(0, reg.getEnableTmu(0));
-            m_rasterizer.enableTmu(1, reg.getEnableTmu(1));
-            m_scissorEnabled = reg.getEnableScissor();
-            return copyCmd<WriteRegisterCmd<FeatureEnableReg>>(src);
-        }
-        break;
-        case ScissorStartReg::getAddr():
-        {
-            ScissorStartReg reg {};
-            reg.deserialize(regData);
-            m_rasterizer.setScissorStart(reg.getX(), reg.getY());
-            m_scissorYStart = reg.getY();
-            return copyCmd<WriteRegisterCmd<ScissorStartReg>>(src);
-        }
-        break;
-        case ScissorEndReg::getAddr():
-        {
-            ScissorEndReg reg {};
-            reg.deserialize(regData);
-            m_rasterizer.setScissorEnd(reg.getX(), reg.getY());
-            m_scissorYEnd = reg.getY();
-            return copyCmd<WriteRegisterCmd<ScissorEndReg>>(src);
-        }
-        break;
-        case ColorBufferAddrReg::getAddr():
-        {
-            ColorBufferAddrReg reg {};
-            reg.deserialize(regData);
-            m_colorBufferAddr = reg.getValue();
-            return copyCmd<WriteRegisterCmd<ColorBufferAddrReg>>(src);
-        }
-        break;
-        case YOffsetReg::getAddr():
-        {
-            src.getNext<uint32_t>(); // op
-            src.getNext<uint32_t>(); // payload
-            return addCommandWithFactory(
-                [](const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
-                {
-                    const uint16_t yOffset = i * resY;
-                    return WriteRegisterCmd<YOffsetReg> { YOffsetReg { 0, yOffset } };
-                });
-        }
-        break;
-        case RenderResolutionReg::getAddr():
-        {
-            RenderResolutionReg reg {};
-            reg.deserialize(regData);
-            if (!m_displayListBuffer.getBack().setResolution(reg.getX(), reg.getY())
-                || !m_displayListBuffer.getFront().setResolution(reg.getX(), reg.getY()))
-            {
-                return false;
-            }
-            reg.setY(m_displayListBuffer.getBack().getYLineResolution());
-            src.getNext<uint32_t>(); // op
-            src.getNext<uint32_t>(); // payload
-            return writeReg(reg);
-        }
-        break;
-        default:
-            return copyCmd<WriteRegisterCmd<BaseColorReg>>(src);
-        }
-        return false;
-    }
-
-    bool decodeAndCopyCommand(displaylist::DisplayList& srcList)
-    {
-        const uint32_t op = *(srcList.lookAhead<uint32_t>());
-        bool ret = true;
-
-        if (PushVertexCmd::isThis(op))
-        {
-            ret = pushVertex(srcList);
-        }
-        else if (SetVertexCtxCmd::isThis(op))
-        {
-            ret = setVertexCtx(srcList);
-        }
-        else if (WriteRegisterCmd<BaseColorReg>::isThis(op))
-        {
-            ret = handleWriteRegisterCmd(srcList);
-        }
-        else if (NopCmd::isThis(op))
-        {
-            ret = copyCmd<NopCmd>(srcList);
-        }
-        else if (TextureStreamCmd::isThis(op))
-        {
-            ret = copyCmd<TextureStreamCmd>(srcList);
-        }
-        else if (FramebufferCmd::isThis(op))
-        {
-            ret = handleFramebufferCmd(srcList);
-        }
-        else if (FogLutStreamCmd::isThis(op))
-        {
-            ret = copyCmd<FogLutStreamCmd>(srcList);
-        }
-        else if (RegularTriangleCmd::isThis(op))
-        {
-            SPDLOG_CRITICAL("RegularTriangleCmd not allowed in ThreadedRasterizer. This might cause the renderer to crash ...");
-            ret = false;
-        }
-        else if (TriangleStreamCmd::isThis(op))
-        {
-            SPDLOG_CRITICAL("TriangleStreamCmd not allowed in ThreadedRasterizer. This might cause the renderer to crash ...");
-            ret = false;
-        }
-        else
-        {
-            SPDLOG_CRITICAL("Unknown command (0x{:X})found. This might cause the renderer to crash ...", op);
-            ret = false;
-        }
-        return ret;
     }
 
     void swapAndUploadDisplayLists()
@@ -520,7 +495,7 @@ private:
 
     bool setStencilBufferConfig(const StencilReg& stencilConf)
     {
-        return m_displayListBuffer.getBack().addCommand(WriteRegisterCmd<StencilReg> { stencilConf });
+        return m_displayListBuffer.getBack().addCommand(WriteRegisterCmd { stencilConf });
     }
 
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;

@@ -26,7 +26,7 @@ namespace rr
 class DepthBufferAddrReg : public BaseSingleReg<0xffffffff>
 {
 public:
-    DepthBufferAddrReg(const uint32_t addr)
+    DepthBufferAddrReg(const uint32_t addr = 0)
         : BaseSingleReg<0xffffffff> { addr + RenderConfig::GRAM_MEMORY_LOC }
     {
     }

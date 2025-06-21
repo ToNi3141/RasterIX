@@ -18,6 +18,7 @@
 #ifndef _WRITE_REGISTER_CMD_HPP_
 #define _WRITE_REGISTER_CMD_HPP_
 
+#include "renderer/registers/RegisterVariant.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -25,7 +26,6 @@
 namespace rr
 {
 
-template <class TRegister>
 class WriteRegisterCmd
 {
     static constexpr uint32_t OP_RENDER_CONFIG { 0x1000'0000 };
@@ -36,18 +36,23 @@ public:
     using CommandType = uint32_t;
 
     WriteRegisterCmd() = default;
-    WriteRegisterCmd(const TRegister& reg)
+    WriteRegisterCmd(const RegisterVariant& reg)
     {
-        m_val[0] = reg.serialize();
-        m_op = OP_RENDER_CONFIG | reg.getAddr();
+        const CommandType regAddr = std::visit(
+            [this](const auto& r)
+            {
+                m_val[0] = r.serialize();
+                return r.getAddr();
+            },
+            reg);
+        m_op = OP_RENDER_CONFIG | regAddr;
         m_payload = { m_val };
     }
 
     WriteRegisterCmd(const CommandType op, const PayloadType& payload, const bool)
     {
         m_op = op;
-        m_val[0] = payload[0];
-        m_payload = { m_val };
+        m_payload = payload;
     }
 
     const PayloadType& payload() const { return m_payload; }
@@ -55,9 +60,76 @@ public:
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 1; }
     static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_RENDER_CONFIG; }
+
     static uint32_t getRegAddr(const CommandType cmd) { return cmd & ~OP_MASK; };
+    uint32_t getRegAddr() const { return getRegAddr(m_op); }
+
+    RegisterVariant getRegister() const
+    {
+        switch (getRegAddr())
+        {
+        case ColorBufferAddrReg::getAddr():
+            return deserializeRegister<ColorBufferAddrReg>();
+        case ColorBufferClearColorReg::getAddr():
+            return deserializeRegister<ColorBufferClearColorReg>();
+        case DepthBufferAddrReg::getAddr():
+            return deserializeRegister<DepthBufferAddrReg>();
+        case DepthBufferClearDepthReg::getAddr():
+            return deserializeRegister<DepthBufferClearDepthReg>();
+        case FeatureEnableReg::getAddr():
+            return deserializeRegister<FeatureEnableReg>();
+        case FogColorReg::getAddr():
+            return deserializeRegister<FogColorReg>();
+        case FragmentPipelineReg::getAddr():
+            return deserializeRegister<FragmentPipelineReg>();
+        case RenderResolutionReg::getAddr():
+            return deserializeRegister<RenderResolutionReg>();
+        case ScissorEndReg::getAddr():
+            return deserializeRegister<ScissorEndReg>();
+        case ScissorStartReg::getAddr():
+            return deserializeRegister<ScissorStartReg>();
+        case StencilBufferAddrReg::getAddr():
+            return deserializeRegister<StencilBufferAddrReg>();
+        case StencilReg::getAddr():
+            return deserializeRegister<StencilReg>();
+        case TexEnvColorReg::getAddr(0):
+            return deserializeTextureRegister<TexEnvColorReg>(0);
+        case TexEnvReg::getAddr(0):
+            return deserializeTextureRegister<TexEnvReg>(0);
+        case TmuTextureReg::getAddr(0):
+            return deserializeTextureRegister<TmuTextureReg>(0);
+        case TexEnvColorReg::getAddr(1):
+            return deserializeTextureRegister<TexEnvColorReg>(1);
+        case TexEnvReg::getAddr(1):
+            return deserializeTextureRegister<TexEnvReg>(1);
+        case TmuTextureReg::getAddr(1):
+            return deserializeTextureRegister<TmuTextureReg>(1);
+        case YOffsetReg::getAddr():
+            return deserializeRegister<YOffsetReg>();
+        default:
+            break;
+        }
+        return RegisterVariant {};
+    }
 
 private:
+    template <typename T>
+    T deserializeRegister() const
+    {
+        T reg {};
+        reg.deserialize(m_payload[0]);
+        return reg;
+    }
+
+    template <typename T>
+    T deserializeTextureRegister(const std::size_t tmu) const
+    {
+        T reg {};
+        reg.deserialize(m_payload[0]);
+        reg.setTmu(tmu);
+        return reg;
+    }
+
     CommandType m_op {};
     std::array<uint32_t, 1> m_val;
     PayloadType m_payload;

@@ -67,12 +67,7 @@ public:
 
     FogLutStreamCmd(const CommandType, const PayloadType& payload, const bool)
     {
-        const std::size_t texSize = payload.size();
-        for (std::size_t i = 0; i < texSize; i++)
-        {
-            m_lut[i] = payload[i];
-        }
-        m_payload = { m_lut };
+        m_payload = payload;
     }
 
     const PayloadType& payload() const { return m_payload; }

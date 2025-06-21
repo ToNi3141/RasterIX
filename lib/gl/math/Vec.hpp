@@ -223,7 +223,7 @@ public:
     friend bool operator==(const rr::Vec<S>& lhs, const rr::Vec<S>& rhs);
 
 private:
-    std::array<float, VecSize> vec;
+    std::array<float, VecSize> vec {};
 };
 
 template <std::size_t S, std::size_t T>

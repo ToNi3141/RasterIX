@@ -26,6 +26,7 @@ namespace rr
 class StencilBufferAddrReg : public BaseSingleReg<0xffffffff>
 {
 public:
+    StencilBufferAddrReg() = default;
     StencilBufferAddrReg(const uint32_t addr)
         : BaseSingleReg<0xffffffff> { addr + RenderConfig::GRAM_MEMORY_LOC }
     {
