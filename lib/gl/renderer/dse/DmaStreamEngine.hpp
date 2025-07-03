@@ -38,18 +38,21 @@ public:
 
     void streamDisplayList(const uint8_t index, uint32_t size) override
     {
+        blockUntilDeviceIsIdle();
         size = fillWhenDataIsTooSmall(index, size);
         const uint32_t commandSize = addDseStreamCommand(index, size);
         m_busConnector.writeData(index, size + commandSize);
     }
 
-    void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
+    bool writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
     {
+        blockUntilDeviceIsIdle();
         const uint32_t commandSize = addDseStoreCommand(
             (std::max)(static_cast<uint32_t>(data.size()), DEVICE_MIN_TRANSFER_SIZE),
             addr + RenderConfig::GRAM_MEMORY_LOC);
         addDseStorePayload(commandSize, data);
         m_busConnector.writeData(getStoreBufferIndex(), commandSize + data.size());
+        return true;
     }
 
     void blockUntilDeviceIsIdle() override

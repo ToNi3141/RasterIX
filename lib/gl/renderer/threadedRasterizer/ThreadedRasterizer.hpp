@@ -33,6 +33,8 @@
 #include "renderer/registers/BaseColorReg.hpp"
 #include "renderer/registers/RegisterVariant.hpp"
 
+#include "renderer/threadedRasterizer/DeviceUploadList.hpp"
+
 #include <spdlog/spdlog.h>
 
 namespace rr
@@ -84,12 +86,15 @@ public:
         m_workerThread.run(compute);
     }
 
-    void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
+    bool writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
     {
         m_workerThread.wait();
-        m_uploadThread.wait();
-        m_device.blockUntilDeviceIsIdle();
-        m_device.writeToDeviceMemory(data, addr);
+        if (!m_textureUploadList.addPage(data, addr))
+        {
+            SPDLOG_ERROR("Failed to add page to texture upload list");
+            return false;
+        }
+        return true;
     }
 
     void blockUntilDeviceIsIdle() override
@@ -482,6 +487,7 @@ private:
     void swapAndUploadDisplayLists()
     {
         switchDisplayLists();
+        textureUpload();
         uploadDisplayList();
     }
 
@@ -498,6 +504,28 @@ private:
         return m_displayListBuffer.getBack().addCommand(WriteRegisterCmd { stencilConf });
     }
 
+    void textureUpload()
+    {
+        if (m_textureUploadList.empty())
+        {
+            return;
+        }
+
+        while (!m_textureUploadList.atEnd())
+        {
+            const auto* page = m_textureUploadList.getNextPage();
+            if (page)
+            {
+                if (!m_device.writeToDeviceMemory(page->data, page->addr))
+                {
+                    SPDLOG_ERROR("Failed to write texture data to device memory");
+                }
+            }
+        }
+        m_textureUploadList.clear();
+        m_device.blockUntilDeviceIsIdle();
+    }
+
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
 
     IDevice& m_device;
@@ -506,6 +534,7 @@ private:
     std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};
     std::array<DisplayListDispatcherType, 2> m_displayListDispatcher { m_displayListAssembler[0], m_displayListAssembler[1] };
     DisplayListDoubleBufferType m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };
+    DeviceUploadList<BUFFER_SIZE, RenderConfig::TEXTURE_PAGE_SIZE> m_textureUploadList {};
 
     std::array<std::array<uint8_t, BUFFER_SIZE>, BUFFER_COUNT> m_buffer;
 

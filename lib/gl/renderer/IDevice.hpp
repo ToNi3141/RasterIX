@@ -39,7 +39,8 @@ public:
     ///
     /// @param data The data to write.
     /// @param addr The address to write to.
-    virtual void writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) = 0;
+    /// @return True if the write operation was successful, false otherwise.
+    virtual bool writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) = 0;
 
     /// @brief Waits until the device is idle and ready for new commands.
     ///     When this method returns, the buffer used in streamDisplayList can be safely reused.
