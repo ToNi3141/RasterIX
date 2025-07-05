@@ -246,8 +246,7 @@ void Renderer::uploadTextures()
     m_textureManager.uploadTextures(
         [&](uint32_t gramAddr, const tcb::span<const uint8_t> data)
         {
-            m_device.writeToDeviceMemory(data, gramAddr);
-            return true;
+            return m_device.writeToDeviceMemory(data, gramAddr);
         });
 }
 
