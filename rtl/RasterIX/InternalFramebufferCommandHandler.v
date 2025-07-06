@@ -1,6 +1,6 @@
 // RasterIX
 // https://github.com/ToNi3141/RasterIX
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2025 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,31 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// The framebuffer is used to store the frame.
-//
-// This module uses an AXIS interface to stream out the framebuffer contents.
-// To execute a command, set apply to 1. The framebuffer will then start sampling the command bits and starts executing.
-// During execution, applied is set to 0. Is the execution finished, applied is set to 1.
-// cmdCommit: This command will start streaming the content of the framebuffer via the AXIS interface.
-// cmdMemset: This command will initialize the memory with the color in confClearColor
-//
-// The fragment interface can be used to access single fragments from the framebuffer
-//
-// Improvements: The scrissor is not optimized. When memset is called, it will set the whole memory except
-// the scissor area. A improved version will just set the scissor area.
-// It is not implemented, because it requires additional logic for the index calculation (multiplier and so on).
-//
-// Pipelined: yes
-// Performance: 1 pixel per cycle
-// Depth: 2 cycle
-module FrameBuffer
+module InternalFramebufferCommandHandler
 #(
     // Number of pixels a stream beat contains
     parameter NUMBER_OF_PIXELS_PER_BEAT = 1,
     
-    // Number of sub pixels the interface of this module containts
+    // Number of sub pixels the interface of this module contains
     parameter NUMBER_OF_SUB_PIXELS = 4,
-    // Number of bits of each sub pixel containts
+    // Number of bits of each sub pixel contains
     parameter SUB_PIXEL_WIDTH = 8,
 
     // The maximum size of the screen in power of two
@@ -57,7 +40,15 @@ module FrameBuffer
     localparam ADDR_WIDTH = FRAMEBUFFER_SIZE_IN_PIXEL_LG,
 
     // Width of the AXIS interface with the frame buffer content
-    localparam STREAM_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * PIXEL_WIDTH
+    localparam STREAM_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * PIXEL_WIDTH,
+
+    // Number of pixels a AXIS beat or a memory line can contain
+    localparam PIXEL_PER_BEAT_LOG2 = $clog2(NUMBER_OF_PIXELS_PER_BEAT),
+    // Size constrains of the internal memory
+    localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
+    localparam MEM_MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS,
+    localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH,
+    localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2
 )
 (
     input   wire                            clk,
@@ -66,7 +57,6 @@ module FrameBuffer
     /////////////////////////
     // Configs
     /////////////////////////
-    input  wire                             confEnable,
     input  wire [PIXEL_WIDTH - 1 : 0]       confClearColor,
     input  wire                             confEnableScissor,
     input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
@@ -79,29 +69,16 @@ module FrameBuffer
     input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0] confMask,
 
     /////////////////////////
-    // Fragment interface
+    // RAM interface
     /////////////////////////
+    output wire [MEM_WIDTH - 1 : 0]         writeDataPort,
+    output reg                              writeEnablePort,
+    output wire [MEM_ADDR_WIDTH - 1 : 0]    writeAddrPort,
+    output wire [MEM_MASK_WIDTH - 1 : 0]    writeMaskPort, 
 
-    // Output stream
-    input  wire                             arvalid,
-    input  wire                             arlast,
-    // output wire                             arready,
-    input  wire [ADDR_WIDTH - 1 : 0]        araddr,
-
-    output reg                              rvalid,
-    output reg                              rlast,
-    // input  wire                             rready,
-    output reg  [PIXEL_WIDTH - 1 : 0]       rdata,
-
-    // Input Stream
-    input  wire                             wvalid,
-    // input  wire                             wlast,
-    // output wire                             wready,
-    input  wire [ADDR_WIDTH - 1 : 0]        waddr,
-    input  wire [PIXEL_WIDTH - 1 : 0]       wdata,
-    input  wire                             wstrb,
-    input  wire [X_BIT_WIDTH - 1 : 0]       wscreenPosX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       wscreenPosY,
+    // Read interface port 1
+    input  wire [MEM_WIDTH - 1 : 0]         readDataPort,
+    output wire [MEM_ADDR_WIDTH - 1 : 0]    readAddrPort,
     
     /////////////////////////
     // Control
@@ -121,15 +98,6 @@ module FrameBuffer
     output wire [STREAM_WIDTH - 1 : 0]      m_axis_tdata
     
 );
-    // Number of pixels a AXIS beat or a memory line can contain
-    localparam PIXEL_PER_BEAT_LOG2 = $clog2(NUMBER_OF_PIXELS_PER_BEAT);
-
-    // Size constrains of the internal memory
-    localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH;
-    localparam MEM_MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS;
-    localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH;
-    localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2;
-
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
     localparam COMMAND_MEMCPY = 1;
@@ -137,46 +105,16 @@ module FrameBuffer
     localparam COMMAND_MEMCPY_INIT = 3;
 
     // Scissor function
-    function [0 : 0] scissorFunc;
-        input                       enable;
-        input [X_BIT_WIDTH - 1 : 0] startX;
-        input [Y_BIT_WIDTH - 1 : 0] startY;
-        input [X_BIT_WIDTH - 1 : 0] endX;
-        input [Y_BIT_WIDTH - 1 : 0] endY;
-        input [X_BIT_WIDTH - 1 : 0] screenX;
-        input [Y_BIT_WIDTH - 1 : 0] screenY;
-        begin
-            scissorFunc = !enable || ((screenX >= startX) && (screenX < endX) && (screenY >= startY) && (screenY < endY));
-        end
-    endfunction
-
-    // Interface to the memory when accessing a fragment. This interface has already the size required for the internal memory.
-    wire [MEM_MASK_WIDTH - 1 : 0]   memWriteMask; 
-    wire [MEM_ADDR_WIDTH - 1 : 0]   memAddrWrite;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   memAddrRead;
-    reg  [ADDR_WIDTH - 1 : 0]       memAddrReadDelay;
-    wire [MEM_WIDTH - 1 : 0]        memDataIn; 
-    wire [MEM_PIXEL_WIDTH - 1 : 0]  memDataOut;
-    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { confMask } };
-    wire                            memScissorTest;
-    wire                            memWriteEnable = wvalid && wstrb && confEnable;
-    reg                             rvalidDelay;
-    reg                             rlastDelay;
+    `include "InternalFramebufferScissorFunc.vh"
     
     // State variables for managing the memory (memset and memcpy)
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdIndex;
     wire [MEM_ADDR_WIDTH - 1 : 0]   cmdIndexNext = cmdIndex + 1;
-    reg                             cmdRunning;
     reg  [5 : 0]                    cmdState;
-    reg                             cmdWrite;
     wire [MEM_MASK_WIDTH - 1 : 0]   cmdMask = { NUMBER_OF_PIXELS_PER_BEAT { confMask } };
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdFbSizeInBeats;
-
-    // Memcpy address
-    wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemcpyAddr = (m_axis_tready && (cmdState == COMMAND_MEMCPY)) ? cmdIndexNext : cmdIndex;
     
     // State variables for the memset
-    wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemsetAddr = cmdIndex;
     reg  [X_BIT_WIDTH - 1 : 0]      cmdMemsetX;
     wire [X_BIT_WIDTH - 1 : 0]      cmdMemsetXNext = cmdMemsetX + NUMBER_OF_PIXELS_PER_BEAT;
     reg  [Y_BIT_WIDTH - 1 : 0]      cmdMemsetY;
@@ -185,34 +123,14 @@ module FrameBuffer
     wire [NUMBER_OF_PIXELS_PER_BEAT - 1 : 0]   cmdMemsetScissor;
     reg                             cmdMemsetPending = 0;
 
-    // Multiplexed interface to the internal memory. It multiplexs between the commands and the fragmend access.
-    wire [MEM_WIDTH - 1 : 0]        memBusDataOut;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   memBusAddrWrite = (cmdRunning) ? cmdMemsetAddr                          : memAddrWrite;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   memBusAddrRead  = (cmdRunning) ? cmdMemcpyAddr                          : memAddrRead;
-    wire [MEM_WIDTH - 1 : 0]        memBusDataIn    = (cmdRunning) ? { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } }  : memDataIn;
-    wire                            memBusWrite     = (cmdRunning) ? cmdWrite                               : memWriteEnable;
-    wire [MEM_MASK_WIDTH - 1 : 0]   memBusWriteMask = (cmdRunning) ? cmdMask & cmdMemsetScissorMask         : memWriteMask;
-
-    // Instance of the internal memory
-    DualPortRam ramTile (
-        .clk(clk),
-        .reset(reset),
-
-        .writeData(memBusDataIn),
-        .write(memBusWrite),
-        .writeAddr(memBusAddrWrite),
-        .writeMask(memBusWriteMask),
-
-        .readData(memBusDataOut),
-        .readAddr(memBusAddrRead)
-    );
-    defparam ramTile.ADDR_WIDTH = MEM_ADDR_WIDTH;
-    defparam ramTile.MEM_WIDTH = MEM_WIDTH;
-    defparam ramTile.WRITE_STROBE_WIDTH = SUB_PIXEL_WIDTH;
-
-    genvar i, j;
+    assign writeDataPort = { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } };
+    assign writeMaskPort = cmdMask & cmdMemsetScissorMask;
+    assign readAddrPort = (m_axis_tready && (cmdState == COMMAND_MEMCPY)) ? cmdIndexNext : cmdIndex;
+    assign writeAddrPort = cmdIndex;
+    assign m_axis_tdata = readDataPort;
 
     // Scissor check for the memset command 
+    genvar i, j;
     generate
         if (NUMBER_OF_PIXELS_PER_BEAT == 1)
         begin 
@@ -232,66 +150,26 @@ module FrameBuffer
         end
     endgenerate
 
-    // Fragment access including the scissor check
-    generate
-        assign memScissorTest = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, wscreenPosX, wscreenPosY);
-        if (NUMBER_OF_PIXELS_PER_BEAT == 1)
-        begin
-            assign memAddrWrite = waddr;
-            assign memDataIn = wdata;
-            assign memWriteMask = memMask & { NUMBER_OF_SUB_PIXELS { memScissorTest } };
-            assign memAddrRead = araddr;
-            assign memDataOut = memBusDataOut;
-        end
-        else
-        begin
-            for (i = 0; i < NUMBER_OF_PIXELS_PER_BEAT; i = i + 1)
-            begin
-                for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
-                begin
-                    assign memWriteMask[(i * NUMBER_OF_SUB_PIXELS) + j] = (waddr[0 +: PIXEL_PER_BEAT_LOG2] == i) & memMask[j] & memScissorTest;
-                end
-            end
-            assign memAddrWrite = waddr[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
-            assign memDataIn = { NUMBER_OF_PIXELS_PER_BEAT { wdata } };
-            assign memAddrRead = araddr[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
-            assign memDataOut = memBusDataOut[memAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * MEM_PIXEL_WIDTH +: MEM_PIXEL_WIDTH];
-        end
-    endgenerate
-
-    always @(posedge clk)
-    begin
-        rdata <= memDataOut;
-        rvalidDelay <= arvalid;
-        rvalid <= rvalidDelay;
-        rlastDelay <= arlast;
-        rlast <= rlastDelay;
-    end
-            
-    assign m_axis_tdata = memBusDataOut;
-
     // Command execution
     always @(posedge clk)
     begin
         if (reset)
         begin
             cmdState <= COMMAND_WAIT_FOR_COMMAND;
-            cmdRunning <= 0;
             m_axis_tvalid <= 0;
             m_axis_tlast <= 0;
-            cmdWrite <= 0;
+            writeEnablePort <= 0;
             applied <= 1;
         end
         else
         begin
-            memAddrReadDelay <= araddr;
             case (cmdState)
             COMMAND_WAIT_FOR_COMMAND:
             begin : waitForCommand
                 cmdIndex <= 0;
                 cmdMemsetX <= 0;
 
-                // Here is a missmatch between the RAM adresses and the OpenGL coordiate system.
+                // Here is a mismatch between the RAM addresses and the OpenGL coordinate system.
                 // OpenGL starts at the lower left corner. But this is a fairly high address in the RAM.
                 // The cmdIndex starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
                 cmdMemsetY <= confYOffset + confYResolution - 1;
@@ -301,13 +179,12 @@ module FrameBuffer
                 if (apply)
                 begin
                     applied <= 0;
-                    cmdRunning <= 1;
 
                     cmdMemsetPending <= cmdMemset;
 
                     if (cmdMemset) 
                     begin
-                        cmdWrite <= 1;
+                        writeEnablePort <= 1;
                         cmdState <= COMMAND_MEMSET;
                     end
 
@@ -315,14 +192,13 @@ module FrameBuffer
                     // When both are activated, the user probably wants first to commit and then to clear it.
                     if (cmdCommit)
                     begin
-                        cmdWrite <= 0;
+                        writeEnablePort <= 0;
                         cmdState <= COMMAND_MEMCPY_INIT;
                     end
                 end
                 else 
                 begin
                     applied <= 1;
-                    cmdRunning <= 0;
                 end
             end
             COMMAND_MEMCPY_INIT:
@@ -351,7 +227,7 @@ module FrameBuffer
                         if (cmdMemsetPending) 
                         begin
                             cmdIndex <= 0;
-                            cmdWrite <= 1;
+                            writeEnablePort <= 1;
                             cmdState <= COMMAND_MEMSET;
                         end
                         else
@@ -365,7 +241,7 @@ module FrameBuffer
             begin
                 if (cmdIndexNext == cmdFbSizeInBeats)
                 begin
-                    cmdWrite <= 0;
+                    writeEnablePort <= 0;
                     cmdState <= COMMAND_WAIT_FOR_COMMAND;
                 end
                 cmdIndex <= cmdIndexNext;

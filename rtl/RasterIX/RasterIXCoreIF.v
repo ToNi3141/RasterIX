@@ -252,7 +252,7 @@ module RasterIXCoreIF #(
     generate
         if (ENABLE_DEPTH_BUFFER)
         begin
-            FrameBuffer depthBuffer (  
+            InternalFramebuffer depthBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
 
@@ -311,7 +311,7 @@ module RasterIXCoreIF #(
     endgenerate
 
     wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0] framebuffer_unconverted_axis_tdata;
-    FrameBuffer colorBuffer (  
+    InternalFramebuffer colorBuffer (  
         .clk(aclk),
         .reset(!resetn),
 
@@ -377,7 +377,7 @@ module RasterIXCoreIF #(
     generate 
         if (ENABLE_STENCIL_BUFFER)
         begin
-            FrameBuffer stencilBuffer (  
+            InternalFramebuffer stencilBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
 

@@ -34,7 +34,12 @@ read_verilog ./../../../../RasterIX/DualPortRam.v
 read_verilog ./../../../../RasterIX/Fog.v
 read_verilog ./../../../../RasterIX/FramebufferReader.v
 read_verilog ./../../../../RasterIX/FramebufferSerializer.v
-read_verilog ./../../../../RasterIX/FrameBuffer.v
+read_verilog ./../../../../RasterIX/InternalFramebuffer.v
+read_verilog ./../../../../RasterIX/InternalFramebufferCommandHandler.v
+read_verilog ./../../../../RasterIX/InternalFramebufferRam.v
+read_verilog ./../../../../RasterIX/InternalFramebufferReader.v
+read_verilog ./../../../../RasterIX/InternalFramebufferScissorFunc.vh
+read_verilog ./../../../../RasterIX/InternalFramebufferWriter.v
 read_verilog ./../../../../RasterIX/FramebufferWriterClear.v
 read_verilog ./../../../../RasterIX/FramebufferWriterStrobeGen.v
 read_verilog ./../../../../RasterIX/FramebufferWriter.v
