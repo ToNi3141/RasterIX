@@ -44,6 +44,7 @@ read_verilog ./../../../../RasterIX/FramebufferWriterClear.v
 read_verilog ./../../../../RasterIX/FramebufferWriterStrobeGen.v
 read_verilog ./../../../../RasterIX/FramebufferWriter.v
 read_verilog ./../../../../RasterIX/FunctionInterpolator.v
+read_verilog ./../../../../RasterIX/LinearAddressGenerator.v
 read_verilog ./../../../../RasterIX/LodCalculator.v
 read_verilog ./../../../../RasterIX/MemoryReadRequestGenerator.v
 read_verilog ./../../../../RasterIX/MipmapOptimizedRam.v

@@ -27,7 +27,7 @@ clean:
 	rm -rf obj_dir
 
 dmaStreamEngine:
-	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/DmaStreamEngine.v --top-module DmaStreamEngine cpp/sim_DmaStreamEngine.cpp
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/DmaStreamEngine.v --top-module DmaStreamEngine cpp/sim_DmaStreamEngine.cpp -I../rtl/RasterIX/
 	-make -C obj_dir -f VDmaStreamEngine.mk
 	./obj_dir/VDmaStreamEngine
 

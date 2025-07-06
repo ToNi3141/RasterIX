@@ -110,15 +110,15 @@ module DmaStreamEngine #(
     input  wire [STREAM_WIDTH - 1 : 0]  s_st1_axis_tdata,
 
     // Memory interface (Channel 2)
-    output reg  [ID_WIDTH - 1 : 0]      m_mem_axi_awid,
-    output reg  [ADDR_WIDTH - 1 : 0]    m_mem_axi_awaddr,
-    output reg  [ 7 : 0]                m_mem_axi_awlen, // How many beats are in this transaction
-    output reg  [ 2 : 0]                m_mem_axi_awsize, // The increment during one cycle. Means, 0 incs addr by 1, 2 by 4 and so on
-    output reg  [ 1 : 0]                m_mem_axi_awburst, // 0 fixed, 1 incr, 2 wrappig
-    output reg                          m_mem_axi_awlock,
-    output reg  [ 3 : 0]                m_mem_axi_awcache,
-    output reg  [ 2 : 0]                m_mem_axi_awprot, 
-    output reg                          m_mem_axi_awvalid,
+    output wire [ID_WIDTH - 1 : 0]      m_mem_axi_awid,
+    output wire [ADDR_WIDTH - 1 : 0]    m_mem_axi_awaddr,
+    output wire [ 7 : 0]                m_mem_axi_awlen, // How many beats are in this transaction
+    output wire [ 2 : 0]                m_mem_axi_awsize, // The increment during one cycle. Means, 0 incs addrStart by 1, 2 by 4 and so on
+    output wire [ 1 : 0]                m_mem_axi_awburst, // 0 fixed, 1 incr, 2 wrappig
+    output wire                         m_mem_axi_awlock,
+    output wire [ 3 : 0]                m_mem_axi_awcache,
+    output wire [ 2 : 0]                m_mem_axi_awprot, 
+    output wire                         m_mem_axi_awvalid,
     input  wire                         m_mem_axi_awready,
 
     output wire [STREAM_WIDTH - 1 : 0]  m_mem_axi_wdata,
@@ -132,15 +132,15 @@ module DmaStreamEngine #(
     input  wire                         m_mem_axi_bvalid,
     output reg                          m_mem_axi_bready,
 
-    output reg  [ID_WIDTH - 1 : 0]      m_mem_axi_arid,
-    output reg  [ADDR_WIDTH - 1 : 0]    m_mem_axi_araddr,
-    output reg  [ 7 : 0]                m_mem_axi_arlen,
-    output reg  [ 2 : 0]                m_mem_axi_arsize,
-    output reg  [ 1 : 0]                m_mem_axi_arburst,
-    output reg                          m_mem_axi_arlock,
-    output reg  [ 3 : 0]                m_mem_axi_arcache,
-    output reg  [ 2 : 0]                m_mem_axi_arprot,
-    output reg                          m_mem_axi_arvalid,
+    output wire [ID_WIDTH - 1 : 0]      m_mem_axi_arid,
+    output wire [ADDR_WIDTH - 1 : 0]    m_mem_axi_araddr,
+    output wire [ 7 : 0]                m_mem_axi_arlen,
+    output wire [ 2 : 0]                m_mem_axi_arsize,
+    output wire [ 1 : 0]                m_mem_axi_arburst,
+    output wire                         m_mem_axi_arlock,
+    output wire [ 3 : 0]                m_mem_axi_arcache,
+    output wire [ 2 : 0]                m_mem_axi_arprot,
+    output wire                         m_mem_axi_arvalid,
     input  wire                         m_mem_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]      m_mem_axi_rid,
@@ -151,7 +151,7 @@ module DmaStreamEngine #(
     output wire                         m_mem_axi_rready
 );
     localparam BYTES_PER_BEAT = STREAM_WIDTH / 8;
-    localparam BYTES_TO_BEATS_SHIFT = $clog2(BYTES_PER_BEAT);
+    localparam BYTES_PER_BEAT_LG2 = $clog2(BYTES_PER_BEAT);
 
     // Memory transfers have to be 128 bytes aligned.
     // 128 because: The zynq has 64 bit axi3 ports, which means one beat contains 8 bytes.
@@ -212,10 +212,14 @@ module DmaStreamEngine #(
     reg  [ 1 : 0]               tmpMuxOut;
     reg  [ADDR_WIDTH - 1 : 0]   counter;
     
-    reg  [ADDR_WIDTH - 1 : 0]   addr;
+    reg  [ADDR_WIDTH - 1 : 0]   addrStart;
     reg                         enableWriteChannel;
-    reg  [ADDR_WIDTH - 1 : 0]   addrLast;
+    reg  [ADDR_WIDTH - 1 : 0]   addrEnd;
     reg                         enableAddressChannel;
+    reg                         startWriteAddressGeneration;
+    wire                        writeAddressGenerationDone;
+    reg                         startReadAddressGeneration;
+    wire                        readAddressGenerationDone;
 
     reg                         axisDestValid;
     reg                         axisDestReady;
@@ -232,27 +236,65 @@ module DmaStreamEngine #(
     reg                         axiSourceLastNext;
     reg  [STREAM_WIDTH - 1 : 0] axisSourceDataNext;
 
+    LinearAddressGenerator #(
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .ID_WIDTH(ID_WIDTH),
+        .AxLEN_BEATS_PER_TRANSFER(BEATS_PER_TRANSFER - 1),
+        .AxSIZE_BYTES_PER_BEAT(BYTES_PER_BEAT_LG2),
+        .AxBURST(1) // Incremental
+    ) writeAddressGenerator (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .start(startWriteAddressGeneration),
+        .done(writeAddressGenerationDone),
+
+        .startAddr(addrStart),
+        .endAddr(addrEnd),
+
+        .axid(m_mem_axi_awid),
+        .axaddr(m_mem_axi_awaddr),
+        .axlen(m_mem_axi_awlen),
+        .axsize(m_mem_axi_awsize),
+        .axburst(m_mem_axi_awburst),
+        .axlock(m_mem_axi_awlock),
+        .axcache(m_mem_axi_awcache),
+        .axprot(m_mem_axi_awprot), 
+        .axvalid(m_mem_axi_awvalid),
+        .axready(m_mem_axi_awready)
+    );
+
+    LinearAddressGenerator #(
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .ID_WIDTH(ID_WIDTH),
+        .AxLEN_BEATS_PER_TRANSFER(BEATS_PER_TRANSFER - 1),
+        .AxSIZE_BYTES_PER_BEAT(BYTES_PER_BEAT_LG2),
+        .AxBURST(1) // Incremental
+    ) readAddressGenerator (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .start(startReadAddressGeneration),
+        .done(readAddressGenerationDone),
+
+        .startAddr(addrStart),
+        .endAddr(addrEnd),
+
+        .axid(m_mem_axi_arid),
+        .axaddr(m_mem_axi_araddr),
+        .axlen(m_mem_axi_arlen),
+        .axsize(m_mem_axi_arsize),
+        .axburst(m_mem_axi_arburst),
+        .axlock(m_mem_axi_arlock),
+        .axcache(m_mem_axi_arcache),
+        .axprot(m_mem_axi_arprot), 
+        .axvalid(m_mem_axi_arvalid),
+        .axready(m_mem_axi_arready)
+    );
+
     initial 
     begin
-        m_mem_axi_awid = 0;
-        m_mem_axi_awlen = BEATS_PER_TRANSFER - 1;
-        m_mem_axi_awsize = BYTES_TO_BEATS_SHIFT[0 +: 3];
-        m_mem_axi_awburst = 1;
-        m_mem_axi_awlock = 0;
-        m_mem_axi_awcache = 0; 
-        m_mem_axi_awprot = 0;
-        m_mem_axi_awvalid = 0;
-
-        m_mem_axi_arid = 0;
-        m_mem_axi_arlen = BEATS_PER_TRANSFER - 1;
-        m_mem_axi_arsize = BYTES_TO_BEATS_SHIFT[0 +: 3];
-        m_mem_axi_arburst = 1;
-        m_mem_axi_arlock = 0;
-        m_mem_axi_arcache = 0;
-        m_mem_axi_arprot = 0;
-
-        m_mem_axi_wstrb = {STRB_WIDTH{1'b1}};
-
+        m_mem_axi_wstrb = { STRB_WIDTH { 1'b1 } };
         m_mem_axi_bready = 1;
     end
 
@@ -309,11 +351,8 @@ module DmaStreamEngine #(
             axiDestLast <= 0;
             axisSourceReady <= 0;
 
-            m_mem_axi_arvalid <= 0;
-            m_mem_axi_awvalid <= 0;
-
-            addrLast <= 0;
-            addr <= 0;
+            addrEnd <= 0;
+            addrStart <= 0;
 
             enableAddressChannel <= 0;
 
@@ -352,13 +391,13 @@ module DmaStreamEngine #(
                 begin
                     if (AUTO_LOAD)
                     begin
-                        counterConverted = AUTO_DATA_SIZE >> BYTES_TO_BEATS_SHIFT;
+                        counterConverted = AUTO_DATA_SIZE >> BYTES_PER_BEAT_LG2;
                         tmpMuxIn <= AUTO_CH_IN;
                         tmpMuxOut <= AUTO_CH_OUT;
                     end 
                     else
                     begin
-                        counterConverted = axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_TO_BEATS_SHIFT;
+                        counterConverted = axisSourceData[OP_IMM_POS +: OP_IMM_SIZE] >> BYTES_PER_BEAT_LG2;
                         tmpMuxIn <= axisSourceData[MUX_SELECT_IN_POS +: MUX_SELECT_SIZE];
                         tmpMuxOut <= axisSourceData[MUX_SELECT_OUT_POS +: MUX_SELECT_SIZE];
                     end
@@ -400,11 +439,12 @@ module DmaStreamEngine #(
                         begin
                             addrTmp = axisSourceData[0 +: ADDR_WIDTH];
                         end
-                        enableWriteChannel <= (tmpMuxOut == MUX_CHANNEL_MEM);
+                        startWriteAddressGeneration <= (tmpMuxOut == MUX_CHANNEL_MEM);
+                        startReadAddressGeneration <= (tmpMuxIn == MUX_CHANNEL_MEM);
                         enableAddressChannel <= (tmpMuxIn == MUX_CHANNEL_MEM) || (tmpMuxOut == MUX_CHANNEL_MEM);
 
-                        addr <= addrTmp;
-                        addrLast <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_TO_BEATS_SHIFT) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        addrStart <= addrTmp;
+                        addrEnd <= addrTmp + (counter[0 +: ADDR_WIDTH] << BYTES_PER_BEAT_LG2) - (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
 
                         muxIn <= tmpMuxIn;
                         muxOut <= tmpMuxOut;
@@ -502,53 +542,21 @@ module DmaStreamEngine #(
             endcase 
         end
 
-        // Optional addr channel
-        if (enableAddressChannel)
+        if (startWriteAddressGeneration && !writeAddressGenerationDone)
         begin
-            if (enableWriteChannel)
-            begin
-                if (addr != addrLast)
-                begin
-                    if (m_mem_axi_awready && m_mem_axi_awvalid) 
-                    begin
-                        addr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                        m_mem_axi_awaddr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                    end
-                    else 
-                    begin
-                        m_mem_axi_awaddr <= addr;
-                    end
-                    m_mem_axi_awvalid <= 1;
-                end
-
-                if (m_mem_axi_awready && (addr == addrLast))
-                begin
-                    m_mem_axi_awvalid <= 0;
-                    enableAddressChannel <= 0;
-                end
-            end
-            else 
-            begin
-                if (addr != addrLast)
-                begin
-                    if (m_mem_axi_arready && m_mem_axi_arvalid) 
-                    begin
-                        addr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                        m_mem_axi_araddr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                    end
-                    else 
-                    begin
-                        m_mem_axi_araddr <= addr;
-                    end
-                    m_mem_axi_arvalid <= 1;
-                end
-
-                if (m_mem_axi_arready && (addr == addrLast))
-                begin
-                    m_mem_axi_arvalid <= 0;
-                    enableAddressChannel <= 0;
-                end
-            end
+            startWriteAddressGeneration <= 0;
+        end
+        if (enableAddressChannel && writeAddressGenerationDone)
+        begin
+            enableAddressChannel <= 0;
+        end
+        if (startReadAddressGeneration && !readAddressGenerationDone)
+        begin
+            startReadAddressGeneration <= 0;
+        end
+        if (enableAddressChannel && readAddressGenerationDone)
+        begin
+            enableAddressChannel <= 0;
         end
     end
 endmodule
