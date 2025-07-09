@@ -92,7 +92,7 @@ module LinearAddressGenerator #(
 
             if (!done)
             begin
-                if (addr != addrLast)
+                if (addr < addrLast)
                 begin
                     if (axready && axvalid) 
                     begin
@@ -106,7 +106,7 @@ module LinearAddressGenerator #(
                     axvalid <= 1;
                 end
 
-                if (axready && (addr == addrLast))
+                if (axready && (addr >= addrLast))
                 begin
                     axvalid <= 0;
                     done <= 1;

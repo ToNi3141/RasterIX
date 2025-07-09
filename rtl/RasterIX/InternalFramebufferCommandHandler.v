@@ -102,7 +102,6 @@ module InternalFramebufferCommandHandler
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
     localparam COMMAND_MEMCPY = 1;
     localparam COMMAND_MEMSET = 2;
-    localparam COMMAND_MEMCPY_INIT = 3;
 
     // Scissor function
     `include "InternalFramebufferScissorFunc.vh"
@@ -125,8 +124,8 @@ module InternalFramebufferCommandHandler
 
     assign writeDataPort = { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } };
     assign writeMaskPort = cmdMask & cmdMemsetScissorMask;
-    assign readAddrPort = (m_axis_tready && (cmdState == COMMAND_MEMCPY)) ? cmdIndexNext : cmdIndex;
     assign writeAddrPort = cmdIndex;
+    assign readAddrPort = (m_axis_tready && (cmdState == COMMAND_MEMCPY)) ? cmdIndexNext : cmdIndex;
     assign m_axis_tdata = readDataPort;
 
     // Scissor check for the memset command 
@@ -193,18 +192,14 @@ module InternalFramebufferCommandHandler
                     if (cmdCommit)
                     begin
                         writeEnablePort <= 0;
-                        cmdState <= COMMAND_MEMCPY_INIT;
+                        m_axis_tvalid <= 1;
+                        cmdState <= COMMAND_MEMCPY;
                     end
                 end
                 else 
                 begin
                     applied <= 1;
                 end
-            end
-            COMMAND_MEMCPY_INIT:
-            begin
-                m_axis_tvalid <= 1;
-                cmdState <= COMMAND_MEMCPY;
             end
             COMMAND_MEMCPY:
             begin

@@ -130,7 +130,6 @@ module InternalFramebuffer
     output wire [STREAM_WIDTH - 1 : 0]      m_axis_tdata
     
 );
-    // Interface to the memory when accessing a fragment. This interface has already the size required for the internal memory.
     wire [MEM_MASK_WIDTH - 1 : 0]   writeMaskPort1; 
     wire [MEM_ADDR_WIDTH - 1 : 0]   writeAddrPort1;
     wire [MEM_WIDTH - 1 : 0]        writeDataPort1; 
@@ -138,13 +137,12 @@ module InternalFramebuffer
     wire [MEM_ADDR_WIDTH - 1 : 0]   readAddrPort1;
     wire [MEM_WIDTH - 1 : 0]        readDataPort1;
     
-
-    wire [MEM_MASK_WIDTH - 1 : 0]    writeMaskPort0; 
-    wire [MEM_ADDR_WIDTH - 1 : 0]    writeAddrPort0;
-    wire [MEM_WIDTH - 1 : 0]         writeDataPort0;
-    wire                             writeEnablePort0;
-    wire [MEM_ADDR_WIDTH - 1 : 0]    readAddrPort0;
-    wire [MEM_WIDTH - 1 : 0]         readDataPort0;
+    wire [MEM_MASK_WIDTH - 1 : 0]   writeMaskPort0; 
+    wire [MEM_ADDR_WIDTH - 1 : 0]   writeAddrPort0;
+    wire [MEM_WIDTH - 1 : 0]        writeDataPort0;
+    wire                            writeEnablePort0;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   readAddrPort0;
+    wire [MEM_WIDTH - 1 : 0]        readDataPort0;
 
     InternalFramebufferRam #(
         .ADDR_WIDTH(MEM_ADDR_WIDTH),
