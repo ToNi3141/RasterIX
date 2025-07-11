@@ -18,7 +18,7 @@
 module InternalFramebufferCommandHandler
 #(
     // Number of pixels a stream beat contains
-    parameter NUMBER_OF_PIXELS_PER_BEAT = 1,
+    parameter NUMBER_OF_PIXELS_PER_BEAT = 2,
     
     // Number of sub pixels the interface of this module contains
     parameter NUMBER_OF_SUB_PIXELS = 4,
@@ -51,8 +51,8 @@ module InternalFramebufferCommandHandler
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2
 )
 (
-    input   wire                            clk,
-    input   wire                            reset,
+    input   wire                            aclk,
+    input   wire                            resetn,
 
     /////////////////////////
     // Configs
@@ -95,13 +95,14 @@ module InternalFramebufferCommandHandler
     output reg                              m_axis_tvalid,
     input  wire                             m_axis_tready,
     output reg                              m_axis_tlast,
-    output wire [STREAM_WIDTH - 1 : 0]      m_axis_tdata
+    output reg  [STREAM_WIDTH - 1 : 0]      m_axis_tdata
     
 );
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
     localparam COMMAND_MEMCPY = 1;
     localparam COMMAND_MEMSET = 2;
+    localparam COMMAND_MEMCPY_INIT = 3;
 
     // Scissor function
     `include "InternalFramebufferScissorFunc.vh"
@@ -122,11 +123,33 @@ module InternalFramebufferCommandHandler
     wire [NUMBER_OF_PIXELS_PER_BEAT - 1 : 0]   cmdMemsetScissor;
     reg                             cmdMemsetPending = 0;
 
+    reg [X_BIT_WIDTH - 1 : 0] scissorStartX;
+    reg [Y_BIT_WIDTH - 1 : 0] scissorStartY;
+    reg [X_BIT_WIDTH - 1 : 0] scissorEndX;
+    reg [Y_BIT_WIDTH - 1 : 0] scissorEndY;
+
     assign writeDataPort = { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } };
     assign writeMaskPort = cmdMask & cmdMemsetScissorMask;
     assign writeAddrPort = cmdIndex;
-    assign readAddrPort = (m_axis_tready && (cmdState == COMMAND_MEMCPY)) ? cmdIndexNext : cmdIndex;
-    assign m_axis_tdata = readDataPort;
+
+    assign readAddrPort = cmdIndex;
+    wire readPortReady;
+    wire readPortLast;
+
+    ValueDelay #(
+        .VALUE_SIZE(2),
+        .DELAY(1)
+    ) readDataPortDelay (
+        .clk(aclk),
+        .ce(1),
+        .in({ cmdState == COMMAND_MEMCPY, cmdIndexNext == cmdFbSizeInBeats }),
+        .out({ readPortReady, readPortLast })
+    );
+
+    reg  [STREAM_WIDTH - 1 : 0] skidBufferData;
+    reg                         skidBufferValid;
+    reg                         skidBufferLast;
+    reg last1;
 
     // Scissor check for the memset command 
     genvar i, j;
@@ -150,15 +173,16 @@ module InternalFramebufferCommandHandler
     endgenerate
 
     // Command execution
-    always @(posedge clk)
+    always @(posedge aclk)
     begin
-        if (reset)
+        if (!resetn)
         begin
             cmdState <= COMMAND_WAIT_FOR_COMMAND;
-            m_axis_tvalid <= 0;
-            m_axis_tlast <= 0;
             writeEnablePort <= 0;
             applied <= 1;
+            m_axis_tlast <= 0;
+            m_axis_tvalid <= 0;
+            skidBufferValid <= 0;
         end
         else
         begin
@@ -184,6 +208,10 @@ module InternalFramebufferCommandHandler
                     if (cmdMemset) 
                     begin
                         writeEnablePort <= 1;
+                        scissorStartX <= confScissorStartX;
+                        scissorStartY <= confScissorStartY;
+                        scissorEndX <= confScissorEndX;
+                        scissorEndY <= confScissorEndY;
                         cmdState <= COMMAND_MEMSET;
                     end
 
@@ -192,7 +220,13 @@ module InternalFramebufferCommandHandler
                     if (cmdCommit)
                     begin
                         writeEnablePort <= 0;
-                        m_axis_tvalid <= 1;
+                        scissorStartX <= 0;
+                        scissorStartY <= 0;
+                        m_axis_tvalid <= 0;
+                        m_axis_tlast <= 0;
+                        skidBufferValid <= 0;
+                        scissorEndX <= confXResolution;
+                        scissorEndY <= confYResolution;
                         cmdState <= COMMAND_MEMCPY;
                     end
                 end
@@ -203,32 +237,55 @@ module InternalFramebufferCommandHandler
             end
             COMMAND_MEMCPY:
             begin
-                if (m_axis_tready)
+                if (m_axis_tready || !m_axis_tvalid)
                 begin
-                    cmdIndex <= cmdIndexNext;
-                
-                    if (cmdIndexNext == (cmdFbSizeInBeats - 1))
+                    m_axis_tvalid <= readPortReady;
+                    if (!m_axis_tlast)
                     begin
-                        m_axis_tlast <= 1;
+                        if (skidBufferValid)
+                        begin
+                            m_axis_tdata <= skidBufferData;
+                            m_axis_tlast <= skidBufferLast;
+                            skidBufferValid <= 0;
+                        end
+                        else
+                        begin
+                            m_axis_tdata <= readDataPort;
+                            m_axis_tlast <= readPortLast;
+                        end
                     end
 
-                    // Check if we reached the end of the copy process
-                    if (cmdIndexNext == cmdFbSizeInBeats)
-                    begin
-                        m_axis_tvalid <= 0; 
-                        m_axis_tlast <= 0;
+                    cmdIndex <= cmdIndexNext;
 
+                    // Check if we reached the end of the copy process
+                    if (m_axis_tlast)
+                    begin
+                        m_axis_tvalid <= 0;
+                        m_axis_tlast <= 0;
                         // Continue with memset if it is activated
                         if (cmdMemsetPending) 
                         begin
                             cmdIndex <= 0;
                             writeEnablePort <= 1;
+                            scissorStartX <= confScissorStartX;
+                            scissorStartY <= confScissorStartY;
+                            scissorEndX <= confScissorEndX;
+                            scissorEndY <= confScissorEndY;
                             cmdState <= COMMAND_MEMSET;
                         end
                         else
                         begin
                             cmdState <= COMMAND_WAIT_FOR_COMMAND;
                         end
+                    end
+                end
+                else
+                begin
+                    if (!skidBufferValid)
+                    begin
+                        skidBufferData <= readDataPort;
+                        skidBufferLast <= readPortLast;
+                        skidBufferValid <= 1;
                     end
                 end
             end

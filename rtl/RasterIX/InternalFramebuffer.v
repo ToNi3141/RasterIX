@@ -239,8 +239,8 @@ module InternalFramebuffer
         .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
         .FB_SIZE_IN_PIXEL_LG(FB_SIZE_IN_PIXEL_LG)
     ) commandHandler (
-        .clk(clk),
-        .reset(reset),
+        .aclk(clk),
+        .resetn(!reset),
 
         // Configs
         .confClearColor(confClearColor),

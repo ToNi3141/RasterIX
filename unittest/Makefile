@@ -21,7 +21,8 @@ all: \
 	attributeInterpolationX \
 	attributePerspectiveCorrectionX \
 	triangleStreamF2XConverter \
-	pagedMemoryReader
+	pagedMemoryReader \
+	internalFramebufferCommandHandler
  
 clean:
 	rm -rf obj_dir
@@ -130,6 +131,11 @@ pagedMemoryReader:
 	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/PagedMemoryReader.v --top-module PagedMemoryReader cpp/sim_PagedMemoryReader.cpp -I../rtl/RasterIX/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
 	-make -C obj_dir -f VPagedMemoryReader.mk
 	./obj_dir/VPagedMemoryReader
+
+internalFramebufferCommandHandler:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/InternalFramebufferCommandHandler.v --top-module InternalFramebufferCommandHandler cpp/sim_InternalFramebufferCommandHandler.cpp -I../rtl/RasterIX/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VInternalFramebufferCommandHandler.mk
+	./obj_dir/VInternalFramebufferCommandHandler
 
 .SECONDARY:
 .PHONY: all clean

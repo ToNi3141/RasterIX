@@ -1,0 +1,245 @@
+// RasterIX
+// https://github.com/ToNi3141/RasterIX
+// Copyright (c) 2025 ToNi3141
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#include "general.hpp"
+#include <algorithm>
+#include <array>
+#include <math.h>
+
+// Include model header, generated from Verilating "top.v"
+#include "VInternalFramebufferCommandHandler.h"
+
+static constexpr std::size_t NUMBER_OF_PIXELS_PER_BEAT = 2;
+
+static bool isInScissorArea(const std::size_t x, const std::size_t y, const VInternalFramebufferCommandHandler* t)
+{
+    // Note: The Y coordinate is flipped. The Framebuffer's Y coordinate starts at the top left, while the openGL Y coordinate starts at the bottom left.
+    std::size_t tY = t->confYOffset + t->confYResolution - 1 - y; // Apply Y offset and flip Y coordinate
+    return (x >= t->confScissorStartX && x < t->confScissorEndX) && (tY >= t->confScissorStartY && tY < t->confScissorEndY);
+}
+
+TEST_CASE("memset", "[VInternalFramebufferCommandHandler]")
+{
+    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+
+    rr::ut::reset(t);
+
+    t->confClearColor = 0xaabbccdd; // Set clear color
+    t->confEnableScissor = 0; // Disable scissor test
+    t->confScissorStartX = 0;
+    t->confScissorStartY = 0;
+    t->confScissorEndX = 0;
+    t->confScissorEndY = 0;
+    t->confYOffset = 0;
+    t->confXResolution = 20;
+    t->confYResolution = 10;
+    t->confMask = 0b1111; // Enable all sub-pixels
+
+    t->apply = 1;
+    t->cmdMemset = 1; // Trigger memset command
+    t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
+
+    for (std::size_t i = 0; i < (t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT; i++)
+    {
+        rr::ut::clk(t);
+        CHECK(t->writeEnablePort == 1);
+        CHECK(t->writeDataPort == 0xaabbccdd'aabbccdd);
+        CHECK(t->writeAddrPort == i);
+        CHECK(t->writeMaskPort == 0b1111'1111);
+        CHECK(t->applied == 0);
+        t->apply = 0;
+    }
+
+    rr::ut::clk(t);
+    CHECK(t->writeEnablePort == 0);
+
+    rr::ut::clk(t);
+    CHECK(t->applied == 1);
+
+    // Destroy model
+    delete t;
+}
+
+TEST_CASE("memset with scissor and offset", "[VInternalFramebufferCommandHandler]")
+{
+    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+
+    rr::ut::reset(t);
+
+    t->confClearColor = 0xaabbccdd; // Set clear color
+    t->confEnableScissor = 1; // Disable scissor test
+    t->confScissorStartX = 5;
+    t->confScissorStartY = 15;
+    t->confScissorEndX = 11;
+    t->confScissorEndY = 20;
+    t->confYOffset = 10;
+    t->confXResolution = 20;
+    t->confYResolution = 10;
+    t->confMask = 0b1111; // Enable all sub-pixels
+
+    t->apply = 1;
+    t->cmdMemset = 1; // Trigger memset command
+    t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
+
+    for (std::size_t y = 0; y < t->confYResolution; y++)
+    {
+        for (std::size_t x = 0; x < t->confXResolution; x += NUMBER_OF_PIXELS_PER_BEAT)
+        {
+            const uint8_t maskScissor1 = isInScissorArea(x, y, t) ? 0b0000'1111 : 0b0000'0000;
+            const uint8_t maskScissor0 = isInScissorArea(x + 1, y, t) ? 0b1111'0000 : 0b0000'0000;
+            const uint8_t maskScissor = maskScissor0 | maskScissor1;
+
+            // Calculate index in memory
+            std::size_t i = (y * t->confXResolution + x) / NUMBER_OF_PIXELS_PER_BEAT;
+            rr::ut::clk(t);
+            CHECK(t->writeEnablePort == 1);
+            CHECK(t->writeDataPort == 0xaabbccdd'aabbccdd);
+            CHECK(t->writeAddrPort == i);
+            CHECK(t->writeMaskPort == maskScissor);
+            CHECK(t->applied == 0);
+            t->apply = 0;
+        }
+    }
+
+    rr::ut::clk(t);
+    CHECK(t->writeEnablePort == 0);
+
+    rr::ut::clk(t);
+    CHECK(t->applied == 1);
+
+    // Destroy model
+    delete t;
+}
+
+TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
+{
+    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+
+    rr::ut::reset(t);
+
+    t->confEnableScissor = 0; // Disable scissor test
+    t->confYOffset = 0;
+    t->confXResolution = 20;
+    t->confYResolution = 10;
+
+    t->apply = 1;
+    t->cmdCommit = 1; // Trigger memset command
+    t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
+
+    t->m_axis_tready = 1; // Set ready signal to 1 to allow data transfer
+    t->readDataPort = 0;
+    rr::ut::clk(t);
+    CHECK(t->readAddrPort == 0);
+    CHECK(t->m_axis_tvalid == 0);
+
+    rr::ut::clk(t);
+    CHECK(t->readAddrPort == 1);
+    CHECK(t->m_axis_tvalid == 0);
+
+    const std::size_t numberOfBeats = ((t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT);
+    for (std::size_t i = 0; i < numberOfBeats; i++)
+    {
+        t->readDataPort = i; // Simulate reading data from memory
+        rr::ut::clk(t);
+        CHECK(t->readAddrPort == i + 2);
+        CHECK(t->applied == 0);
+
+        CHECK(t->m_axis_tdata == i);
+        CHECK(t->m_axis_tvalid == 1);
+        CHECK(t->m_axis_tlast == (i == numberOfBeats - 1));
+        t->apply = 0;
+    }
+
+    rr::ut::clk(t);
+    CHECK(t->m_axis_tvalid == 0);
+
+    rr::ut::clk(t);
+    CHECK(t->applied == 1);
+
+    // Destroy model
+    delete t;
+}
+
+TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler]")
+{
+    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+
+    rr::ut::reset(t);
+
+    t->confEnableScissor = 0; // Disable scissor test
+    t->confYOffset = 0;
+    t->confXResolution = 20;
+    t->confYResolution = 10;
+
+    t->apply = 1;
+    t->cmdCommit = 1; // Trigger memset command
+    t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
+
+    t->m_axis_tready = 1; // Set ready signal to 1 to allow data transfer
+    t->readDataPort = 1;
+    rr::ut::clk(t);
+    CHECK(t->readAddrPort == 0);
+    CHECK(t->m_axis_tvalid == 0);
+
+    t->m_axis_tready = 0;
+    t->readDataPort = 0;
+    rr::ut::clk(t);
+    CHECK(t->readAddrPort == 1);
+    CHECK(t->m_axis_tvalid == 0);
+
+    t->m_axis_tready = 0;
+    t->readDataPort = 2;
+    rr::ut::clk(t);
+    CHECK(t->readAddrPort == 2);
+    CHECK(t->m_axis_tvalid == 1);
+    CHECK(t->m_axis_tdata == 2);
+
+    const std::size_t numberOfBeats = ((t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT);
+    for (std::size_t i = 0; i < numberOfBeats - 1; i++)
+    {
+        t->m_axis_tready = 0; // Simulate that the stream is interrupted
+        t->readDataPort = i + 3; 
+        rr::ut::clk(t);
+        CHECK(t->readAddrPort == i + 2);
+        CHECK(t->applied == 0);
+        CHECK(t->m_axis_tdata == i + 2);
+        CHECK(t->m_axis_tvalid == 1);
+        CHECK(t->m_axis_tlast == (i == numberOfBeats - 1));
+        t->apply = 0;
+
+        t->m_axis_tready = 1; 
+        if (!t->m_axis_tlast)
+        {
+            rr::ut::clk(t);
+            CHECK(t->readAddrPort == i + 3);
+            CHECK(t->applied == 0);
+            CHECK(t->m_axis_tdata == i + 3);
+            CHECK(t->m_axis_tvalid == 1);
+            INFO("i: " << i);
+            CHECK(t->m_axis_tlast == ((i + 1) == numberOfBeats - 1));
+        }
+    }
+
+    rr::ut::clk(t);
+    CHECK(t->m_axis_tvalid == 0);
+
+    rr::ut::clk(t);
+    CHECK(t->applied == 1);
+
+    // Destroy model
+    delete t;
+}
