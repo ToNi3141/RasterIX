@@ -100,36 +100,33 @@ module InternalFramebufferCommandHandler
 );
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
-    localparam COMMAND_MEMCPY = 1;
+    localparam COMMAND_COMMIT = 1;
     localparam COMMAND_MEMSET = 2;
-    localparam COMMAND_MEMCPY_INIT = 3;
-
-    // Scissor function
-    `include "InternalFramebufferScissorFunc.vh"
     
-    // State variables for managing the memory (memset and memcpy)
+    // State variables
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdIndex;
     wire [MEM_ADDR_WIDTH - 1 : 0]   cmdIndexNext = cmdIndex + 1;
     reg  [5 : 0]                    cmdState;
-    wire [MEM_MASK_WIDTH - 1 : 0]   cmdMask = { NUMBER_OF_PIXELS_PER_BEAT { confMask } };
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdFbSizeInBeats;
     
-    // State variables for the memset
-    reg  [X_BIT_WIDTH - 1 : 0]      cmdMemsetX;
-    wire [X_BIT_WIDTH - 1 : 0]      cmdMemsetXNext = cmdMemsetX + NUMBER_OF_PIXELS_PER_BEAT;
-    reg  [Y_BIT_WIDTH - 1 : 0]      cmdMemsetY;
-    wire [Y_BIT_WIDTH - 1 : 0]      cmdMemsetYNext = cmdMemsetY - 1;
-    wire [MEM_MASK_WIDTH - 1 : 0]   cmdMemsetScissorMask;
-    wire [NUMBER_OF_PIXELS_PER_BEAT - 1 : 0]   cmdMemsetScissor;
-    reg                             cmdMemsetPending = 0;
+    // Scissor variables
+    wire [X_BIT_WIDTH - 1 : 0]      scissorXNext = scissorX + NUMBER_OF_PIXELS_PER_BEAT;
+    wire [Y_BIT_WIDTH - 1 : 0]      scissorYNext = scissorY - 1;
+    reg  [X_BIT_WIDTH - 1 : 0]      scissorX;
+    reg  [Y_BIT_WIDTH - 1 : 0]      scissorY;
+    wire [MEM_MASK_WIDTH - 1 : 0]   scissorPixelAndColorMask;
+    reg  [X_BIT_WIDTH - 1 : 0]      scissorStartX;
+    reg  [Y_BIT_WIDTH - 1 : 0]      scissorStartY;
+    reg  [X_BIT_WIDTH - 1 : 0]      scissorEndX;
+    reg  [Y_BIT_WIDTH - 1 : 0]      scissorEndY;
 
-    reg [X_BIT_WIDTH - 1 : 0] scissorStartX;
-    reg [Y_BIT_WIDTH - 1 : 0] scissorStartY;
-    reg [X_BIT_WIDTH - 1 : 0] scissorEndX;
-    reg [Y_BIT_WIDTH - 1 : 0] scissorEndY;
+    // Skid buffer
+    reg  [STREAM_WIDTH - 1 : 0]     skidBufferData;
+    reg                             skidBufferValid;
+    reg                             skidBufferLast;
 
     assign writeDataPort = { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } };
-    assign writeMaskPort = cmdMask & cmdMemsetScissorMask;
+    assign writeMaskPort = { NUMBER_OF_PIXELS_PER_BEAT { confMask } } & scissorPixelAndColorMask;
     assign writeAddrPort = cmdIndex;
 
     assign readAddrPort = cmdIndex;
@@ -142,35 +139,26 @@ module InternalFramebufferCommandHandler
     ) readDataPortDelay (
         .clk(aclk),
         .ce(1),
-        .in({ cmdState == COMMAND_MEMCPY, cmdIndexNext == cmdFbSizeInBeats }),
+        .in({ cmdState == COMMAND_COMMIT, cmdIndexNext == cmdFbSizeInBeats }),
         .out({ readPortReady, readPortLast })
     );
 
-    reg  [STREAM_WIDTH - 1 : 0] skidBufferData;
-    reg                         skidBufferValid;
-    reg                         skidBufferLast;
-    reg last1;
+    InternalFramebufferScissor #(
+        .NUMBER_OF_PIXELS_PER_BEAT(NUMBER_OF_PIXELS_PER_BEAT),
+        .NUMBER_OF_SUB_PIXELS(NUMBER_OF_SUB_PIXELS),
+        .X_BIT_WIDTH(X_BIT_WIDTH),
+        .Y_BIT_WIDTH(Y_BIT_WIDTH)
+    ) scissorInst (
+        .confEnableScissor(confEnableScissor),
+        .confScissorStartX(confScissorStartX),
+        .confScissorStartY(confScissorStartY),
+        .confScissorEndX(confScissorEndX),
+        .confScissorEndY(confScissorEndY),
+        .x(scissorX),
+        .y(scissorY),
 
-    // Scissor check for the memset command 
-    genvar i, j;
-    generate
-        if (NUMBER_OF_PIXELS_PER_BEAT == 1)
-        begin 
-            assign cmdMemsetScissor = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, cmdMemsetX, cmdMemsetY);
-            assign cmdMemsetScissorMask = { NUMBER_OF_SUB_PIXELS { cmdMemsetScissor } };
-        end
-        else
-        begin
-            for (i = 0; i < NUMBER_OF_PIXELS_PER_BEAT; i = i + 1)
-            begin
-                assign cmdMemsetScissor[i] = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, cmdMemsetX + i, cmdMemsetY);
-                for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
-                begin
-                    assign cmdMemsetScissorMask[(i * NUMBER_OF_SUB_PIXELS) + j] = cmdMemsetScissor[i];
-                end
-            end
-        end
-    endgenerate
+        .pixelMask(scissorPixelAndColorMask)
+    );
 
     // Command execution
     always @(posedge aclk)
@@ -190,20 +178,18 @@ module InternalFramebufferCommandHandler
             COMMAND_WAIT_FOR_COMMAND:
             begin : waitForCommand
                 cmdIndex <= 0;
-                cmdMemsetX <= 0;
+                scissorX <= 0;
 
                 // Here is a mismatch between the RAM addresses and the OpenGL coordinate system.
                 // OpenGL starts at the lower left corner. But this is a fairly high address in the RAM.
                 // The cmdIndex starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
-                cmdMemsetY <= confYOffset + confYResolution - 1;
+                scissorY <= confYOffset + confYResolution - 1;
 
                 cmdFbSizeInBeats <= cmdSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
                 if (apply)
                 begin
                     applied <= 0;
-
-                    cmdMemsetPending <= cmdMemset;
 
                     if (cmdMemset) 
                     begin
@@ -215,19 +201,14 @@ module InternalFramebufferCommandHandler
                         cmdState <= COMMAND_MEMSET;
                     end
 
-                    // Commits have priority over a clear.
-                    // When both are activated, the user probably wants first to commit and then to clear it.
                     if (cmdCommit)
                     begin
                         writeEnablePort <= 0;
                         scissorStartX <= 0;
                         scissorStartY <= 0;
-                        m_axis_tvalid <= 0;
-                        m_axis_tlast <= 0;
-                        skidBufferValid <= 0;
                         scissorEndX <= confXResolution;
                         scissorEndY <= confYResolution;
-                        cmdState <= COMMAND_MEMCPY;
+                        cmdState <= COMMAND_COMMIT;
                     end
                 end
                 else 
@@ -235,7 +216,7 @@ module InternalFramebufferCommandHandler
                     applied <= 1;
                 end
             end
-            COMMAND_MEMCPY:
+            COMMAND_COMMIT:
             begin
                 if (m_axis_tready || !m_axis_tvalid)
                 begin
@@ -253,35 +234,31 @@ module InternalFramebufferCommandHandler
                             m_axis_tdata <= readDataPort;
                             m_axis_tlast <= readPortLast;
                         end
-                    end
 
-                    cmdIndex <= cmdIndexNext;
+                        cmdIndex <= cmdIndexNext;
+                        if (scissorXNext == confXResolution)
+                        begin
+                            scissorX <= 0;
+                            scissorY <= scissorYNext;
+                        end
+                        else
+                        begin
+                            scissorX <= scissorXNext;
+                        end
+                    end
 
                     // Check if we reached the end of the copy process
                     if (m_axis_tlast)
                     begin
                         m_axis_tvalid <= 0;
                         m_axis_tlast <= 0;
-                        // Continue with memset if it is activated
-                        if (cmdMemsetPending) 
-                        begin
-                            cmdIndex <= 0;
-                            writeEnablePort <= 1;
-                            scissorStartX <= confScissorStartX;
-                            scissorStartY <= confScissorStartY;
-                            scissorEndX <= confScissorEndX;
-                            scissorEndY <= confScissorEndY;
-                            cmdState <= COMMAND_MEMSET;
-                        end
-                        else
-                        begin
-                            cmdState <= COMMAND_WAIT_FOR_COMMAND;
-                        end
+ 
+                        cmdState <= COMMAND_WAIT_FOR_COMMAND;
                     end
                 end
                 else
                 begin
-                    if (!skidBufferValid)
+                    if (readPortReady && !skidBufferValid)
                     begin
                         skidBufferData <= readDataPort;
                         skidBufferLast <= readPortLast;
@@ -298,17 +275,68 @@ module InternalFramebufferCommandHandler
                 end
                 cmdIndex <= cmdIndexNext;
 
-                if (cmdMemsetXNext == confXResolution)
+                if (scissorXNext == confXResolution)
                 begin
-                    cmdMemsetX <= 0;
-                    cmdMemsetY <= cmdMemsetYNext;
+                    scissorX <= 0;
+                    scissorY <= scissorYNext;
                 end
                 else
                 begin
-                    cmdMemsetX <= cmdMemsetXNext;
+                    scissorX <= scissorXNext;
                 end
             end
             endcase
         end
     end
+endmodule
+
+module InternalFramebufferScissor
+#(
+    // Number of pixels a stream beat contains
+    parameter NUMBER_OF_PIXELS_PER_BEAT = 2,
+    
+    // Number of sub pixels the interface of this module contains
+    parameter NUMBER_OF_SUB_PIXELS = 4,
+
+    // The maximum size of the screen in power of two
+    parameter X_BIT_WIDTH = 11,
+    parameter Y_BIT_WIDTH = 11,
+
+    localparam MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS
+)
+(
+    input  wire                       confEnableScissor,
+    input  wire [X_BIT_WIDTH - 1 : 0] confScissorStartX,
+    input  wire [Y_BIT_WIDTH - 1 : 0] confScissorStartY,
+    input  wire [X_BIT_WIDTH - 1 : 0] confScissorEndX,
+    input  wire [Y_BIT_WIDTH - 1 : 0] confScissorEndY,
+    input  wire [X_BIT_WIDTH - 1 : 0] x,
+    input  wire [Y_BIT_WIDTH - 1 : 0] y,
+
+    output wire [MASK_WIDTH - 1 : 0]  pixelMask
+);
+    `include "InternalFramebufferScissorFunc.vh"
+
+    wire [NUMBER_OF_PIXELS_PER_BEAT - 1 : 0] scissorPixelMask;
+
+    genvar i, j;
+    generate
+        if (NUMBER_OF_PIXELS_PER_BEAT == 1)
+        begin 
+            assign scissorPixelMask = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, x, y);
+            assign pixelMask = { NUMBER_OF_SUB_PIXELS { scissorPixelMask } };
+        end
+        else
+        begin
+            for (i = 0; i < NUMBER_OF_PIXELS_PER_BEAT; i = i + 1)
+            begin
+                assign scissorPixelMask[i] = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, x + i, y);
+                for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
+                begin
+                    assign pixelMask[(i * NUMBER_OF_SUB_PIXELS) + j] = scissorPixelMask[i];
+                end
+            end
+        end
+    endgenerate
+
 endmodule
