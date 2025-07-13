@@ -25,11 +25,54 @@
 
 static constexpr std::size_t NUMBER_OF_PIXELS_PER_BEAT = 2;
 
-static bool isInScissorArea(const std::size_t x, const std::size_t y, const VInternalFramebufferCommandHandler* t)
+static bool isInScissorArea(
+    const std::size_t x,
+    const std::size_t y,
+    const std::size_t scissorStartX,
+    const std::size_t scissorStartY,
+    const std::size_t scissorEndX,
+    const std::size_t scissorEndY,
+    const std::size_t yOffset,
+    const std::size_t yResolution)
 {
     // Note: The Y coordinate is flipped. The Framebuffer's Y coordinate starts at the top left, while the openGL Y coordinate starts at the bottom left.
-    std::size_t tY = t->confYOffset + t->confYResolution - 1 - y; // Apply Y offset and flip Y coordinate
-    return (x >= t->confScissorStartX && x < t->confScissorEndX) && (tY >= t->confScissorStartY && tY < t->confScissorEndY);
+    std::size_t tY = yOffset + yResolution - 1 - y; // Apply Y offset and flip Y coordinate
+    return (x >= scissorStartX && x < scissorEndX) && (tY >= scissorStartY && tY < scissorEndY);
+}
+
+static uint8_t getScissorMask(
+    const std::size_t x,
+    const std::size_t y,
+    const std::size_t scissorStartX,
+    const std::size_t scissorStartY,
+    const std::size_t scissorEndX,
+    const std::size_t scissorEndY,
+    const std::size_t yOffset,
+    const std::size_t yResolution)
+{
+    const uint8_t maskScissor1 = isInScissorArea(
+                                     x,
+                                     y,
+                                     scissorStartX,
+                                     scissorStartY,
+                                     scissorEndX,
+                                     scissorEndY,
+                                     yOffset,
+                                     yResolution)
+        ? 0b0000'1111
+        : 0b0000'0000;
+    const uint8_t maskScissor0 = isInScissorArea(x + 1,
+                                     y,
+                                     scissorStartX,
+                                     scissorStartY,
+                                     scissorEndX,
+                                     scissorEndY,
+                                     yOffset,
+                                     yResolution)
+        ? 0b1111'0000
+        : 0b0000'0000;
+    const uint8_t maskScissor = maskScissor0 | maskScissor1;
+    return maskScissor;
 }
 
 TEST_CASE("memset", "[VInternalFramebufferCommandHandler]")
@@ -99,17 +142,13 @@ TEST_CASE("memset with scissor and offset", "[VInternalFramebufferCommandHandler
     {
         for (std::size_t x = 0; x < t->confXResolution; x += NUMBER_OF_PIXELS_PER_BEAT)
         {
-            const uint8_t maskScissor1 = isInScissorArea(x, y, t) ? 0b0000'1111 : 0b0000'0000;
-            const uint8_t maskScissor0 = isInScissorArea(x + 1, y, t) ? 0b1111'0000 : 0b0000'0000;
-            const uint8_t maskScissor = maskScissor0 | maskScissor1;
-
             // Calculate index in memory
             std::size_t i = (y * t->confXResolution + x) / NUMBER_OF_PIXELS_PER_BEAT;
             rr::ut::clk(t);
             CHECK(t->writeEnablePort == 1);
             CHECK(t->writeDataPort == 0xaabbccdd'aabbccdd);
             CHECK(t->writeAddrPort == i);
-            CHECK(t->writeMaskPort == maskScissor);
+            CHECK(t->writeMaskPort == getScissorMask(x, y, t->confScissorStartX, t->confScissorStartY, t->confScissorEndX, t->confScissorEndY, t->confYOffset, t->confYResolution));
             CHECK(t->applied == 0);
             t->apply = 0;
         }
@@ -138,7 +177,7 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
 
     t->apply = 1;
     t->cmdCommit = 1; // Trigger memset command
-    t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
+    t->cmdSize = (t->confXResolution * t->confYResolution) + t->confXResolution;
 
     t->m_axis_tready = 1; // Set ready signal to 1 to allow data transfer
     t->readDataPort = 0;
@@ -151,17 +190,23 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     CHECK(t->m_axis_tvalid == 0);
 
     const std::size_t numberOfBeats = ((t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT);
-    for (std::size_t i = 0; i < numberOfBeats; i++)
+    for (std::size_t y = 0; y < t->confYResolution + 1; y++) // + to simulate an additional line (in respect to the cmdSize)
     {
-        t->readDataPort = i; // Simulate reading data from memory
-        rr::ut::clk(t);
-        CHECK(t->readAddrPort == i + 2);
-        CHECK(t->applied == 0);
+        for (std::size_t x = 0; x < t->confXResolution; x += NUMBER_OF_PIXELS_PER_BEAT)
+        {
+            std::size_t i = (y * t->confXResolution + x) / NUMBER_OF_PIXELS_PER_BEAT;
 
-        CHECK(t->m_axis_tdata == i);
-        CHECK(t->m_axis_tvalid == 1);
-        CHECK(t->m_axis_tlast == (i == numberOfBeats - 1));
-        t->apply = 0;
+            t->readDataPort = i; // Simulate reading data from memory
+            rr::ut::clk(t);
+            CHECK(t->readAddrPort == i + 2);
+            CHECK(t->applied == 0);
+
+            CHECK(t->m_axis_tdata == i);
+            CHECK(t->m_axis_tstrb == getScissorMask(x, y, 0, 0, t->confXResolution, t->confYResolution, 0, t->confYResolution));
+            CHECK(t->m_axis_tvalid == 1);
+            CHECK(t->m_axis_tlast == (i >= (t->cmdSize / NUMBER_OF_PIXELS_PER_BEAT) - 1));
+            t->apply = 0;
+        }
     }
 
     rr::ut::clk(t);
@@ -187,7 +232,7 @@ TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler
 
     t->apply = 1;
     t->cmdCommit = 1; // Trigger memset command
-    t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
+    t->cmdSize = t->confXResolution * t->confYResolution;
 
     t->m_axis_tready = 1; // Set ready signal to 1 to allow data transfer
     t->readDataPort = 1;
@@ -212,24 +257,25 @@ TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler
     for (std::size_t i = 0; i < numberOfBeats - 1; i++)
     {
         t->m_axis_tready = 0; // Simulate that the stream is interrupted
-        t->readDataPort = i + 3; 
+        t->readDataPort = i + 3;
         rr::ut::clk(t);
         CHECK(t->readAddrPort == i + 2);
         CHECK(t->applied == 0);
         CHECK(t->m_axis_tdata == i + 2);
+        CHECK(t->m_axis_tstrb == 0b1111'1111);
         CHECK(t->m_axis_tvalid == 1);
         CHECK(t->m_axis_tlast == (i == numberOfBeats - 1));
         t->apply = 0;
 
-        t->m_axis_tready = 1; 
+        t->m_axis_tready = 1;
         if (!t->m_axis_tlast)
         {
             rr::ut::clk(t);
             CHECK(t->readAddrPort == i + 3);
             CHECK(t->applied == 0);
             CHECK(t->m_axis_tdata == i + 3);
+            CHECK(t->m_axis_tstrb == 0b1111'1111);
             CHECK(t->m_axis_tvalid == 1);
-            INFO("i: " << i);
             CHECK(t->m_axis_tlast == ((i + 1) == numberOfBeats - 1));
         }
     }

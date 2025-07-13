@@ -42,7 +42,7 @@ module LinearAddressGenerator #(
     output reg                          done,
 
     input  wire [ADDR_WIDTH - 1 : 0]    startAddr,
-    input  wire [ADDR_WIDTH - 1 : 0]    endAddr,
+    input  wire [ADDR_WIDTH - 1 : 0]    dataSizeInBytes,
 
     // Address channel
     output reg  [ID_WIDTH - 1 : 0]      axid,
@@ -59,8 +59,9 @@ module LinearAddressGenerator #(
     localparam BYTES_PER_BEAT = 2 ** AxSIZE_BYTES_PER_BEAT;
     localparam BEATS_PER_TRANSFER = AxLEN_BEATS_PER_TRANSFER + 1;
     
-    reg  [ADDR_WIDTH - 1 : 0]   addr;
-    reg  [ADDR_WIDTH - 1 : 0]   addrLast;
+    reg  [ADDR_WIDTH - 1 : 0] addr;
+    reg  [ADDR_WIDTH - 1 : 0] addrLast;
+    wire [ADDR_WIDTH - 1 : 0] addrNext = addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
 
     initial 
     begin
@@ -86,18 +87,18 @@ module LinearAddressGenerator #(
             if (start && done)
             begin
                 addr <= startAddr;
-                addrLast <= endAddr;
+                addrLast <= startAddr + dataSizeInBytes - 1;
                 done <= 0;
             end
 
             if (!done)
             begin
-                if (addr < addrLast)
+                if (addrNext < addrLast)
                 begin
                     if (axready && axvalid) 
                     begin
-                        addr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
-                        axaddr <= addr + (BYTES_PER_BEAT * BEATS_PER_TRANSFER);
+                        addr <= addrNext;
+                        axaddr <= addrNext;
                     end
                     else 
                     begin
@@ -105,8 +106,7 @@ module LinearAddressGenerator #(
                     end
                     axvalid <= 1;
                 end
-
-                if (axready && (addr >= addrLast))
+                else if (axready)
                 begin
                     axvalid <= 0;
                     done <= 1;

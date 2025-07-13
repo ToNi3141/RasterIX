@@ -37,7 +37,7 @@ module InternalFramebufferCommandHandler
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
     // Size of the internal memory
-    localparam ADDR_WIDTH = FRAMEBUFFER_SIZE_IN_PIXEL_LG,
+    localparam INT_MEM_SIZE = FRAMEBUFFER_SIZE_IN_PIXEL_LG,
 
     // Width of the AXIS interface with the frame buffer content
     localparam STREAM_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * PIXEL_WIDTH,
@@ -48,7 +48,7 @@ module InternalFramebufferCommandHandler
     localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
     localparam MEM_MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS,
     localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH,
-    localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2
+    localparam MEM_ADDR_WIDTH = INT_MEM_SIZE - PIXEL_PER_BEAT_LOG2
 )
 (
     input   wire                            aclk,
@@ -95,8 +95,8 @@ module InternalFramebufferCommandHandler
     output reg                              m_axis_tvalid,
     input  wire                             m_axis_tready,
     output reg                              m_axis_tlast,
-    output reg  [STREAM_WIDTH - 1 : 0]      m_axis_tdata
-    
+    output reg  [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
+    output reg  [MEM_MASK_WIDTH - 1 : 0]    m_axis_tstrb 
 );
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
@@ -124,23 +124,26 @@ module InternalFramebufferCommandHandler
     reg  [STREAM_WIDTH - 1 : 0]     skidBufferData;
     reg                             skidBufferValid;
     reg                             skidBufferLast;
+    reg  [MEM_MASK_WIDTH - 1 : 0]   skidBufferStrb;
 
     assign writeDataPort = { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } };
     assign writeMaskPort = { NUMBER_OF_PIXELS_PER_BEAT { confMask } } & scissorPixelAndColorMask;
     assign writeAddrPort = cmdIndex;
 
     assign readAddrPort = cmdIndex;
-    wire readPortReady;
-    wire readPortLast;
+    wire                            readPortReady;
+    wire                            readPortLast;
+    wire [MEM_MASK_WIDTH - 1 : 0]   readPortStrb;
+    wire                            commitActive = cmdState == COMMAND_COMMIT;
 
     ValueDelay #(
-        .VALUE_SIZE(2),
+        .VALUE_SIZE(2 + MEM_MASK_WIDTH),
         .DELAY(1)
     ) readDataPortDelay (
         .clk(aclk),
         .ce(1),
-        .in({ cmdState == COMMAND_COMMIT, cmdIndexNext == cmdFbSizeInBeats }),
-        .out({ readPortReady, readPortLast })
+        .in({ commitActive, cmdIndexNext == cmdFbSizeInBeats, scissorPixelAndColorMask }),
+        .out({ readPortReady, readPortLast, readPortStrb })
     );
 
     InternalFramebufferScissor #(
@@ -149,11 +152,11 @@ module InternalFramebufferCommandHandler
         .X_BIT_WIDTH(X_BIT_WIDTH),
         .Y_BIT_WIDTH(Y_BIT_WIDTH)
     ) scissorInst (
-        .confEnableScissor(confEnableScissor),
-        .confScissorStartX(confScissorStartX),
-        .confScissorStartY(confScissorStartY),
-        .confScissorEndX(confScissorEndX),
-        .confScissorEndY(confScissorEndY),
+        .confEnableScissor(confEnableScissor || commitActive),
+        .confScissorStartX(scissorStartX),
+        .confScissorStartY(scissorStartY),
+        .confScissorEndX(scissorEndX),
+        .confScissorEndY(scissorEndY),
         .x(scissorX),
         .y(scissorY),
 
@@ -226,12 +229,14 @@ module InternalFramebufferCommandHandler
                         if (skidBufferValid)
                         begin
                             m_axis_tdata <= skidBufferData;
+                            m_axis_tstrb <= skidBufferStrb;
                             m_axis_tlast <= skidBufferLast;
                             skidBufferValid <= 0;
                         end
                         else
                         begin
                             m_axis_tdata <= readDataPort;
+                            m_axis_tstrb <= readPortStrb;
                             m_axis_tlast <= readPortLast;
                         end
 
@@ -261,6 +266,7 @@ module InternalFramebufferCommandHandler
                     if (readPortReady && !skidBufferValid)
                     begin
                         skidBufferData <= readDataPort;
+                        skidBufferStrb <= readPortStrb;
                         skidBufferLast <= readPortLast;
                         skidBufferValid <= 1;
                     end

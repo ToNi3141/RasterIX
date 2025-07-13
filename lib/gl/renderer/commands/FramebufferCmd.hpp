@@ -18,6 +18,7 @@
 #ifndef _FRAMEBUFFER_CMD_HPP_
 #define _FRAMEBUFFER_CMD_HPP_
 
+#include "RenderConfigs.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -96,7 +97,7 @@ public:
     void setFramebufferSizeInPixel(const std::size_t size)
     {
         m_op &= ~(OP_FRAMEBUFFER_SIZE_MASK << OP_FRAMEBUFFER_SIZE_POS);
-        m_op |= (static_cast<uint32_t>(size) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
+        m_op |= (RenderConfig::getAlignedSize(static_cast<uint32_t>(size)) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
     }
     void enableVSync()
     {
