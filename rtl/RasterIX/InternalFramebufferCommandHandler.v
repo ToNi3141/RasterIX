@@ -183,11 +183,6 @@ module InternalFramebufferCommandHandler
                 cmdIndex <= 0;
                 scissorX <= 0;
 
-                // Here is a mismatch between the RAM addresses and the OpenGL coordinate system.
-                // OpenGL starts at the lower left corner. But this is a fairly high address in the RAM.
-                // The cmdIndex starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
-                scissorY <= confYOffset + confYResolution - 1;
-
                 cmdFbSizeInBeats <= cmdSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
                 if (apply)
@@ -196,6 +191,12 @@ module InternalFramebufferCommandHandler
 
                     if (cmdMemset) 
                     begin
+
+                        // Here is a mismatch between the RAM addresses and the OpenGL coordinate system.
+                        // OpenGL starts at the lower left corner. But this is a fairly high address in the RAM.
+                        // The cmdIndex starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
+                        scissorY <= confYOffset + confYResolution - 1;
+
                         writeEnablePort <= 1;
                         scissorStartX <= confScissorStartX;
                         scissorStartY <= confScissorStartY;
@@ -206,6 +207,7 @@ module InternalFramebufferCommandHandler
 
                     if (cmdCommit)
                     begin
+                        scissorY <= confYResolution - 1;
                         writeEnablePort <= 0;
                         scissorStartX <= 0;
                         scissorStartY <= 0;

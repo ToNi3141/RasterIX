@@ -86,12 +86,14 @@ TEST_CASE("check mem write", "[VAxisFramebufferWriter]")
     for (std::size_t i = 0; i < t->fb_size; i += PIXEL_PER_BEAT)
     {
         t->s_disp_axis_tdata = i;
+        t->s_disp_axis_tstrb = i % 16;
         t->s_disp_axis_tvalid = true;
         rr::ut::clk(t);
         INFO(std::string("i ") + std::to_string(i));
         CHECK(t->m_mem_axi_wdata == i);
         CHECK(t->m_mem_axi_wvalid == true);
         CHECK(t->m_mem_axi_wlast == ((i % (16 * PIXEL_PER_BEAT)) == 30));
+        CHECK(t->m_mem_axi_wstrb == (i % 16));
         CHECK(t->fb_committed == false);
     }
 
@@ -126,20 +128,24 @@ TEST_CASE("interrupted mem write", "[VAxisFramebufferWriter]")
     t->commit_fb = false;
 
     t->s_disp_axis_tdata = 0;
+    t->s_disp_axis_tstrb = 0;
     t->s_disp_axis_tvalid = true;
     t->m_mem_axi_wready = false;
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_wdata == 0);
+    CHECK(t->m_mem_axi_wstrb == 0);
     CHECK(t->m_mem_axi_wvalid == true);
     CHECK(t->m_mem_axi_wlast == 0);
     CHECK(t->s_disp_axis_tready == true);
     CHECK(t->fb_committed == false);
 
     t->s_disp_axis_tdata = PIXEL_PER_BEAT;
+    t->s_disp_axis_tstrb = 2;
     t->s_disp_axis_tvalid = true;
     t->m_mem_axi_wready = false;
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_wdata == 0);
+    CHECK(t->m_mem_axi_wstrb == 0);
     CHECK(t->m_mem_axi_wvalid == true);
     CHECK(t->m_mem_axi_wlast == 0);
     CHECK(t->s_disp_axis_tready == false);
@@ -150,10 +156,12 @@ TEST_CASE("interrupted mem write", "[VAxisFramebufferWriter]")
         const std::size_t index = i + PIXEL_PER_BEAT;
 
         t->s_disp_axis_tdata = index;
+        t->s_disp_axis_tstrb = index % 16;
         t->s_disp_axis_tvalid = true;
         t->m_mem_axi_wready = false;
         rr::ut::clk(t);
         CHECK(t->m_mem_axi_wdata == i);
+        CHECK(t->m_mem_axi_wstrb == (i % 16));
         CHECK(t->m_mem_axi_wvalid == true);
         CHECK(t->m_mem_axi_wlast == ((i % (16 * PIXEL_PER_BEAT)) == 30));
         CHECK(t->s_disp_axis_tready == false);
@@ -163,6 +171,7 @@ TEST_CASE("interrupted mem write", "[VAxisFramebufferWriter]")
         rr::ut::clk(t);
         INFO(std::string("i ") + std::to_string(i));
         CHECK(t->m_mem_axi_wdata == index);
+        CHECK(t->m_mem_axi_wstrb == (index % 16));
         CHECK(t->m_mem_axi_wvalid == true);
         CHECK(t->m_mem_axi_wlast == ((index % (16 * PIXEL_PER_BEAT)) == 30));
         CHECK(t->s_disp_axis_tready == (index < (t->fb_size - PIXEL_PER_BEAT))); // It's one pixel behind here because one is in the skid buffer

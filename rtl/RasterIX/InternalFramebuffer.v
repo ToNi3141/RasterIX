@@ -58,6 +58,7 @@ module InternalFramebuffer
 
     // Width of the AXIS interface with the frame buffer content
     localparam STREAM_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * PIXEL_WIDTH,
+    localparam STREAM_STRB_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS,
 
     // Number of pixels a AXIS beat or a memory line can contain
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(NUMBER_OF_PIXELS_PER_BEAT),
@@ -127,7 +128,8 @@ module InternalFramebuffer
     output wire                             m_axis_tvalid,
     input  wire                             m_axis_tready,
     output wire                             m_axis_tlast,
-    output wire [STREAM_WIDTH - 1 : 0]      m_axis_tdata
+    output wire [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
+    output wire [STREAM_STRB_WIDTH - 1 : 0] m_axis_tstrb
     
 );
     wire [MEM_MASK_WIDTH - 1 : 0]   writeMaskPort1; 
@@ -274,6 +276,7 @@ module InternalFramebuffer
         .m_axis_tvalid(m_axis_tvalid),
         .m_axis_tready(m_axis_tready),
         .m_axis_tlast(m_axis_tlast),
-        .m_axis_tdata(m_axis_tdata)
+        .m_axis_tdata(m_axis_tdata),
+        .m_axis_tstrb(m_axis_tstrb)
     );
 endmodule

@@ -42,6 +42,7 @@ module AxisFramebufferWriter #(
     output reg                                  s_disp_axis_tready,
     input  wire                                 s_disp_axis_tlast,
     input  wire [DATA_WIDTH - 1 : 0]            s_disp_axis_tdata,
+    input  wire [STRB_WIDTH - 1 : 0]            s_disp_axis_tstrb,
 
     // Memory port
     output wire [ID_WIDTH - 1 : 0]              m_mem_axi_awid,
@@ -56,7 +57,7 @@ module AxisFramebufferWriter #(
     input  wire                                 m_mem_axi_awready,
 
     output reg  [DATA_WIDTH - 1 : 0]            m_mem_axi_wdata,
-    output reg  [(STRB_WIDTH - 1) : 0]          m_mem_axi_wstrb,
+    output reg  [STRB_WIDTH - 1 : 0]            m_mem_axi_wstrb,
     output reg                                  m_mem_axi_wlast,
     output reg                                  m_mem_axi_wvalid,
     input  wire                                 m_mem_axi_wready,
@@ -81,7 +82,7 @@ module AxisFramebufferWriter #(
     wire addressGenerationDone;
 
     reg  [DATA_WIDTH - 1 : 0]   wdataSkid;
-    reg  [(STRB_WIDTH - 1) : 0] wstrbSkid;
+    reg  [STRB_WIDTH - 1 : 0]   wstrbSkid;
     reg                         wlastSkid;
     reg                         wvalidSkid;
     reg                         skidValid;
@@ -145,11 +146,11 @@ module AxisFramebufferWriter #(
                     skidValid <= 0;
                     s_disp_axis_tready <= !transferEnd; 
                 end
-                else if ((!m_mem_axi_wvalid || m_mem_axi_wready) && s_disp_axis_tvalid)
+                else if (!m_mem_axi_wvalid || m_mem_axi_wready)
                 begin
                     m_mem_axi_wdata <= s_disp_axis_tdata;
                     m_mem_axi_wvalid <= s_disp_axis_tvalid;
-                    m_mem_axi_wstrb <= ~0;
+                    m_mem_axi_wstrb <= s_disp_axis_tstrb;
                     m_mem_axi_wlast <= lastSignal;
                     s_disp_axis_tready <= !transferEnd;
                     if (s_disp_axis_tvalid)
@@ -159,7 +160,7 @@ module AxisFramebufferWriter #(
                 begin
                     wdataSkid <= s_disp_axis_tdata;
                     wvalidSkid <= s_disp_axis_tvalid;
-                    wstrbSkid <= ~0;
+                    wstrbSkid <= s_disp_axis_tstrb;
                     wlastSkid <= lastSignal;
                     s_disp_axis_tready <= 0;
                     skidValid <= 1;

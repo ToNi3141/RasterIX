@@ -520,6 +520,7 @@ module RasterIX_IF #(
     wire                        framebuffer_axis_tready;
     wire                        framebuffer_axis_tlast;
     wire [DATA_WIDTH - 1 : 0]   framebuffer_axis_tdata;
+    wire [STRB_WIDTH - 1 : 0]   framebuffer_axis_tstrb;
     
     generate
         if (ENABLE_FRAMEBUFFER_STREAM)
@@ -577,6 +578,7 @@ module RasterIX_IF #(
                 .s_disp_axis_tready(framebuffer_axis_tready),
                 .s_disp_axis_tlast(framebuffer_axis_tlast),
                 .s_disp_axis_tdata(framebuffer_axis_tdata),
+                .s_disp_axis_tstrb(framebuffer_axis_tstrb),
 
                 .m_mem_axi_awid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
                 .m_mem_axi_awaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
@@ -635,6 +637,7 @@ module RasterIX_IF #(
         .m_framebuffer_axis_tready(framebuffer_axis_tready),
         .m_framebuffer_axis_tlast(framebuffer_axis_tlast),
         .m_framebuffer_axis_tdata(framebuffer_axis_tdata),
+        .m_framebuffer_axis_tstrb(framebuffer_axis_tstrb),
 
         .swap_fb(swap_fb),
         .swap_fb_enable_vsync(swap_fb_enable_vsync),

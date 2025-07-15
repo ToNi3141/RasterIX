@@ -119,7 +119,7 @@
 // ElementWidth: The width of a vector element.
 // NumberOfElements: The number of elements the vector contains.
 // Offset: Index of the first element which will be removed. If this is 0, the first element is removed. If it is 1, the second element will be removed.
-// N: Every very n't element will be removed.
+// N: Every very n't element will be removed beginning at the offset. If N is 2, every other element will be removed. If N is 4, one component from an RGBA color can be removed.
 // NewNumberOfElements: The size of the vector after the conversion.
 `define ReduceVec(FuncName, ElementWidth, NumberOfElements, Offset, N, NewNumberOfElements) \
     function [(ElementWidth * NewNumberOfElements) - 1 : 0] FuncName; \

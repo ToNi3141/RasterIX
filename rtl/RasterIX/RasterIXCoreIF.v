@@ -106,6 +106,7 @@ module RasterIXCoreIF #(
     input  wire                                 m_framebuffer_axis_tready,
     output wire                                 m_framebuffer_axis_tlast,
     output wire [DATA_WIDTH - 1 : 0]            m_framebuffer_axis_tdata,
+    output wire [STRB_WIDTH - 1 : 0]            m_framebuffer_axis_tstrb,
 
     // Color
     output wire                                 swap_fb,
@@ -159,6 +160,7 @@ module RasterIXCoreIF #(
     localparam SCREEN_POS_WIDTH = 11;
     localparam PIXEL_WIDTH_STREAM = 16;
     localparam PIXEL_PER_BEAT = DATA_WIDTH / PIXEL_WIDTH_STREAM;
+    localparam FRAMEBUFFER_SUBPIXEL_PER_BEAT = PIXEL_PER_BEAT * FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
     localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
     // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
     // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
@@ -310,7 +312,8 @@ module RasterIXCoreIF #(
         end
     endgenerate
 
-    wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0] framebuffer_unconverted_axis_tdata;
+    wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0]   framebuffer_unconverted_axis_tdata;
+    wire [FRAMEBUFFER_SUBPIXEL_PER_BEAT - 1 : 0]                framebuffer_unconverted_axis_tstrb;
     InternalFramebuffer colorBuffer (  
         .clk(aclk),
         .reset(!resetn),
@@ -349,7 +352,8 @@ module RasterIXCoreIF #(
         .m_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_axis_tready(m_framebuffer_axis_tready),
         .m_axis_tlast(m_framebuffer_axis_tlast),
-        .m_axis_tdata(framebuffer_unconverted_axis_tdata)
+        .m_axis_tdata(framebuffer_unconverted_axis_tdata),
+        .m_axis_tstrb(framebuffer_unconverted_axis_tstrb)
     );
     defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
@@ -363,6 +367,11 @@ module RasterIXCoreIF #(
     generate
         `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
         `Expand(ExpandFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
+
+        // Remove every other bit from the mask when RGBA is used. If only RGB is used, every third element can be removed to get two strobe bits per pixel.
+        localparam MASK_BIT_TO_REMOVE = (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4) ? 2 : 3; 
+        `ReduceVec(FramebufferMaskToByteMask, 1, FRAMEBUFFER_SUBPIXEL_PER_BEAT, 0, MASK_BIT_TO_REMOVE, STRB_WIDTH);
+
         if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
         begin
             `ReduceVec(ReduceVecFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
@@ -372,6 +381,7 @@ module RasterIXCoreIF #(
         begin
             assign m_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(framebuffer_unconverted_axis_tdata));
         end
+        assign m_framebuffer_axis_tstrb = FramebufferMaskToByteMask(framebuffer_unconverted_axis_tstrb);
     endgenerate
 
     generate 
