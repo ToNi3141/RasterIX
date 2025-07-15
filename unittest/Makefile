@@ -137,5 +137,10 @@ internalFramebufferCommandHandler:
 	-make -C obj_dir -f VInternalFramebufferCommandHandler.mk
 	./obj_dir/VInternalFramebufferCommandHandler
 
+axisFramebufferWriter:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/AxisFramebufferWriter.v --top-module AxisFramebufferWriter cpp/sim_AxisFramebufferWriter.cpp -I../rtl/RasterIX/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VAxisFramebufferWriter.mk
+	./obj_dir/VAxisFramebufferWriter
+
 .SECONDARY:
 .PHONY: all clean
