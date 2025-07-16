@@ -217,10 +217,10 @@ module DmaStreamEngine #(
     reg                         enableWriteChannel;
     reg  [ADDR_WIDTH - 1 : 0]   addrEnd;
     reg                         enableAddressChannel;
-    reg                         startWriteAddressGeneration;
-    wire                        writeAddressGenerationDone;
-    reg                         startReadAddressGeneration;
-    wire                        readAddressGenerationDone;
+    reg                         startAddressGeneration;
+    wire                        addressGenerationDone;
+    reg                         readAddressGeneration;
+    reg                         writeAddressGeneration;
 
     reg                         axisDestValid;
     reg                         axisDestReady;
@@ -237,33 +237,16 @@ module DmaStreamEngine #(
     reg                         axiSourceLastNext;
     reg  [STREAM_WIDTH - 1 : 0] axisSourceDataNext;
 
-    LinearAddressGenerator #(
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .ID_WIDTH(ID_WIDTH),
-        .AxLEN_BEATS_PER_TRANSFER(BEATS_PER_TRANSFER - 1),
-        .AxSIZE_BYTES_PER_BEAT(BYTES_PER_BEAT_LG2),
-        .AxBURST(1) // Incremental
-    ) writeAddressGenerator (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .start(startWriteAddressGeneration),
-        .done(writeAddressGenerationDone),
-
-        .startAddr(addrStart),
-        .dataSizeInBytes(dataSizeInBytes),
-
-        .axid(m_mem_axi_awid),
-        .axaddr(m_mem_axi_awaddr),
-        .axlen(m_mem_axi_awlen),
-        .axsize(m_mem_axi_awsize),
-        .axburst(m_mem_axi_awburst),
-        .axlock(m_mem_axi_awlock),
-        .axcache(m_mem_axi_awcache),
-        .axprot(m_mem_axi_awprot), 
-        .axvalid(m_mem_axi_awvalid),
-        .axready(m_mem_axi_awready)
-    );
+    wire [ID_WIDTH - 1 : 0]     mem_axi_axid;
+    wire [ADDR_WIDTH - 1 : 0]   mem_axi_axaddr;
+    wire [ 7 : 0]               mem_axi_axlen;
+    wire [ 2 : 0]               mem_axi_axsize;
+    wire [ 1 : 0]               mem_axi_axburst;
+    wire                        mem_axi_axlock;
+    wire [ 3 : 0]               mem_axi_axcache;
+    wire [ 2 : 0]               mem_axi_axprot;
+    wire                        mem_axi_axvalid;
+    wire                        mem_axi_axready;
 
     LinearAddressGenerator #(
         .ADDR_WIDTH(ADDR_WIDTH),
@@ -275,23 +258,46 @@ module DmaStreamEngine #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .start(startReadAddressGeneration),
-        .done(readAddressGenerationDone),
+        .start(startAddressGeneration),
+        .done(addressGenerationDone),
 
         .startAddr(addrStart),
         .dataSizeInBytes(dataSizeInBytes),
 
-        .axid(m_mem_axi_arid),
-        .axaddr(m_mem_axi_araddr),
-        .axlen(m_mem_axi_arlen),
-        .axsize(m_mem_axi_arsize),
-        .axburst(m_mem_axi_arburst),
-        .axlock(m_mem_axi_arlock),
-        .axcache(m_mem_axi_arcache),
-        .axprot(m_mem_axi_arprot), 
-        .axvalid(m_mem_axi_arvalid),
-        .axready(m_mem_axi_arready)
+        .axid(mem_axi_axid),
+        .axaddr(mem_axi_axaddr),
+        .axlen(mem_axi_axlen),
+        .axsize(mem_axi_axsize),
+        .axburst(mem_axi_axburst),
+        .axlock(mem_axi_axlock),
+        .axcache(mem_axi_axcache),
+        .axprot(mem_axi_axprot), 
+        .axvalid(mem_axi_axvalid),
+        .axready(mem_axi_axready)
     );
+
+    assign m_mem_axi_arid = mem_axi_axid;
+    assign m_mem_axi_araddr = mem_axi_axaddr;
+    assign m_mem_axi_arlen = mem_axi_axlen;
+    assign m_mem_axi_arsize = mem_axi_axsize;
+    assign m_mem_axi_arburst = mem_axi_axburst;
+    assign m_mem_axi_arlock = mem_axi_axlock;
+    assign m_mem_axi_arcache = mem_axi_axcache;
+    assign m_mem_axi_arprot = mem_axi_axprot;
+    assign m_mem_axi_arvalid = mem_axi_axvalid && readAddressGeneration;
+
+    assign m_mem_axi_awid = mem_axi_axid;
+    assign m_mem_axi_awaddr = mem_axi_axaddr;
+    assign m_mem_axi_awlen = mem_axi_axlen;
+    assign m_mem_axi_awsize = mem_axi_axsize;
+    assign m_mem_axi_awburst = mem_axi_axburst;
+    assign m_mem_axi_awlock = mem_axi_axlock;
+    assign m_mem_axi_awcache = mem_axi_axcache;
+    assign m_mem_axi_awprot = mem_axi_axprot;
+    assign m_mem_axi_awvalid = mem_axi_axvalid && writeAddressGeneration;
+
+    assign mem_axi_axready = (m_mem_axi_awready && writeAddressGeneration) 
+                                || (m_mem_axi_arready && readAddressGeneration);
 
     initial 
     begin
@@ -356,6 +362,9 @@ module DmaStreamEngine #(
             addrStart <= 0;
 
             enableAddressChannel <= 0;
+            startAddressGeneration <= 0;
+            readAddressGeneration <= 0;
+            writeAddressGeneration <= 0;
 
             state <= IDLE;
             muxIn <= MUX_CHANNEL_ST0;
@@ -440,9 +449,10 @@ module DmaStreamEngine #(
                         begin
                             addrTmp = axisSourceData[0 +: ADDR_WIDTH];
                         end
-                        startWriteAddressGeneration <= (tmpMuxOut == MUX_CHANNEL_MEM);
-                        startReadAddressGeneration <= (tmpMuxIn == MUX_CHANNEL_MEM);
+                        writeAddressGeneration <= (tmpMuxOut == MUX_CHANNEL_MEM);
+                        readAddressGeneration <= (tmpMuxIn == MUX_CHANNEL_MEM);
                         enableAddressChannel <= (tmpMuxIn == MUX_CHANNEL_MEM) || (tmpMuxOut == MUX_CHANNEL_MEM);
+                        startAddressGeneration <= (tmpMuxIn == MUX_CHANNEL_MEM) || (tmpMuxOut == MUX_CHANNEL_MEM);
 
                         addrStart <= addrTmp;
                         dataSizeInBytes <= counter << BYTES_PER_BEAT_LG2;
@@ -543,20 +553,14 @@ module DmaStreamEngine #(
             endcase 
         end
 
-        if (startWriteAddressGeneration && !writeAddressGenerationDone)
+        if (startAddressGeneration && !addressGenerationDone)
         begin
-            startWriteAddressGeneration <= 0;
+            startAddressGeneration <= 0;
         end
-        if (enableAddressChannel && writeAddressGenerationDone)
+        if (!startAddressGeneration && enableAddressChannel && addressGenerationDone)
         begin
-            enableAddressChannel <= 0;
-        end
-        if (startReadAddressGeneration && !readAddressGenerationDone)
-        begin
-            startReadAddressGeneration <= 0;
-        end
-        if (enableAddressChannel && readAddressGenerationDone)
-        begin
+            readAddressGeneration <= 0;
+            writeAddressGeneration <= 0;
             enableAddressChannel <= 0;
         end
     end
