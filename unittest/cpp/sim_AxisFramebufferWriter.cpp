@@ -23,9 +23,11 @@
 // Include model header, generated from Verilating "top.v"
 #include "VAxisFramebufferWriter.h"
 
+static constexpr std::size_t PIXEL_PER_BEAT = 2;
+static constexpr std::size_t NUMBER_OF_BEATS = 16;
+
 TEST_CASE("check address channel", "[VAxisFramebufferWriter]")
 {
-    constexpr std::size_t PIXEL_PER_BEAT = 2;
 
     VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
 
@@ -44,12 +46,12 @@ TEST_CASE("check address channel", "[VAxisFramebufferWriter]")
 
     t->commit_fb = false;
     rr::ut::clk(t);
-    for (std::size_t i = 0; i < t->fb_size; i += 16 * PIXEL_PER_BEAT)
+    for (std::size_t i = 0; i < t->fb_size; i += NUMBER_OF_BEATS * PIXEL_PER_BEAT)
     {
         rr::ut::clk(t);
         CHECK(t->m_mem_axi_awvalid == true);
         CHECK(t->m_mem_axi_awaddr == (t->fb_addr + (i * PIXEL_PER_BEAT)));
-        CHECK(t->m_mem_axi_awlen == 15);
+        CHECK(t->m_mem_axi_awlen == (NUMBER_OF_BEATS - 1));
         CHECK(t->m_mem_axi_awsize == 2);
         CHECK(t->m_mem_axi_awburst == 1);
         CHECK(t->fb_committed == false);
@@ -65,8 +67,6 @@ TEST_CASE("check address channel", "[VAxisFramebufferWriter]")
 
 TEST_CASE("check mem write", "[VAxisFramebufferWriter]")
 {
-    constexpr std::size_t PIXEL_PER_BEAT = 2;
-
     VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
 
     t->s_disp_axis_tvalid = 1;
@@ -86,14 +86,14 @@ TEST_CASE("check mem write", "[VAxisFramebufferWriter]")
     for (std::size_t i = 0; i < t->fb_size; i += PIXEL_PER_BEAT)
     {
         t->s_disp_axis_tdata = i;
-        t->s_disp_axis_tstrb = i % 16;
+        t->s_disp_axis_tstrb = i % NUMBER_OF_BEATS;
         t->s_disp_axis_tvalid = true;
         rr::ut::clk(t);
         INFO(std::string("i ") + std::to_string(i));
         CHECK(t->m_mem_axi_wdata == i);
         CHECK(t->m_mem_axi_wvalid == true);
-        CHECK(t->m_mem_axi_wlast == ((i % (16 * PIXEL_PER_BEAT)) == 30));
-        CHECK(t->m_mem_axi_wstrb == (i % 16));
+        CHECK(t->m_mem_axi_wlast == ((i % (NUMBER_OF_BEATS * PIXEL_PER_BEAT)) == ((NUMBER_OF_BEATS - 1) * PIXEL_PER_BEAT)));
+        CHECK(t->m_mem_axi_wstrb == (i % NUMBER_OF_BEATS));
         CHECK(t->fb_committed == false);
     }
 
@@ -107,8 +107,6 @@ TEST_CASE("check mem write", "[VAxisFramebufferWriter]")
 
 TEST_CASE("interrupted mem write", "[VAxisFramebufferWriter]")
 {
-    constexpr std::size_t PIXEL_PER_BEAT = 2;
-
     VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
 
     t->s_disp_axis_tvalid = true;
@@ -156,14 +154,14 @@ TEST_CASE("interrupted mem write", "[VAxisFramebufferWriter]")
         const std::size_t index = i + PIXEL_PER_BEAT;
 
         t->s_disp_axis_tdata = index;
-        t->s_disp_axis_tstrb = index % 16;
+        t->s_disp_axis_tstrb = index % NUMBER_OF_BEATS;
         t->s_disp_axis_tvalid = true;
         t->m_mem_axi_wready = false;
         rr::ut::clk(t);
         CHECK(t->m_mem_axi_wdata == i);
-        CHECK(t->m_mem_axi_wstrb == (i % 16));
+        CHECK(t->m_mem_axi_wstrb == (i % NUMBER_OF_BEATS));
         CHECK(t->m_mem_axi_wvalid == true);
-        CHECK(t->m_mem_axi_wlast == ((i % (16 * PIXEL_PER_BEAT)) == 30));
+        CHECK(t->m_mem_axi_wlast == ((i % (NUMBER_OF_BEATS * PIXEL_PER_BEAT)) == ((NUMBER_OF_BEATS - 1) * PIXEL_PER_BEAT)));
         CHECK(t->s_disp_axis_tready == false);
         CHECK(t->fb_committed == false);
 
@@ -171,9 +169,9 @@ TEST_CASE("interrupted mem write", "[VAxisFramebufferWriter]")
         rr::ut::clk(t);
         INFO(std::string("i ") + std::to_string(i));
         CHECK(t->m_mem_axi_wdata == index);
-        CHECK(t->m_mem_axi_wstrb == (index % 16));
+        CHECK(t->m_mem_axi_wstrb == (index % NUMBER_OF_BEATS));
         CHECK(t->m_mem_axi_wvalid == true);
-        CHECK(t->m_mem_axi_wlast == ((index % (16 * PIXEL_PER_BEAT)) == 30));
+        CHECK(t->m_mem_axi_wlast == ((index % (NUMBER_OF_BEATS * PIXEL_PER_BEAT)) == ((NUMBER_OF_BEATS - 1) * PIXEL_PER_BEAT)));
         CHECK(t->s_disp_axis_tready == (index < (t->fb_size - PIXEL_PER_BEAT))); // It's one pixel behind here because one is in the skid buffer
         CHECK(t->fb_committed == false);
     }
