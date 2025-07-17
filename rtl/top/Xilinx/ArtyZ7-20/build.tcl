@@ -28,7 +28,7 @@ read_verilog ./../../../../RasterIX/ColorMixerSigned.v
 read_verilog ./../../../../RasterIX/ColorMixer.v
 read_verilog ./../../../../RasterIX/CommandParser.v
 read_verilog ./../../../../RasterIX/AxisFramebufferReader.v
-read_verilog ./../../../../RasterIX/AxisFramebufferWriter.v
+read_verilog ./../../../../RasterIX/AxisToAxiAdapter.v
 read_verilog ./../../../../RasterIX/DmaStreamEngine.v
 read_verilog ./../../../../RasterIX/DualPortRam.v
 read_verilog ./../../../../RasterIX/Fog.v

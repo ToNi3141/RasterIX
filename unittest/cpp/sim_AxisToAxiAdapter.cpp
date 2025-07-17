@@ -21,15 +21,15 @@
 #include <math.h>
 
 // Include model header, generated from Verilating "top.v"
-#include "VAxisFramebufferWriter.h"
+#include "VAxisToAxiAdapter.h"
 
 static constexpr std::size_t BEAT_SIZE = 4;
 static constexpr std::size_t NUMBER_OF_BEATS = 16;
 
-TEST_CASE("check address channel", "[VAxisFramebufferWriter]")
+TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
 {
 
-    VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
+    VAxisToAxiAdapter* t = new VAxisToAxiAdapter();
 
     t->s_xvalid = true;
     rr::ut::reset(t);
@@ -65,9 +65,9 @@ TEST_CASE("check address channel", "[VAxisFramebufferWriter]")
     delete t;
 }
 
-TEST_CASE("check mem write", "[VAxisFramebufferWriter]")
+TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
 {
-    VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
+    VAxisToAxiAdapter* t = new VAxisToAxiAdapter();
 
     t->s_xvalid = 1;
     rr::ut::reset(t);
@@ -105,9 +105,9 @@ TEST_CASE("check mem write", "[VAxisFramebufferWriter]")
     delete t;
 }
 
-TEST_CASE("check mem read", "[VAxisFramebufferWriter]")
+TEST_CASE("check mem read", "[VAxisToAxiAdapter]")
 {
-    VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
+    VAxisToAxiAdapter* t = new VAxisToAxiAdapter();
 
     t->s_xvalid = 1;
     rr::ut::reset(t);
@@ -145,9 +145,9 @@ TEST_CASE("check mem read", "[VAxisFramebufferWriter]")
     delete t;
 }
 
-TEST_CASE("interrupted mem write", "[VAxisFramebufferWriter]")
+TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
 {
-    VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
+    VAxisToAxiAdapter* t = new VAxisToAxiAdapter();
 
     t->s_xvalid = true;
     rr::ut::reset(t);

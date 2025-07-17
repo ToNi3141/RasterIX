@@ -15,8 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Receives a stream from a framebuffer and writes it into the memory
-module AxisFramebufferWriter #(
+// Can transfer a AXI Stream to an AXI device/memory. It will split the
+// transfer in smaller AXI transfers and will generate requests on the address
+// channel.
+// It works also the other way around. It can read from an AXI memory.
+// It will generate the AXI address requests and will combine the smaller
+// AXI transfers into one big AXI Stream transfer.
+module AxisToAxiAdapter #(
     // Width of the axi interfaces
     parameter DATA_WIDTH = 32,
     // Width of address bus in bits

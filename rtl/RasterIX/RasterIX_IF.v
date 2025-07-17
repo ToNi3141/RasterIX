@@ -560,12 +560,12 @@ module RasterIX_IF #(
         end
         else
         begin
-            AxisFramebufferWriter #(
+            AxisToAxiAdapter #(
                 .DATA_WIDTH(DATA_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .STRB_WIDTH(STRB_WIDTH),
                 .ID_WIDTH(ID_WIDTH_LOC)
-            ) axisFramebufferWriter (
+            ) axisToAxiAdapter (
                 .aclk(aclk),
                 .resetn(resetn),
 
