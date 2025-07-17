@@ -24,62 +24,61 @@ module AxisFramebufferWriter #(
     // Width of wstrb (width of data bus in words)
     parameter STRB_WIDTH = 4,
     // Width of ID signal
-    parameter ID_WIDTH = 8,
-
-    localparam FB_SIZE_IN_PIXEL_LG = 20,
-    localparam PIXEL_SIZE = 16
+    parameter ID_WIDTH = 8
 ) (
-    input  wire                                 aclk,
-    input  wire                                 resetn,
+    input  wire                         aclk,
+    input  wire                         resetn,
 
-    input  wire                                 commit_fb,
-    input  wire [ADDR_WIDTH - 1 : 0]            fb_addr,
-    input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   fb_size,
-    output reg                                  fb_committed,
+    input  wire                         tstart,
+    input  wire [ADDR_WIDTH - 1 : 0]    taddr,
+    input  wire [ADDR_WIDTH - 1 : 0]    tbytes,
+    output reg                          tdone,
 
-    // Display port
-    input  wire                                 s_disp_axis_tvalid,
-    output reg                                  s_disp_axis_tready,
-    input  wire                                 s_disp_axis_tlast,
-    input  wire [DATA_WIDTH - 1 : 0]            s_disp_axis_tdata,
-    input  wire [STRB_WIDTH - 1 : 0]            s_disp_axis_tstrb,
+    // When this is true, the m_xlast signal matches the address channel transfers (axi behavior).
+    // If this is false, m_xlast is only asserted at the end of the stream (axis behavior).
+    input  wire                         enableAxiLastSignal,
 
-    // Memory port
-    output wire [ID_WIDTH - 1 : 0]              m_mem_axi_awid,
-    output wire [ADDR_WIDTH - 1 : 0]            m_mem_axi_awaddr,
-    output wire [ 7 : 0]                        m_mem_axi_awlen,
-    output wire [ 2 : 0]                        m_mem_axi_awsize,
-    output wire [ 1 : 0]                        m_mem_axi_awburst,
-    output wire                                 m_mem_axi_awlock,
-    output wire [ 3 : 0]                        m_mem_axi_awcache,
-    output wire [ 2 : 0]                        m_mem_axi_awprot, 
-    output wire                                 m_mem_axi_awvalid,
-    input  wire                                 m_mem_axi_awready,
+    // Read port
+    input  wire                         s_xvalid,
+    output reg                          s_xready,
+    input  wire                         s_xlast,
+    input  wire [DATA_WIDTH - 1 : 0]    s_xdata,
+    input  wire [STRB_WIDTH - 1 : 0]    s_xstrb,
 
-    output reg  [DATA_WIDTH - 1 : 0]            m_mem_axi_wdata,
-    output reg  [STRB_WIDTH - 1 : 0]            m_mem_axi_wstrb,
-    output reg                                  m_mem_axi_wlast,
-    output reg                                  m_mem_axi_wvalid,
-    input  wire                                 m_mem_axi_wready,
+    // Write port
+    output reg  [DATA_WIDTH - 1 : 0]    m_xdata,
+    output reg  [STRB_WIDTH - 1 : 0]    m_xstrb,
+    output reg                          m_xlast,
+    output reg                          m_xvalid,
+    input  wire                         m_xready,
 
-    input  wire [ID_WIDTH - 1 : 0]              m_mem_axi_bid,
-    input  wire [ 1 : 0]                        m_mem_axi_bresp,
-    input  wire                                 m_mem_axi_bvalid,
-    output wire                                 m_mem_axi_bready
+    // Address port
+    output wire [ID_WIDTH - 1 : 0]      m_axid,
+    output wire [ADDR_WIDTH - 1 : 0]    m_axaddr,
+    output wire [ 7 : 0]                m_axlen,
+    output wire [ 2 : 0]                m_axsize,
+    output wire [ 1 : 0]                m_axburst,
+    output wire                         m_axlock,
+    output wire [ 3 : 0]                m_axcache,
+    output wire [ 2 : 0]                m_axprot, 
+    output wire                         m_axvalid,
+    input  wire                         m_axready
+
 );
     localparam AWLEN = 15;
     localparam AWSIZE = $clog2(DATA_WIDTH / 8);
 
-    reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]  dataSizeInBytes;
-    reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]  counter;
-    wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]  counterNext = counter + (DATA_WIDTH / PIXEL_SIZE);
-    wire                                lastSignal = ((counterNext >> (AWSIZE - $clog2(PIXEL_SIZE / 8))) & AWLEN) == 0;
-    wire                                transferEnd = counterNext > dataSizeInBytes;
+    wire axiLastSignal = ((counterNext >> AWSIZE) & AWLEN) == 0;
+    wire axisLastSignal = (counterNext == dataSizeInBytes);
 
-    assign m_mem_axi_bready = 1;
+    reg  [ADDR_WIDTH - 1 : 0]   dataSizeInBytes;
+    reg  [ADDR_WIDTH - 1 : 0]   counter;
+    wire [ADDR_WIDTH - 1 : 0]   counterNext = counter + (DATA_WIDTH / 8);
+    wire                        lastSignal = (axiLastSignal && enableAxiLastSignal) || (axisLastSignal && !enableAxiLastSignal);
+    wire                        transferEnd = counterNext > dataSizeInBytes;
 
-    reg  startAddressGeneration;
-    wire addressGenerationDone;
+    reg                         startAddressGeneration;
+    wire                        addressGenerationDone;
 
     reg  [DATA_WIDTH - 1 : 0]   wdataSkid;
     reg  [STRB_WIDTH - 1 : 0]   wstrbSkid;
@@ -99,79 +98,79 @@ module AxisFramebufferWriter #(
         .start(startAddressGeneration),
         .done(addressGenerationDone),
 
-        .startAddr(fb_addr),
-        .dataSizeInBytes({ 11'h0, fb_size, 1'b0 }),
+        .startAddr(taddr),
+        .dataSizeInBytes(tbytes),
 
-        .axid(m_mem_axi_awid),
-        .axaddr(m_mem_axi_awaddr),
-        .axlen(m_mem_axi_awlen),
-        .axsize(m_mem_axi_awsize),
-        .axburst(m_mem_axi_awburst),
-        .axlock(m_mem_axi_awlock),
-        .axcache(m_mem_axi_awcache),
-        .axprot(m_mem_axi_awprot),
-        .axvalid(m_mem_axi_awvalid),
-        .axready(m_mem_axi_awready)
+        .axid(m_axid),
+        .axaddr(m_axaddr),
+        .axlen(m_axlen),
+        .axsize(m_axsize),
+        .axburst(m_axburst),
+        .axlock(m_axlock),
+        .axcache(m_axcache),
+        .axprot(m_axprot),
+        .axvalid(m_axvalid),
+        .axready(m_axready)
     );
 
     always @(posedge aclk)
     begin
         if (!resetn)
         begin
-            fb_committed <= 1;
+            tdone <= 1;
             startAddressGeneration <= 0;
-            s_disp_axis_tready <= 0;
-            m_mem_axi_wvalid <= 0;
+            s_xready <= 0;
+            m_xvalid <= 0;
             skidValid <= 0;
         end
         else
         begin
-            if (commit_fb && addressGenerationDone)
+            if (tstart && addressGenerationDone)
             begin
-                fb_committed <= 0;
+                tdone <= 0;
                 counter <= 0;
-                s_disp_axis_tready <= 1;
-                dataSizeInBytes <= fb_size;
+                s_xready <= 1;
+                dataSizeInBytes <= tbytes;
                 startAddressGeneration <= 1;
             end
 
-            if (!fb_committed)
+            if (!tdone)
             begin
-                if (skidValid && m_mem_axi_wready)
+                if (skidValid && m_xready)
                 begin
-                    m_mem_axi_wdata <= wdataSkid; 
-                    m_mem_axi_wvalid <= wvalidSkid; 
-                    m_mem_axi_wstrb <= wstrbSkid; 
-                    m_mem_axi_wlast <= wlastSkid;
+                    m_xdata <= wdataSkid; 
+                    m_xvalid <= wvalidSkid; 
+                    m_xstrb <= wstrbSkid; 
+                    m_xlast <= wlastSkid;
                     skidValid <= 0;
-                    s_disp_axis_tready <= !transferEnd; 
+                    s_xready <= !transferEnd; 
                 end
-                else if (!m_mem_axi_wvalid || m_mem_axi_wready)
+                else if (!m_xvalid || m_xready)
                 begin
-                    m_mem_axi_wdata <= s_disp_axis_tdata;
-                    m_mem_axi_wvalid <= s_disp_axis_tvalid;
-                    m_mem_axi_wstrb <= s_disp_axis_tstrb;
-                    m_mem_axi_wlast <= lastSignal;
-                    s_disp_axis_tready <= !transferEnd;
-                    if (s_disp_axis_tvalid)
+                    m_xdata <= s_xdata;
+                    m_xvalid <= s_xvalid;
+                    m_xstrb <= s_xstrb;
+                    m_xlast <= lastSignal;
+                    s_xready <= !transferEnd;
+                    if (s_xvalid)
                         counter <= counterNext;
                 end
-                else if (!skidValid && !m_mem_axi_wready && m_mem_axi_wvalid && s_disp_axis_tvalid)
+                else if (!skidValid && !m_xready && m_xvalid && s_xvalid)
                 begin
-                    wdataSkid <= s_disp_axis_tdata;
-                    wvalidSkid <= s_disp_axis_tvalid;
-                    wstrbSkid <= s_disp_axis_tstrb;
+                    wdataSkid <= s_xdata;
+                    wvalidSkid <= s_xvalid;
+                    wstrbSkid <= s_xstrb;
                     wlastSkid <= lastSignal;
-                    s_disp_axis_tready <= 0;
+                    s_xready <= 0;
                     skidValid <= 1;
                     counter <= counterNext;
                 end
 
-                if (transferEnd && m_mem_axi_wready && m_mem_axi_wvalid && !skidValid)
+                if (transferEnd && m_xready && m_xvalid && !skidValid)
                 begin
-                    fb_committed <= 1;
-                    m_mem_axi_wvalid <= 0;
-                    s_disp_axis_tready <= 0;
+                    tdone <= 1;
+                    m_xvalid <= 0;
+                    s_xready <= 0;
                 end
             end
 

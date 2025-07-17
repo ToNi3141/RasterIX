@@ -569,39 +569,36 @@ module RasterIX_IF #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .commit_fb(commit_fb),
-                .fb_addr(fb_addr),
-                .fb_size(fb_size),
-                .fb_committed(fb_committed),
+                .tstart(commit_fb),
+                .taddr(fb_addr),
+                .tbytes({ 11'h0, fb_size, 1'b0 }),
+                .tdone(fb_committed),
+                .enableAxiLastSignal(1),
 
-                .s_disp_axis_tvalid(framebuffer_axis_tvalid),
-                .s_disp_axis_tready(framebuffer_axis_tready),
-                .s_disp_axis_tlast(framebuffer_axis_tlast),
-                .s_disp_axis_tdata(framebuffer_axis_tdata),
-                .s_disp_axis_tstrb(framebuffer_axis_tstrb),
+                .s_xvalid(framebuffer_axis_tvalid),
+                .s_xready(framebuffer_axis_tready),
+                .s_xlast(framebuffer_axis_tlast),
+                .s_xdata(framebuffer_axis_tdata),
+                .s_xstrb(framebuffer_axis_tstrb),
 
-                .m_mem_axi_awid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-                .m_mem_axi_awaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
-                .m_mem_axi_awlen(xbar_axi_awlen[3 * 8 +: 8]),
-                .m_mem_axi_awsize(xbar_axi_awsize[3 * 3 +: 3]),
-                .m_mem_axi_awburst(xbar_axi_awburst[3 * 2 +: 2]),
-                .m_mem_axi_awlock(xbar_axi_awlock[3 * 1 +: 1]),
-                .m_mem_axi_awcache(xbar_axi_awcache[3 * 4 +: 4]),
-                .m_mem_axi_awprot(xbar_axi_awprot[3 * 3 +: 3]), 
-                .m_mem_axi_awvalid(xbar_axi_awvalid[3 * 1 +: 1]),
-                .m_mem_axi_awready(xbar_axi_awready[3 * 1 +: 1]),
+                .m_axid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+                .m_axaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
+                .m_axlen(xbar_axi_awlen[3 * 8 +: 8]),
+                .m_axsize(xbar_axi_awsize[3 * 3 +: 3]),
+                .m_axburst(xbar_axi_awburst[3 * 2 +: 2]),
+                .m_axlock(xbar_axi_awlock[3 * 1 +: 1]),
+                .m_axcache(xbar_axi_awcache[3 * 4 +: 4]),
+                .m_axprot(xbar_axi_awprot[3 * 3 +: 3]), 
+                .m_axvalid(xbar_axi_awvalid[3 * 1 +: 1]),
+                .m_axready(xbar_axi_awready[3 * 1 +: 1]),
 
-                .m_mem_axi_wdata(xbar_axi_wdata[3 * DATA_WIDTH +: DATA_WIDTH]),
-                .m_mem_axi_wstrb(xbar_axi_wstrb[3 * STRB_WIDTH +: STRB_WIDTH]),
-                .m_mem_axi_wlast(xbar_axi_wlast[3 * 1 +: 1]),
-                .m_mem_axi_wvalid(xbar_axi_wvalid[3 * 1 +: 1]),
-                .m_mem_axi_wready(xbar_axi_wready[3 * 1 +: 1]),
-
-                .m_mem_axi_bid(xbar_axi_bid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-                .m_mem_axi_bresp(xbar_axi_bresp[3 * 2 +: 2]),
-                .m_mem_axi_bvalid(xbar_axi_bvalid[3 * 1 +: 1]),
-                .m_mem_axi_bready(xbar_axi_bready[3 * 1 +: 1])
+                .m_xdata(xbar_axi_wdata[3 * DATA_WIDTH +: DATA_WIDTH]),
+                .m_xstrb(xbar_axi_wstrb[3 * STRB_WIDTH +: STRB_WIDTH]),
+                .m_xlast(xbar_axi_wlast[3 * 1 +: 1]),
+                .m_xvalid(xbar_axi_wvalid[3 * 1 +: 1]),
+                .m_xready(xbar_axi_wready[3 * 1 +: 1])
             );
+            assign xbar_axi_bready[3 * 1 +: 1] = 1;
         end
     endgenerate
 

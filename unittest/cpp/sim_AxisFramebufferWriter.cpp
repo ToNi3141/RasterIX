@@ -23,7 +23,7 @@
 // Include model header, generated from Verilating "top.v"
 #include "VAxisFramebufferWriter.h"
 
-static constexpr std::size_t PIXEL_PER_BEAT = 2;
+static constexpr std::size_t BEAT_SIZE = 4;
 static constexpr std::size_t NUMBER_OF_BEATS = 16;
 
 TEST_CASE("check address channel", "[VAxisFramebufferWriter]")
@@ -31,35 +31,35 @@ TEST_CASE("check address channel", "[VAxisFramebufferWriter]")
 
     VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
 
-    t->s_disp_axis_tvalid = true;
+    t->s_xvalid = true;
     rr::ut::reset(t);
-    CHECK(t->fb_committed == true);
+    CHECK(t->tdone == true);
 
-    t->commit_fb = true;
-    t->fb_addr = 0x1000'0000;
-    t->fb_size = 0x100;
-    t->m_mem_axi_awready = true;
-    t->m_mem_axi_wready = true;
-    t->m_mem_axi_bready = true;
+    t->tstart = true;
+    t->taddr = 0x1000'0000;
+    t->tbytes = 0x100;
+    t->enableAxiLastSignal = true;
+    t->m_axready = true;
+    t->m_xready = true;
     rr::ut::clk(t);
-    CHECK(t->fb_committed == false);
+    CHECK(t->tdone == false);
 
-    t->commit_fb = false;
+    t->tstart = false;
     rr::ut::clk(t);
-    for (std::size_t i = 0; i < t->fb_size; i += NUMBER_OF_BEATS * PIXEL_PER_BEAT)
+    for (std::size_t i = 0; i < t->tbytes; i += NUMBER_OF_BEATS * BEAT_SIZE)
     {
         rr::ut::clk(t);
-        CHECK(t->m_mem_axi_awvalid == true);
-        CHECK(t->m_mem_axi_awaddr == (t->fb_addr + (i * PIXEL_PER_BEAT)));
-        CHECK(t->m_mem_axi_awlen == (NUMBER_OF_BEATS - 1));
-        CHECK(t->m_mem_axi_awsize == 2);
-        CHECK(t->m_mem_axi_awburst == 1);
-        CHECK(t->fb_committed == false);
+        CHECK(t->m_axvalid == true);
+        CHECK(t->m_axaddr == (t->taddr + i));
+        CHECK(t->m_axlen == (NUMBER_OF_BEATS - 1));
+        CHECK(t->m_axsize == 2);
+        CHECK(t->m_axburst == 1);
+        CHECK(t->tdone == false);
     }
 
     rr::ut::clk(t);
-    CHECK(t->m_mem_axi_awvalid == false);
-    CHECK(t->fb_committed == false);
+    CHECK(t->m_axvalid == false);
+    CHECK(t->tdone == false);
 
     // Destroy model
     delete t;
@@ -69,37 +69,77 @@ TEST_CASE("check mem write", "[VAxisFramebufferWriter]")
 {
     VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
 
-    t->s_disp_axis_tvalid = 1;
+    t->s_xvalid = 1;
     rr::ut::reset(t);
-    CHECK(t->fb_committed == true);
+    CHECK(t->tdone == true);
 
-    t->commit_fb = true;
-    t->fb_addr = 0x1000'0000;
-    t->fb_size = 0x100;
-    t->m_mem_axi_awready = true;
-    t->m_mem_axi_wready = true;
-    t->m_mem_axi_bready = true;
+    t->tstart = true;
+    t->taddr = 0x1000'0000;
+    t->tbytes = 0x100;
+    t->enableAxiLastSignal = true;
+    t->m_axready = true;
+    t->m_xready = true;
     rr::ut::clk(t);
-    CHECK(t->fb_committed == false);
+    CHECK(t->tdone == false);
 
-    t->commit_fb = false;
-    for (std::size_t i = 0; i < t->fb_size; i += PIXEL_PER_BEAT)
+    t->tstart = false;
+    for (std::size_t i = 0; i < t->tbytes; i += BEAT_SIZE)
     {
-        t->s_disp_axis_tdata = i;
-        t->s_disp_axis_tstrb = i % NUMBER_OF_BEATS;
-        t->s_disp_axis_tvalid = true;
+        t->s_xdata = i;
+        t->s_xstrb = i % NUMBER_OF_BEATS;
+        t->s_xvalid = true;
         rr::ut::clk(t);
         INFO(std::string("i ") + std::to_string(i));
-        CHECK(t->m_mem_axi_wdata == i);
-        CHECK(t->m_mem_axi_wvalid == true);
-        CHECK(t->m_mem_axi_wlast == ((i % (NUMBER_OF_BEATS * PIXEL_PER_BEAT)) == ((NUMBER_OF_BEATS - 1) * PIXEL_PER_BEAT)));
-        CHECK(t->m_mem_axi_wstrb == (i % NUMBER_OF_BEATS));
-        CHECK(t->fb_committed == false);
+        CHECK(t->m_xdata == i);
+        CHECK(t->m_xvalid == true);
+        CHECK(t->m_xlast == ((i % (NUMBER_OF_BEATS * BEAT_SIZE)) == ((NUMBER_OF_BEATS - 1) * BEAT_SIZE)));
+        CHECK(t->m_xstrb == (i % NUMBER_OF_BEATS));
+        CHECK(t->tdone == false);
     }
 
     rr::ut::clk(t);
-    CHECK(t->m_mem_axi_wvalid == false);
-    CHECK(t->fb_committed == true);
+    CHECK(t->m_xvalid == false);
+    CHECK(t->tdone == true);
+
+    // Destroy model
+    delete t;
+}
+
+TEST_CASE("check mem read", "[VAxisFramebufferWriter]")
+{
+    VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
+
+    t->s_xvalid = 1;
+    rr::ut::reset(t);
+    CHECK(t->tdone == true);
+
+    t->tstart = true;
+    t->taddr = 0x1000'0000;
+    t->tbytes = 0x100;
+    t->enableAxiLastSignal = false;
+    t->m_axready = true;
+    t->m_xready = true;
+    rr::ut::clk(t);
+    CHECK(t->tdone == false);
+
+    t->tstart = false;
+    for (std::size_t i = 0; i < t->tbytes; i += BEAT_SIZE)
+    {
+        t->s_xdata = i;
+        t->s_xstrb = i % NUMBER_OF_BEATS;
+        t->s_xvalid = true;
+        rr::ut::clk(t);
+        INFO(std::string("i ") + std::to_string(i));
+        CHECK(t->m_xdata == i);
+        CHECK(t->m_xvalid == true);
+        CHECK(t->m_xlast == ((i + BEAT_SIZE) == t->tbytes));
+        CHECK(t->m_xstrb == (i % NUMBER_OF_BEATS));
+        CHECK(t->tdone == false);
+    }
+
+    rr::ut::clk(t);
+    CHECK(t->m_xvalid == false);
+    CHECK(t->tdone == true);
 
     // Destroy model
     delete t;
@@ -109,76 +149,76 @@ TEST_CASE("interrupted mem write", "[VAxisFramebufferWriter]")
 {
     VAxisFramebufferWriter* t = new VAxisFramebufferWriter();
 
-    t->s_disp_axis_tvalid = true;
+    t->s_xvalid = true;
     rr::ut::reset(t);
-    CHECK(t->fb_committed == true);
+    CHECK(t->tdone == true);
 
-    t->commit_fb = true;
-    t->fb_addr = 0x1000'0000;
-    t->fb_size = 0x100;
-    t->m_mem_axi_awready = true;
-    t->m_mem_axi_wready = false;
-    t->m_mem_axi_bready = true;
+    t->tstart = true;
+    t->taddr = 0x1000'0000;
+    t->tbytes = 0x100;
+    t->enableAxiLastSignal = true;
+    t->m_axready = true;
+    t->m_xready = false;
     rr::ut::clk(t);
-    CHECK(t->fb_committed == false);
-    CHECK(t->s_disp_axis_tready == true);
+    CHECK(t->tdone == false);
+    CHECK(t->s_xready == true);
 
-    t->commit_fb = false;
+    t->tstart = false;
 
-    t->s_disp_axis_tdata = 0;
-    t->s_disp_axis_tstrb = 0;
-    t->s_disp_axis_tvalid = true;
-    t->m_mem_axi_wready = false;
+    t->s_xdata = 0;
+    t->s_xstrb = 0;
+    t->s_xvalid = true;
+    t->m_xready = false;
     rr::ut::clk(t);
-    CHECK(t->m_mem_axi_wdata == 0);
-    CHECK(t->m_mem_axi_wstrb == 0);
-    CHECK(t->m_mem_axi_wvalid == true);
-    CHECK(t->m_mem_axi_wlast == 0);
-    CHECK(t->s_disp_axis_tready == true);
-    CHECK(t->fb_committed == false);
+    CHECK(t->m_xdata == 0);
+    CHECK(t->m_xstrb == 0);
+    CHECK(t->m_xvalid == true);
+    CHECK(t->m_xlast == 0);
+    CHECK(t->s_xready == true);
+    CHECK(t->tdone == false);
 
-    t->s_disp_axis_tdata = PIXEL_PER_BEAT;
-    t->s_disp_axis_tstrb = 2;
-    t->s_disp_axis_tvalid = true;
-    t->m_mem_axi_wready = false;
+    t->s_xdata = BEAT_SIZE;
+    t->s_xstrb = BEAT_SIZE;
+    t->s_xvalid = true;
+    t->m_xready = false;
     rr::ut::clk(t);
-    CHECK(t->m_mem_axi_wdata == 0);
-    CHECK(t->m_mem_axi_wstrb == 0);
-    CHECK(t->m_mem_axi_wvalid == true);
-    CHECK(t->m_mem_axi_wlast == 0);
-    CHECK(t->s_disp_axis_tready == false);
-    CHECK(t->fb_committed == false);
+    CHECK(t->m_xdata == 0);
+    CHECK(t->m_xstrb == 0);
+    CHECK(t->m_xvalid == true);
+    CHECK(t->m_xlast == 0);
+    CHECK(t->s_xready == false);
+    CHECK(t->tdone == false);
 
-    for (std::size_t i = 0; i < t->fb_size; i += PIXEL_PER_BEAT)
+    for (std::size_t i = 0; i < t->tbytes; i += BEAT_SIZE)
     {
-        const std::size_t index = i + PIXEL_PER_BEAT;
+        const std::size_t index = i + BEAT_SIZE;
 
-        t->s_disp_axis_tdata = index;
-        t->s_disp_axis_tstrb = index % NUMBER_OF_BEATS;
-        t->s_disp_axis_tvalid = true;
-        t->m_mem_axi_wready = false;
+        t->s_xdata = index;
+        t->s_xstrb = index % NUMBER_OF_BEATS;
+        t->s_xvalid = true;
+        t->m_xready = false;
         rr::ut::clk(t);
-        CHECK(t->m_mem_axi_wdata == i);
-        CHECK(t->m_mem_axi_wstrb == (i % NUMBER_OF_BEATS));
-        CHECK(t->m_mem_axi_wvalid == true);
-        CHECK(t->m_mem_axi_wlast == ((i % (NUMBER_OF_BEATS * PIXEL_PER_BEAT)) == ((NUMBER_OF_BEATS - 1) * PIXEL_PER_BEAT)));
-        CHECK(t->s_disp_axis_tready == false);
-        CHECK(t->fb_committed == false);
+        CHECK(t->m_xdata == i);
+        CHECK(t->m_xstrb == (i % NUMBER_OF_BEATS));
+        CHECK(t->m_xvalid == true);
+        CHECK(t->m_xlast == ((i % (NUMBER_OF_BEATS * BEAT_SIZE)) == ((NUMBER_OF_BEATS - 1) * BEAT_SIZE)));
+        CHECK(t->s_xready == false);
+        CHECK(t->tdone == false);
 
-        t->m_mem_axi_wready = true;
+        t->m_xready = true;
         rr::ut::clk(t);
         INFO(std::string("i ") + std::to_string(i));
-        CHECK(t->m_mem_axi_wdata == index);
-        CHECK(t->m_mem_axi_wstrb == (index % NUMBER_OF_BEATS));
-        CHECK(t->m_mem_axi_wvalid == true);
-        CHECK(t->m_mem_axi_wlast == ((index % (NUMBER_OF_BEATS * PIXEL_PER_BEAT)) == ((NUMBER_OF_BEATS - 1) * PIXEL_PER_BEAT)));
-        CHECK(t->s_disp_axis_tready == (index < (t->fb_size - PIXEL_PER_BEAT))); // It's one pixel behind here because one is in the skid buffer
-        CHECK(t->fb_committed == false);
+        CHECK(t->m_xdata == index);
+        CHECK(t->m_xstrb == (index % NUMBER_OF_BEATS));
+        CHECK(t->m_xvalid == true);
+        CHECK(t->m_xlast == ((index % (NUMBER_OF_BEATS * BEAT_SIZE)) == ((NUMBER_OF_BEATS - 1) * BEAT_SIZE)));
+        CHECK(t->s_xready == (index < (t->tbytes - BEAT_SIZE))); // It's one pixel behind here because one is in the skid buffer
+        CHECK(t->tdone == false);
     }
 
     rr::ut::clk(t);
-    CHECK(t->m_mem_axi_wvalid == false);
-    CHECK(t->fb_committed == true);
+    CHECK(t->m_xvalid == false);
+    CHECK(t->tdone == true);
 
     // Destroy model
     delete t;
