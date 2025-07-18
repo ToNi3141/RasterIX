@@ -106,13 +106,17 @@ module RasterIXCoreIF #(
     input  wire                                 m_framebuffer_axis_tready,
     output wire                                 m_framebuffer_axis_tlast,
     output wire [DATA_WIDTH - 1 : 0]            m_framebuffer_axis_tdata,
+    output wire [STRB_WIDTH - 1 : 0]            m_framebuffer_axis_tstrb,
+
+    output wire                                 m_colorbuffer_avalid,
+    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_aaddr,
+    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_abytes,
+    input  wire                                 m_colorbuffer_aready,
 
     // Color
     output wire                                 swap_fb,
     output wire                                 swap_fb_enable_vsync,
     input  wire                                 fb_swapped,
-    output wire                                 commit_fb,
-    input  wire                                 fb_committed,
     output wire [ADDR_WIDTH - 1 : 0]            fb_addr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   fb_size,
 
@@ -159,6 +163,7 @@ module RasterIXCoreIF #(
     localparam SCREEN_POS_WIDTH = 11;
     localparam PIXEL_WIDTH_STREAM = 16;
     localparam PIXEL_PER_BEAT = DATA_WIDTH / PIXEL_WIDTH_STREAM;
+    localparam FRAMEBUFFER_SUBPIXEL_PER_BEAT = PIXEL_PER_BEAT * FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
     localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
     // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
     // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
@@ -252,7 +257,7 @@ module RasterIXCoreIF #(
     generate
         if (ENABLE_DEPTH_BUFFER)
         begin
-            FrameBuffer depthBuffer (  
+            InternalFramebuffer depthBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
 
@@ -290,7 +295,12 @@ module RasterIXCoreIF #(
                 .m_axis_tvalid(),
                 .m_axis_tready(1'b1),
                 .m_axis_tlast(),
-                .m_axis_tdata()
+                .m_axis_tdata(),
+
+                .m_avalid(),
+                .m_aaddr(),
+                .m_abytes(),
+                .m_aready(1'b1)
             );
             defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
@@ -310,8 +320,9 @@ module RasterIXCoreIF #(
         end
     endgenerate
 
-    wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0] framebuffer_unconverted_axis_tdata;
-    FrameBuffer colorBuffer (  
+    wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0]   framebuffer_unconverted_axis_tdata;
+    wire [FRAMEBUFFER_SUBPIXEL_PER_BEAT - 1 : 0]                framebuffer_unconverted_axis_tstrb;
+    InternalFramebuffer colorBuffer (  
         .clk(aclk),
         .reset(!resetn),
 
@@ -345,11 +356,18 @@ module RasterIXCoreIF #(
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
         .cmdSize(colorBufferSize),
+        .cmdAddr(colorBufferAddr),
 
         .m_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_axis_tready(m_framebuffer_axis_tready),
         .m_axis_tlast(m_framebuffer_axis_tlast),
-        .m_axis_tdata(framebuffer_unconverted_axis_tdata)
+        .m_axis_tdata(framebuffer_unconverted_axis_tdata),
+        .m_axis_tstrb(framebuffer_unconverted_axis_tstrb),
+
+        .m_avalid(m_colorbuffer_avalid),
+        .m_aaddr(m_colorbuffer_aaddr),
+        .m_abytes(m_colorbuffer_abytes),
+        .m_aready(m_colorbuffer_aready)
     );
     defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
@@ -363,6 +381,11 @@ module RasterIXCoreIF #(
     generate
         `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
         `Expand(ExpandFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
+
+        // Remove every other bit from the mask when RGBA is used. If only RGB is used, every third element can be removed to get two strobe bits per pixel.
+        localparam MASK_BIT_TO_REMOVE = (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4) ? 2 : 3; 
+        `ReduceVec(FramebufferMaskToByteMask, 1, FRAMEBUFFER_SUBPIXEL_PER_BEAT, 0, MASK_BIT_TO_REMOVE, STRB_WIDTH);
+
         if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
         begin
             `ReduceVec(ReduceVecFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
@@ -372,12 +395,13 @@ module RasterIXCoreIF #(
         begin
             assign m_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(framebuffer_unconverted_axis_tdata));
         end
+        assign m_framebuffer_axis_tstrb = FramebufferMaskToByteMask(framebuffer_unconverted_axis_tstrb);
     endgenerate
 
     generate 
         if (ENABLE_STENCIL_BUFFER)
         begin
-            FrameBuffer stencilBuffer (  
+            InternalFramebuffer stencilBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
 
@@ -415,7 +439,12 @@ module RasterIXCoreIF #(
                 .m_axis_tvalid(),
                 .m_axis_tready(1'b1),
                 .m_axis_tlast(),
-                .m_axis_tdata()
+                .m_axis_tdata(),
+
+                .m_avalid(),
+                .m_aaddr(),
+                .m_abytes(),
+                .m_aready(1'b1)
             );
             defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam stencilBuffer.NUMBER_OF_SUB_PIXELS = STENCIL_WIDTH;
@@ -474,7 +503,7 @@ module RasterIXCoreIF #(
         .colorBufferAddr(colorBufferAddr),
         .colorBufferSize(colorBufferSize),
         .colorBufferApply(colorBufferApply),
-        .colorBufferApplied(colorBufferApplied && fb_swapped && fb_committed),
+        .colorBufferApplied(colorBufferApplied && fb_swapped),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferCmdSwap(colorBufferCmdSwap),
@@ -584,7 +613,6 @@ module RasterIXCoreIF #(
 
     assign swap_fb = colorBufferApply && colorBufferCmdSwap;
     assign swap_fb_enable_vsync = colorBufferCmdSwapEnableVsync;
-    assign commit_fb = colorBufferApply && colorBufferCmdCommit;
     assign fb_addr = colorBufferAddr;
     assign fb_size = colorBufferSize;
 

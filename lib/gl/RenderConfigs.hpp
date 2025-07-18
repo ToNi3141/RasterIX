@@ -55,6 +55,16 @@ struct RenderConfig
         }
         return (MAX_FRAMEBUFFER_SIZE / FRAMEBUFFER_SIZE_IN_PIXEL) + 1;
     }
+
+    static constexpr uint32_t getAlignedSize(const uint32_t size)
+    {
+        constexpr uint32_t MASK = TEXTURE_PAGE_SIZE - 1;
+        if (size & MASK)
+        {
+            return (size | MASK) + 1;
+        }
+        return size;
+    }
 };
 
 } // namespace rr
