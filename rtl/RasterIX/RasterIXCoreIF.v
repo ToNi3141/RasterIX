@@ -108,10 +108,10 @@ module RasterIXCoreIF #(
     output wire [DATA_WIDTH - 1 : 0]            m_framebuffer_axis_tdata,
     output wire [STRB_WIDTH - 1 : 0]            m_framebuffer_axis_tstrb,
 
-    output wire                                 m_colorbuffer_tstart,
-    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_taddr,
-    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_tbytes,
-    input  wire                                 m_colorbuffer_tdone,
+    output wire                                 m_colorbuffer_avalid,
+    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_aaddr,
+    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_abytes,
+    input  wire                                 m_colorbuffer_aready,
 
     // Color
     output wire                                 swap_fb,

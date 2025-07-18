@@ -34,10 +34,10 @@ module AxisToAxiAdapter #(
     input  wire                         aclk,
     input  wire                         resetn,
 
-    input  wire                         tstart,
-    input  wire [ADDR_WIDTH - 1 : 0]    taddr,
-    input  wire [ADDR_WIDTH - 1 : 0]    tbytes,
-    output reg                          tdone,
+    input  wire                         s_avalid,
+    input  wire [ADDR_WIDTH - 1 : 0]    s_aaddr,
+    input  wire [ADDR_WIDTH - 1 : 0]    s_abytes,
+    output reg                          s_aready,
 
     // When this is true, the m_xlast signal matches the address channel transfers (axi behavior).
     // If this is false, m_xlast is only asserted at the end of the stream (axis behavior).
@@ -105,8 +105,8 @@ module AxisToAxiAdapter #(
         .start(startAddressGeneration),
         .done(addressGenerationDone),
 
-        .startAddr(taddr),
-        .dataSizeInBytes(tbytes),
+        .startAddr(s_aaddr),
+        .dataSizeInBytes(s_abytes),
 
         .axid(m_axid),
         .axaddr(m_axaddr),
@@ -124,7 +124,7 @@ module AxisToAxiAdapter #(
     begin
         if (!resetn)
         begin
-            tdone <= 0;
+            s_aready <= 0;
             startAddressGeneration <= 0;
             s_xready <= 0;
             m_xvalid <= 0;
@@ -133,16 +133,16 @@ module AxisToAxiAdapter #(
         end
         else
         begin
-            if (tstart && addressGenerationDone && streamingDone)
+            if (s_avalid && addressGenerationDone && streamingDone)
             begin
                 counter <= 0;
                 s_xready <= 1;
-                dataSizeInBytes <= tbytes;
+                dataSizeInBytes <= s_abytes;
                 startAddressGeneration <= 1;
                 streamingDone <= 0;
             end
 
-            if (!streamingDone && !tdone)
+            if (!streamingDone && !s_aready)
             begin
                 if (skidValid && m_xready)
                 begin
@@ -176,15 +176,15 @@ module AxisToAxiAdapter #(
 
                 if (transferEnd && m_xready && m_xvalid && !skidValid)
                 begin
-                    tdone <= 1;
+                    s_aready <= 1;
                     m_xvalid <= 0;
                     s_xready <= 0;
                 end
             end
 
-            if (tdone)
+            if (s_aready)
             begin
-                tdone <= 0;
+                s_aready <= 0;
                 streamingDone <= 1;
             end
 

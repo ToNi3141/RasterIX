@@ -135,10 +135,10 @@ module InternalFramebuffer
     output wire [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
     output wire [STREAM_STRB_WIDTH - 1 : 0] m_axis_tstrb,
 
-    output wire                             m_tstart,
-    output wire [ADDR_WIDTH - 1 : 0]        m_taddr,
-    output wire [ADDR_WIDTH - 1 : 0]        m_tbytes,
-    input  wire                             m_tdone
+    output wire                             m_avalid,
+    output wire [ADDR_WIDTH - 1 : 0]        m_aaddr,
+    output wire [ADDR_WIDTH - 1 : 0]        m_abytes,
+    input  wire                             m_aready
 );
     wire [MEM_MASK_WIDTH - 1 : 0]   writeMaskPort1; 
     wire [MEM_ADDR_WIDTH - 1 : 0]   writeAddrPort1;
@@ -289,9 +289,9 @@ module InternalFramebuffer
         .m_axis_tdata(m_axis_tdata),
         .m_axis_tstrb(m_axis_tstrb),
 
-        .m_tstart(m_tstart),
-        .m_taddr(m_taddr),
-        .m_tbytes(m_tbytes),
-        .m_tdone(m_tdone)
+        .m_avalid(m_avalid),
+        .m_aaddr(m_aaddr),
+        .m_abytes(m_abytes),
+        .m_aready(m_aready)
     );
 endmodule

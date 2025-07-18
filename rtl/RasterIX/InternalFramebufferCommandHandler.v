@@ -102,10 +102,10 @@ module InternalFramebufferCommandHandler
     output reg  [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
     output reg  [MEM_MASK_WIDTH - 1 : 0]    m_axis_tstrb,
 
-    output reg                              m_tstart,
-    output reg  [ADDR_WIDTH - 1 : 0]        m_taddr,
-    output reg  [ADDR_WIDTH - 1 : 0]        m_tbytes,
-    input  wire                             m_tdone
+    output reg                              m_avalid,
+    output reg  [ADDR_WIDTH - 1 : 0]        m_aaddr,
+    output reg  [ADDR_WIDTH - 1 : 0]        m_abytes,
+    input  wire                             m_aready
 );
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
@@ -183,7 +183,7 @@ module InternalFramebufferCommandHandler
             m_axis_tlast <= 0;
             m_axis_tvalid <= 0;
             skidBufferValid <= 0;
-            m_tstart <= 0;
+            m_avalid <= 0;
         end
         else
         begin
@@ -195,7 +195,7 @@ module InternalFramebufferCommandHandler
 
                 cmdFbSizeInBeats <= cmdSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
-                if (apply && !m_tstart)
+                if (apply && !m_avalid)
                 begin
                     applied <= 0;
 
@@ -217,9 +217,9 @@ module InternalFramebufferCommandHandler
 
                     if (cmdCommit)
                     begin
-                        m_tstart <= 1;
-                        m_taddr <= cmdAddr;
-                        m_tbytes <= { 11'b0, cmdSize, 1'b0 };
+                        m_avalid <= 1;
+                        m_aaddr <= cmdAddr;
+                        m_abytes <= { 11'b0, cmdSize, 1'b0 };
                         scissorY <= confYResolution - 1;
                         writeEnablePort <= 0;
                         scissorStartX <= 0;
@@ -231,7 +231,7 @@ module InternalFramebufferCommandHandler
                 end
                 else 
                 begin
-                    if (!m_tstart)
+                    if (!m_avalid)
                     begin
                         applied <= 1;
                     end
@@ -311,9 +311,9 @@ module InternalFramebufferCommandHandler
             end
             endcase
         end
-        if (m_tstart && m_tdone)
+        if (m_avalid && m_aready)
         begin
-            m_tstart <= 0;
+            m_avalid <= 0;
         end
     end
 endmodule

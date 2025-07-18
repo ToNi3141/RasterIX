@@ -522,10 +522,10 @@ module RasterIX_IF #(
     wire [DATA_WIDTH - 1 : 0]   framebuffer_axis_tdata;
     wire [STRB_WIDTH - 1 : 0]   framebuffer_axis_tstrb;
 
-    wire                        colorbuffer_tstart;
-    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_taddr;
-    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_tbytes;
-    wire                        colorbuffer_tdone;
+    wire                        colorbuffer_avalid;
+    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_aaddr;
+    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_abytes;
+    wire                        colorbuffer_aready;
     
     generate
         if (ENABLE_FRAMEBUFFER_STREAM)
@@ -574,10 +574,10 @@ module RasterIX_IF #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .tstart(colorbuffer_tstart),
-                .taddr(colorbuffer_taddr),
-                .tbytes(colorbuffer_tbytes),
-                .tdone(colorbuffer_tdone),
+                .s_avalid(colorbuffer_avalid),
+                .s_aaddr(colorbuffer_aaddr),
+                .s_abytes(colorbuffer_abytes),
+                .s_aready(colorbuffer_aready),
                 .enableAxiLastSignal(1),
 
                 .s_xvalid(framebuffer_axis_tvalid),
@@ -641,10 +641,10 @@ module RasterIX_IF #(
         .m_framebuffer_axis_tdata(framebuffer_axis_tdata),
         .m_framebuffer_axis_tstrb(framebuffer_axis_tstrb),
 
-        .m_colorbuffer_tstart(colorbuffer_tstart),
-        .m_colorbuffer_taddr(colorbuffer_taddr),
-        .m_colorbuffer_tbytes(colorbuffer_tbytes),
-        .m_colorbuffer_tdone(colorbuffer_tdone),
+        .m_colorbuffer_avalid(colorbuffer_avalid),
+        .m_colorbuffer_aaddr(colorbuffer_aaddr),
+        .m_colorbuffer_abytes(colorbuffer_abytes),
+        .m_colorbuffer_aready(colorbuffer_aready),
 
         .swap_fb(swap_fb),
         .swap_fb_enable_vsync(swap_fb_enable_vsync),
