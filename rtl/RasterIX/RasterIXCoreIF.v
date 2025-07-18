@@ -108,12 +108,15 @@ module RasterIXCoreIF #(
     output wire [DATA_WIDTH - 1 : 0]            m_framebuffer_axis_tdata,
     output wire [STRB_WIDTH - 1 : 0]            m_framebuffer_axis_tstrb,
 
+    output wire                                 m_colorbuffer_tstart,
+    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_taddr,
+    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_tbytes,
+    input  wire                                 m_colorbuffer_tdone,
+
     // Color
     output wire                                 swap_fb,
     output wire                                 swap_fb_enable_vsync,
     input  wire                                 fb_swapped,
-    output wire                                 commit_fb,
-    input  wire                                 fb_committed,
     output wire [ADDR_WIDTH - 1 : 0]            fb_addr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   fb_size,
 
@@ -292,7 +295,12 @@ module RasterIXCoreIF #(
                 .m_axis_tvalid(),
                 .m_axis_tready(1'b1),
                 .m_axis_tlast(),
-                .m_axis_tdata()
+                .m_axis_tdata(),
+
+                .m_avalid(),
+                .m_aaddr(),
+                .m_abytes(),
+                .m_aready(1'b1)
             );
             defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
@@ -348,12 +356,18 @@ module RasterIXCoreIF #(
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
         .cmdSize(colorBufferSize),
+        .cmdAddr(colorBufferAddr),
 
         .m_axis_tvalid(m_framebuffer_axis_tvalid),
         .m_axis_tready(m_framebuffer_axis_tready),
         .m_axis_tlast(m_framebuffer_axis_tlast),
         .m_axis_tdata(framebuffer_unconverted_axis_tdata),
-        .m_axis_tstrb(framebuffer_unconverted_axis_tstrb)
+        .m_axis_tstrb(framebuffer_unconverted_axis_tstrb),
+
+        .m_avalid(m_colorbuffer_avalid),
+        .m_aaddr(m_colorbuffer_aaddr),
+        .m_abytes(m_colorbuffer_abytes),
+        .m_aready(m_colorbuffer_aready)
     );
     defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
@@ -425,7 +439,12 @@ module RasterIXCoreIF #(
                 .m_axis_tvalid(),
                 .m_axis_tready(1'b1),
                 .m_axis_tlast(),
-                .m_axis_tdata()
+                .m_axis_tdata(),
+
+                .m_avalid(),
+                .m_aaddr(),
+                .m_abytes(),
+                .m_aready(1'b1)
             );
             defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam stencilBuffer.NUMBER_OF_SUB_PIXELS = STENCIL_WIDTH;
@@ -484,7 +503,7 @@ module RasterIXCoreIF #(
         .colorBufferAddr(colorBufferAddr),
         .colorBufferSize(colorBufferSize),
         .colorBufferApply(colorBufferApply),
-        .colorBufferApplied(colorBufferApplied && fb_swapped && fb_committed),
+        .colorBufferApplied(colorBufferApplied && fb_swapped),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferCmdSwap(colorBufferCmdSwap),
@@ -594,7 +613,6 @@ module RasterIXCoreIF #(
 
     assign swap_fb = colorBufferApply && colorBufferCmdSwap;
     assign swap_fb_enable_vsync = colorBufferCmdSwapEnableVsync;
-    assign commit_fb = colorBufferApply && colorBufferCmdCommit;
     assign fb_addr = colorBufferAddr;
     assign fb_size = colorBufferSize;
 

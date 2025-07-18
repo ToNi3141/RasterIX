@@ -33,6 +33,9 @@ module InternalFramebufferCommandHandler
     // The maximum size stream size
     parameter FB_SIZE_IN_PIXEL_LG = 20,
 
+    // Address width
+    parameter ADDR_WIDTH = 32,
+
     // Size of the pixels
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
@@ -90,13 +93,19 @@ module InternalFramebufferCommandHandler
     input  wire                                 cmdCommit, // Starts to stream the memory content via the AXIS interface
     input  wire                                 cmdMemset, // Applies the confClearColor (with respect to the scissor) to the memory
     input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   cmdSize, // Size of the stream 
+    input  wire [ADDR_WIDTH - 1 : 0]            cmdAddr,
 
     // AXI Stream master interface
     output reg                              m_axis_tvalid,
     input  wire                             m_axis_tready,
     output reg                              m_axis_tlast,
     output reg  [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
-    output reg  [MEM_MASK_WIDTH - 1 : 0]    m_axis_tstrb 
+    output reg  [MEM_MASK_WIDTH - 1 : 0]    m_axis_tstrb,
+
+    output reg                              m_tstart,
+    output reg  [ADDR_WIDTH - 1 : 0]        m_taddr,
+    output reg  [ADDR_WIDTH - 1 : 0]        m_tbytes,
+    input  wire                             m_tdone
 );
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
@@ -174,6 +183,7 @@ module InternalFramebufferCommandHandler
             m_axis_tlast <= 0;
             m_axis_tvalid <= 0;
             skidBufferValid <= 0;
+            m_tstart <= 0;
         end
         else
         begin
@@ -185,7 +195,7 @@ module InternalFramebufferCommandHandler
 
                 cmdFbSizeInBeats <= cmdSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
-                if (apply)
+                if (apply && !m_tstart)
                 begin
                     applied <= 0;
 
@@ -207,6 +217,9 @@ module InternalFramebufferCommandHandler
 
                     if (cmdCommit)
                     begin
+                        m_tstart <= 1;
+                        m_taddr <= cmdAddr;
+                        m_tbytes <= { 11'b0, cmdSize, 1'b0 };
                         scissorY <= confYResolution - 1;
                         writeEnablePort <= 0;
                         scissorStartX <= 0;
@@ -218,7 +231,10 @@ module InternalFramebufferCommandHandler
                 end
                 else 
                 begin
-                    applied <= 1;
+                    if (!m_tstart)
+                    begin
+                        applied <= 1;
+                    end
                 end
             end
             COMMAND_COMMIT:
@@ -294,6 +310,10 @@ module InternalFramebufferCommandHandler
                 end
             end
             endcase
+        end
+        if (m_tstart && m_tdone)
+        begin
+            m_tstart <= 0;
         end
     end
 endmodule

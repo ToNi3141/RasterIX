@@ -170,6 +170,8 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
 
     rr::ut::reset(t);
 
+    t->m_tdone = 0;
+
     t->confEnableScissor = 0; // Disable scissor test
     t->confYOffset = 0;
     t->confXResolution = 20;
@@ -178,17 +180,25 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     t->apply = 1;
     t->cmdCommit = 1; // Trigger memset command
     t->cmdSize = (t->confXResolution * t->confYResolution) + t->confXResolution;
+    t->cmdAddr = 0x1000'0000;
 
     t->m_axis_tready = 1; // Set ready signal to 1 to allow data transfer
     t->readDataPort = 0;
     rr::ut::clk(t);
     CHECK(t->readAddrPort == 0);
     CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->m_tstart == 1);
+    CHECK(t->m_taddr == t->cmdAddr);
+    CHECK(t->m_tbytes == (t->cmdSize * 2));
 
     rr::ut::clk(t);
     CHECK(t->readAddrPort == 1);
     CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->m_tstart == 1);
+    CHECK(t->m_taddr == t->cmdAddr);
+    CHECK(t->m_tbytes == (t->cmdSize * 2));
 
+    t->apply = 0;
     const std::size_t numberOfBeats = ((t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT);
     for (std::size_t y = 0; y < t->confYResolution + 1; y++) // + to simulate an additional line (in respect to the cmdSize)
     {
@@ -205,14 +215,28 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
             CHECK(t->m_axis_tstrb == getScissorMask(x, y, 0, 0, t->confXResolution, t->confYResolution, 0, t->confYResolution));
             CHECK(t->m_axis_tvalid == 1);
             CHECK(t->m_axis_tlast == (i >= (t->cmdSize / NUMBER_OF_PIXELS_PER_BEAT) - 1));
-            t->apply = 0;
+
+            CHECK(t->m_tstart == 1);
+            CHECK(t->m_taddr == t->cmdAddr);
+            CHECK(t->m_tbytes == (t->cmdSize * 2));
         }
     }
 
+    // Additional clocks to check, that applied stays 0 as long as m_tdone is not asserted
     rr::ut::clk(t);
     CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->m_tstart == 1);
+    CHECK(t->applied == 0);
+
+    t->m_tdone = 1;
+    rr::ut::clk(t);
+    CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->m_tstart == 0);
+    CHECK(t->applied == 0);
 
     rr::ut::clk(t);
+    CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->m_tstart == 0);
     CHECK(t->applied == 1);
 
     // Destroy model
@@ -280,6 +304,7 @@ TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler
         }
     }
 
+    t->m_tdone = 1;
     rr::ut::clk(t);
     CHECK(t->m_axis_tvalid == 0);
 

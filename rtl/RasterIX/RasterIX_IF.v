@@ -521,6 +521,11 @@ module RasterIX_IF #(
     wire                        framebuffer_axis_tlast;
     wire [DATA_WIDTH - 1 : 0]   framebuffer_axis_tdata;
     wire [STRB_WIDTH - 1 : 0]   framebuffer_axis_tstrb;
+
+    wire                        colorbuffer_tstart;
+    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_taddr;
+    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_tbytes;
+    wire                        colorbuffer_tdone;
     
     generate
         if (ENABLE_FRAMEBUFFER_STREAM)
@@ -569,10 +574,10 @@ module RasterIX_IF #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .tstart(commit_fb),
-                .taddr(fb_addr),
-                .tbytes({ 11'h0, fb_size, 1'b0 }),
-                .tdone(fb_committed),
+                .tstart(colorbuffer_tstart),
+                .taddr(colorbuffer_taddr),
+                .tbytes(colorbuffer_tbytes),
+                .tdone(colorbuffer_tdone),
                 .enableAxiLastSignal(1),
 
                 .s_xvalid(framebuffer_axis_tvalid),
@@ -636,11 +641,14 @@ module RasterIX_IF #(
         .m_framebuffer_axis_tdata(framebuffer_axis_tdata),
         .m_framebuffer_axis_tstrb(framebuffer_axis_tstrb),
 
+        .m_colorbuffer_tstart(colorbuffer_tstart),
+        .m_colorbuffer_taddr(colorbuffer_taddr),
+        .m_colorbuffer_tbytes(colorbuffer_tbytes),
+        .m_colorbuffer_tdone(colorbuffer_tdone),
+
         .swap_fb(swap_fb),
         .swap_fb_enable_vsync(swap_fb_enable_vsync),
         .fb_swapped(fb_swapped),
-        .commit_fb(commit_fb),
-        .fb_committed(fb_committed),
         .fb_addr(fb_addr),
         .fb_size(fb_size),
 

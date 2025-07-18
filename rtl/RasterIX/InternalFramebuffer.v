@@ -50,11 +50,14 @@ module InternalFramebuffer
     // The maximum size stream size
     parameter FB_SIZE_IN_PIXEL_LG = 20,
 
+    // Address with
+    parameter ADDR_WIDTH = 32,
+
     // Size of the pixels
     localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
     // Size of the internal memory
-    localparam ADDR_WIDTH = FRAMEBUFFER_SIZE_IN_PIXEL_LG,
+    localparam PIXEL_ADDR_WIDTH = FRAMEBUFFER_SIZE_IN_PIXEL_LG,
 
     // Width of the AXIS interface with the frame buffer content
     localparam STREAM_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * PIXEL_WIDTH,
@@ -67,7 +70,7 @@ module InternalFramebuffer
     localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
     localparam MEM_MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS,
     localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH,
-    localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2
+    localparam MEM_ADDR_WIDTH = PIXEL_ADDR_WIDTH - PIXEL_PER_BEAT_LOG2
 )
 (
     input   wire                            clk,
@@ -96,7 +99,7 @@ module InternalFramebuffer
     input  wire                             arvalid,
     input  wire                             arlast,
     // output wire                             arready,
-    input  wire [ADDR_WIDTH - 1 : 0]        araddr,
+    input  wire [PIXEL_ADDR_WIDTH - 1 : 0]  araddr,
 
     output wire                             rvalid,
     output wire                             rlast,
@@ -107,7 +110,7 @@ module InternalFramebuffer
     input  wire                             wvalid,
     // input  wire                             wlast,
     // output wire                             wready,
-    input  wire [ADDR_WIDTH - 1 : 0]        waddr,
+    input  wire [PIXEL_ADDR_WIDTH - 1 : 0]  waddr,
     input  wire [PIXEL_WIDTH - 1 : 0]       wdata,
     input  wire                             wstrb,
     input  wire [X_BIT_WIDTH - 1 : 0]       wscreenPosX,
@@ -123,14 +126,19 @@ module InternalFramebuffer
     input  wire                                 cmdCommit, // Starts to stream the memory content via the AXIS interface
     input  wire                                 cmdMemset, // Applies the confClearColor (with respect to the scissor) to the memory
     input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   cmdSize, // Size of the stream 
+    input  wire [ADDR_WIDTH - 1 : 0]            cmdAddr,
 
     // AXI Stream master interface
     output wire                             m_axis_tvalid,
     input  wire                             m_axis_tready,
     output wire                             m_axis_tlast,
     output wire [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
-    output wire [STREAM_STRB_WIDTH - 1 : 0] m_axis_tstrb
-    
+    output wire [STREAM_STRB_WIDTH - 1 : 0] m_axis_tstrb,
+
+    output wire                             m_tstart,
+    output wire [ADDR_WIDTH - 1 : 0]        m_taddr,
+    output wire [ADDR_WIDTH - 1 : 0]        m_tbytes,
+    input  wire                             m_tdone
 );
     wire [MEM_MASK_WIDTH - 1 : 0]   writeMaskPort1; 
     wire [MEM_ADDR_WIDTH - 1 : 0]   writeAddrPort1;
@@ -239,7 +247,8 @@ module InternalFramebuffer
         .X_BIT_WIDTH(X_BIT_WIDTH),
         .Y_BIT_WIDTH(Y_BIT_WIDTH),
         .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
-        .FB_SIZE_IN_PIXEL_LG(FB_SIZE_IN_PIXEL_LG)
+        .FB_SIZE_IN_PIXEL_LG(FB_SIZE_IN_PIXEL_LG),
+        .ADDR_WIDTH(ADDR_WIDTH)
     ) commandHandler (
         .aclk(clk),
         .resetn(!reset),
@@ -271,12 +280,18 @@ module InternalFramebuffer
         .cmdCommit(cmdCommit),
         .cmdMemset(cmdMemset),
         .cmdSize(cmdSize),
+        .cmdAddr(cmdAddr),
 
         // AXI Stream master interface
         .m_axis_tvalid(m_axis_tvalid),
         .m_axis_tready(m_axis_tready),
         .m_axis_tlast(m_axis_tlast),
         .m_axis_tdata(m_axis_tdata),
-        .m_axis_tstrb(m_axis_tstrb)
+        .m_axis_tstrb(m_axis_tstrb),
+
+        .m_tstart(m_tstart),
+        .m_taddr(m_taddr),
+        .m_tbytes(m_tbytes),
+        .m_tdone(m_tdone)
     );
 endmodule

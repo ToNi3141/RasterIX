@@ -44,11 +44,11 @@ module AxisToAxiAdapter #(
     input  wire                         enableAxiLastSignal,
 
     // Read port
-    input  wire                         s_xvalid,
-    output reg                          s_xready,
-    input  wire                         s_xlast,
     input  wire [DATA_WIDTH - 1 : 0]    s_xdata,
     input  wire [STRB_WIDTH - 1 : 0]    s_xstrb,
+    input  wire                         s_xlast,
+    input  wire                         s_xvalid,
+    output reg                          s_xready,
 
     // Write port
     output reg  [DATA_WIDTH - 1 : 0]    m_xdata,
@@ -84,6 +84,8 @@ module AxisToAxiAdapter #(
 
     reg                         startAddressGeneration;
     wire                        addressGenerationDone;
+
+    reg                         streamingDone;
 
     reg  [DATA_WIDTH - 1 : 0]   wdataSkid;
     reg  [STRB_WIDTH - 1 : 0]   wstrbSkid;
@@ -122,24 +124,25 @@ module AxisToAxiAdapter #(
     begin
         if (!resetn)
         begin
-            tdone <= 1;
+            tdone <= 0;
             startAddressGeneration <= 0;
             s_xready <= 0;
             m_xvalid <= 0;
             skidValid <= 0;
+            streamingDone <= 1;
         end
         else
         begin
-            if (tstart && addressGenerationDone)
+            if (tstart && addressGenerationDone && streamingDone)
             begin
-                tdone <= 0;
                 counter <= 0;
                 s_xready <= 1;
                 dataSizeInBytes <= tbytes;
                 startAddressGeneration <= 1;
+                streamingDone <= 0;
             end
 
-            if (!tdone)
+            if (!streamingDone && !tdone)
             begin
                 if (skidValid && m_xready)
                 begin
@@ -177,6 +180,12 @@ module AxisToAxiAdapter #(
                     m_xvalid <= 0;
                     s_xready <= 0;
                 end
+            end
+
+            if (tdone)
+            begin
+                tdone <= 0;
+                streamingDone <= 1;
             end
 
             if (startAddressGeneration && !addressGenerationDone)

@@ -33,7 +33,7 @@ TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
 
     t->s_xvalid = true;
     rr::ut::reset(t);
-    CHECK(t->tdone == true);
+    CHECK(t->tdone == false);
 
     t->tstart = true;
     t->taddr = 0x1000'0000;
@@ -44,7 +44,6 @@ TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
     rr::ut::clk(t);
     CHECK(t->tdone == false);
 
-    t->tstart = false;
     rr::ut::clk(t);
     for (std::size_t i = 0; i < t->tbytes; i += NUMBER_OF_BEATS * BEAT_SIZE)
     {
@@ -71,7 +70,7 @@ TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
 
     t->s_xvalid = 1;
     rr::ut::reset(t);
-    CHECK(t->tdone == true);
+    CHECK(t->tdone == false);
 
     t->tstart = true;
     t->taddr = 0x1000'0000;
@@ -82,7 +81,6 @@ TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
     rr::ut::clk(t);
     CHECK(t->tdone == false);
 
-    t->tstart = false;
     for (std::size_t i = 0; i < t->tbytes; i += BEAT_SIZE)
     {
         t->s_xdata = i;
@@ -101,6 +99,16 @@ TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
     CHECK(t->m_xvalid == false);
     CHECK(t->tdone == true);
 
+    t->tstart = false;
+    rr::ut::clk(t);
+    CHECK(t->m_xvalid == false);
+    CHECK(t->tdone == false);
+
+    // Check that it stays done
+    rr::ut::clk(t);
+    CHECK(t->m_xvalid == false);
+    CHECK(t->tdone == false);
+
     // Destroy model
     delete t;
 }
@@ -111,7 +119,7 @@ TEST_CASE("check mem read", "[VAxisToAxiAdapter]")
 
     t->s_xvalid = 1;
     rr::ut::reset(t);
-    CHECK(t->tdone == true);
+    CHECK(t->tdone == false);
 
     t->tstart = true;
     t->taddr = 0x1000'0000;
@@ -122,7 +130,6 @@ TEST_CASE("check mem read", "[VAxisToAxiAdapter]")
     rr::ut::clk(t);
     CHECK(t->tdone == false);
 
-    t->tstart = false;
     for (std::size_t i = 0; i < t->tbytes; i += BEAT_SIZE)
     {
         t->s_xdata = i;
@@ -141,6 +148,11 @@ TEST_CASE("check mem read", "[VAxisToAxiAdapter]")
     CHECK(t->m_xvalid == false);
     CHECK(t->tdone == true);
 
+    t->tstart = false;
+    rr::ut::clk(t);
+    CHECK(t->m_xvalid == false);
+    CHECK(t->tdone == false);
+
     // Destroy model
     delete t;
 }
@@ -151,7 +163,7 @@ TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
 
     t->s_xvalid = true;
     rr::ut::reset(t);
-    CHECK(t->tdone == true);
+    CHECK(t->tdone == false);
 
     t->tstart = true;
     t->taddr = 0x1000'0000;
@@ -162,8 +174,6 @@ TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
     rr::ut::clk(t);
     CHECK(t->tdone == false);
     CHECK(t->s_xready == true);
-
-    t->tstart = false;
 
     t->s_xdata = 0;
     t->s_xstrb = 0;
@@ -219,6 +229,11 @@ TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
     rr::ut::clk(t);
     CHECK(t->m_xvalid == false);
     CHECK(t->tdone == true);
+
+    t->tstart = false;
+    rr::ut::clk(t);
+    CHECK(t->m_xvalid == false);
+    CHECK(t->tdone == false);
 
     // Destroy model
     delete t;
