@@ -21,10 +21,6 @@ module RasterIX_IF #(
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
     parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 16,
 
-    // Enables the m_framebuffer_axis_* interface. This is exclusive to the
-    // swap_fb interface. When this is enabled, the swap_fb interface can't be used.
-    parameter ENABLE_FRAMEBUFFER_STREAM = 0,
-
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
     // Lower depth will result in color banding.
@@ -90,11 +86,6 @@ module RasterIX_IF #(
     input  wire                             s_cmd_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
-    // AXI Stream framebuffer
-    output wire                             m_framebuffer_axis_tvalid,
-    input  wire                             m_framebuffer_axis_tready,
-    output wire                             m_framebuffer_axis_tlast,
-    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
     // Framebuffer
     output wire                             swap_fb,
     output wire                             swap_fb_enable_vsync,
@@ -140,7 +131,7 @@ module RasterIX_IF #(
     output wire                             m_axi_rready
 );
     localparam ID_WIDTH_LOC = ID_WIDTH - 2;
-    localparam NRS = (ENABLE_FRAMEBUFFER_STREAM) ? 3 : 4;
+    localparam NRS = 4;
 
     initial
     begin
@@ -516,96 +507,56 @@ module RasterIX_IF #(
     wire commit_fb;
     wire fb_committed;
 
-    wire                        framebuffer_axis_tvalid;
-    wire                        framebuffer_axis_tready;
-    wire                        framebuffer_axis_tlast;
-    wire [DATA_WIDTH - 1 : 0]   framebuffer_axis_tdata;
-    wire [STRB_WIDTH - 1 : 0]   framebuffer_axis_tstrb;
+    wire                        colorbuffer_axis_tvalid;
+    wire                        colorbuffer_axis_tready;
+    wire                        colorbuffer_axis_tlast;
+    wire [DATA_WIDTH - 1 : 0]   colorbuffer_axis_tdata;
+    wire [STRB_WIDTH - 1 : 0]   colorbuffer_axis_tstrb;
 
     wire                        colorbuffer_avalid;
     wire [ADDR_WIDTH - 1 : 0]   colorbuffer_aaddr;
     wire [ADDR_WIDTH - 1 : 0]   colorbuffer_abytes;
     wire                        colorbuffer_aready;
-    
-    generate
-        if (ENABLE_FRAMEBUFFER_STREAM)
-        begin
-            axis_adapter #(
-                .S_DATA_WIDTH(DATA_WIDTH),
-                .M_DATA_WIDTH(CMD_STREAM_WIDTH),
-                .S_KEEP_ENABLE(1),
-                .M_KEEP_ENABLE(1),
-                .ID_ENABLE(0),
-                .DEST_ENABLE(0),
-                .USER_ENABLE(0)
-            ) framebufferAdapter (
-                .clk(aclk),
-                .rst(!resetn),
 
-                .s_axis_tdata(framebuffer_axis_tdata),
-                .s_axis_tkeep(~0),
-                .s_axis_tvalid(framebuffer_axis_tvalid),
-                .s_axis_tready(framebuffer_axis_tready),
-                .s_axis_tlast(framebuffer_axis_tlast),
-                .s_axis_tid(0),
-                .s_axis_tdest(0),
-                .s_axis_tuser(0),
+    AxisToAxiAdapter #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .STRB_WIDTH(STRB_WIDTH),
+        .ID_WIDTH(ID_WIDTH_LOC)
+    ) axisToAxiAdapter (
+        .aclk(aclk),
+        .resetn(resetn),
 
-                .m_axis_tdata(m_framebuffer_axis_tdata),
-                .m_axis_tkeep(),
-                .m_axis_tvalid(m_framebuffer_axis_tvalid),
-                .m_axis_tready(m_framebuffer_axis_tready),
-                .m_axis_tlast(m_framebuffer_axis_tlast),
-                .m_axis_tid(),
-                .m_axis_tdest(),
-                .m_axis_tuser()
-            );
+        .s_avalid(colorbuffer_avalid),
+        .s_aaddr(colorbuffer_aaddr),
+        .s_abytes(colorbuffer_abytes),
+        .s_aready(colorbuffer_aready),
+        .enableAxiLastSignal(1),
 
-            assign fb_committed = !commit_fb;
-        end
-        else
-        begin
-            AxisToAxiAdapter #(
-                .DATA_WIDTH(DATA_WIDTH),
-                .ADDR_WIDTH(ADDR_WIDTH),
-                .STRB_WIDTH(STRB_WIDTH),
-                .ID_WIDTH(ID_WIDTH_LOC)
-            ) axisToAxiAdapter (
-                .aclk(aclk),
-                .resetn(resetn),
+        .s_xvalid(colorbuffer_axis_tvalid),
+        .s_xready(colorbuffer_axis_tready),
+        .s_xlast(colorbuffer_axis_tlast),
+        .s_xdata(colorbuffer_axis_tdata),
+        .s_xstrb(colorbuffer_axis_tstrb),
 
-                .s_avalid(colorbuffer_avalid),
-                .s_aaddr(colorbuffer_aaddr),
-                .s_abytes(colorbuffer_abytes),
-                .s_aready(colorbuffer_aready),
-                .enableAxiLastSignal(1),
+        .m_axid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_axaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_axlen(xbar_axi_awlen[3 * 8 +: 8]),
+        .m_axsize(xbar_axi_awsize[3 * 3 +: 3]),
+        .m_axburst(xbar_axi_awburst[3 * 2 +: 2]),
+        .m_axlock(xbar_axi_awlock[3 * 1 +: 1]),
+        .m_axcache(xbar_axi_awcache[3 * 4 +: 4]),
+        .m_axprot(xbar_axi_awprot[3 * 3 +: 3]), 
+        .m_axvalid(xbar_axi_awvalid[3 * 1 +: 1]),
+        .m_axready(xbar_axi_awready[3 * 1 +: 1]),
 
-                .s_xvalid(framebuffer_axis_tvalid),
-                .s_xready(framebuffer_axis_tready),
-                .s_xlast(framebuffer_axis_tlast),
-                .s_xdata(framebuffer_axis_tdata),
-                .s_xstrb(framebuffer_axis_tstrb),
-
-                .m_axid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-                .m_axaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
-                .m_axlen(xbar_axi_awlen[3 * 8 +: 8]),
-                .m_axsize(xbar_axi_awsize[3 * 3 +: 3]),
-                .m_axburst(xbar_axi_awburst[3 * 2 +: 2]),
-                .m_axlock(xbar_axi_awlock[3 * 1 +: 1]),
-                .m_axcache(xbar_axi_awcache[3 * 4 +: 4]),
-                .m_axprot(xbar_axi_awprot[3 * 3 +: 3]), 
-                .m_axvalid(xbar_axi_awvalid[3 * 1 +: 1]),
-                .m_axready(xbar_axi_awready[3 * 1 +: 1]),
-
-                .m_xdata(xbar_axi_wdata[3 * DATA_WIDTH +: DATA_WIDTH]),
-                .m_xstrb(xbar_axi_wstrb[3 * STRB_WIDTH +: STRB_WIDTH]),
-                .m_xlast(xbar_axi_wlast[3 * 1 +: 1]),
-                .m_xvalid(xbar_axi_wvalid[3 * 1 +: 1]),
-                .m_xready(xbar_axi_wready[3 * 1 +: 1])
-            );
-            assign xbar_axi_bready[3 * 1 +: 1] = 1;
-        end
-    endgenerate
+        .m_xdata(xbar_axi_wdata[3 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_xstrb(xbar_axi_wstrb[3 * STRB_WIDTH +: STRB_WIDTH]),
+        .m_xlast(xbar_axi_wlast[3 * 1 +: 1]),
+        .m_xvalid(xbar_axi_wvalid[3 * 1 +: 1]),
+        .m_xready(xbar_axi_wready[3 * 1 +: 1])
+    );
+    assign xbar_axi_bready[3 * 1 +: 1] = 1;
 
     RasterIXCoreIF #(
         .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
@@ -635,11 +586,11 @@ module RasterIX_IF #(
         .s_cmd_axis_tlast(cmd_axis_tlast),
         .s_cmd_axis_tdata(cmd_axis_tdata),
 
-        .m_framebuffer_axis_tvalid(framebuffer_axis_tvalid),
-        .m_framebuffer_axis_tready(framebuffer_axis_tready),
-        .m_framebuffer_axis_tlast(framebuffer_axis_tlast),
-        .m_framebuffer_axis_tdata(framebuffer_axis_tdata),
-        .m_framebuffer_axis_tstrb(framebuffer_axis_tstrb),
+        .m_colorbuffer_axis_tvalid(colorbuffer_axis_tvalid),
+        .m_colorbuffer_axis_tready(colorbuffer_axis_tready),
+        .m_colorbuffer_axis_tlast(colorbuffer_axis_tlast),
+        .m_colorbuffer_axis_tdata(colorbuffer_axis_tdata),
+        .m_colorbuffer_axis_tstrb(colorbuffer_axis_tstrb),
 
         .m_colorbuffer_avalid(colorbuffer_avalid),
         .m_colorbuffer_aaddr(colorbuffer_aaddr),

@@ -102,11 +102,11 @@ module RasterIXCoreIF #(
 
     // Framebuffer output
     // AXI Stream master interface (RGB565)
-    output wire                                 m_framebuffer_axis_tvalid,
-    input  wire                                 m_framebuffer_axis_tready,
-    output wire                                 m_framebuffer_axis_tlast,
-    output wire [DATA_WIDTH - 1 : 0]            m_framebuffer_axis_tdata,
-    output wire [STRB_WIDTH - 1 : 0]            m_framebuffer_axis_tstrb,
+    output wire                                 m_colorbuffer_axis_tvalid,
+    input  wire                                 m_colorbuffer_axis_tready,
+    output wire                                 m_colorbuffer_axis_tlast,
+    output wire [DATA_WIDTH - 1 : 0]            m_colorbuffer_axis_tdata,
+    output wire [STRB_WIDTH - 1 : 0]            m_colorbuffer_axis_tstrb,
 
     output wire                                 m_colorbuffer_avalid,
     output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_aaddr,
@@ -358,9 +358,9 @@ module RasterIXCoreIF #(
         .cmdSize(colorBufferSize),
         .cmdAddr(colorBufferAddr),
 
-        .m_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_axis_tready(m_framebuffer_axis_tready),
-        .m_axis_tlast(m_framebuffer_axis_tlast),
+        .m_axis_tvalid(m_colorbuffer_axis_tvalid),
+        .m_axis_tready(m_colorbuffer_axis_tready),
+        .m_axis_tlast(m_colorbuffer_axis_tlast),
         .m_axis_tdata(framebuffer_unconverted_axis_tdata),
         .m_axis_tstrb(framebuffer_unconverted_axis_tstrb),
 
@@ -389,13 +389,13 @@ module RasterIXCoreIF #(
         if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
         begin
             `ReduceVec(ReduceVecFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
-            assign m_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(framebuffer_unconverted_axis_tdata)));
+            assign m_colorbuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(framebuffer_unconverted_axis_tdata)));
         end
         else
         begin
-            assign m_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(framebuffer_unconverted_axis_tdata));
+            assign m_colorbuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(framebuffer_unconverted_axis_tdata));
         end
-        assign m_framebuffer_axis_tstrb = FramebufferMaskToByteMask(framebuffer_unconverted_axis_tstrb);
+        assign m_colorbuffer_axis_tstrb = FramebufferMaskToByteMask(framebuffer_unconverted_axis_tstrb);
     endgenerate
 
     generate 
