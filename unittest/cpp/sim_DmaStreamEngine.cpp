@@ -673,19 +673,6 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         rr::ut::clk(top);
 
         // STORE ADDR ////////////////////////
-        // One idle cycle to wait till the address generator starts
-        REQUIRE(t.m_mem_axi_awvalid == 0);
-        REQUIRE(t.m_mem_axi_wvalid == 0);
-        REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 0);
-        REQUIRE(t.m_st0_axis_tvalid == 0);
-        REQUIRE(t.s_st0_axis_tready == 1);
-        REQUIRE(t.m_st1_axis_tvalid == 0);
-        REQUIRE(t.s_st1_axis_tready == 0);
-
-        rr::ut::clk(top);
-
-        // STORE ADDR ////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 1);
         REQUIRE(t.m_mem_axi_wvalid == 0);
         REQUIRE(t.m_mem_axi_arvalid == 0);
@@ -876,19 +863,6 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 1);
 
         t.s_st1_axis_tvalid = 0;
-
-        rr::ut::clk(top);
-
-        // STORE ADDR ////////////////////////
-        // One idle cycle to wait till the address generator starts
-        REQUIRE(t.m_mem_axi_awvalid == 0);
-        REQUIRE(t.m_mem_axi_wvalid == 0);
-        REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 0);
-        REQUIRE(t.m_st0_axis_tvalid == 0);
-        REQUIRE(t.s_st0_axis_tready == 0);
-        REQUIRE(t.m_st1_axis_tvalid == 0);
-        REQUIRE(t.s_st1_axis_tready == 1);
 
         rr::ut::clk(top);
 
@@ -1087,19 +1061,6 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         rr::ut::clk(top);
 
         // LOAD ADDR /////////////////////////
-        // One idle cycle to wait till the address generator starts
-        REQUIRE(t.m_mem_axi_awvalid == 0);
-        REQUIRE(t.m_mem_axi_wvalid == 0);
-        REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 1);
-        REQUIRE(t.m_st0_axis_tvalid == 0);
-        REQUIRE(t.s_st0_axis_tready == 0);
-        REQUIRE(t.m_st1_axis_tvalid == 0);
-        REQUIRE(t.s_st1_axis_tready == 0);
-
-        rr::ut::clk(top);
-
-        // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
         REQUIRE(t.m_mem_axi_wvalid == 0);
         REQUIRE(t.m_mem_axi_arvalid == 1);
@@ -1250,19 +1211,6 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 0);
 
         t.m_st1_axis_tready = 0;
-
-        rr::ut::clk(top);
-
-        // LOAD ADDR /////////////////////////
-        // One idle cycle to wait till the address generator starts
-        REQUIRE(t.m_mem_axi_awvalid == 0);
-        REQUIRE(t.m_mem_axi_wvalid == 0);
-        REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 1);
-        REQUIRE(t.m_st0_axis_tvalid == 0);
-        REQUIRE(t.s_st0_axis_tready == 0);
-        REQUIRE(t.m_st1_axis_tvalid == 0);
-        REQUIRE(t.s_st1_axis_tready == 0);
 
         rr::ut::clk(top);
 

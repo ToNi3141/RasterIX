@@ -44,7 +44,6 @@ TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
     rr::ut::clk(t);
     CHECK(t->s_aready == false);
 
-    rr::ut::clk(t);
     for (std::size_t i = 0; i < t->s_abytes; i += NUMBER_OF_BEATS * BEAT_SIZE)
     {
         rr::ut::clk(t);

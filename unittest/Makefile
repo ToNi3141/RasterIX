@@ -142,5 +142,10 @@ axisToAxiAdapter:
 	-make -C obj_dir -f VAxisToAxiAdapter.mk
 	./obj_dir/VAxisToAxiAdapter
 
+axisToAxiCrossbar:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/AxisToAxiCrossbar.v --top-module AxisToAxiCrossbar cpp/sim_AxisToAxiCrossbar.cpp -I../rtl/RasterIX/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VAxisToAxiCrossbar.mk
+	./obj_dir/VAxisToAxiCrossbar
+
 .SECONDARY:
 .PHONY: all clean

@@ -88,6 +88,8 @@ module LinearAddressGenerator #(
             begin
                 addr <= startAddr;
                 addrLast <= startAddr + dataSizeInBytes - 1;
+                axaddr <= startAddr;
+                axvalid <= 1;
                 done <= 0;
             end
 
@@ -100,11 +102,6 @@ module LinearAddressGenerator #(
                         addr <= addrNext;
                         axaddr <= addrNext;
                     end
-                    else 
-                    begin
-                        axaddr <= addr;
-                    end
-                    axvalid <= 1;
                 end
                 else if (axready)
                 begin
