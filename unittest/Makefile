@@ -21,13 +21,14 @@ all: \
 	attributeInterpolationX \
 	attributePerspectiveCorrectionX \
 	triangleStreamF2XConverter \
-	pagedMemoryReader
+	pagedMemoryReader \
+	internalFramebufferCommandHandler
  
 clean:
 	rm -rf obj_dir
 
 dmaStreamEngine:
-	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/DmaStreamEngine.v --top-module DmaStreamEngine cpp/sim_DmaStreamEngine.cpp
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/DmaStreamEngine.v --top-module DmaStreamEngine cpp/sim_DmaStreamEngine.cpp -I../rtl/RasterIX/
 	-make -C obj_dir -f VDmaStreamEngine.mk
 	./obj_dir/VDmaStreamEngine
 
@@ -130,6 +131,21 @@ pagedMemoryReader:
 	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/PagedMemoryReader.v --top-module PagedMemoryReader cpp/sim_PagedMemoryReader.cpp -I../rtl/RasterIX/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
 	-make -C obj_dir -f VPagedMemoryReader.mk
 	./obj_dir/VPagedMemoryReader
+
+internalFramebufferCommandHandler:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/InternalFramebufferCommandHandler.v --top-module InternalFramebufferCommandHandler cpp/sim_InternalFramebufferCommandHandler.cpp -I../rtl/RasterIX/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VInternalFramebufferCommandHandler.mk
+	./obj_dir/VInternalFramebufferCommandHandler
+
+axisToAxiAdapter:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/AxisToAxiAdapter.v --top-module AxisToAxiAdapter cpp/sim_AxisToAxiAdapter.cpp -I../rtl/RasterIX/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VAxisToAxiAdapter.mk
+	./obj_dir/VAxisToAxiAdapter
+
+axisToAxiCrossbar:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/AxisToAxiCrossbar.v --top-module AxisToAxiCrossbar cpp/sim_AxisToAxiCrossbar.cpp -I../rtl/RasterIX/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/
+	-make -C obj_dir -f VAxisToAxiCrossbar.mk
+	./obj_dir/VAxisToAxiCrossbar
 
 .SECONDARY:
 .PHONY: all clean

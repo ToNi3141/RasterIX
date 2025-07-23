@@ -67,7 +67,7 @@ The driver is build with the following components:
       - `TextureBuffer`: Buffer which contains the complete texture. One for each TMU. They are filled with data from the command parser.
       - `StreamConcatFifo`: Concatenates the pixel stream with the framebuffer stream. It only forwards a pixel if (enabled) all three framebuffers have read a fragment. Otherwise the pipeline stalls here. It does the opposite of the `AXISBroadcast`.
       - `PerFragmentPipeline`: Calculates the per fragment operations like color blending and alpha / stencil / depth tests.
-      - `FrameBuffer`: Contains the color, depth and stencil buffer.
+      - `InternalFramebuffer`: Contains the color, depth and stencil buffer.
 
 ### Flow Control
 The high level modules using a back pressure mechanism (valid/ready) to stall the pipeline. High level modules are considered all modules in the `RasterIXRenderCore`. Other modules using a clock enable signal (ce) to stall the processing when the m_ready signal stalls.
