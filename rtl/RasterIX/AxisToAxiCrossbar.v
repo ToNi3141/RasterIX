@@ -38,7 +38,7 @@ module AxisToAxiCrossbar #(
     input  wire [NPRT - 1 : 0]                  s_avalid,
     input  wire [NPRT - 1 : 0]                  s_arnw, // address read not or write, 0 = read, 1 = write
     input  wire [(NPRT * ADDR_WIDTH) - 1 : 0]   s_aaddr,
-    input  wire [(NPRT * ADDR_WIDTH) - 1 : 0]   s_abytes,
+    input  wire [(NPRT * ADDR_WIDTH) - 1 : 0]   s_abeats,
     output reg  [NPRT - 1 : 0]                  s_aready,
 
     // Write port
@@ -128,7 +128,7 @@ module AxisToAxiCrossbar #(
     reg                         avalid;
     wire                        aready;
     reg  [ADDR_WIDTH - 1 : 0]   aaddr;
-    reg  [ADDR_WIDTH - 1 : 0]   abytes;
+    reg  [ADDR_WIDTH - 1 : 0]   abeats;
 
     wire                        s_wlastSignal;
     wire                        s_rlastSignal;
@@ -146,7 +146,7 @@ module AxisToAxiCrossbar #(
 
         .s_avalid(avalid),
         .s_aaddr(aaddr),
-        .s_abytes(abytes),
+        .s_abeats(abeats),
         .s_aready(aready),
 
         .enableAxiLastSignal(writeToMemory),
@@ -258,7 +258,7 @@ module AxisToAxiCrossbar #(
                     writeToMemory <= s_arnw[portSelect];
                     avalid <= s_avalid[portSelect];
                     aaddr <= s_aaddr[(portSelect * ADDR_WIDTH) +: ADDR_WIDTH];
-                    abytes <= s_abytes[(portSelect * ADDR_WIDTH) +: ADDR_WIDTH];
+                    abeats <= s_abeats[(portSelect * ADDR_WIDTH) +: ADDR_WIDTH];
                     s_aready[portSelect] <= 1;
 
                     s_wlastReg <= 0;

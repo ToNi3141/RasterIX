@@ -42,7 +42,7 @@ module LinearAddressGenerator #(
     output reg                          done,
 
     input  wire [ADDR_WIDTH - 1 : 0]    startAddr,
-    input  wire [ADDR_WIDTH - 1 : 0]    dataSizeInBytes,
+    input  wire [ADDR_WIDTH - 1 : 0]    dataSizeInBeats,
 
     // Address channel
     output reg  [ID_WIDTH - 1 : 0]      axid,
@@ -87,7 +87,7 @@ module LinearAddressGenerator #(
             if (start && done)
             begin
                 addr <= startAddr;
-                addrLast <= startAddr + dataSizeInBytes - 1;
+                addrLast <= startAddr + (dataSizeInBeats << AxSIZE_BYTES_PER_BEAT) - 1;
                 axaddr <= startAddr;
                 axvalid <= 1;
                 done <= 0;

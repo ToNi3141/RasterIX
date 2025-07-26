@@ -110,7 +110,7 @@ module InternalFramebufferCommandHandler
 
     output reg                              m_avalid,
     output reg  [ADDR_WIDTH - 1 : 0]        m_aaddr,
-    output reg  [ADDR_WIDTH - 1 : 0]        m_abytes,
+    output reg  [ADDR_WIDTH - 1 : 0]        m_abeats,
     input  wire                             m_aready,
     output reg                              m_arnw // 0 = read, 1 = write
 );
@@ -222,11 +222,12 @@ module InternalFramebufferCommandHandler
                         cmdState <= COMMAND_MEMSET;
                     end
 
+                    m_abeats <= { 12'b0, cmdSize } >> PIXEL_PER_BEAT_LOG2;
+                    m_aaddr <= cmdAddr;
+
                     if (cmdCommit)
                     begin
                         m_avalid <= 1;
-                        m_aaddr <= cmdAddr;
-                        m_abytes <= { 11'b0, cmdSize, 1'b0 };
                         m_arnw <= 1;
                         scissorY <= confYResolution - 1;
                         scissorStartX <= 0;
@@ -241,8 +242,6 @@ module InternalFramebufferCommandHandler
                     begin
                         s_axis_tready <= 1;
                         m_avalid <= 1;
-                        m_aaddr <= cmdAddr;
-                        m_abytes <= { 11'b0, cmdSize, 1'b0 };
                         m_arnw <= 0;
 
                         cmdState <= COMMAND_READ;

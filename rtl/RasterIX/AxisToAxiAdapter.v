@@ -36,7 +36,7 @@ module AxisToAxiAdapter #(
 
     input  wire                         s_avalid,
     input  wire [ADDR_WIDTH - 1 : 0]    s_aaddr,
-    input  wire [ADDR_WIDTH - 1 : 0]    s_abytes,
+    input  wire [ADDR_WIDTH - 1 : 0]    s_abeats,
     output reg                          s_aready,
 
     // When this is true, the m_xlast signal matches the address channel transfers (axi behavior).
@@ -73,14 +73,14 @@ module AxisToAxiAdapter #(
     localparam AWLEN = 15;
     localparam AWSIZE = $clog2(DATA_WIDTH / 8);
 
-    wire axiLastSignal = ((counterNext >> AWSIZE) & AWLEN) == 0;
-    wire axisLastSignal = (counterNext == dataSizeInBytes);
+    wire axiLastSignal = (counterNext & AWLEN) == 0;
+    wire axisLastSignal = (counterNext == dataSizeInBeats);
 
-    reg  [ADDR_WIDTH - 1 : 0]   dataSizeInBytes;
+    reg  [ADDR_WIDTH - 1 : 0]   dataSizeInBeats;
     reg  [ADDR_WIDTH - 1 : 0]   counter;
-    wire [ADDR_WIDTH - 1 : 0]   counterNext = counter + (DATA_WIDTH / 8);
+    wire [ADDR_WIDTH - 1 : 0]   counterNext = counter + 1;
     wire                        lastSignal = (axiLastSignal && enableAxiLastSignal) || (axisLastSignal && !enableAxiLastSignal);
-    wire                        transferEnd = counterNext > dataSizeInBytes;
+    wire                        transferEnd = counterNext > dataSizeInBeats;
 
     reg                         startAddressGeneration;
     wire                        addressGenerationDone;
@@ -106,7 +106,7 @@ module AxisToAxiAdapter #(
         .done(addressGenerationDone),
 
         .startAddr(s_aaddr),
-        .dataSizeInBytes(s_abytes),
+        .dataSizeInBeats(s_abeats),
 
         .axid(m_axid),
         .axaddr(m_axaddr),
@@ -137,7 +137,7 @@ module AxisToAxiAdapter #(
             begin
                 counter <= 0;
                 s_xready <= 1;
-                dataSizeInBytes <= s_abytes;
+                dataSizeInBeats <= s_abeats;
                 startAddressGeneration <= 1;
                 streamingDone <= 0;
             end

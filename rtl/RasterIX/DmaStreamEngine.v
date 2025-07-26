@@ -211,7 +211,7 @@ module DmaStreamEngine #(
     reg  [ 1 : 0]               tmpMuxIn;
     reg  [ 1 : 0]               tmpMuxOut;
     reg  [ADDR_WIDTH - 1 : 0]   counter;
-    reg  [ADDR_WIDTH - 1 : 0]   dataSizeInBytes;
+    reg  [ADDR_WIDTH - 1 : 0]   dataSizeInBeats;
     
     reg  [ADDR_WIDTH - 1 : 0]   addrStart;
     reg                         enableWriteChannel;
@@ -262,7 +262,7 @@ module DmaStreamEngine #(
         .done(addressGenerationDone),
 
         .startAddr(addrStart),
-        .dataSizeInBytes(dataSizeInBytes),
+        .dataSizeInBeats(dataSizeInBeats),
 
         .axid(mem_axi_axid),
         .axaddr(mem_axi_axaddr),
@@ -455,7 +455,7 @@ module DmaStreamEngine #(
                         startAddressGeneration <= (tmpMuxIn == MUX_CHANNEL_MEM) || (tmpMuxOut == MUX_CHANNEL_MEM);
 
                         addrStart <= addrTmp;
-                        dataSizeInBytes <= counter << BYTES_PER_BEAT_LG2;
+                        dataSizeInBeats <= counter;
 
                         muxIn <= tmpMuxIn;
                         muxOut <= tmpMuxOut;

@@ -303,7 +303,7 @@ module RasterIXCoreIF #(
 
                 .m_avalid(),
                 .m_aaddr(),
-                .m_abytes(),
+                .m_abeats(),
                 .m_aready(1'b1)
             );
             defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
@@ -371,7 +371,7 @@ module RasterIXCoreIF #(
 
         .m_avalid(m_colorbuffer_avalid),
         .m_aaddr(m_colorbuffer_aaddr),
-        .m_abytes(m_colorbuffer_abytes),
+        .m_abeats(m_colorbuffer_abeats),
         .m_aready(m_colorbuffer_aready)
     );
     defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
@@ -449,7 +449,7 @@ module RasterIXCoreIF #(
 
                 .m_avalid(),
                 .m_aaddr(),
-                .m_abytes(),
+                .m_abeats(),
                 .m_aready(1'b1)
             );
             defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;

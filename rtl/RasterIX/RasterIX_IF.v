@@ -515,7 +515,7 @@ module RasterIX_IF #(
 
     wire                        colorbuffer_avalid;
     wire [ADDR_WIDTH - 1 : 0]   colorbuffer_aaddr;
-    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_abytes;
+    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_abeats;
     wire                        colorbuffer_aready;
 
     AxisToAxiAdapter #(
@@ -529,7 +529,7 @@ module RasterIX_IF #(
 
         .s_avalid(colorbuffer_avalid),
         .s_aaddr(colorbuffer_aaddr),
-        .s_abytes(colorbuffer_abytes),
+        .s_abeats(colorbuffer_abeats),
         .s_aready(colorbuffer_aready),
         .enableAxiLastSignal(1),
 
@@ -594,7 +594,7 @@ module RasterIX_IF #(
 
         .m_colorbuffer_avalid(colorbuffer_avalid),
         .m_colorbuffer_aaddr(colorbuffer_aaddr),
-        .m_colorbuffer_abytes(colorbuffer_abytes),
+        .m_colorbuffer_abeats(colorbuffer_abeats),
         .m_colorbuffer_aready(colorbuffer_aready),
 
         .swap_fb(swap_fb),

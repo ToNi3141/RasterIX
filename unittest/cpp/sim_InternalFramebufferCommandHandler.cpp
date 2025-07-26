@@ -191,7 +191,7 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
-    CHECK(t->m_abytes == (t->cmdSize * 2));
+    CHECK(t->m_abeats == (t->cmdSize / 2));
     CHECK(t->m_arnw == 1);
 
     rr::ut::clk(t);
@@ -199,7 +199,7 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
-    CHECK(t->m_abytes == (t->cmdSize * 2));
+    CHECK(t->m_abeats == (t->cmdSize / 2));
     CHECK(t->m_arnw == 1);
 
     t->apply = 0;
@@ -222,7 +222,7 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
 
             CHECK(t->m_avalid == 1);
             CHECK(t->m_aaddr == t->cmdAddr);
-            CHECK(t->m_abytes == (t->cmdSize * 2));
+            CHECK(t->m_abeats == (t->cmdSize / 2));
         }
     }
 
@@ -338,7 +338,7 @@ TEST_CASE("read", "[VInternalFramebufferCommandHandler]")
     CHECK(t->s_axis_tready == 1);
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
-    CHECK(t->m_abytes == (t->cmdSize * 2));
+    CHECK(t->m_abeats == (t->cmdSize / 2));
     CHECK(t->m_arnw == 0);
 
     rr::ut::clk(t);
@@ -346,7 +346,7 @@ TEST_CASE("read", "[VInternalFramebufferCommandHandler]")
     CHECK(t->s_axis_tready == 1);
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
-    CHECK(t->m_abytes == (t->cmdSize * 2));
+    CHECK(t->m_abeats == (t->cmdSize / 2));
     CHECK(t->m_arnw == 0);
 
     t->apply = 0;
@@ -365,7 +365,7 @@ TEST_CASE("read", "[VInternalFramebufferCommandHandler]")
 
         CHECK(t->m_avalid == 1);
         CHECK(t->m_aaddr == t->cmdAddr);
-        CHECK(t->m_abytes == (t->cmdSize * 2));
+        CHECK(t->m_abeats == (t->cmdSize / 2));
     }
 
     // Additional clocks to check, that applied stays 0 as long as m_aready is not asserted

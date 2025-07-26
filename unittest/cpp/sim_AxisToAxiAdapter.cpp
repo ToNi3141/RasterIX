@@ -37,18 +37,18 @@ TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
 
     t->s_avalid = true;
     t->s_aaddr = 0x1000'0000;
-    t->s_abytes = 0x100;
+    t->s_abeats = NUMBER_OF_BEATS;
     t->enableAxiLastSignal = true;
     t->m_axready = true;
     t->m_xready = true;
     rr::ut::clk(t);
     CHECK(t->s_aready == false);
 
-    for (std::size_t i = 0; i < t->s_abytes; i += NUMBER_OF_BEATS * BEAT_SIZE)
+    for (std::size_t i = 0; i < t->s_abeats; i += NUMBER_OF_BEATS)
     {
         rr::ut::clk(t);
         CHECK(t->m_axvalid == true);
-        CHECK(t->m_axaddr == (t->s_aaddr + i));
+        CHECK(t->m_axaddr == (t->s_aaddr + (i * BEAT_SIZE)));
         CHECK(t->m_axlen == (NUMBER_OF_BEATS - 1));
         CHECK(t->m_axsize == 2);
         CHECK(t->m_axburst == 1);
@@ -73,14 +73,14 @@ TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
 
     t->s_avalid = true;
     t->s_aaddr = 0x1000'0000;
-    t->s_abytes = 0x100;
+    t->s_abeats = NUMBER_OF_BEATS;
     t->enableAxiLastSignal = true;
     t->m_axready = true;
     t->m_xready = true;
     rr::ut::clk(t);
     CHECK(t->s_aready == false);
 
-    for (std::size_t i = 0; i < t->s_abytes; i += BEAT_SIZE)
+    for (std::size_t i = 0; i < t->s_abeats; i++)
     {
         t->s_xdata = i;
         t->s_xstrb = i % NUMBER_OF_BEATS;
@@ -89,7 +89,7 @@ TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
         INFO(std::string("i ") + std::to_string(i));
         CHECK(t->m_xdata == i);
         CHECK(t->m_xvalid == true);
-        CHECK(t->m_xlast == ((i % (NUMBER_OF_BEATS * BEAT_SIZE)) == ((NUMBER_OF_BEATS - 1) * BEAT_SIZE)));
+        CHECK(t->m_xlast == ((i % (NUMBER_OF_BEATS)) == (NUMBER_OF_BEATS - 1)));
         CHECK(t->m_xstrb == (i % NUMBER_OF_BEATS));
         CHECK(t->s_aready == false);
     }
@@ -122,14 +122,14 @@ TEST_CASE("check mem read", "[VAxisToAxiAdapter]")
 
     t->s_avalid = true;
     t->s_aaddr = 0x1000'0000;
-    t->s_abytes = 0x100;
+    t->s_abeats = NUMBER_OF_BEATS;
     t->enableAxiLastSignal = false;
     t->m_axready = true;
     t->m_xready = true;
     rr::ut::clk(t);
     CHECK(t->s_aready == false);
 
-    for (std::size_t i = 0; i < t->s_abytes; i += BEAT_SIZE)
+    for (std::size_t i = 0; i < t->s_abeats; i++)
     {
         t->s_xdata = i;
         t->s_xstrb = i % NUMBER_OF_BEATS;
@@ -138,7 +138,7 @@ TEST_CASE("check mem read", "[VAxisToAxiAdapter]")
         INFO(std::string("i ") + std::to_string(i));
         CHECK(t->m_xdata == i);
         CHECK(t->m_xvalid == true);
-        CHECK(t->m_xlast == ((i + BEAT_SIZE) == t->s_abytes));
+        CHECK(t->m_xlast == ((i + 1) == t->s_abeats));
         CHECK(t->m_xstrb == (i % NUMBER_OF_BEATS));
         CHECK(t->s_aready == false);
     }
@@ -166,7 +166,7 @@ TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
 
     t->s_avalid = true;
     t->s_aaddr = 0x1000'0000;
-    t->s_abytes = 0x100;
+    t->s_abeats = NUMBER_OF_BEATS;
     t->enableAxiLastSignal = true;
     t->m_axready = true;
     t->m_xready = false;
@@ -186,8 +186,8 @@ TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
     CHECK(t->s_xready == true);
     CHECK(t->s_aready == false);
 
-    t->s_xdata = BEAT_SIZE;
-    t->s_xstrb = BEAT_SIZE;
+    t->s_xdata = 1;
+    t->s_xstrb = 1;
     t->s_xvalid = true;
     t->m_xready = false;
     rr::ut::clk(t);
@@ -198,9 +198,9 @@ TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
     CHECK(t->s_xready == false);
     CHECK(t->s_aready == false);
 
-    for (std::size_t i = 0; i < t->s_abytes; i += BEAT_SIZE)
+    for (std::size_t i = 0; i < t->s_abeats; i++)
     {
-        const std::size_t index = i + BEAT_SIZE;
+        const std::size_t index = i + 1;
 
         t->s_xdata = index;
         t->s_xstrb = index % NUMBER_OF_BEATS;
@@ -210,7 +210,7 @@ TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
         CHECK(t->m_xdata == i);
         CHECK(t->m_xstrb == (i % NUMBER_OF_BEATS));
         CHECK(t->m_xvalid == true);
-        CHECK(t->m_xlast == ((i % (NUMBER_OF_BEATS * BEAT_SIZE)) == ((NUMBER_OF_BEATS - 1) * BEAT_SIZE)));
+        CHECK(t->m_xlast == ((i % (NUMBER_OF_BEATS)) == (NUMBER_OF_BEATS - 1)));
         CHECK(t->s_xready == false);
         CHECK(t->s_aready == false);
 
@@ -220,8 +220,8 @@ TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
         CHECK(t->m_xdata == index);
         CHECK(t->m_xstrb == (index % NUMBER_OF_BEATS));
         CHECK(t->m_xvalid == true);
-        CHECK(t->m_xlast == ((index % (NUMBER_OF_BEATS * BEAT_SIZE)) == ((NUMBER_OF_BEATS - 1) * BEAT_SIZE)));
-        CHECK(t->s_xready == (index < (t->s_abytes - BEAT_SIZE))); // It's one pixel behind here because one is in the skid buffer
+        CHECK(t->m_xlast == ((index % NUMBER_OF_BEATS) == (NUMBER_OF_BEATS - 1)));
+        CHECK(t->s_xready == (index < (t->s_abeats - 1))); // It's one pixel behind here because one is in the skid buffer
         CHECK(t->s_aready == false);
     }
 

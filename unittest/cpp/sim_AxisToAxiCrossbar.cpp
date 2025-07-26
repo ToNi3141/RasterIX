@@ -23,8 +23,7 @@
 // Include model header, generated from Verilating "top.v"
 #include "VAxisToAxiCrossbar.h"
 
-static constexpr std::size_t BYTES_PER_BEAT = 4; // 32 bit
-static constexpr std::size_t TEST_SIZE = 0x80; // 128 bytes
+static constexpr std::size_t TEST_SIZE = 0x20; // 128 bytes
 static constexpr std::size_t DATA_WIDTH = 32; // 32 bit data width
 
 TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
@@ -39,7 +38,7 @@ TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
     t->s_avalid = 0b0'1;
     t->s_aaddr = 0x00000000'10000000;
     t->s_arnw = 0b0'1; // Write
-    t->s_abytes = 0x00000000'00000000 + TEST_SIZE;
+    t->s_abeats = 0x00000000'00000020;
     rr::ut::clk(t); // port 1 because the rr::ut::reset() already triggers with the extra clock cycle a scheduling
     rr::ut::clk(t); // port 0
     CHECK(t->s_aready == 0b0'1);
@@ -67,18 +66,18 @@ TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awvalid == 0);
     CHECK(t->s_wready == 0b0'1);
 
-    for (std::size_t i = 0; i < t->s_abytes; i += BYTES_PER_BEAT)
+    for (std::size_t i = 0; i < t->s_abeats; i++)
     {
         t->s_wvalid = 0b0'1;
         t->s_wdata = i;
         t->s_wstrb = 0b0000'1111;
-        t->s_wlast = (i + BYTES_PER_BEAT) >= t->s_abytes;
+        t->s_wlast = (i + 1) >= t->s_abeats;
         t->m_mem_axi_wready = 1;
         rr::ut::clk(t);
         CHECK(t->m_mem_axi_wvalid == 1);
         CHECK(t->m_mem_axi_wdata == i);
         CHECK(t->m_mem_axi_wstrb == 0b1111);
-        CHECK(t->m_mem_axi_wlast == (((i + BYTES_PER_BEAT) % 64) == 0));
+        CHECK(t->m_mem_axi_wlast == (((i + 1) % 16) == 0));
         CHECK(t->s_wready == 0b0'1);
     }
     rr::ut::clk(t);
@@ -101,7 +100,7 @@ TEST_CASE("check write channel 1", "[VAxisToAxiCrossbar]")
     t->s_avalid = 0b1'0;
     t->s_aaddr = 0x10000000'00000000;
     t->s_arnw = 0b1'0; // Write
-    t->s_abytes = 0x00000000'00000000 + (TEST_SIZE << 32);
+    t->s_abeats = 0x00000020'00000000;
     rr::ut::clk(t); // port 0
     CHECK(t->s_aready == 0b1'0);
 
@@ -128,18 +127,18 @@ TEST_CASE("check write channel 1", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awvalid == 0);
     CHECK(t->s_wready == 0b1'0);
 
-    for (std::size_t i = 0; i < TEST_SIZE; i += BYTES_PER_BEAT)
+    for (std::size_t i = 0; i < TEST_SIZE; i++)
     {
         t->s_wvalid = 0b1'0;
         t->s_wdata = (i << DATA_WIDTH);
         t->s_wstrb = 0b1111'0000;
-        t->s_wlast = ((i + BYTES_PER_BEAT) >= TEST_SIZE) << 1;
+        t->s_wlast = ((i + 1) >= TEST_SIZE) << 1;
         t->m_mem_axi_wready = 1;
         rr::ut::clk(t);
         CHECK(t->m_mem_axi_wvalid == 1);
         CHECK(t->m_mem_axi_wdata == i);
         CHECK(t->m_mem_axi_wstrb == 0b1111);
-        CHECK(t->m_mem_axi_wlast == (((i + BYTES_PER_BEAT) % 64) == 0));
+        CHECK(t->m_mem_axi_wlast == (((i + 1) % 16) == 0));
         CHECK(t->s_wready == 0b1'0);
     }
     rr::ut::clk(t);
@@ -162,7 +161,7 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
     t->s_avalid = 0b1'1;
     t->s_aaddr = 0x10000000'20000000;
     t->s_arnw = 0b1'1; // Write
-    t->s_abytes = 0x00000080'00000040;
+    t->s_abeats = 0x00000020'00000010;
     rr::ut::clk(t); // port 0
     CHECK(t->s_aready == 0b1'0);
 
@@ -191,18 +190,18 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awvalid == 0);
     CHECK(t->s_wready == 0b1'0);
 
-    for (std::size_t i = 0; i < TEST_SIZE; i += BYTES_PER_BEAT)
+    for (std::size_t i = 0; i < TEST_SIZE; i++)
     {
         t->s_wvalid = 0b1'1;
         t->s_wdata = (i << DATA_WIDTH);
         t->s_wstrb = 0b1111'0000;
-        t->s_wlast = ((i + BYTES_PER_BEAT) >= TEST_SIZE) << 1;
+        t->s_wlast = ((i + 1) >= TEST_SIZE) << 1;
         t->m_mem_axi_wready = 1;
         rr::ut::clk(t);
         CHECK(t->m_mem_axi_wvalid == 1);
         CHECK(t->m_mem_axi_wdata == i);
         CHECK(t->m_mem_axi_wstrb == 0b1111);
-        CHECK(t->m_mem_axi_wlast == (((i + BYTES_PER_BEAT) % 64) == 0));
+        CHECK(t->m_mem_axi_wlast == (((i + 1) % 16) == 0));
         CHECK(t->s_wready == 0b1'0);
     }
 
@@ -238,18 +237,18 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awvalid == 0);
     CHECK(t->s_wready == 0b0'1);
 
-    for (std::size_t i = 0; i < TEST_SIZE / 2; i += BYTES_PER_BEAT)
+    for (std::size_t i = 0; i < TEST_SIZE / 2; i++)
     {
         t->s_wvalid = 0b1'1;
         t->s_wdata = i;
         t->s_wstrb = 0b0000'1111;
-        t->s_wlast = ((i + BYTES_PER_BEAT) >= (TEST_SIZE / 2));
+        t->s_wlast = ((i + 1) >= (TEST_SIZE / 2));
         t->m_mem_axi_wready = 1;
         rr::ut::clk(t);
         CHECK(t->m_mem_axi_wvalid == 1);
         CHECK(t->m_mem_axi_wdata == i);
         CHECK(t->m_mem_axi_wstrb == 0b1111);
-        CHECK(t->m_mem_axi_wlast == (((i + BYTES_PER_BEAT) % 64) == 0));
+        CHECK(t->m_mem_axi_wlast == (((i + 1) % 16) == 0));
         CHECK(t->s_wready == 0b0'1);
     }
     rr::ut::clk(t);
@@ -272,7 +271,7 @@ TEST_CASE("check read channel 0", "[VAxisToAxiCrossbar]")
     t->s_avalid = 0b0'1;
     t->s_aaddr = 0x00000000'10000000;
     t->s_arnw = 0b0'0; // Read
-    t->s_abytes = 0x00000000'00000080;
+    t->s_abeats = 0x00000000'00000020;
     rr::ut::clk(t); // port 1 because the rr::ut::reset() already triggers with the extra clock cycle a scheduling
     rr::ut::clk(t); // port 0
     CHECK(t->s_aready == 0b0'1);
@@ -300,16 +299,16 @@ TEST_CASE("check read channel 0", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_arvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b1);
 
-    for (std::size_t i = 0; i < TEST_SIZE; i += BYTES_PER_BEAT)
+    for (std::size_t i = 0; i < TEST_SIZE; i++)
     {
         t->m_mem_axi_rvalid = 0b1;
         t->m_mem_axi_rdata = i;
-        t->m_mem_axi_rlast = (((i + BYTES_PER_BEAT) % 64) == 0);
+        t->m_mem_axi_rlast = (((i + 1) % 16) == 0);
         t->s_rready = 0b0'1;
         rr::ut::clk(t);
         CHECK((t->s_rvalid & 0b0'1) == 1);
         CHECK((t->s_rdata & 0xffffffff) == i);
-        CHECK((t->s_rlast & 0b0'1) == (i + BYTES_PER_BEAT) >= TEST_SIZE);
+        CHECK((t->s_rlast & 0b0'1) == (i + 1) >= TEST_SIZE);
         CHECK(t->m_mem_axi_rready == 0b1);
     }
     rr::ut::clk(t);
@@ -332,7 +331,7 @@ TEST_CASE("check read channel 1", "[VAxisToAxiCrossbar]")
     t->s_avalid = 0b1'0;
     t->s_aaddr = 0x10000000'00000000;
     t->s_arnw = 0b0'0; // Read
-    t->s_abytes = 0x00000080'00000000;
+    t->s_abeats = 0x00000020'00000000;
     rr::ut::clk(t); // port 1 because the rr::ut::reset() already triggers with the extra clock cycle a scheduling
     CHECK(t->s_aready == 0b1'0);
 
@@ -359,16 +358,16 @@ TEST_CASE("check read channel 1", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_arvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b1);
 
-    for (std::size_t i = 0; i < TEST_SIZE; i += BYTES_PER_BEAT)
+    for (std::size_t i = 0; i < TEST_SIZE; i++)
     {
         t->m_mem_axi_rvalid = 0b1;
         t->m_mem_axi_rdata = i;
-        t->m_mem_axi_rlast = (((i + BYTES_PER_BEAT) % 64) == 0);
+        t->m_mem_axi_rlast = (((i + 1) % 16) == 0);
         t->s_rready = 0b1'0;
         rr::ut::clk(t);
         CHECK(((t->s_rvalid & 0b1'0) >> 1) == 1);
         CHECK(((t->s_rdata >> DATA_WIDTH) & 0xffffffff) == i);
-        CHECK(((t->s_rlast & 0b1'0) >> 1) == (i + BYTES_PER_BEAT) >= TEST_SIZE);
+        CHECK(((t->s_rlast & 0b1'0) >> 1) == (i + 1) >= TEST_SIZE);
         CHECK(t->m_mem_axi_rready == 0b1);
     }
     rr::ut::clk(t);
@@ -391,7 +390,7 @@ TEST_CASE("check both read channels", "[VAxisToAxiCrossbar]")
     t->s_avalid = 0b1'1;
     t->s_aaddr = 0x10000000'20000000;
     t->s_arnw = 0b0'0; // Read
-    t->s_abytes = 0x00000080'00000040;
+    t->s_abeats = 0x00000020'00000010;
     rr::ut::clk(t); // port 1 because the rr::ut::reset() already triggers with the extra clock cycle a scheduling
     CHECK(t->s_aready == 0b1'0);
 
@@ -416,16 +415,16 @@ TEST_CASE("check both read channels", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_arvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b1);
 
-    for (std::size_t i = 0; i < TEST_SIZE; i += BYTES_PER_BEAT)
+    for (std::size_t i = 0; i < TEST_SIZE; i++)
     {
         t->m_mem_axi_rvalid = 0b1;
         t->m_mem_axi_rdata = i;
-        t->m_mem_axi_rlast = (((i + BYTES_PER_BEAT) % 64) == 0);
+        t->m_mem_axi_rlast = (((i + 1) % 16) == 0);
         t->s_rready = 0b1'0;
         rr::ut::clk(t);
         CHECK(((t->s_rvalid & 0b1'0) >> 1) == 1);
         CHECK(((t->s_rdata >> DATA_WIDTH) & 0xffffffff) == i);
-        CHECK(((t->s_rlast & 0b1'0) >> 1) == (i + BYTES_PER_BEAT) >= TEST_SIZE);
+        CHECK(((t->s_rlast & 0b1'0) >> 1) == (i + 1) >= TEST_SIZE);
         CHECK(t->m_mem_axi_rready == 0b1);
     }
     t->m_mem_axi_rvalid = 0;
@@ -459,16 +458,16 @@ TEST_CASE("check both read channels", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_arvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b1);
 
-    for (std::size_t i = 0; i < TEST_SIZE / 2; i += BYTES_PER_BEAT)
+    for (std::size_t i = 0; i < TEST_SIZE / 2; i++)
     {
         t->m_mem_axi_rvalid = 0b1;
         t->m_mem_axi_rdata = i;
-        t->m_mem_axi_rlast = (((i + BYTES_PER_BEAT) % 64) == 0);
+        t->m_mem_axi_rlast = (((i + 1) % 16) == 0);
         t->s_rready = 0b0'1;
         rr::ut::clk(t);
         CHECK((t->s_rvalid & 0b0'1) == 1);
         CHECK((t->s_rdata & 0xffffffff) == i);
-        CHECK((t->s_rlast & 0b0'1) == (i + BYTES_PER_BEAT) >= (TEST_SIZE / 2));
+        CHECK((t->s_rlast & 0b0'1) == (i + 1) >= (TEST_SIZE / 2));
         CHECK(t->m_mem_axi_rready == 0b1);
     }
     rr::ut::clk(t);
