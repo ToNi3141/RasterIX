@@ -74,10 +74,10 @@ module InternalFramebufferCommandHandler
     /////////////////////////
     // RAM interface
     /////////////////////////
-    output wire [MEM_WIDTH - 1 : 0]         writeDataPort,
+    output reg  [MEM_WIDTH - 1 : 0]         writeDataPort,
     output reg                              writeEnablePort,
     output wire [MEM_ADDR_WIDTH - 1 : 0]    writeAddrPort,
-    output wire [MEM_MASK_WIDTH - 1 : 0]    writeMaskPort, 
+    output reg  [MEM_MASK_WIDTH - 1 : 0]    writeMaskPort, 
 
     // Read interface port 1
     input  wire [MEM_WIDTH - 1 : 0]         readDataPort,
@@ -91,6 +91,7 @@ module InternalFramebufferCommandHandler
     input  wire                                 apply, // This start a command 
     output reg                                  applied, // This marks if the commands have been applied.
     input  wire                                 cmdCommit, // Starts to stream the memory content via the AXIS interface
+    input  wire                                 cmdRead, // Starts to read the memory content via the AXIS interface
     input  wire                                 cmdMemset, // Applies the confClearColor (with respect to the scissor) to the memory
     input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   cmdSize, // Size of the stream 
     input  wire [ADDR_WIDTH - 1 : 0]            cmdAddr,
@@ -102,19 +103,26 @@ module InternalFramebufferCommandHandler
     output reg  [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
     output reg  [MEM_MASK_WIDTH - 1 : 0]    m_axis_tstrb,
 
+    input  wire                             s_axis_tvalid,
+    output reg                              s_axis_tready,
+    input  wire                             s_axis_tlast,
+    input  wire [STREAM_WIDTH - 1 : 0]      s_axis_tdata,
+
     output reg                              m_avalid,
     output reg  [ADDR_WIDTH - 1 : 0]        m_aaddr,
     output reg  [ADDR_WIDTH - 1 : 0]        m_abytes,
-    input  wire                             m_aready
+    input  wire                             m_aready,
+    output reg                              m_arnw // 0 = read, 1 = write
 );
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
     localparam COMMAND_COMMIT = 1;
     localparam COMMAND_MEMSET = 2;
+    localparam COMMAND_READ = 3;
     
     // State variables
-    reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdIndex;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   cmdIndexNext = cmdIndex + 1;
+    reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdMemAddr;
+    wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemAddrNext = cmdMemAddr + 1;
     reg  [5 : 0]                    cmdState;
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdFbSizeInBeats;
     
@@ -135,11 +143,9 @@ module InternalFramebufferCommandHandler
     reg                             skidBufferLast;
     reg  [MEM_MASK_WIDTH - 1 : 0]   skidBufferStrb;
 
-    assign writeDataPort = { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } };
-    assign writeMaskPort = { NUMBER_OF_PIXELS_PER_BEAT { confMask } } & scissorPixelAndColorMask;
-    assign writeAddrPort = cmdIndex;
+    assign writeAddrPort = cmdMemAddr;
 
-    assign readAddrPort = cmdIndex;
+    assign readAddrPort = cmdMemAddr;
     wire                            readPortReady;
     wire                            readPortLast;
     wire [MEM_MASK_WIDTH - 1 : 0]   readPortStrb;
@@ -151,7 +157,7 @@ module InternalFramebufferCommandHandler
     ) readDataPortDelay (
         .clk(aclk),
         .ce(1),
-        .in({ commitActive, cmdIndexNext == cmdFbSizeInBeats, scissorPixelAndColorMask }),
+        .in({ commitActive, cmdMemAddrNext == cmdFbSizeInBeats, scissorPixelAndColorMask }),
         .out({ readPortReady, readPortLast, readPortStrb })
     );
 
@@ -184,14 +190,16 @@ module InternalFramebufferCommandHandler
             m_axis_tvalid <= 0;
             skidBufferValid <= 0;
             m_avalid <= 0;
+            s_axis_tready <= 0;
         end
         else
         begin
             case (cmdState)
             COMMAND_WAIT_FOR_COMMAND:
             begin : waitForCommand
-                cmdIndex <= 0;
+                cmdMemAddr <= 0;
                 scissorX <= 0;
+                writeEnablePort <= 0;
 
                 cmdFbSizeInBeats <= cmdSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
 
@@ -201,17 +209,16 @@ module InternalFramebufferCommandHandler
 
                     if (cmdMemset) 
                     begin
-
                         // Here is a mismatch between the RAM addresses and the OpenGL coordinate system.
                         // OpenGL starts at the lower left corner. But this is a fairly high address in the RAM.
-                        // The cmdIndex starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
+                        // The cmdMemAddr starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
                         scissorY <= confYOffset + confYResolution - 1;
 
-                        writeEnablePort <= 1;
                         scissorStartX <= confScissorStartX;
                         scissorStartY <= confScissorStartY;
                         scissorEndX <= confScissorEndX;
                         scissorEndY <= confScissorEndY;
+
                         cmdState <= COMMAND_MEMSET;
                     end
 
@@ -220,13 +227,25 @@ module InternalFramebufferCommandHandler
                         m_avalid <= 1;
                         m_aaddr <= cmdAddr;
                         m_abytes <= { 11'b0, cmdSize, 1'b0 };
+                        m_arnw <= 1;
                         scissorY <= confYResolution - 1;
-                        writeEnablePort <= 0;
                         scissorStartX <= 0;
                         scissorStartY <= 0;
                         scissorEndX <= confXResolution;
                         scissorEndY <= confYResolution;
+
                         cmdState <= COMMAND_COMMIT;
+                    end
+
+                    if (cmdRead)
+                    begin
+                        s_axis_tready <= 1;
+                        m_avalid <= 1;
+                        m_aaddr <= cmdAddr;
+                        m_abytes <= { 11'b0, cmdSize, 1'b0 };
+                        m_arnw <= 0;
+
+                        cmdState <= COMMAND_READ;
                     end
                 end
                 else 
@@ -258,7 +277,7 @@ module InternalFramebufferCommandHandler
                             m_axis_tlast <= readPortLast;
                         end
 
-                        cmdIndex <= cmdIndexNext;
+                        cmdMemAddr <= cmdMemAddrNext;
                         if (scissorXNext == confXResolution)
                         begin
                             scissorX <= 0;
@@ -290,14 +309,46 @@ module InternalFramebufferCommandHandler
                     end
                 end
             end
-            COMMAND_MEMSET:
+            COMMAND_READ:
             begin
-                if (cmdIndexNext == cmdFbSizeInBeats)
+                if (s_axis_tvalid && s_axis_tready)
+                begin
+                    if (s_axis_tlast)
+                    begin
+                        s_axis_tready <= 0;
+                    end
+                    if (writeEnablePort)
+                    begin
+                        cmdMemAddr <= cmdMemAddrNext;
+                    end
+                    writeMaskPort <= ~0;
+                    writeDataPort <= s_axis_tdata;
+                    writeEnablePort <= 1;
+                end
+                if (!s_axis_tready)
                 begin
                     writeEnablePort <= 0;
                     cmdState <= COMMAND_WAIT_FOR_COMMAND;
                 end
-                cmdIndex <= cmdIndexNext;
+            end
+            COMMAND_MEMSET:
+            begin
+                if (cmdMemAddrNext == cmdFbSizeInBeats)
+                begin
+                    writeEnablePort <= 0;
+                    cmdState <= COMMAND_WAIT_FOR_COMMAND;
+                end
+                else
+                begin
+                    writeEnablePort <= 1;
+                end
+
+                if (writeEnablePort)
+                begin
+                    cmdMemAddr <= cmdMemAddrNext;
+                end
+                writeDataPort <= { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } };
+                writeMaskPort <= { NUMBER_OF_PIXELS_PER_BEAT { confMask } } & scissorPixelAndColorMask;
 
                 if (scissorXNext == confXResolution)
                 begin

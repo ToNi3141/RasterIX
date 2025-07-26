@@ -95,6 +95,7 @@ TEST_CASE("memset", "[VInternalFramebufferCommandHandler]")
     t->apply = 1;
     t->cmdMemset = 1; // Trigger memset command
     t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
+    rr::ut::clk(t);
 
     for (std::size_t i = 0; i < (t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT; i++)
     {
@@ -137,6 +138,7 @@ TEST_CASE("memset with scissor and offset", "[VInternalFramebufferCommandHandler
     t->apply = 1;
     t->cmdMemset = 1; // Trigger memset command
     t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
+    rr::ut::clk(t);
 
     for (std::size_t y = 0; y < t->confYResolution; y++)
     {
@@ -178,7 +180,7 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     t->confYResolution = 10;
 
     t->apply = 1;
-    t->cmdCommit = 1; // Trigger memset command
+    t->cmdCommit = 1;
     t->cmdSize = (t->confXResolution * t->confYResolution) + t->confXResolution;
     t->cmdAddr = 0x1000'0000;
 
@@ -190,6 +192,7 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
     CHECK(t->m_abytes == (t->cmdSize * 2));
+    CHECK(t->m_arnw == 1);
 
     rr::ut::clk(t);
     CHECK(t->readAddrPort == 1);
@@ -197,6 +200,7 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
     CHECK(t->m_abytes == (t->cmdSize * 2));
+    CHECK(t->m_arnw == 1);
 
     t->apply = 0;
     const std::size_t numberOfBeats = ((t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT);
@@ -255,7 +259,7 @@ TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler
     t->confYResolution = 10;
 
     t->apply = 1;
-    t->cmdCommit = 1; // Trigger memset command
+    t->cmdCommit = 1;
     t->cmdSize = t->confXResolution * t->confYResolution;
 
     t->m_axis_tready = 1; // Set ready signal to 1 to allow data transfer
@@ -310,6 +314,82 @@ TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler
 
     rr::ut::clk(t);
     CHECK(t->applied == 1);
+
+    // Destroy model
+    delete t;
+}
+
+TEST_CASE("read", "[VInternalFramebufferCommandHandler]")
+{
+    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+
+    rr::ut::reset(t);
+
+    t->m_aready = 0;
+
+    t->apply = 1;
+    t->cmdRead = 1;
+    t->cmdSize = 0x100;
+    t->cmdAddr = 0x1000'0000;
+
+    t->m_axis_tready = 1; // Set ready signal to 1 to allow data transfer
+    rr::ut::clk(t);
+    CHECK(t->writeAddrPort == 0);
+    CHECK(t->s_axis_tready == 1);
+    CHECK(t->m_avalid == 1);
+    CHECK(t->m_aaddr == t->cmdAddr);
+    CHECK(t->m_abytes == (t->cmdSize * 2));
+    CHECK(t->m_arnw == 0);
+
+    rr::ut::clk(t);
+    CHECK(t->writeAddrPort == 0);
+    CHECK(t->s_axis_tready == 1);
+    CHECK(t->m_avalid == 1);
+    CHECK(t->m_aaddr == t->cmdAddr);
+    CHECK(t->m_abytes == (t->cmdSize * 2));
+    CHECK(t->m_arnw == 0);
+
+    t->apply = 0;
+    for (std::size_t i = 0; i < t->cmdSize; i += NUMBER_OF_PIXELS_PER_BEAT)
+    {
+        t->s_axis_tvalid = 1; // Simulate that the AXIS stream is valid
+        t->s_axis_tdata = i;
+        t->s_axis_tlast = (i + NUMBER_OF_PIXELS_PER_BEAT) >= t->cmdSize;
+        rr::ut::clk(t);
+        CHECK(t->writeAddrPort == i / NUMBER_OF_PIXELS_PER_BEAT);
+        CHECK(t->writeEnablePort == 1);
+        CHECK(t->writeDataPort == i);
+        CHECK(t->writeMaskPort == 0b1111'1111);
+        CHECK(t->s_axis_tready == !t->s_axis_tlast);
+        CHECK(t->applied == 0);
+
+        CHECK(t->m_avalid == 1);
+        CHECK(t->m_aaddr == t->cmdAddr);
+        CHECK(t->m_abytes == (t->cmdSize * 2));
+    }
+
+    // Additional clocks to check, that applied stays 0 as long as m_aready is not asserted
+    rr::ut::clk(t);
+    CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->m_avalid == 1);
+    CHECK(t->applied == 0);
+    CHECK(t->writeEnablePort == 0);
+    CHECK(t->s_axis_tready == 0);
+
+    t->m_aready = 1;
+    rr::ut::clk(t);
+    CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->m_avalid == 0);
+    CHECK(t->applied == 0);
+    CHECK(t->writeEnablePort == 0);
+    CHECK(t->s_axis_tready == 0);
+
+    rr::ut::clk(t);
+    CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->m_avalid == 0);
+    CHECK(t->applied == 1);
+    CHECK(t->writeEnablePort == 0);
+    CHECK(t->s_axis_tready == 0);
 
     // Destroy model
     delete t;

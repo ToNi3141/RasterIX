@@ -125,6 +125,7 @@ module InternalFramebuffer
     output wire                                 applied, // This marks if the commands have been applied.
     input  wire                                 cmdCommit, // Starts to stream the memory content via the AXIS interface
     input  wire                                 cmdMemset, // Applies the confClearColor (with respect to the scissor) to the memory
+    input  wire                                 cmdRead, // Reads the framebuffer content and streams it via the AXIS interface
     input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   cmdSize, // Size of the stream 
     input  wire [ADDR_WIDTH - 1 : 0]            cmdAddr,
 
@@ -134,6 +135,11 @@ module InternalFramebuffer
     output wire                             m_axis_tlast,
     output wire [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
     output wire [STREAM_STRB_WIDTH - 1 : 0] m_axis_tstrb,
+
+    input  wire                             s_axis_tvalid,
+    output wire                             s_axis_tready,
+    input  wire                             s_axis_tlast,
+    input  wire [STREAM_WIDTH - 1 : 0]      s_axis_tdata,
 
     output wire                             m_avalid,
     output wire [ADDR_WIDTH - 1 : 0]        m_aaddr,
@@ -279,6 +285,7 @@ module InternalFramebuffer
         .applied(applied),
         .cmdCommit(cmdCommit),
         .cmdMemset(cmdMemset),
+        .cmdRead(cmdRead),
         .cmdSize(cmdSize),
         .cmdAddr(cmdAddr),
 
@@ -288,6 +295,11 @@ module InternalFramebuffer
         .m_axis_tlast(m_axis_tlast),
         .m_axis_tdata(m_axis_tdata),
         .m_axis_tstrb(m_axis_tstrb),
+
+        .s_axis_tvalid(s_axis_tvalid),
+        .s_axis_tready(s_axis_tready),
+        .s_axis_tlast(s_axis_tlast),
+        .s_axis_tdata(s_axis_tdata),
 
         .m_avalid(m_avalid),
         .m_aaddr(m_aaddr),

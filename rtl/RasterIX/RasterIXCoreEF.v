@@ -298,6 +298,7 @@ module RasterIXCoreEF #(
     wire                                             colorBufferCmdCommit;
     wire                                             colorBufferCmdMemset;
     wire                                             colorBufferCmdSwap;
+    wire                                             colorBufferCmdRead;
     wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
     wire [COLOR_NUMBER_OF_SUB_PIXEL - 1 : 0]         colorBufferMaskReduced;
@@ -325,6 +326,7 @@ module RasterIXCoreEF #(
     wire                                             depthBufferApplied;
     wire                                             depthBufferCmdCommit;
     wire                                             depthBufferCmdMemset;
+    wire                                             depthBufferCmdRead;
     wire                                             depthBufferEnable;
     wire                                             depthBufferMask;
     wire                                             m_depth_arvalid;
@@ -351,6 +353,7 @@ module RasterIXCoreEF #(
     wire                                             stencilBufferApplied;
     wire                                             stencilBufferCmdCommit;
     wire                                             stencilBufferCmdMemset;
+    wire                                             stencilBufferCmdRead;
     wire                                             stencilBufferEnable;
     wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask;
     wire                                             m_stencil_arvalid;
@@ -700,7 +703,7 @@ module RasterIXCoreEF #(
         .colorBufferAddr(colorBufferAddr),
         .colorBufferSize(fb_size),
         .colorBufferApply(colorBufferApply),
-        .colorBufferApplied(colorBufferApplied && fb_swapped && !(colorBufferCmdCommit && colorBufferApply)),
+        .colorBufferApplied(colorBufferApplied && fb_swapped && !((colorBufferCmdCommit || colorBufferCmdRead) && colorBufferApply)),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferCmdSwap(colorBufferCmdSwap),
@@ -727,7 +730,7 @@ module RasterIXCoreEF #(
         .depthBufferAddr(depthBufferAddr),
         .depthBufferSize(),
         .depthBufferApply(depthBufferApply),
-        .depthBufferApplied(depthBufferApplied && !(depthBufferCmdCommit && depthBufferApply)),
+        .depthBufferApplied(depthBufferApplied && !((depthBufferCmdCommit || depthBufferCmdRead) && depthBufferApply)),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
         .depthBufferEnable(depthBufferEnable),
@@ -752,7 +755,7 @@ module RasterIXCoreEF #(
         .stencilBufferAddr(stencilBufferAddr),
         .stencilBufferSize(),
         .stencilBufferApply(stencilBufferApply),
-        .stencilBufferApplied(stencilBufferApplied && !(stencilBufferCmdCommit && stencilBufferApply)),
+        .stencilBufferApplied(stencilBufferApplied && !((stencilBufferCmdCommit || stencilBufferCmdRead) && stencilBufferApply)),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdMemset(stencilBufferCmdMemset),
         .stencilBufferEnable(stencilBufferEnable),
