@@ -127,10 +127,10 @@ module InternalFramebufferCommandHandler
     reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdFbSizeInBeats;
     
     // Scissor variables
-    wire [X_BIT_WIDTH - 1 : 0]      scissorXNext = scissorX + NUMBER_OF_PIXELS_PER_BEAT;
-    wire [Y_BIT_WIDTH - 1 : 0]      scissorYNext = scissorY - 1;
     reg  [X_BIT_WIDTH - 1 : 0]      scissorX;
     reg  [Y_BIT_WIDTH - 1 : 0]      scissorY;
+    wire [X_BIT_WIDTH - 1 : 0]      scissorXNext = scissorX + NUMBER_OF_PIXELS_PER_BEAT;
+    wire [Y_BIT_WIDTH - 1 : 0]      scissorYNext = scissorY - 1;
     wire [MEM_MASK_WIDTH - 1 : 0]   scissorPixelAndColorMask;
     reg  [X_BIT_WIDTH - 1 : 0]      scissorStartX;
     reg  [Y_BIT_WIDTH - 1 : 0]      scissorStartY;

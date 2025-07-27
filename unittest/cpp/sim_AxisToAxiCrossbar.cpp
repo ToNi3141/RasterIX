@@ -304,15 +304,15 @@ TEST_CASE("check read channel 0", "[VAxisToAxiCrossbar]")
         t->m_mem_axi_rvalid = 0b1;
         t->m_mem_axi_rdata = i;
         t->m_mem_axi_rlast = (((i + 1) % 16) == 0);
-        t->s_rready = 0b0'1;
+        t->m_rready = 0b0'1;
         rr::ut::clk(t);
-        CHECK((t->s_rvalid & 0b0'1) == 1);
-        CHECK((t->s_rdata & 0xffffffff) == i);
-        CHECK((t->s_rlast & 0b0'1) == (i + 1) >= TEST_SIZE);
+        CHECK((t->m_rvalid & 0b0'1) == 1);
+        CHECK((t->m_rdata & 0xffffffff) == i);
+        CHECK((t->m_rlast & 0b0'1) == (i + 1) >= TEST_SIZE);
         CHECK(t->m_mem_axi_rready == 0b1);
     }
     rr::ut::clk(t);
-    CHECK(t->s_rvalid == 0);
+    CHECK(t->m_rvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b0);
 
     // Destroy model
@@ -363,15 +363,15 @@ TEST_CASE("check read channel 1", "[VAxisToAxiCrossbar]")
         t->m_mem_axi_rvalid = 0b1;
         t->m_mem_axi_rdata = i;
         t->m_mem_axi_rlast = (((i + 1) % 16) == 0);
-        t->s_rready = 0b1'0;
+        t->m_rready = 0b1'0;
         rr::ut::clk(t);
-        CHECK(((t->s_rvalid & 0b1'0) >> 1) == 1);
-        CHECK(((t->s_rdata >> DATA_WIDTH) & 0xffffffff) == i);
-        CHECK(((t->s_rlast & 0b1'0) >> 1) == (i + 1) >= TEST_SIZE);
+        CHECK(((t->m_rvalid & 0b1'0) >> 1) == 1);
+        CHECK(((t->m_rdata >> DATA_WIDTH) & 0xffffffff) == i);
+        CHECK(((t->m_rlast & 0b1'0) >> 1) == (i + 1) >= TEST_SIZE);
         CHECK(t->m_mem_axi_rready == 0b1);
     }
     rr::ut::clk(t);
-    CHECK(t->s_rvalid == 0);
+    CHECK(t->m_rvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b0);
 
     // Destroy model
@@ -420,26 +420,26 @@ TEST_CASE("check both read channels", "[VAxisToAxiCrossbar]")
         t->m_mem_axi_rvalid = 0b1;
         t->m_mem_axi_rdata = i;
         t->m_mem_axi_rlast = (((i + 1) % 16) == 0);
-        t->s_rready = 0b1'0;
+        t->m_rready = 0b1'0;
         rr::ut::clk(t);
-        CHECK(((t->s_rvalid & 0b1'0) >> 1) == 1);
-        CHECK(((t->s_rdata >> DATA_WIDTH) & 0xffffffff) == i);
-        CHECK(((t->s_rlast & 0b1'0) >> 1) == (i + 1) >= TEST_SIZE);
+        CHECK(((t->m_rvalid & 0b1'0) >> 1) == 1);
+        CHECK(((t->m_rdata >> DATA_WIDTH) & 0xffffffff) == i);
+        CHECK(((t->m_rlast & 0b1'0) >> 1) == (i + 1) >= TEST_SIZE);
         CHECK(t->m_mem_axi_rready == 0b1);
     }
     t->m_mem_axi_rvalid = 0;
     rr::ut::clk(t);
-    CHECK(t->s_rvalid == 0);
+    CHECK(t->m_rvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b0);
     CHECK(t->s_aready == 0b0'0);
 
     rr::ut::clk(t);
-    CHECK(t->s_rvalid == 0);
+    CHECK(t->m_rvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b0);
     CHECK(t->s_aready == 0b0'0);
 
     rr::ut::clk(t);
-    CHECK(t->s_rvalid == 0);
+    CHECK(t->m_rvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b0);
     CHECK(t->s_aready == 0b0'1);
 
@@ -463,15 +463,15 @@ TEST_CASE("check both read channels", "[VAxisToAxiCrossbar]")
         t->m_mem_axi_rvalid = 0b1;
         t->m_mem_axi_rdata = i;
         t->m_mem_axi_rlast = (((i + 1) % 16) == 0);
-        t->s_rready = 0b0'1;
+        t->m_rready = 0b0'1;
         rr::ut::clk(t);
-        CHECK((t->s_rvalid & 0b0'1) == 1);
-        CHECK((t->s_rdata & 0xffffffff) == i);
-        CHECK((t->s_rlast & 0b0'1) == (i + 1) >= (TEST_SIZE / 2));
+        CHECK((t->m_rvalid & 0b0'1) == 1);
+        CHECK((t->m_rdata & 0xffffffff) == i);
+        CHECK((t->m_rlast & 0b0'1) == (i + 1) >= (TEST_SIZE / 2));
         CHECK(t->m_mem_axi_rready == 0b1);
     }
     rr::ut::clk(t);
-    CHECK(t->s_rvalid == 0);
+    CHECK(t->m_rvalid == 0);
     CHECK(t->m_mem_axi_rready == 0b0);
 
     // Destroy model

@@ -69,6 +69,13 @@
         end \
     endfunction
 
+// Expands a pixel from a given bit width to a new bit width.
+// For instance, given is a vector with 4 bit elements and the new width is 6 bit.
+// Assume a[3 : 0] and b[5 : 0].  
+// a ElementWidth is 2 bit and b NewElementWidth is 3 bit.
+// The number of elements is 2.
+// Then the result will be:
+// b = { a[3 : 2], a[3 : 3], a[1 : 0], a[1 : 1] }
 `define Expand(FuncName, ElementWidth, NewElementWidth, NumberOfElements) \
     function automatic [(NewElementWidth * NumberOfElements) - 1 : 0] FuncName; \
         input [(ElementWidth * NumberOfElements) - 1 : 0] pixel; \
@@ -94,13 +101,13 @@
         end \
     endfunction
 
-`define Reduce(FuncName, ElementWidth, NewElementWidth, NumberOfElements) \
-    function [(ElementWidth * NumberOfElements) - 1 : 0] FuncName; \
-        input [(NewElementWidth * NumberOfElements) - 1 : 0] pixel; \
-        localparam PIXEL_WIDTH = ElementWidth * NumberOfElements; \
-        localparam DIFF_SUB_PIXEL_WIDTH = NewElementWidth - ElementWidth; \
+`define Reduce(FuncName, NewElementWidth, ElementWidth, NumberOfElements) \
+    function [(NewElementWidth * NumberOfElements) - 1 : 0] FuncName; \
+        input [(ElementWidth * NumberOfElements) - 1 : 0] pixel; \
+        localparam PIXEL_WIDTH = NewElementWidth * NumberOfElements; \
+        localparam DIFF_SUB_PIXEL_WIDTH = ElementWidth - NewElementWidth; \
         integer i; \
-        if (ElementWidth == NewElementWidth) \
+        if (NewElementWidth == ElementWidth) \
         begin \
             FuncName[0 +: PIXEL_WIDTH] = pixel[0 +: PIXEL_WIDTH];  \
         end \
@@ -108,8 +115,8 @@
         begin \
             for (i = 0; i < NumberOfElements; i = i + 1) \
             begin \
-                FuncName[i * ElementWidth +: ElementWidth] = {  \
-                    pixel[(NewElementWidth * i) + DIFF_SUB_PIXEL_WIDTH +: ElementWidth]  \
+                FuncName[i * NewElementWidth +: NewElementWidth] = {  \
+                    pixel[(ElementWidth * i) + DIFF_SUB_PIXEL_WIDTH +: NewElementWidth]  \
                 }; \
             end \
         end \
@@ -212,7 +219,7 @@
 
 `define RGB5652XXX(FuncName, ElementWidth, NumberOfPixels) \
     function [(ElementWidth * 3 * NumberOfPixels) - 1 : 0] FuncName; \
-        input [15 : 0] pixels; \
+        input [(16 * NumberOfPixels) - 1 : 0] pixels; \
         integer i; \
         for (i = 0; i < NumberOfPixels; i = i + 1) \
         begin \

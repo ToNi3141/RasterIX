@@ -43,17 +43,16 @@ module AxisToAxiCrossbar #(
 
     // Write port
     input  wire [NPRT - 1 : 0]                  s_wvalid,
-    output reg  [NPRT - 1 : 0]                  s_wready,
+    output wire [NPRT - 1 : 0]                  s_wready,
     input  wire [NPRT - 1 : 0]                  s_wlast,
     input  wire [(NPRT * DATA_WIDTH) - 1 : 0]   s_wdata,
     input  wire [(NPRT * STRB_WIDTH) - 1 : 0]   s_wstrb,
 
     // Read port
-    output wire [(NPRT * DATA_WIDTH) - 1 : 0]   s_rdata,
-    output wire [(NPRT * STRB_WIDTH) - 1 : 0]   s_rstrb,
-    output wire [NPRT - 1 : 0]                  s_rlast,
-    output wire [NPRT - 1 : 0]                  s_rvalid,
-    input  wire [NPRT - 1 : 0]                  s_rready,
+    output wire [(NPRT * DATA_WIDTH) - 1 : 0]   m_rdata,
+    output wire [NPRT - 1 : 0]                  m_rlast,
+    output wire [NPRT - 1 : 0]                  m_rvalid,
+    input  wire [NPRT - 1 : 0]                  m_rready,
 
     // Memory port
     output wire [ID_WIDTH - 1 : 0]              m_mem_axi_awid,
@@ -68,7 +67,7 @@ module AxisToAxiCrossbar #(
     input  wire                                 m_mem_axi_awready,
 
     output wire [DATA_WIDTH - 1 : 0]            m_mem_axi_wdata,
-    output reg  [STRB_WIDTH - 1 : 0]            m_mem_axi_wstrb,
+    output wire [STRB_WIDTH - 1 : 0]            m_mem_axi_wstrb,
     output wire                                 m_mem_axi_wlast,
     output wire                                 m_mem_axi_wvalid,
     input  wire                                 m_mem_axi_wready,
@@ -131,9 +130,16 @@ module AxisToAxiCrossbar #(
     reg  [ADDR_WIDTH - 1 : 0]   abeats;
 
     wire                        s_wlastSignal;
-    wire                        s_rlastSignal;
+    wire                        m_rlastSignal;
     wire                        mem_wlastSignal;
     reg                         s_wlastReg;
+
+    initial begin
+        if (NPRT < 2) begin
+            $error("AxisToAxiCrossbar: NPRT must be at least 2, but is %0d", NPRT);
+            $finish;
+        end
+    end
 
     AxisToAxiAdapter #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -201,16 +207,15 @@ module AxisToAxiCrossbar #(
     assign m_mem_axi_wstrb = wstrb;
     assign m_mem_axi_wlast = wlast;
     assign m_mem_axi_wvalid = wvalid && transferActive && writeToMemory;
-    assign s_rdata = { NPRT { wdata } };
-    assign s_rstrb = { NPRT { wstrb } };
-    assign s_rlast = { NPRT { wlast } };
+    assign m_rdata = { NPRT { wdata } };
+    assign m_rlast = { NPRT { wlast } };
     generate
         for (i = 0; i < NPRT; i = i + 1)
         begin
-            assign s_rvalid[i] = wvalid && transferActive && !writeToMemory && (portSelect == i);
+            assign m_rvalid[i] = wvalid && transferActive && !writeToMemory && (portSelect == i);
         end
     endgenerate
-    assign wready = ((m_mem_axi_wready && writeToMemory) || (s_rready[portSelect] && !writeToMemory)) && transferActive;
+    assign wready = ((m_mem_axi_wready && writeToMemory) || (m_rready[portSelect] && !writeToMemory)) && transferActive;
 
     assign rdata = (!writeToMemory) ? m_mem_axi_rdata : s_wdata[(portSelect * DATA_WIDTH) +: DATA_WIDTH];
     assign rstrb = (!writeToMemory) ? 0 : s_wstrb[(portSelect * STRB_WIDTH) +: STRB_WIDTH];
@@ -227,7 +232,7 @@ module AxisToAxiCrossbar #(
     assign m_mem_axi_bready = 1;
 
     assign s_wlastSignal = (s_wlast[portSelect] && s_wvalid[portSelect] && s_wready[portSelect]);
-    assign s_rlastSignal = (s_rlast[portSelect] && s_rvalid[portSelect] && s_rready[portSelect]);
+    assign m_rlastSignal = (m_rlast[portSelect] && m_rvalid[portSelect] && m_rready[portSelect]);
     assign mem_wlastSignal = (m_mem_axi_wlast && m_mem_axi_wvalid && m_mem_axi_wready);
 
     always @(posedge aclk)
@@ -289,7 +294,7 @@ module AxisToAxiCrossbar #(
                 // The memory transfer will already be finished when the last signal of the stream is set.
                 if (!writeToMemory)
                 begin
-                    if (s_rlastSignal)
+                    if (m_rlastSignal)
                     begin
                         transferActive <= 0;
                     end

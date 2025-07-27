@@ -507,56 +507,92 @@ module RasterIX_IF #(
     wire commit_fb;
     wire fb_committed;
 
-    wire                        colorbuffer_axis_tvalid;
-    wire                        colorbuffer_axis_tready;
-    wire                        colorbuffer_axis_tlast;
-    wire [DATA_WIDTH - 1 : 0]   colorbuffer_axis_tdata;
-    wire [STRB_WIDTH - 1 : 0]   colorbuffer_axis_tstrb;
+    localparam FRAMEBUFFER_STREAMS = 3;
 
-    wire                        colorbuffer_avalid;
-    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_aaddr;
-    wire [ADDR_WIDTH - 1 : 0]   colorbuffer_abeats;
-    wire                        colorbuffer_aready;
+    wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_axis_wvalid;
+    wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_axis_wready;
+    wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_axis_wlast;
+    wire [(DATA_WIDTH * FRAMEBUFFER_STREAMS) - 1 : 0]   framebuffer_axis_wdata;
+    wire [(STRB_WIDTH * FRAMEBUFFER_STREAMS) - 1 : 0]   framebuffer_axis_wstrb;
 
-    AxisToAxiAdapter #(
+    wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_axis_rvalid;
+    wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_axis_rready;
+    wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_axis_rlast;
+    wire [(DATA_WIDTH * FRAMEBUFFER_STREAMS) - 1 : 0]   framebuffer_axis_rdata;
+
+    wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_avalid;
+    wire [(ADDR_WIDTH * FRAMEBUFFER_STREAMS) - 1 : 0]   framebuffer_aaddr;
+    wire [(ADDR_WIDTH * FRAMEBUFFER_STREAMS) - 1 : 0]   framebuffer_abeats;
+    wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_aready;
+    wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_arnw;
+
+    AxisToAxiCrossbar #(
         .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .STRB_WIDTH(STRB_WIDTH),
-        .ID_WIDTH(ID_WIDTH_LOC)
-    ) axisToAxiAdapter (
+        .ID_WIDTH(ID_WIDTH_LOC),
+        .NPRT(FRAMEBUFFER_STREAMS)
+    ) axisToAxiCrossbar (
         .aclk(aclk),
         .resetn(resetn),
 
-        .s_avalid(colorbuffer_avalid),
-        .s_aaddr(colorbuffer_aaddr),
-        .s_abeats(colorbuffer_abeats),
-        .s_aready(colorbuffer_aready),
-        .enableAxiLastSignal(1),
+        .s_avalid(framebuffer_avalid),
+        .s_aaddr(framebuffer_aaddr),
+        .s_abeats(framebuffer_abeats),
+        .s_aready(framebuffer_aready),
+        .s_arnw(framebuffer_arnw),
 
-        .s_xvalid(colorbuffer_axis_tvalid),
-        .s_xready(colorbuffer_axis_tready),
-        .s_xlast(colorbuffer_axis_tlast),
-        .s_xdata(colorbuffer_axis_tdata),
-        .s_xstrb(colorbuffer_axis_tstrb),
+        .s_wvalid(framebuffer_axis_wvalid),
+        .s_wready(framebuffer_axis_wready),
+        .s_wlast(framebuffer_axis_wlast),
+        .s_wdata(framebuffer_axis_wdata),
+        .s_wstrb(framebuffer_axis_wstrb),
 
-        .m_axid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_axaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_axlen(xbar_axi_awlen[3 * 8 +: 8]),
-        .m_axsize(xbar_axi_awsize[3 * 3 +: 3]),
-        .m_axburst(xbar_axi_awburst[3 * 2 +: 2]),
-        .m_axlock(xbar_axi_awlock[3 * 1 +: 1]),
-        .m_axcache(xbar_axi_awcache[3 * 4 +: 4]),
-        .m_axprot(xbar_axi_awprot[3 * 3 +: 3]), 
-        .m_axvalid(xbar_axi_awvalid[3 * 1 +: 1]),
-        .m_axready(xbar_axi_awready[3 * 1 +: 1]),
+        .m_rdata(framebuffer_axis_rdata),
+        .m_rlast(framebuffer_axis_rlast),
+        .m_rvalid(framebuffer_axis_rvalid),
+        .m_rready(framebuffer_axis_rready),
 
-        .m_xdata(xbar_axi_wdata[3 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_xstrb(xbar_axi_wstrb[3 * STRB_WIDTH +: STRB_WIDTH]),
-        .m_xlast(xbar_axi_wlast[3 * 1 +: 1]),
-        .m_xvalid(xbar_axi_wvalid[3 * 1 +: 1]),
-        .m_xready(xbar_axi_wready[3 * 1 +: 1])
+        .m_mem_axi_awid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_mem_axi_awaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_mem_axi_awlen(xbar_axi_awlen[3 * 8 +: 8]),
+        .m_mem_axi_awsize(xbar_axi_awsize[3 * 3 +: 3]),
+        .m_mem_axi_awburst(xbar_axi_awburst[3 * 2 +: 2]),
+        .m_mem_axi_awlock(xbar_axi_awlock[3 * 1 +: 1]),
+        .m_mem_axi_awcache(xbar_axi_awcache[3 * 4 +: 4]),
+        .m_mem_axi_awprot(xbar_axi_awprot[3 * 3 +: 3]), 
+        .m_mem_axi_awvalid(xbar_axi_awvalid[3 * 1 +: 1]),
+        .m_mem_axi_awready(xbar_axi_awready[3 * 1 +: 1]),
+
+        .m_mem_axi_wdata(xbar_axi_wdata[3 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_mem_axi_wstrb(xbar_axi_wstrb[3 * STRB_WIDTH +: STRB_WIDTH]),
+        .m_mem_axi_wlast(xbar_axi_wlast[3 * 1 +: 1]),
+        .m_mem_axi_wvalid(xbar_axi_wvalid[3 * 1 +: 1]),
+        .m_mem_axi_wready(xbar_axi_wready[3 * 1 +: 1]),
+
+        .m_mem_axi_bid(xbar_axi_bid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_mem_axi_bresp(xbar_axi_bresp[3 * 2 +: 2]),
+        .m_mem_axi_bvalid(xbar_axi_bvalid[3 * 1 +: 1]),
+        .m_mem_axi_bready(xbar_axi_bready[3 * 1 +: 1]),
+
+        .m_mem_axi_arid(xbar_axi_arid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_mem_axi_araddr(xbar_axi_araddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_mem_axi_arlen(xbar_axi_arlen[3 * 8 +: 8]),
+        .m_mem_axi_arsize(xbar_axi_arsize[3 * 3 +: 3]),
+        .m_mem_axi_arburst(xbar_axi_arburst[3 * 2 +: 2]),
+        .m_mem_axi_arlock(xbar_axi_arlock[3 * 1 +: 1]),
+        .m_mem_axi_arcache(xbar_axi_arcache[3 * 4 +: 4]),
+        .m_mem_axi_arprot(xbar_axi_arprot[3 * 3 +: 3]),
+        .m_mem_axi_arvalid(xbar_axi_arvalid[3 * 1 +: 1]),
+        .m_mem_axi_arready(xbar_axi_arready[3 * 1 +: 1]),
+
+        .m_mem_axi_rid(xbar_axi_rid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_mem_axi_rdata(xbar_axi_rdata[3 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_mem_axi_rresp(xbar_axi_rresp[3 * 2 +: 2]),
+        .m_mem_axi_rlast(xbar_axi_rlast[3 * 1 +: 1]),
+        .m_mem_axi_rvalid(xbar_axi_rvalid[3 * 1 +: 1]),
+        .m_mem_axi_rready(xbar_axi_rready[3 * 1 +: 1])
     );
-    assign xbar_axi_bready[3 * 1 +: 1] = 1;
 
     RasterIXCoreIF #(
         .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
@@ -586,16 +622,56 @@ module RasterIX_IF #(
         .s_cmd_axis_tlast(cmd_axis_tlast),
         .s_cmd_axis_tdata(cmd_axis_tdata),
 
-        .m_colorbuffer_axis_tvalid(colorbuffer_axis_tvalid),
-        .m_colorbuffer_axis_tready(colorbuffer_axis_tready),
-        .m_colorbuffer_axis_tlast(colorbuffer_axis_tlast),
-        .m_colorbuffer_axis_tdata(colorbuffer_axis_tdata),
-        .m_colorbuffer_axis_tstrb(colorbuffer_axis_tstrb),
+        .m_colorbuffer_axis_tvalid(framebuffer_axis_wvalid[0]),
+        .m_colorbuffer_axis_tready(framebuffer_axis_wready[0]),
+        .m_colorbuffer_axis_tlast(framebuffer_axis_wlast[0]),
+        .m_colorbuffer_axis_tdata(framebuffer_axis_wdata[0 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_colorbuffer_axis_tstrb(framebuffer_axis_wstrb[0 * STRB_WIDTH +: STRB_WIDTH]),
 
-        .m_colorbuffer_avalid(colorbuffer_avalid),
-        .m_colorbuffer_aaddr(colorbuffer_aaddr),
-        .m_colorbuffer_abeats(colorbuffer_abeats),
-        .m_colorbuffer_aready(colorbuffer_aready),
+        .s_colorbuffer_axis_tvalid(framebuffer_axis_rvalid[0]),
+        .s_colorbuffer_axis_tready(framebuffer_axis_rready[0]),
+        .s_colorbuffer_axis_tlast(framebuffer_axis_rlast[0]),
+        .s_colorbuffer_axis_tdata(framebuffer_axis_rdata[0 * DATA_WIDTH +: DATA_WIDTH]),
+
+        .m_colorbuffer_avalid(framebuffer_avalid[0]),
+        .m_colorbuffer_aaddr(framebuffer_aaddr[0 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_colorbuffer_abeats(framebuffer_abeats[0 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_colorbuffer_aready(framebuffer_aready[0]),
+        .m_colorbuffer_arnw(framebuffer_arnw[0]),
+
+        .m_depthbuffer_axis_tvalid(framebuffer_axis_wvalid[1]),
+        .m_depthbuffer_axis_tready(framebuffer_axis_wready[1]),
+        .m_depthbuffer_axis_tlast(framebuffer_axis_wlast[1]),
+        .m_depthbuffer_axis_tdata(framebuffer_axis_wdata[1 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_depthbuffer_axis_tstrb(framebuffer_axis_wstrb[1 * STRB_WIDTH +: STRB_WIDTH]),
+
+        .s_depthbuffer_axis_tvalid(framebuffer_axis_rvalid[1]),
+        .s_depthbuffer_axis_tready(framebuffer_axis_rready[1]),
+        .s_depthbuffer_axis_tlast(framebuffer_axis_rlast[1]),
+        .s_depthbuffer_axis_tdata(framebuffer_axis_rdata[1 * DATA_WIDTH +: DATA_WIDTH]),
+
+        .m_depthbuffer_avalid(framebuffer_avalid[1]),
+        .m_depthbuffer_aaddr(framebuffer_aaddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_depthbuffer_abeats(framebuffer_abeats[1 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_depthbuffer_aready(framebuffer_aready[1]),
+        .m_depthbuffer_arnw(framebuffer_arnw[1]),
+
+        .m_stencilbuffer_axis_tvalid(framebuffer_axis_wvalid[2]),
+        .m_stencilbuffer_axis_tready(framebuffer_axis_wready[2]),
+        .m_stencilbuffer_axis_tlast(framebuffer_axis_wlast[2]),
+        .m_stencilbuffer_axis_tdata(framebuffer_axis_wdata[2 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_stencilbuffer_axis_tstrb(framebuffer_axis_wstrb[2 * STRB_WIDTH +: STRB_WIDTH]),
+
+        .s_stencilbuffer_axis_tvalid(framebuffer_axis_rvalid[2]),
+        .s_stencilbuffer_axis_tready(framebuffer_axis_rready[2]),
+        .s_stencilbuffer_axis_tlast(framebuffer_axis_rlast[2]),
+        .s_stencilbuffer_axis_tdata(framebuffer_axis_rdata[2 * DATA_WIDTH +: DATA_WIDTH]),
+
+        .m_stencilbuffer_avalid(framebuffer_avalid[2]),
+        .m_stencilbuffer_aaddr(framebuffer_aaddr[2 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_stencilbuffer_abeats(framebuffer_abeats[2 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_stencilbuffer_aready(framebuffer_aready[2]),
+        .m_stencilbuffer_arnw(framebuffer_arnw[2]),
 
         .swap_fb(swap_fb),
         .swap_fb_enable_vsync(swap_fb_enable_vsync),

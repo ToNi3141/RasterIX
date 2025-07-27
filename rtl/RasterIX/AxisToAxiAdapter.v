@@ -73,12 +73,13 @@ module AxisToAxiAdapter #(
     localparam AWLEN = 15;
     localparam AWSIZE = $clog2(DATA_WIDTH / 8);
 
-    wire axiLastSignal = (counterNext & AWLEN) == 0;
-    wire axisLastSignal = (counterNext == dataSizeInBeats);
-
     reg  [ADDR_WIDTH - 1 : 0]   dataSizeInBeats;
     reg  [ADDR_WIDTH - 1 : 0]   counter;
     wire [ADDR_WIDTH - 1 : 0]   counterNext = counter + 1;
+
+    wire axiLastSignal = (counterNext & AWLEN) == 0;
+    wire axisLastSignal = (counterNext == dataSizeInBeats);
+
     wire                        lastSignal = (axiLastSignal && enableAxiLastSignal) || (axisLastSignal && !enableAxiLastSignal);
     wire                        transferEnd = counterNext > dataSizeInBeats;
 

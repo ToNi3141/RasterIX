@@ -144,7 +144,8 @@ module InternalFramebuffer
     output wire                             m_avalid,
     output wire [ADDR_WIDTH - 1 : 0]        m_aaddr,
     output wire [ADDR_WIDTH - 1 : 0]        m_abeats,
-    input  wire                             m_aready
+    input  wire                             m_aready,
+    output wire                             m_arnw
 );
     wire [MEM_MASK_WIDTH - 1 : 0]   writeMaskPort1; 
     wire [MEM_ADDR_WIDTH - 1 : 0]   writeAddrPort1;
@@ -304,6 +305,7 @@ module InternalFramebuffer
         .m_avalid(m_avalid),
         .m_aaddr(m_aaddr),
         .m_abeats(m_abeats),
-        .m_aready(m_aready)
+        .m_aready(m_aready),
+        .m_arnw(m_arnw)
     );
 endmodule

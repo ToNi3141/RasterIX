@@ -22,13 +22,14 @@ read_verilog ./../../../../RasterIX/AttributeInterpolationX.v
 read_verilog ./../../../../RasterIX/AttributeInterpolator.v
 read_verilog ./../../../../RasterIX/AttributeInterpolatorX.v
 read_verilog ./../../../../RasterIX/AttributePerspectiveCorrectionX.v
+read_verilog ./../../../../RasterIX/AxisFramebufferReader.v
+read_verilog ./../../../../RasterIX/AxisToAxiAdapter.v
+read_verilog ./../../../../RasterIX/AxisToAxiCrossbar.v
 read_verilog ./../../../../RasterIX/ColorBlender.v
 read_verilog ./../../../../RasterIX/ColorInterpolator.v
 read_verilog ./../../../../RasterIX/ColorMixerSigned.v
 read_verilog ./../../../../RasterIX/ColorMixer.v
 read_verilog ./../../../../RasterIX/CommandParser.v
-read_verilog ./../../../../RasterIX/AxisFramebufferReader.v
-read_verilog ./../../../../RasterIX/AxisToAxiAdapter.v
 read_verilog ./../../../../RasterIX/DmaStreamEngine.v
 read_verilog ./../../../../RasterIX/DualPortRam.v
 read_verilog ./../../../../RasterIX/Fog.v
