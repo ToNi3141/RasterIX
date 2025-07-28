@@ -96,8 +96,9 @@ module AxisToAxiCrossbar #(
     output wire                                 m_mem_axi_rready
 );
     genvar i;
+    `define MAX(a, b) ((a) > (b) ? (a) : (b))
     
-    reg [$clog2(NPRT) - 1 : 0]  portSelect;
+    reg [`MAX($clog2(NPRT), 1) - 1 : 0]  portSelect;
     reg                         writeToMemory;
     reg                         transferActive;
 
@@ -133,13 +134,6 @@ module AxisToAxiCrossbar #(
     wire                        m_rlastSignal;
     wire                        mem_wlastSignal;
     reg                         s_wlastReg;
-
-    initial begin
-        if (NPRT < 2) begin
-            $error("AxisToAxiCrossbar: NPRT must be at least 2, but is %0d", NPRT);
-            $finish;
-        end
-    end
 
     AxisToAxiAdapter #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -269,7 +263,7 @@ module AxisToAxiCrossbar #(
                     s_wlastReg <= 0;
                 end
                 else
-                begin
+                begin if (NPRT > 1)
                     portSelect <= portSelect + 1;
                 end
             end
