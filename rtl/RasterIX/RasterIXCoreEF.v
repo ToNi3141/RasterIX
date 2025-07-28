@@ -297,8 +297,8 @@ module RasterIXCoreEF #(
     wire                                             colorBufferApplied;
     wire                                             colorBufferCmdCommit;
     wire                                             colorBufferCmdMemset;
-    wire                                             colorBufferCmdSwap;
     wire                                             colorBufferCmdRead;
+    wire                                             colorBufferCmdSwap;
     wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
     wire [COLOR_NUMBER_OF_SUB_PIXEL - 1 : 0]         colorBufferMaskReduced;
@@ -706,6 +706,7 @@ module RasterIXCoreEF #(
         .colorBufferApplied(colorBufferApplied && fb_swapped && !((colorBufferCmdCommit || colorBufferCmdRead) && colorBufferApply)),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
+        .colorBufferCmdRead(colorBufferCmdRead),
         .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
         .colorBufferEnable(colorBufferEnable),
@@ -733,6 +734,7 @@ module RasterIXCoreEF #(
         .depthBufferApplied(depthBufferApplied && !((depthBufferCmdCommit || depthBufferCmdRead) && depthBufferApply)),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
+        .depthBufferCmdRead(depthBufferCmdRead),
         .depthBufferEnable(depthBufferEnable),
         .depthBufferMask(depthBufferMask),
         .m_depth_arready(m_depth_arready),
@@ -758,6 +760,7 @@ module RasterIXCoreEF #(
         .stencilBufferApplied(stencilBufferApplied && !((stencilBufferCmdCommit || stencilBufferCmdRead) && stencilBufferApply)),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdMemset(stencilBufferCmdMemset),
+        .stencilBufferCmdRead(stencilBufferCmdRead),
         .stencilBufferEnable(stencilBufferEnable),
         .stencilBufferMask(stencilBufferMask),
         .m_stencil_arready(m_stencil_arready),
