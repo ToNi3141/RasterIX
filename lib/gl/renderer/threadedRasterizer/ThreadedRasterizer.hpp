@@ -327,6 +327,16 @@ private:
                     return cmd;
                 });
         }
+        // Load
+        if (cmd.getLoadFramebuffer())
+        {
+            return addCommandWithFactory(
+                [&cmd](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
+                {
+                    cmd.setFramebufferSizeInPixel(resX * resY);
+                    return cmd;
+                });
+        }
         SPDLOG_CRITICAL("FramebufferCmd was not correctly handled and is ignored. This might cause the renderer to crash ...");
         return true;
     }

@@ -32,6 +32,7 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER_COMMIT { OP_FRAMEBUFFER | 0x0000'0001 };
     static constexpr uint32_t OP_FRAMEBUFFER_MEMSET { OP_FRAMEBUFFER | 0x0000'0002 };
     static constexpr uint32_t OP_FRAMEBUFFER_SWAP { OP_FRAMEBUFFER | 0x0000'0004 };
+    static constexpr uint32_t OP_FRAMEBUFFER_LOAD { OP_FRAMEBUFFER | 0x0000'0008 };
     static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
     static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
     static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
@@ -82,6 +83,10 @@ public:
     {
         m_op |= OP_FRAMEBUFFER_MEMSET;
     }
+    void loadFramebuffer()
+    {
+        m_op |= OP_FRAMEBUFFER_LOAD;
+    }
     void selectColorBuffer()
     {
         m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
@@ -117,6 +122,10 @@ public:
     bool getEnableMemset() const
     {
         return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_MEMSET;
+    }
+    bool getLoadFramebuffer() const
+    {
+        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_LOAD;
     }
     bool getSelectColorBuffer() const
     {

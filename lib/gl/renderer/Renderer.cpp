@@ -105,8 +105,19 @@ void Renderer::swapDisplayList()
     uploadDisplayList();
     switchDisplayLists();
     clearDisplayListAssembler();
+    loadFramebuffer();
     setYOffset();
     swapFramebuffer();
+}
+
+void Renderer::loadFramebuffer()
+{
+    // Loads the framebuffer into the internal framebuffer in the IF config.
+    // This is required to have some framebuffer effects like to redraw to an uncleared framebuffer.
+    // This command is ignored in the EF config.
+    FramebufferCmd cmd { true, false, false, m_resolutionX * m_resolutionY };
+    cmd.loadFramebuffer();
+    addCommand(cmd);
 }
 
 void Renderer::addCommitFramebufferCommand()
