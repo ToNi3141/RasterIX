@@ -115,7 +115,7 @@ void Renderer::loadFramebuffer()
     // Loads the framebuffer into the internal framebuffer in the IF config.
     // This is required to have some framebuffer effects like to redraw to an uncleared framebuffer.
     // This command is ignored in the EF config.
-    FramebufferCmd cmd { true, false, false, m_resolutionX * m_resolutionY };
+    FramebufferCmd cmd { true, true, true, m_resolutionX * m_resolutionY };
     cmd.loadFramebuffer();
     addCommand(cmd);
 }
