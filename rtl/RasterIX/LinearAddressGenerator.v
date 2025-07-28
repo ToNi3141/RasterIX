@@ -87,7 +87,7 @@ module LinearAddressGenerator #(
             if (start && done)
             begin
                 addr <= startAddr;
-                addrLast <= startAddr + (dataSizeInBeats << AxSIZE_BYTES_PER_BEAT) - 1;
+                addrLast <= startAddr + (dataSizeInBeats << AxSIZE_BYTES_PER_BEAT);
                 axaddr <= startAddr;
                 axvalid <= 1;
                 done <= 0;

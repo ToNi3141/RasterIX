@@ -348,7 +348,7 @@ module RasterIXRenderCore #(
         // Control
         .rasterizerRunning(rasterizerRunning),
         .pixelInPipeline(pixelInPipeline || !color_fifo_empty || !depth_fifo_empty || !stencil_fifo_empty),
-        .dataInTriangleInterpolator(dataInInterpolator),
+        .dataInTriangleInterpolator(dataInTriangleInterpolator),
 
         // applied
         .colorBufferApply(colorBufferApply),
@@ -404,52 +404,18 @@ module RasterIXRenderCore #(
         end
         else
         begin
-            wire            triangle_axis_tvalid;
-            wire            triangle_axis_tlast;
-            wire [31 : 0]   triangle_axis_tdata;
-
             wire            trianglex_axis_tvalid;
             wire            trianglex_axis_tlast;
             wire [31 : 0]   trianglex_axis_tdata;
 
-            axis_adapter #(
-                .S_DATA_WIDTH(CMD_STREAM_WIDTH),
-                .M_DATA_WIDTH(32),
-                .S_KEEP_ENABLE(1),
-                .M_KEEP_ENABLE(1),
-                .ID_ENABLE(0),
-                .DEST_ENABLE(0),
-                .USER_ENABLE(0)
-            ) triangleStreamAxisAdapter (
-                .clk(aclk),
-                .rst(!resetn),
-
-                .s_axis_tdata(cmd_xxx_axis_tdata),
-                .s_axis_tkeep(~0),
-                .s_axis_tvalid(cmd_rasterizer_axis_tvalid),
-                .s_axis_tready(cmd_rasterizer_axis_tready),
-                .s_axis_tlast(cmd_xxx_axis_tlast),
-                .s_axis_tid(0),
-                .s_axis_tdest(0),
-                .s_axis_tuser(0),
-
-                .m_axis_tdata(triangle_axis_tdata),
-                .m_axis_tkeep(),
-                .m_axis_tvalid(triangle_axis_tvalid),
-                .m_axis_tready(1),
-                .m_axis_tlast(triangle_axis_tlast),
-                .m_axis_tid(),
-                .m_axis_tdest(),
-                .m_axis_tuser()
-            );
-
+            assign cmd_rasterizer_axis_tready = 1;
             TriangleStreamF2XConverter triangleStreamF2XConverter (
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .s_axis_tvalid(triangle_axis_tvalid),
-                .s_axis_tlast(triangle_axis_tlast),
-                .s_axis_tdata(triangle_axis_tdata),
+                .s_axis_tvalid(cmd_rasterizer_axis_tvalid),
+                .s_axis_tlast(cmd_xxx_axis_tlast),
+                .s_axis_tdata(cmd_xxx_axis_tdata),
 
                 .m_axis_tvalid(trianglex_axis_tvalid),
                 .m_axis_tlast(trianglex_axis_tlast),
