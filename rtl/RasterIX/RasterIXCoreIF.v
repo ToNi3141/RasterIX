@@ -440,7 +440,8 @@ module RasterIXCoreIF #(
         end
 
         // The strobe can not logically be reduced to STRB_WIDTH bits, because the AXIS interface requires a strobe for every sub pixel.
-        // Therefore, as long one strobe signal is active, store the whole pixel.
+        // Therefore, as long one strobe signal is active, store the whole pixel. This should be sufficient because the strobing is already
+        // done by the internal framebuffer.
         assign m_colorbuffer_axis_tstrb = { STRB_WIDTH { |m_colorbuffer_unconverted_axis_tstrb } };
     endgenerate
 

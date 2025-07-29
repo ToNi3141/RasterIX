@@ -15,7 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+// Reads from the internal framebuffer and deserializes the data
+// to fragment interface.
 module InternalFramebufferReader
 #(
     // Number of pixels a stream beat contains

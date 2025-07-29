@@ -215,7 +215,6 @@ module DmaStreamEngine #(
     
     reg  [ADDR_WIDTH - 1 : 0]   addrStart;
     reg                         enableWriteChannel;
-    reg  [ADDR_WIDTH - 1 : 0]   addrEnd;
     reg                         enableAddressChannel;
     reg                         startAddressGeneration;
     wire                        addressGenerationDone;
@@ -358,7 +357,6 @@ module DmaStreamEngine #(
             axiDestLast <= 0;
             axisSourceReady <= 0;
 
-            addrEnd <= 0;
             addrStart <= 0;
 
             enableAddressChannel <= 0;

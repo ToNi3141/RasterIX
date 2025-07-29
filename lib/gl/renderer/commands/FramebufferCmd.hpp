@@ -101,8 +101,6 @@ public:
     }
     void setFramebufferSizeInPixel(const std::size_t size)
     {
-        // TODO: Check if size is aligned to the memory width. Narrow sizes are not supported. Round to the next aligned size.
-        // Consider 128 bit as always aligned size.
         m_op &= ~(OP_FRAMEBUFFER_SIZE_MASK << OP_FRAMEBUFFER_SIZE_POS);
         m_op |= (RenderConfig::getAlignedSize(static_cast<uint32_t>(size)) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
     }

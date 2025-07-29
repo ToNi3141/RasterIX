@@ -15,7 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+// Serializes the data from the fragment interface, does a scissor test
+// and writes it to the internal framebuffer memory.
 module InternalFramebufferWriter
 #(
     // Number of pixels a stream beat contains

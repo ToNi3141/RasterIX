@@ -15,6 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Handles the internal framebuffer commands.
+// It will handle the commands to clear the framebuffer, apply a scissor
+// and read/write the framebuffer content.
 module InternalFramebufferCommandHandler
 #(
     // Number of pixels a stream beat contains

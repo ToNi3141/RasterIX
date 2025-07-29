@@ -112,8 +112,8 @@ void Renderer::swapDisplayList()
 
 void Renderer::loadFramebuffer()
 {
-    // Loads the framebuffer into the internal framebuffer in the IF config.
-    // This is required to have some framebuffer effects like to redraw to an uncleared framebuffer.
+    // Loads the framebuffer into the internal framebuffer when using the IF config.
+    // This is required to enable framebuffer effects, such as redrawing to an uncleared framebuffer.
     // This command is ignored in the EF config.
     FramebufferCmd cmd { true, true, true, m_resolutionX * m_resolutionY };
     cmd.loadFramebuffer();

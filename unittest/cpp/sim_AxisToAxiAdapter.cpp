@@ -28,7 +28,6 @@ static constexpr std::size_t NUMBER_OF_BEATS = 16;
 
 TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
 {
-
     VAxisToAxiAdapter* t = new VAxisToAxiAdapter();
 
     t->s_xvalid = true;

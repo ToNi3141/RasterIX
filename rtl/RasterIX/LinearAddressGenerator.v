@@ -15,7 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+// Generates a stream of address requests for an AXI address channel.
+// Based on the start address and the size of the transfer,
+// it will generate the address requests in a burst mode.
 module LinearAddressGenerator #(
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,

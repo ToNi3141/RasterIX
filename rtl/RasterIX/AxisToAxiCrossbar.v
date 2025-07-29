@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Crossbar which streams an AXI stream interface to an AXI memory interface.
-// It uses a dedicated AXIS address channel to transfer the address and
-// a read/write channel to transfer data to, or from, the memory.
+// Crossbar to write an AXI Stream to an AXI memory. Several AXI Streams
+// can be connected to this crossbar, and the crossbar will select one
+// of the streams to write to the memory.
+// It uses a dedicated AXI Stream address channel to transfer the address and
+// an read/write flag to transfer data to, or from, the memory.
 module AxisToAxiCrossbar #(
     // Width of the axi interfaces
     parameter DATA_WIDTH = 32,

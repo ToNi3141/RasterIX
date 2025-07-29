@@ -67,54 +67,53 @@ module InternalFramebuffer
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(NUMBER_OF_PIXELS_PER_BEAT),
 
     // Size constrains of the internal memory
-    localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
     localparam MEM_MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS,
     localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH,
     localparam MEM_ADDR_WIDTH = PIXEL_ADDR_WIDTH - PIXEL_PER_BEAT_LOG2
 )
 (
-    input   wire                            clk,
-    input   wire                            reset,
+    input   wire                                clk,
+    input   wire                                reset,
 
     /////////////////////////
     // Configs
     /////////////////////////
-    input  wire                             confEnable,
-    input  wire [PIXEL_WIDTH - 1 : 0]       confClearColor,
-    input  wire                             confEnableScissor,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorStartY,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorEndX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorEndY,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confYOffset,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confXResolution,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confYResolution,
-    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0] confMask,
+    input  wire                                 confEnable,
+    input  wire [PIXEL_WIDTH - 1 : 0]           confClearColor,
+    input  wire                                 confEnableScissor,
+    input  wire [X_BIT_WIDTH - 1 : 0]           confScissorStartX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]           confScissorStartY,
+    input  wire [X_BIT_WIDTH - 1 : 0]           confScissorEndX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]           confScissorEndY,
+    input  wire [Y_BIT_WIDTH - 1 : 0]           confYOffset,
+    input  wire [X_BIT_WIDTH - 1 : 0]           confXResolution,
+    input  wire [Y_BIT_WIDTH - 1 : 0]           confYResolution,
+    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  confMask,
 
     /////////////////////////
     // Fragment interface
     /////////////////////////
 
     // Output stream
-    input  wire                             arvalid,
-    input  wire                             arlast,
-    // output wire                             arready,
-    input  wire [PIXEL_ADDR_WIDTH - 1 : 0]  araddr,
+    input  wire                                 arvalid,
+    input  wire                                 arlast,
+    // output wire                                 arready,
+    input  wire [PIXEL_ADDR_WIDTH - 1 : 0]      araddr,
 
-    output wire                             rvalid,
-    output wire                             rlast,
-    // input  wire                             rready,
-    output wire [PIXEL_WIDTH - 1 : 0]       rdata,
+    output wire                                 rvalid,
+    output wire                                 rlast,
+    // input  wire                                 rready,
+    output wire [PIXEL_WIDTH - 1 : 0]           rdata,
 
-    // Input Stream
-    input  wire                             wvalid,
-    // input  wire                             wlast,
-    // output wire                             wready,
-    input  wire [PIXEL_ADDR_WIDTH - 1 : 0]  waddr,
-    input  wire [PIXEL_WIDTH - 1 : 0]       wdata,
-    input  wire                             wstrb,
-    input  wire [X_BIT_WIDTH - 1 : 0]       wscreenPosX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       wscreenPosY,
+    // Input Stream 
+    input  wire                                 wvalid,
+    // input  wire                                 wlast,
+    // output wire                                 wready,
+    input  wire [PIXEL_ADDR_WIDTH - 1 : 0]      waddr,
+    input  wire [PIXEL_WIDTH - 1 : 0]           wdata,
+    input  wire                                 wstrb,
+    input  wire [X_BIT_WIDTH - 1 : 0]           wscreenPosX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]           wscreenPosY,
     
     /////////////////////////
     // Control
@@ -130,22 +129,22 @@ module InternalFramebuffer
     input  wire [ADDR_WIDTH - 1 : 0]            cmdAddr,
 
     // AXI Stream master interface
-    output wire                             m_axis_tvalid,
-    input  wire                             m_axis_tready,
-    output wire                             m_axis_tlast,
-    output wire [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
-    output wire [STREAM_STRB_WIDTH - 1 : 0] m_axis_tstrb,
+    output wire                                 m_axis_tvalid,
+    input  wire                                 m_axis_tready,
+    output wire                                 m_axis_tlast,
+    output wire [STREAM_WIDTH - 1 : 0]          m_axis_tdata,
+    output wire [STREAM_STRB_WIDTH - 1 : 0]     m_axis_tstrb,
 
-    input  wire                             s_axis_tvalid,
-    output wire                             s_axis_tready,
-    input  wire                             s_axis_tlast,
-    input  wire [STREAM_WIDTH - 1 : 0]      s_axis_tdata,
+    input  wire                                 s_axis_tvalid,
+    output wire                                 s_axis_tready,
+    input  wire                                 s_axis_tlast,
+    input  wire [STREAM_WIDTH - 1 : 0]          s_axis_tdata,
 
-    output wire                             m_avalid,
-    output wire [ADDR_WIDTH - 1 : 0]        m_aaddr,
-    output wire [ADDR_WIDTH - 1 : 0]        m_abeats,
-    input  wire                             m_aready,
-    output wire                             m_arnw
+    output wire                                 m_avalid,
+    output wire [ADDR_WIDTH - 1 : 0]            m_aaddr,
+    output wire [ADDR_WIDTH - 1 : 0]            m_abeats,
+    input  wire                                 m_aready,
+    output wire                                 m_arnw
 );
     wire [MEM_MASK_WIDTH - 1 : 0]   writeMaskPort1; 
     wire [MEM_ADDR_WIDTH - 1 : 0]   writeAddrPort1;
