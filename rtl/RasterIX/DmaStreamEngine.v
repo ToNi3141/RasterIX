@@ -113,7 +113,7 @@ module DmaStreamEngine #(
     output wire [ID_WIDTH - 1 : 0]      m_mem_axi_awid,
     output wire [ADDR_WIDTH - 1 : 0]    m_mem_axi_awaddr,
     output wire [ 7 : 0]                m_mem_axi_awlen, // How many beats are in this transaction
-    output wire [ 2 : 0]                m_mem_axi_awsize, // The increment during one cycle. Means, 0 incs addrStart by 1, 2 by 4 and so on
+    output wire [ 2 : 0]                m_mem_axi_awsize, // The increment during one cycle. Means, 0 incs addr by 1, 2 by 4 and so on
     output wire [ 1 : 0]                m_mem_axi_awburst, // 0 fixed, 1 incr, 2 wrappig
     output wire                         m_mem_axi_awlock,
     output wire [ 3 : 0]                m_mem_axi_awcache,

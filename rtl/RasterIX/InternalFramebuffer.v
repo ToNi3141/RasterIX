@@ -22,6 +22,7 @@
 // During execution, applied is set to 0. Is the execution finished, applied is set to 1.
 // cmdCommit: This command will start streaming the content of the framebuffer via the AXIS interface.
 // cmdMemset: This command will initialize the memory with the color in confClearColor
+// cmdRead: This command is used to stream the framebuffer content via the AXIS interface into this module (counterpart to cmdCommit).
 //
 // The fragment interface can be used to access single fragments from the framebuffer
 //
