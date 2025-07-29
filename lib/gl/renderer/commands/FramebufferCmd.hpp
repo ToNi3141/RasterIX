@@ -102,7 +102,8 @@ public:
     void setFramebufferSizeInPixel(const std::size_t size)
     {
         m_op &= ~(OP_FRAMEBUFFER_SIZE_MASK << OP_FRAMEBUFFER_SIZE_POS);
-        m_op |= (RenderConfig::getAlignedSize(static_cast<uint32_t>(size)) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
+        // Note: size is in 16 bit pixel, getAlignedSize expects bytes.
+        m_op |= (RenderConfig::getAlignedSize(static_cast<uint32_t>(size << 1) >> 1) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
     }
     void enableVSync()
     {
