@@ -298,6 +298,7 @@ private:
     void swapScreenToNewColorBuffer();
     // In a single list case, this is always zero. It is required for the threaded renderer and the multi list support
     void setYOffset() { writeReg(YOffsetReg { 0, 0 }); }
+    void loadFramebuffer();
 
     uint32_t m_colorBufferAddr {};
     bool m_selectedColorBuffer { true };

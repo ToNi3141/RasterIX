@@ -76,21 +76,22 @@ localparam OP_RENDER_CONFIG_NUMBER_OR_REGS = 19;
 
 //---------------------------------------------------------------------------------------------------------
 // Framebuffer configuration
-//  +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-//  | 4'h2 | 20'hx command size | 1'hx swap vsync | 1'hx stencil buffer select | 1'hx depth buffer select | 1'hx color buffer select | 1'hx reserved | 1'hx swap | 1'hx memset | 1'hx commit |
-//  +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 4'h2 | 20'hx command size | 1'hx swap vsync | 1'hx stencil buffer select | 1'hx depth buffer select | 1'hx color buffer select | 1'hx read | 1'hx swap | 1'hx memset | 1'hx commit |
+//  +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 // Command to execute on the framebuffer
 // Steam size 1 32bit value.
 localparam OP_FRAMEBUFFER = 2;
-localparam OP_FRAMEBUFFER_COMMIT_POS = 0; // Streams the frame buffer (color buffer) content via the framebuffer_axis 
+localparam OP_FRAMEBUFFER_COMMIT_POS = 0; // Streams the frame buffer content to the memory. 
 localparam OP_FRAMEBUFFER_MEMSET_POS = 1; // Clears the frame buffer with the configured clear color / depth value
 localparam OP_FRAMEBUFFER_SWAP_POS = 2; // Swaps the framebuffer to the address defined in OP_RENDER_CONFIG_xxx_BUFFER_ADDR. This functionality is typically implemented only for the color buffer
+localparam OP_FRAMEBUFFER_READ_POS = 3; // Reads the framebuffer content from the frame buffer.
 // The selected buffer where to execute the command above (multiple selections are possible)
 localparam OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS = 4;
 localparam OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS = 5;
 localparam OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS = 6;
 localparam OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC_POS = 7; // Enables the vertical synchronization of the OP_FRAMEBUFFER_SWAP_POS command
-localparam OP_FRAMEBUFFER_SIZE_POS = 8;
+localparam OP_FRAMEBUFFER_SIZE_POS = 8; // Note: Narrow sizes are not supported. For instance, when the memory width is 64bit, then the least log2(64) bits are ignored.
 localparam OP_FRAMEBUFFER_SIZE_SIZE = 20;
 
 //---------------------------------------------------------------------------------------------------------

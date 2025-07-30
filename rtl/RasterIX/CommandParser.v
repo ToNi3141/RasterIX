@@ -54,17 +54,20 @@ module CommandParser #(
     output reg                                  colorBufferCmdCommit,
     output reg                                  colorBufferCmdMemset,
     output reg                                  colorBufferCmdSwap,
+    output reg                                  colorBufferCmdRead,
     output reg                                  colorBufferCmdSwapEnableVsync,
     output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   colorBufferSize,
     output reg                                  depthBufferApply,
     input  wire                                 depthBufferApplied,
     output reg                                  depthBufferCmdCommit,
     output reg                                  depthBufferCmdMemset,
+    output reg                                  depthBufferCmdRead,
     output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   depthBufferSize,
     output reg                                  stencilBufferApply,
     input  wire                                 stencilBufferApplied,
     output reg                                  stencilBufferCmdCommit,
     output reg                                  stencilBufferCmdMemset,
+    output reg                                  stencilBufferCmdRead,
     output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   stencilBufferSize
 );
 `include "RegisterAndDescriptorDefines.vh"
@@ -239,13 +242,16 @@ module CommandParser #(
                         colorBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
                         colorBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
                         colorBufferCmdSwap <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS];
+                        colorBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
                         colorBufferCmdSwapEnableVsync <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC_POS];
                         colorBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
                         depthBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
                         depthBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
+                        depthBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
                         depthBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
                         stencilBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
                         stencilBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
+                        stencilBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
                         stencilBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
                         colorBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
                         depthBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];

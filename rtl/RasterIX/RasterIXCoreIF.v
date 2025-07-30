@@ -101,18 +101,28 @@ module RasterIXCoreIF #(
     input  wire [CMD_STREAM_WIDTH - 1 : 0]      s_cmd_axis_tdata,
 
     // Framebuffer output
-    // AXI Stream master interface (RGB565)
-    output wire                                 m_framebuffer_axis_tvalid,
-    input  wire                                 m_framebuffer_axis_tready,
-    output wire                                 m_framebuffer_axis_tlast,
-    output wire [DATA_WIDTH - 1 : 0]            m_framebuffer_axis_tdata,
+    // AXI Stream color buffer (RGB565)
+    output wire                                 m_colorbuffer_axis_tvalid,
+    input  wire                                 m_colorbuffer_axis_tready,
+    output wire                                 m_colorbuffer_axis_tlast,
+    output wire [DATA_WIDTH - 1 : 0]            m_colorbuffer_axis_tdata,
+    output wire [STRB_WIDTH - 1 : 0]            m_colorbuffer_axis_tstrb,
+
+    input  wire                                 s_colorbuffer_axis_tvalid,
+    output wire                                 s_colorbuffer_axis_tready,
+    input  wire                                 s_colorbuffer_axis_tlast,
+    input  wire [DATA_WIDTH - 1 : 0]            s_colorbuffer_axis_tdata,
+
+    output wire                                 m_colorbuffer_avalid,
+    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_aaddr,
+    output wire [ADDR_WIDTH - 1 : 0]            m_colorbuffer_abeats,
+    input  wire                                 m_colorbuffer_aready,
+    output wire                                 m_colorbuffer_arnw,
 
     // Color
     output wire                                 swap_fb,
     output wire                                 swap_fb_enable_vsync,
     input  wire                                 fb_swapped,
-    output wire                                 commit_fb,
-    input  wire                                 fb_committed,
     output wire [ADDR_WIDTH - 1 : 0]            fb_addr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   fb_size,
 
@@ -159,6 +169,7 @@ module RasterIXCoreIF #(
     localparam SCREEN_POS_WIDTH = 11;
     localparam PIXEL_WIDTH_STREAM = 16;
     localparam PIXEL_PER_BEAT = DATA_WIDTH / PIXEL_WIDTH_STREAM;
+    localparam FRAMEBUFFER_SUBPIXEL_PER_BEAT = PIXEL_PER_BEAT * FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
     localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
     // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
     // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
@@ -189,6 +200,7 @@ module RasterIXCoreIF #(
     wire                                             colorBufferCmdCommit;
     wire                                             colorBufferCmdMemset;
     wire                                             colorBufferCmdSwap;
+    wire                                             colorBufferCmdRead;
     wire                                             colorBufferCmdSwapEnableVsync;
     wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
@@ -207,11 +219,13 @@ module RasterIXCoreIF #(
 
     // Depth buffer access
     wire [DEPTH_WIDTH - 1 : 0]                       depthBufferClearDepth;
+    wire [ADDR_WIDTH - 1 : 0]                        depthBufferAddr;
     wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]               depthBufferSize; 
     wire                                             depthBufferApply;
     wire                                             depthBufferApplied;
     wire                                             depthBufferCmdCommit;
     wire                                             depthBufferCmdMemset;
+    wire                                             depthBufferCmdRead;
     wire                                             depthBufferEnable;
     wire                                             depthBufferMask;
     wire                                             m_depth_arvalid;
@@ -229,11 +243,13 @@ module RasterIXCoreIF #(
 
     // Stencil buffer access
     wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferClearStencil;
+    wire [ADDR_WIDTH - 1 : 0]                        stencilBufferAddr;
     wire [FB_SIZE_IN_PIXEL_LG -1 : 0]                stencilBufferSize; 
     wire                                             stencilBufferApply;
     wire                                             stencilBufferApplied;
     wire                                             stencilBufferCmdCommit;
     wire                                             stencilBufferCmdMemset;
+    wire                                             stencilBufferCmdRead;
     wire                                             stencilBufferEnable;
     wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask;
     wire                                             m_stencil_arvalid;
@@ -252,7 +268,7 @@ module RasterIXCoreIF #(
     generate
         if (ENABLE_DEPTH_BUFFER)
         begin
-            FrameBuffer depthBuffer (  
+            InternalFramebuffer depthBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
 
@@ -284,13 +300,27 @@ module RasterIXCoreIF #(
                 .apply(depthBufferApply),
                 .applied(depthBufferApplied),
                 .cmdCommit(depthBufferCmdCommit),
-                .cmdMemset(depthBufferCmdMemset),
+                .cmdMemset(depthBufferCmdMemset || depthBufferCmdRead),
+                .cmdRead(0),
                 .cmdSize(depthBufferSize),
+                .cmdAddr(depthBufferAddr),
 
                 .m_axis_tvalid(),
-                .m_axis_tready(1'b1),
+                .m_axis_tready(1),
                 .m_axis_tlast(),
-                .m_axis_tdata()
+                .m_axis_tdata(),
+                .m_axis_tstrb(),
+
+                .s_axis_tvalid(0),
+                .s_axis_tready(),
+                .s_axis_tlast(0),
+                .s_axis_tdata(0),
+
+                .m_avalid(),
+                .m_aaddr(),
+                .m_abeats(),
+                .m_aready(1),
+                .m_arnw()
             );
             defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
@@ -310,8 +340,10 @@ module RasterIXCoreIF #(
         end
     endgenerate
 
-    wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0] framebuffer_unconverted_axis_tdata;
-    FrameBuffer colorBuffer (  
+    wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0]   m_colorbuffer_unconverted_axis_tdata;
+    wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0]   s_colorbuffer_unconverted_axis_tdata;
+    wire [FRAMEBUFFER_SUBPIXEL_PER_BEAT - 1 : 0]                m_colorbuffer_unconverted_axis_tstrb;
+    InternalFramebuffer colorBuffer (  
         .clk(aclk),
         .reset(!resetn),
 
@@ -340,16 +372,30 @@ module RasterIXCoreIF #(
         .wscreenPosX(m_color_wscreenPosX),
         .wscreenPosY(m_color_wscreenPosY),
         
-        .apply(colorBufferApply && (colorBufferCmdCommit || colorBufferCmdMemset)),
+        .apply(colorBufferApply && (colorBufferCmdCommit || colorBufferCmdMemset || colorBufferCmdRead)),
         .applied(colorBufferApplied),
         .cmdCommit(colorBufferCmdCommit),
         .cmdMemset(colorBufferCmdMemset),
+        .cmdRead(colorBufferCmdRead),
         .cmdSize(colorBufferSize),
+        .cmdAddr(colorBufferAddr),
 
-        .m_axis_tvalid(m_framebuffer_axis_tvalid),
-        .m_axis_tready(m_framebuffer_axis_tready),
-        .m_axis_tlast(m_framebuffer_axis_tlast),
-        .m_axis_tdata(framebuffer_unconverted_axis_tdata)
+        .m_axis_tvalid(m_colorbuffer_axis_tvalid),
+        .m_axis_tready(m_colorbuffer_axis_tready),
+        .m_axis_tlast(m_colorbuffer_axis_tlast),
+        .m_axis_tdata(m_colorbuffer_unconverted_axis_tdata),
+        .m_axis_tstrb(m_colorbuffer_unconverted_axis_tstrb),
+
+        .s_axis_tvalid(s_colorbuffer_axis_tvalid),
+        .s_axis_tready(s_colorbuffer_axis_tready),
+        .s_axis_tlast(s_colorbuffer_axis_tlast),
+        .s_axis_tdata(s_colorbuffer_unconverted_axis_tdata),
+
+        .m_avalid(m_colorbuffer_avalid),
+        .m_aaddr(m_colorbuffer_aaddr),
+        .m_abeats(m_colorbuffer_abeats),
+        .m_aready(m_colorbuffer_aready),
+        .m_arnw(m_colorbuffer_arnw)
     );
     defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
@@ -359,25 +405,50 @@ module RasterIXCoreIF #(
     defparam colorBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
     defparam colorBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
+    initial if (COLOR_A_POS != 0)
+    begin
+        $error("RasterIXCoreIF: COLOR_A_POS must be zero, otherwise the conversion from the internal framebuffer format to the AXIS format will not work correctly.");
+        $finish;
+    end
+
     // Conversion of the internal pixel representation the exnternal one required for the AXIS interface
     generate
+        // Convert from RGB[A]XXX[X] to RGB565
         `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
-        `Expand(ExpandFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
+        `Expand(RGBnnnToRGB888, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
         if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
         begin
-            `ReduceVec(ReduceVecFramebufferStream, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
-            assign m_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(ReduceVecFramebufferStream(framebuffer_unconverted_axis_tdata)));
+            `ReduceVec(RGBA2RGB, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
+            assign m_colorbuffer_axis_tdata = XXX2RGB565(RGBnnnToRGB888(RGBA2RGB(m_colorbuffer_unconverted_axis_tdata)));
         end
         else
         begin
-            assign m_framebuffer_axis_tdata = XXX2RGB565(ExpandFramebufferStream(framebuffer_unconverted_axis_tdata));
+            assign m_colorbuffer_axis_tdata = XXX2RGB565(RGBnnnToRGB888(m_colorbuffer_unconverted_axis_tdata));
         end
+
+        // Convert from RGB565 to RGB[A]XXX[X]
+        `RGB5652XXX(RGB565ToXXX, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
+        `Reduce(RGBXXXToYYY, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
+        if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
+        begin
+            `ExpandVec(RGBYYYToRGBAYYYY, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3, COLOR_A_POS, 3, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL);
+            assign s_colorbuffer_unconverted_axis_tdata = RGBYYYToRGBAYYYY(RGBXXXToYYY(RGB565ToXXX(s_colorbuffer_axis_tdata)), { FRAMEBUFFER_SUB_PIXEL_WIDTH { 1'b0 } });
+        end
+        else
+        begin
+            assign s_colorbuffer_unconverted_axis_tdata = RGBXXXToYYY(RGB565ToXXX(s_colorbuffer_axis_tdata));
+        end
+
+        // The strobe can not logically be reduced to STRB_WIDTH bits, because the AXIS interface requires a strobe for every sub pixel.
+        // Therefore, as long one strobe signal is active, store the whole pixel. This should be sufficient because the strobing is already
+        // done by the internal framebuffer.
+        assign m_colorbuffer_axis_tstrb = { STRB_WIDTH { |m_colorbuffer_unconverted_axis_tstrb } };
     endgenerate
 
     generate 
         if (ENABLE_STENCIL_BUFFER)
         begin
-            FrameBuffer stencilBuffer (  
+            InternalFramebuffer stencilBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
 
@@ -409,13 +480,27 @@ module RasterIXCoreIF #(
                 .apply(stencilBufferApply),
                 .applied(stencilBufferApplied),
                 .cmdCommit(stencilBufferCmdCommit),
-                .cmdMemset(stencilBufferCmdMemset),
+                .cmdMemset(stencilBufferCmdMemset || stencilBufferCmdRead),
+                .cmdRead(0),
                 .cmdSize(stencilBufferSize),
+                .cmdAddr(stencilBufferAddr),
 
                 .m_axis_tvalid(),
-                .m_axis_tready(1'b1),
+                .m_axis_tready(1),
                 .m_axis_tlast(),
-                .m_axis_tdata()
+                .m_axis_tdata(),
+                .m_axis_tstrb(),
+
+                .s_axis_tvalid(0),
+                .s_axis_tready(),
+                .s_axis_tlast(0),
+                .s_axis_tdata(0),
+
+                .m_avalid(),
+                .m_aaddr(),
+                .m_abeats(),
+                .m_aready(1),
+                .m_arnw()
             );
             defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam stencilBuffer.NUMBER_OF_SUB_PIXELS = STENCIL_WIDTH;
@@ -474,10 +559,11 @@ module RasterIXCoreIF #(
         .colorBufferAddr(colorBufferAddr),
         .colorBufferSize(colorBufferSize),
         .colorBufferApply(colorBufferApply),
-        .colorBufferApplied(colorBufferApplied && fb_swapped && fb_committed),
+        .colorBufferApplied(colorBufferApplied && fb_swapped),
         .colorBufferCmdCommit(colorBufferCmdCommit),
         .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferCmdSwap(colorBufferCmdSwap),
+        .colorBufferCmdRead(colorBufferCmdRead),
         .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
         .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
@@ -498,12 +584,13 @@ module RasterIXCoreIF #(
         .m_color_wscreenPosY(m_color_wscreenPosY),
 
         .depthBufferClearDepth(depthBufferClearDepth),
-        .depthBufferAddr(), // Unused in the rixif config
+        .depthBufferAddr(depthBufferAddr),
         .depthBufferSize(depthBufferSize),
         .depthBufferApply(depthBufferApply),
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
+        .depthBufferCmdRead(depthBufferCmdRead),
         .depthBufferEnable(depthBufferEnable),
         .depthBufferMask(depthBufferMask),
         .m_depth_arready(1),
@@ -523,12 +610,13 @@ module RasterIXCoreIF #(
         .m_depth_wscreenPosY(m_depth_wscreenPosY),
 
         .stencilBufferClearStencil(stencilBufferClearStencil),
-        .stencilBufferAddr(), // Unused in the rixif config
+        .stencilBufferAddr(stencilBufferAddr),
         .stencilBufferSize(stencilBufferSize),
         .stencilBufferApply(stencilBufferApply),
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdMemset(stencilBufferCmdMemset),
+        .stencilBufferCmdRead(stencilBufferCmdRead),
         .stencilBufferEnable(stencilBufferEnable),
         .stencilBufferMask(stencilBufferMask),
         .m_stencil_arready(1),
@@ -584,7 +672,6 @@ module RasterIXCoreIF #(
 
     assign swap_fb = colorBufferApply && colorBufferCmdSwap;
     assign swap_fb_enable_vsync = colorBufferCmdSwapEnableVsync;
-    assign commit_fb = colorBufferApply && colorBufferCmdCommit;
     assign fb_addr = colorBufferAddr;
     assign fb_size = colorBufferSize;
 

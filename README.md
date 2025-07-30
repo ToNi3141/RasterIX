@@ -11,12 +11,13 @@
 - [Missing Features](#missing-features)
 
 # About this Project
-The RasterIX* project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3 compatible fixed function pixel pipeline with a maximum of two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
-The renderer is able to produce __100MPixel__ and __200MTexel__ at a clockspeed of 100MHz.
+The RasterIX* project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3-compatible fixed-function pixel pipeline with up to two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 
-The project started as an experiment, how an 3D renderer can be implemented on an FPGA and has evolved to a core, which is capable to render complex 3D scenes. The long term goal of this project is to recreate an open source fixed function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5 suitable for embedded devices like microcontrollers or embedded linux devices.
+The renderer is able to produce __100 MPixels__ and __200 MTexels__ per second at a clock speed of 100 MHz.
 
-*The name RasterIX is an abbreviation of Rasterizer 9, with the 9 serving as a reference to the end of the 90s, a time when fixed function renderers reached the peak of their popularity.
+The project began as an experiment to see how a 3D renderer could be implemented on an FPGA and has evolved into a core capable of rendering complex 3D scenes. The long-term goal of this project is to recreate an open-source fixed-function renderer compatible with OpenGL ES 1.1 and OpenGL 1.5, suitable for embedded devices such as microcontrollers or embedded Linux systems.
+
+*The name RasterIX is an abbreviation of "Rasterizer 9", with the 9 referencing the end of the 1990s — a time when fixed-function renderers reached the peak of their popularity.
 
 # Area Usage
 With a typical configuration, the core requires __around 11k LUTs__ on a Xilinx Series 7 device: 
@@ -161,20 +162,19 @@ Note: Bold options are required to be equal to the software counterparts.
 | SUB_PIXEL_CALC_PRECISION                  | if/ef   | Precision of the sub pixel calculations in the shader and texture filter. Higher values will improve the image quality but also occupy more logic. Valid range: 5-8. |
 
 # Variant
-The core comes in two pre configured variants, `RasterIX_IF` and `RasterIX_EF`. `IF` stands for internal framebuffer while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks. But except of the framebuffer handling and resulting limitations, they are completely equal.
+The core comes in two variants: `RasterIX_IF` and `RasterIX_EF`. `IF` stands for internal framebuffer, while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks, but except for framebuffer handling and resulting limitations, they are functionally identical.
 
-`RasterIX_IF`: This variant is usually faster, because it only loosely depends on the memory subsystem of your FPGA. The rendering is completely executed in the FPGAs static RAM resources. The drawback is the occupation of a lot of RAM resources on the FPGA and on your host.
-For a reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB memory only for the framebuffers. Less is possible but only useful for smaller displays. More memory is generally recommended.
+`RasterIX_IF`: This variant is usually faster because it only loosely depends on the memory subsystem of your FPGA. Rendering is executed entirely in the FPGA's static RAM resources. The drawback is the occupation of significant RAM resources on both the FPGA and the host. For reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB of memory just for the framebuffers. Less is possible but only useful for smaller displays; more memory is generally recommended.
 
-The used memory is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution won't fit into the internal framebuffer, then the framebuffer is rendered in several cycles where the internal framebuffer only contains a part of the whole framebuffer.
+The memory used is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution does not fit into the internal framebuffer, it is rendered in several cycles, with the internal framebuffer containing only a part of the whole framebuffer.
 
-Because the framebuffer is split in several smaller ones, the host requires a display list for each partial framebuffer and must keep the display list in memory, until the rendering is done. For a picture with a reasonable complexity, you can assume that the host requires several MB of memory just for the display lists. It also can screw up the rendering in some cases. When a new frame without glClear is drawn, you will not see the echo of the last frame, instead you will see the echo of the last partial frame.
+Because the framebuffer is split into several smaller ones, the host requires a display list for each partial framebuffer and must keep the display list in memory until rendering is complete. For a picture with reasonable complexity, you can assume that the host requires several MB of memory just for the display lists. This can also cause rendering issues in some cases (for example, when no `glClear()` is called). No partial depth or stencil buffer is loaded into the FPGA SRAM; instead, only the clear color is loaded. As a result, you end up with a cleared framebuffer instead of the content from the last frame. The color buffer behaves differently: it loads the content of the partial color buffer from memory into the FPGA SRAM to continue drawing on the last framebuffer. Depth and stencil buffers are excluded from this mechanism because drawing with out clear is rarely used, and excluding them improves the performance of the IF variant.
 
-`RasterIX_EF`: The performance of this variant heavily depends on the performance of your memory subsystem, because all framebuffers are on your system memory (typically DRAM). While the latency is not really important for the performance, but the the number of memory request the system can handle is even more. This is especially in the Xilinx MIG a big bottleneck for this design (because of this, it is around ~3 times slower that the `RasterIX_IF`). Another limitation of the memory subsystem / AXI bus (the strobe of the AXI bus works only byte wise, not bit wise): Stencil and color masks are not working correctly and the color buffer does not support an alpha channel.
+`RasterIX_EF`: The performance of this variant heavily depends on the performance of your memory subsystem, because all framebuffers are stored in system memory (typically DRAM). While latency is not critical for performance, the number of memory requests the system can handle is much more important. This is a significant bottleneck for this design, especially with the Xilinx MIG (making it about three times slower than `RasterIX_IF`). Another limitation of the memory subsystem/AXI bus (the strobe of the AXI bus works only byte-wise, not bit-wise) is that stencil and color masks do not work correctly, and the color buffer does not support an alpha channel.
 
-The advantages are: It doesn't use FPGA memory resources for the framebuffers. They are free for other designs, but it needs a bit more additional logic to handle the memory requests. Another advantage is the usage of smaller display list with intermediate display list uploads. That reduces the memory footprint for the display lists on the host system to a few kB. It isn't anymore required to keep the whole frame in the display list, the display list now acts only as a buffer. This configuration works more like a traditional renderer.
+The advantages are that it does not use FPGA memory resources for the framebuffers, freeing them for other designs, though it requires additional logic to handle memory requests. Another advantage is the use of smaller display lists with intermediate display list uploads, reducing the memory footprint for display lists on the host system to a few kB. It is no longer necessary to keep the whole frame in the display list; the display list now acts only as a buffer. This configuration works more like a traditional renderer.
 
-Both variants can work either in fixed point or floating point arithmetic. The fixed point arithmetic has almost the same image quality and compatibility compared to the float arithmetic. All tested games are working perfectly fine with both, while the fixed point configuration only requires half of the logic of the floating point configuration.
+Both variants can operate in either fixed-point or floating-point arithmetic. The fixed-point arithmetic provides almost the same image quality and compatibility as floating-point arithmetic. All tested games work perfectly fine with both, while the fixed-point configuration requires only half the logic of the floating-point configuration.
 
 # Missing Features
 The following features are currently missing compared to a real OpenGL implementation

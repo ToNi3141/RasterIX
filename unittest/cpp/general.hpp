@@ -15,6 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#ifndef GENERAL_HPP
+#define GENERAL_HPP
+
 #define CATCH_CONFIG_MAIN // This tells Catch to provide a main() - only do this in one cpp file
 #include "../3rdParty/catch.hpp"
 
@@ -42,4 +45,18 @@ void reset(T* t)
     clk(t);
 }
 
+void enableVerilatorTracing()
+{
+    Verilated::traceEverOn(true);
+}
+
 } // namespace rr::ut
+
+// Needed for verilator when tracing is enabled
+double sc_time_stamp()
+{
+    static double t = 0;
+    return ++t;
+}
+
+#endif // GENERAL_HPP

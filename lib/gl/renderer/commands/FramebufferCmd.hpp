@@ -18,6 +18,7 @@
 #ifndef _FRAMEBUFFER_CMD_HPP_
 #define _FRAMEBUFFER_CMD_HPP_
 
+#include "RenderConfigs.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -31,6 +32,7 @@ class FramebufferCmd
     static constexpr uint32_t OP_FRAMEBUFFER_COMMIT { OP_FRAMEBUFFER | 0x0000'0001 };
     static constexpr uint32_t OP_FRAMEBUFFER_MEMSET { OP_FRAMEBUFFER | 0x0000'0002 };
     static constexpr uint32_t OP_FRAMEBUFFER_SWAP { OP_FRAMEBUFFER | 0x0000'0004 };
+    static constexpr uint32_t OP_FRAMEBUFFER_LOAD { OP_FRAMEBUFFER | 0x0000'0008 };
     static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
     static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
     static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
@@ -81,6 +83,10 @@ public:
     {
         m_op |= OP_FRAMEBUFFER_MEMSET;
     }
+    void loadFramebuffer()
+    {
+        m_op |= OP_FRAMEBUFFER_LOAD;
+    }
     void selectColorBuffer()
     {
         m_op |= OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
@@ -96,7 +102,13 @@ public:
     void setFramebufferSizeInPixel(const std::size_t size)
     {
         m_op &= ~(OP_FRAMEBUFFER_SIZE_MASK << OP_FRAMEBUFFER_SIZE_POS);
-        m_op |= (static_cast<uint32_t>(size) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
+        // Note: size is in 16 bit pixel, getAlignedSize expects bytes.
+        // So.. shift the size by 1 to convert the size to bytes.
+        // The size is then aligned (only complete pages can be transmitted). 
+        // For instance, a display size of 320x240 pixels has a size of 153600 bytes. Assuming a page size of 4096 bytes.
+        // This framebuffer would requires 37.5 pages, which is rounded to 38 pages. The returned size of getAlignedSize is then 
+        // converted back from bytes to pixels by shifting the size by 1.
+        m_op |= (RenderConfig::getAlignedSize(static_cast<uint32_t>(size << 1) >> 1) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
     }
     void enableVSync()
     {
@@ -114,6 +126,10 @@ public:
     bool getEnableMemset() const
     {
         return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_MEMSET;
+    }
+    bool getLoadFramebuffer() const
+    {
+        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_LOAD;
     }
     bool getSelectColorBuffer() const
     {

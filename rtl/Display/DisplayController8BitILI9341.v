@@ -56,6 +56,7 @@ module DisplayController8BitILI9341 #(
     localparam COLOR_B_POS = 4;
     localparam COLOR_A_POS = 0;
     localparam COLOR_SUB_PIXEL_WIDTH = 4;
+    localparam DISP_SIZE = 320 * 240; // Display size in pixel
 
     assign rst = 1;
     assign rd = 1;
@@ -125,7 +126,8 @@ module DisplayController8BitILI9341 #(
         initMem[ 36] = {1'b0, 8'h2C};
     end
 
-    reg [$clog2(INIT_MEM_SIZE) - 1 : 0] counter;
+    reg [$clog2(INIT_MEM_SIZE) - 1 : 0] counterMemInit;
+    reg [$clog2(DISP_SIZE) - 1 : 0]     counter;
     reg [5 : 0]     state;
 
     reg [15 : 0]    pixel;
@@ -147,6 +149,8 @@ module DisplayController8BitILI9341 #(
             wr <= 1;
             cs <= 1;
             dc <= 1;
+            counterMemInit <= 0;
+            counter <= 0;
             
             if (SKIP_INIT)
             begin
@@ -176,7 +180,17 @@ module DisplayController8BitILI9341 #(
                     begin
                         pixel <= s_axis_tdata;
                     end
-                    pixelValid <= 1;
+  
+                    pixelValid <= counter < DISP_SIZE;
+
+                    if (s_axis_tlast)
+                    begin
+                        counter <= 0;
+                    end
+                    else
+                    begin
+                        counter <= counter + 1;
+                    end
                 end
             end
 
@@ -188,15 +202,15 @@ module DisplayController8BitILI9341 #(
                 begin
                     if (wr)
                     begin
-                        dc <= initMem[counter][8];
-                        data <= initMem[counter][0 +: 8];
+                        dc <= initMem[counterMemInit][8];
+                        data <= initMem[counterMemInit][0 +: 8];
                         wr <= 0;
-                        counter <= counter + 1;
+                        counterMemInit <= counterMemInit + 1;
                     end
                     else 
                     begin
                         wr <= 1;
-                        if (counter == INIT_MEM_SIZE) 
+                        if (counterMemInit == INIT_MEM_SIZE) 
                         begin
                             pixelValid <= 0;
                             state <= STREAM0;

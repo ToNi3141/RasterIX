@@ -19,15 +19,6 @@ module RasterIX #(
     // Selects the variant. Allowed values: if, ef
     parameter VARIANT = "if",
 
-    // When this is enabled, the framebuffer data is streamed via the 
-    // m_framebuffer_axis_*. Otherwise swap_fb interface is used for
-    // memory mapped interfaces.
-    parameter ENABLE_FRAMEBUFFER_STREAM = 0,
-    // This parameter enables a blocking stream transfer useful when only
-    // one color buffer is used. If this option is false, a double buffer
-    // is required.
-    parameter ENABLE_BLOCKING_STREAM = 0,
-
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
     // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
@@ -102,11 +93,6 @@ module RasterIX #(
     input  wire                             s_cmd_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
-    // AXI Stream framebuffer
-    output wire                             m_framebuffer_axis_tvalid,
-    input  wire                             m_framebuffer_axis_tready,
-    output wire                             m_framebuffer_axis_tlast,
-    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata,
     // Framebuffer
     output wire                             swap_fb,
     output wire                             swap_fb_enable_vsync,
@@ -156,7 +142,6 @@ module RasterIX #(
         begin
             RasterIX_IF #(
                 .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
-                .ENABLE_FRAMEBUFFER_STREAM(ENABLE_FRAMEBUFFER_STREAM),
                 .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
                 .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
@@ -182,11 +167,6 @@ module RasterIX #(
                 .s_cmd_axis_tready(s_cmd_axis_tready),
                 .s_cmd_axis_tlast(s_cmd_axis_tlast),
                 .s_cmd_axis_tdata(s_cmd_axis_tdata),
-
-                .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
-                .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
-                .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
-                .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
 
                 .swap_fb(swap_fb),
                 .swap_fb_enable_vsync(swap_fb_enable_vsync),
@@ -237,8 +217,6 @@ module RasterIX #(
                 .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
                 .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
                 .ENABLE_DEPTH_BUFFER(ENABLE_DEPTH_BUFFER),
-                .ENABLE_FRAMEBUFFER_STREAM(ENABLE_FRAMEBUFFER_STREAM),
-                .ENABLE_BLOCKING_STREAM(ENABLE_BLOCKING_STREAM),
                 .TMU_COUNT(TMU_COUNT),
                 .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
                 .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
@@ -260,11 +238,6 @@ module RasterIX #(
                 .s_cmd_axis_tready(s_cmd_axis_tready),
                 .s_cmd_axis_tlast(s_cmd_axis_tlast),
                 .s_cmd_axis_tdata(s_cmd_axis_tdata),
-
-                .m_framebuffer_axis_tvalid(m_framebuffer_axis_tvalid),
-                .m_framebuffer_axis_tready(m_framebuffer_axis_tready),
-                .m_framebuffer_axis_tlast(m_framebuffer_axis_tlast),
-                .m_framebuffer_axis_tdata(m_framebuffer_axis_tdata),
 
                 .swap_fb(swap_fb),
                 .swap_fb_enable_vsync(swap_fb_enable_vsync),
