@@ -103,6 +103,11 @@ public:
     {
         m_op &= ~(OP_FRAMEBUFFER_SIZE_MASK << OP_FRAMEBUFFER_SIZE_POS);
         // Note: size is in 16 bit pixel, getAlignedSize expects bytes.
+        // So.. shift the size by 1 to convert the size to bytes.
+        // The size is then aligned (only complete pages can be transmitted). 
+        // For instance, a display size of 320x240 pixels has a size of 153600 bytes. Assuming a page size of 4096 bytes.
+        // This framebuffer would requires 37.5 pages, which is rounded to 38 pages. The returned size of getAlignedSize is then 
+        // converted back from bytes to pixels by shifting the size by 1.
         m_op |= (RenderConfig::getAlignedSize(static_cast<uint32_t>(size << 1) >> 1) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
     }
     void enableVSync()
