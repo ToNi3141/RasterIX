@@ -18,57 +18,15 @@
 #ifndef _SET_VERTEX_CTX_CMD_HPP_
 #define _SET_VERTEX_CTX_CMD_HPP_
 
+#include "DataTransferCmdBase.hpp"
 #include "Op.hpp"
 #include "RenderConfigs.hpp"
-#include "math/Vec.hpp"
 #include "transform/VertexTransforming.hpp"
-#include <array>
-#include <cstdint>
-#include <tcb/span.hpp>
-#include <type_traits>
-#include <typeinfo>
 
 namespace rr
 {
 
-class SetVertexCtxCmd
-{
-public:
-    struct VertexCtx
-    {
-#pragma pack(push, 4)
-        vertextransforming::VertexTransformingData ctx;
-#pragma pack(pop)
-        VertexCtx& operator=(const VertexCtx&) = default;
-    };
-    using PayloadType = tcb::span<const VertexCtx>;
-    using CommandType = uint32_t;
-
-    SetVertexCtxCmd() = default;
-    SetVertexCtxCmd(const vertextransforming::VertexTransformingData& ctx)
-    {
-        m_buffer[0].ctx = ctx;
-        m_desc = { m_buffer };
-    }
-
-    SetVertexCtxCmd(const CommandType, const PayloadType& payload, const bool)
-    {
-        m_desc = payload;
-    }
-
-    const PayloadType& payload() const { return m_desc; }
-    static constexpr CommandType command() { return op::SET_VERTEX_CTX | (displaylist::DisplayList::template sizeOf<VertexCtx>()); }
-
-    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadBuffer> {}; }
-    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::SET_VERTEX_CTX; }
-
-    SetVertexCtxCmd& operator=(const SetVertexCtxCmd&) = default;
-
-private:
-    using PayloadBuffer = std::array<VertexCtx, 1>;
-    PayloadBuffer m_buffer;
-    PayloadType m_desc;
-};
+using SetVertexCtxCmd = DataTransferCmdBase<vertextransforming::VertexTransformingData, op::SET_VERTEX_CTX>;
 
 } // namespace rr
 

@@ -18,57 +18,15 @@
 #ifndef _PUSH_VERTEX_CMD_HPP_
 #define _PUSH_VERTEX_CMD_HPP_
 
+#include "DataTransferCmdBase.hpp"
 #include "Op.hpp"
 #include "RenderConfigs.hpp"
-#include "math/Vec.hpp"
 #include "transform/Types.hpp"
-#include <array>
-#include <cstdint>
-#include <tcb/span.hpp>
-#include <type_traits>
-#include <typeinfo>
 
 namespace rr
 {
 
-class PushVertexCmd
-{
-public:
-    struct Vertex
-    {
-#pragma pack(push, 4)
-        VertexParameter vertex;
-#pragma pack(pop)
-        Vertex& operator=(const Vertex&) = default;
-    };
-    using PayloadType = tcb::span<const Vertex>;
-    using CommandType = uint32_t;
-
-    PushVertexCmd() = default;
-    PushVertexCmd(const VertexParameter& vertex)
-    {
-        m_buffer[0].vertex = vertex;
-        m_desc = { m_buffer };
-    }
-
-    PushVertexCmd(const CommandType, const PayloadType& payload, const bool)
-    {
-        m_desc = payload;
-    }
-
-    PayloadType payload() const { return m_desc; }
-    static constexpr CommandType command() { return op::PUSH_VERTEX | (displaylist::DisplayList::template sizeOf<Vertex>()); }
-
-    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadBuffer> {}; }
-    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::PUSH_VERTEX; }
-
-    PushVertexCmd& operator=(const PushVertexCmd&) = default;
-
-private:
-    using PayloadBuffer = std::array<Vertex, 1>;
-    PayloadBuffer m_buffer;
-    PayloadType m_desc;
-};
+using PushVertexCmd = DataTransferCmdBase<VertexParameter, op::PUSH_VERTEX>;
 
 } // namespace rr
 

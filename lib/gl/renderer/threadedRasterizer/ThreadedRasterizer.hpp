@@ -354,13 +354,13 @@ private:
 
     bool handleCommand(const PushVertexCmd& cmd)
     {
-        return m_vertexTransform.pushVertex(cmd.payload()[0].vertex);
+        return m_vertexTransform.pushVertex(cmd.payload()[0]);
     }
 
     bool handleCommand(const SetVertexCtxCmd& cmd)
     {
         new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
-            cmd.payload()[0].ctx,
+            cmd.payload()[0],
             drawTriangleLambda,
             setStencilBufferConfigLambda,
         };
