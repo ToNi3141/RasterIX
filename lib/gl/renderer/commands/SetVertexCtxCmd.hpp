@@ -18,6 +18,7 @@
 #ifndef _SET_VERTEX_CTX_CMD_HPP_
 #define _SET_VERTEX_CTX_CMD_HPP_
 
+#include "Op.hpp"
 #include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
 #include "transform/VertexTransforming.hpp"
@@ -32,9 +33,6 @@ namespace rr
 
 class SetVertexCtxCmd
 {
-    static constexpr uint32_t SET_VERTEX_CTX { 0xE000'0000 };
-    static constexpr uint32_t OP_MASK { 0xF000'0000 };
-
 public:
     struct VertexCtx
     {
@@ -59,10 +57,10 @@ public:
     }
 
     const PayloadType& payload() const { return m_desc; }
-    static constexpr CommandType command() { return SET_VERTEX_CTX | (displaylist::DisplayList::template sizeOf<VertexCtx>()); }
+    static constexpr CommandType command() { return op::SET_VERTEX_CTX | (displaylist::DisplayList::template sizeOf<VertexCtx>()); }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadBuffer> {}; }
-    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == SET_VERTEX_CTX; }
+    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::SET_VERTEX_CTX; }
 
     SetVertexCtxCmd& operator=(const SetVertexCtxCmd&) = default;
 

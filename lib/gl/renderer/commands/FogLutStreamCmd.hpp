@@ -18,6 +18,7 @@
 #ifndef _FOG_LUT_STREAM_CMD_HPP_
 #define _FOG_LUT_STREAM_CMD_HPP_
 
+#include "Op.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -28,9 +29,6 @@ namespace rr
 class FogLutStreamCmd
 {
     static constexpr std::size_t LUT_SIZE { 66 }; // upper bound, lower bound, 32 * (m and b)
-    static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
-    static constexpr uint32_t OP_MASK { 0xF000'0000 };
-
 public:
     using PayloadType = tcb::span<const uint32_t>;
     using CommandType = uint32_t;
@@ -71,10 +69,10 @@ public:
     }
 
     const PayloadType& payload() const { return m_payload; }
-    static constexpr CommandType command() { return FOG_LUT_STREAM; }
+    static constexpr CommandType command() { return op::FOG_LUT_STREAM; }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const CommandType) { return LUT_SIZE; }
-    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == FOG_LUT_STREAM; }
+    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::FOG_LUT_STREAM; }
 
 private:
     void setBounds(const float lower, const float upper)

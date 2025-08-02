@@ -18,6 +18,7 @@
 #ifndef _PUSH_VERTEX_CMD_HPP_
 #define _PUSH_VERTEX_CMD_HPP_
 
+#include "Op.hpp"
 #include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
 #include "transform/Types.hpp"
@@ -32,9 +33,6 @@ namespace rr
 
 class PushVertexCmd
 {
-    static constexpr uint32_t PUSH_VERTEX { 0xD000'0000 };
-    static constexpr uint32_t OP_MASK { 0xF000'0000 };
-
 public:
     struct Vertex
     {
@@ -59,10 +57,10 @@ public:
     }
 
     PayloadType payload() const { return m_desc; }
-    static constexpr CommandType command() { return PUSH_VERTEX | (displaylist::DisplayList::template sizeOf<Vertex>()); }
+    static constexpr CommandType command() { return op::PUSH_VERTEX | (displaylist::DisplayList::template sizeOf<Vertex>()); }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadBuffer> {}; }
-    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == PUSH_VERTEX; }
+    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::PUSH_VERTEX; }
 
     PushVertexCmd& operator=(const PushVertexCmd&) = default;
 

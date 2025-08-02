@@ -18,6 +18,7 @@
 #ifndef _FRAMEBUFFER_CMD_HPP_
 #define _FRAMEBUFFER_CMD_HPP_
 
+#include "Op.hpp"
 #include "RenderConfigs.hpp"
 #include <array>
 #include <cstdint>
@@ -28,18 +29,16 @@ namespace rr
 
 class FramebufferCmd
 {
-    static constexpr uint32_t OP_FRAMEBUFFER { 0x2000'0000 };
-    static constexpr uint32_t OP_FRAMEBUFFER_COMMIT { OP_FRAMEBUFFER | 0x0000'0001 };
-    static constexpr uint32_t OP_FRAMEBUFFER_MEMSET { OP_FRAMEBUFFER | 0x0000'0002 };
-    static constexpr uint32_t OP_FRAMEBUFFER_SWAP { OP_FRAMEBUFFER | 0x0000'0004 };
-    static constexpr uint32_t OP_FRAMEBUFFER_LOAD { OP_FRAMEBUFFER | 0x0000'0008 };
-    static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0010 };
-    static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0020 };
-    static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { OP_FRAMEBUFFER | 0x0000'0040 };
-    static constexpr uint32_t OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC { OP_FRAMEBUFFER | 0x0000'0080 };
+    static constexpr uint32_t OP_FRAMEBUFFER_COMMIT { op::FRAMEBUFFER | 0x0000'0001 };
+    static constexpr uint32_t OP_FRAMEBUFFER_MEMSET { op::FRAMEBUFFER | 0x0000'0002 };
+    static constexpr uint32_t OP_FRAMEBUFFER_SWAP { op::FRAMEBUFFER | 0x0000'0004 };
+    static constexpr uint32_t OP_FRAMEBUFFER_LOAD { op::FRAMEBUFFER | 0x0000'0008 };
+    static constexpr uint32_t OP_FRAMEBUFFER_COLOR_BUFFER_SELECT { op::FRAMEBUFFER | 0x0000'0010 };
+    static constexpr uint32_t OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT { op::FRAMEBUFFER | 0x0000'0020 };
+    static constexpr uint32_t OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT { op::FRAMEBUFFER | 0x0000'0040 };
+    static constexpr uint32_t OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC { op::FRAMEBUFFER | 0x0000'0080 };
     static constexpr uint32_t OP_FRAMEBUFFER_SIZE_POS { 8 };
     static constexpr uint32_t OP_FRAMEBUFFER_SIZE_MASK { 0xFFFFF };
-    static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
     using PayloadType = tcb::span<const uint8_t>;
@@ -104,9 +103,9 @@ public:
         m_op &= ~(OP_FRAMEBUFFER_SIZE_MASK << OP_FRAMEBUFFER_SIZE_POS);
         // Note: size is in 16 bit pixel, getAlignedSize expects bytes.
         // So.. shift the size by 1 to convert the size to bytes.
-        // The size is then aligned (only complete pages can be transmitted). 
+        // The size is then aligned (only complete pages can be transmitted).
         // For instance, a display size of 320x240 pixels has a size of 153600 bytes. Assuming a page size of 4096 bytes.
-        // This framebuffer would requires 37.5 pages, which is rounded to 38 pages. The returned size of getAlignedSize is then 
+        // This framebuffer would requires 37.5 pages, which is rounded to 38 pages. The returned size of getAlignedSize is then
         // converted back from bytes to pixels by shifting the size by 1.
         m_op |= (RenderConfig::getAlignedSize(static_cast<uint32_t>(size << 1) >> 1) & OP_FRAMEBUFFER_SIZE_MASK) << OP_FRAMEBUFFER_SIZE_POS;
     }
@@ -117,46 +116,46 @@ public:
 
     bool getSwapFramebuffer() const
     {
-        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_SWAP;
+        return (m_op & ~op::MASK) & OP_FRAMEBUFFER_SWAP;
     }
     bool getCommitFramebuffer() const
     {
-        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_COMMIT;
+        return (m_op & ~op::MASK) & OP_FRAMEBUFFER_COMMIT;
     }
     bool getEnableMemset() const
     {
-        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_MEMSET;
+        return (m_op & ~op::MASK) & OP_FRAMEBUFFER_MEMSET;
     }
     bool getLoadFramebuffer() const
     {
-        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_LOAD;
+        return (m_op & ~op::MASK) & OP_FRAMEBUFFER_LOAD;
     }
     bool getSelectColorBuffer() const
     {
-        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
+        return (m_op & ~op::MASK) & OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
     }
     bool setSelectDepthBuffer() const
     {
-        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT;
+        return (m_op & ~op::MASK) & OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT;
     }
     bool getSelectStencilBuffer() const
     {
-        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT;
+        return (m_op & ~op::MASK) & OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT;
     }
     std::size_t getFramebufferSizeInPixel() const
     {
-        return static_cast<std::size_t>(((m_op & ~OP_MASK) >> OP_FRAMEBUFFER_SIZE_POS) & OP_FRAMEBUFFER_SIZE_MASK);
+        return static_cast<std::size_t>(((m_op & ~op::MASK) >> OP_FRAMEBUFFER_SIZE_POS) & OP_FRAMEBUFFER_SIZE_MASK);
     }
     bool getEnableVSync() const
     {
-        return (m_op & ~OP_MASK) & OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC;
+        return (m_op & ~op::MASK) & OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC;
     }
 
     PayloadType payload() const { return {}; }
     CommandType command() const { return m_op; }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }
-    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_FRAMEBUFFER; }
+    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::FRAMEBUFFER; }
 
 private:
     CommandType m_op {};

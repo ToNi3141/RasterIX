@@ -18,6 +18,7 @@
 #ifndef _TEXTURE_STREAM_CMD_HPP_
 #define _TEXTURE_STREAM_CMD_HPP_
 
+#include "Op.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/displaylist/DisplayList.hpp"
 #include <array>
@@ -30,12 +31,10 @@ namespace rr
 class TextureStreamCmd
 {
     static constexpr uint32_t MAX_PAGES { static_cast<uint32_t>((static_cast<float>(RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2.0f * 1.33f) / static_cast<float>(RenderConfig::TEXTURE_PAGE_SIZE)) + 1.0f) };
-    static constexpr uint32_t OP_TEXTURE_STREAM { 0x5000'0000 };
     static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 18 bit
     static constexpr uint32_t TEXTURE_STREAM_SIZE_MASK { 0x3FFFF }; // size: 18 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 19 }; // size: 2 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_MASK { 0x3 }; // size: 2 bit
-    static constexpr uint32_t OP_MASK { 0xF000'0000 };
 
 public:
     using PayloadType = tcb::span<const uint32_t>;
@@ -52,7 +51,7 @@ public:
 
         const uint32_t texSize = static_cast<uint32_t>(pages.size()) << TEXTURE_STREAM_SIZE_POS;
         const uint32_t tmuShifted = static_cast<uint32_t>(tmu) << TEXTURE_STREAM_TMU_NR_POS;
-        m_op = OP_TEXTURE_STREAM | texSize | tmuShifted;
+        m_op = op::TEXTURE_STREAM | texSize | tmuShifted;
     }
 
     TextureStreamCmd(const CommandType op, const PayloadType& payload, const bool)
@@ -67,7 +66,7 @@ public:
     CommandType command() const { return m_op; }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t cmd) { return cmd & TEXTURE_STREAM_SIZE_MASK; }
-    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_TEXTURE_STREAM; }
+    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::TEXTURE_STREAM; }
 
 private:
     std::array<uint32_t, MAX_PAGES> m_pages;

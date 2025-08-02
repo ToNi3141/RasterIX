@@ -15,34 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _NOP_CMD_HPP_
-#define _NOP_CMD_HPP_
+#ifndef OP_HPP
+#define OP_HPP
 
-#include "Op.hpp"
-#include <array>
-#include <cstdint>
-#include <tcb/span.hpp>
-
-namespace rr
+namespace rr::op
 {
+// In Hardware supported commands
+static constexpr uint32_t NOP { 0x0000'0000 };
+static constexpr uint32_t RENDER_CONFIG { 0x1000'0000 };
+static constexpr uint32_t FRAMEBUFFER { 0x2000'0000 };
+static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
+static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
+static constexpr uint32_t TEXTURE_STREAM { 0x5000'0000 };
+// Virtual commands only supported by the ThreadedRasterizer
+static constexpr uint32_t PUSH_VERTEX { 0xD000'0000 };
+static constexpr uint32_t SET_VERTEX_CTX { 0xE000'0000 };
 
-class NopCmd
-{
-public:
-    using PayloadType = tcb::span<const uint8_t>;
-    using CommandType = uint32_t;
-    NopCmd() = default;
-    NopCmd(const CommandType, const PayloadType&, const bool) { }
+static constexpr uint32_t MASK { 0xF000'0000 };
+} // namespace rr::op
 
-    const PayloadType& payload() const { return m_payload; }
-    CommandType command() const { return op::NOP; }
-    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }
-    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::NOP; }
-
-private:
-    PayloadType m_payload {};
-};
-
-} // namespace rr
-
-#endif // _NOP_CMD_HPP_
+#endif // OP_HPP
