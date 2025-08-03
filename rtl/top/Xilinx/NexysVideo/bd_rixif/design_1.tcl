@@ -457,6 +457,7 @@ proc create_root_design { parentCell } {
     CONFIG.FRAMEBUFFER_SIZE_IN_PIXEL_LG {17} \
     CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {6} \
     CONFIG.STRB_WIDTH {16} \
+    CONFIG.TEXTURE_PAGE_SIZE {2048} \
   ] $RasterIX_0
 
 
