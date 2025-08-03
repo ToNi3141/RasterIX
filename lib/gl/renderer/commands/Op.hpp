@@ -28,8 +28,11 @@ static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
 static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
 static constexpr uint32_t TEXTURE_STREAM { 0x5000'0000 };
 // Virtual commands only supported by the ThreadedRasterizer
+static constexpr uint32_t SET_ELEMENT_GLOBAL_CTX { 0xB000'0000 };
+static constexpr uint32_t SET_LIGHTING_CTX { 0xC000'0000 };
 static constexpr uint32_t PUSH_VERTEX { 0xD000'0000 };
-static constexpr uint32_t SET_VERTEX_CTX { 0xE000'0000 };
+static constexpr uint32_t SET_ELEMENT_LOCAL_CTX { 0xE000'0000 };
+static constexpr uint32_t DRAW_NEW_ELEMENT { 0xF000'0000 };
 
 static constexpr uint32_t MASK { 0xF000'0000 };
 } // namespace rr::op

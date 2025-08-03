@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _SET_VERTEX_CTX_CMD_HPP_
-#define _SET_VERTEX_CTX_CMD_HPP_
+#ifndef _SET_ELEMENT_LOCAL_CTX_CMD_HPP_
+#define _SET_ELEMENT_LOCAL_CTX_CMD_HPP_
 
 #include "DataTransferCmdBase.hpp"
 #include "Op.hpp"
@@ -26,8 +26,8 @@
 namespace rr
 {
 
-using SetVertexCtxCmd = DataTransferCmdBase<vertextransforming::VertexTransformingData, op::SET_VERTEX_CTX>;
+using SetElementLocalCtxCmd = DataTransferCmdBase<vertextransforming::VertexTransformingData::ElementLocalData, op::SET_ELEMENT_LOCAL_CTX>;
 
 } // namespace rr
 
-#endif // _SET_VERTEX_CTX_CMD_HPP_
+#endif // _SET_ELEMENT_LOCAL_CTX_CMD_HPP_

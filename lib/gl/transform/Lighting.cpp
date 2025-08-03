@@ -190,48 +190,63 @@ void LightingCalc::calculateSceneLight(Vec4& __restrict sceneLight,
 
 void LightingSetter::enableLighting(bool enable)
 {
+    if (m_data.lightingEnabled != enable)
+    {
+        setDataChangedFlag();
+    }
     m_data.lightingEnabled = enable;
 }
 
 void LightingSetter::enableLight(const std::size_t light, const bool enable)
 {
+    if (m_data.lightEnable[light] != enable)
+    {
+        setDataChangedFlag();
+    }
     m_data.lightEnable[light] = enable;
 }
 
 void LightingSetter::setAmbientColorLight(const std::size_t light, const Vec4& color)
 {
     m_data.lights[light].ambientColor = color;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setDiffuseColorLight(const std::size_t light, const Vec4& color)
 {
     m_data.lights[light].diffuseColor = color;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setSpecularColorLight(const std::size_t light, const Vec4& color)
 {
     m_data.lights[light].specularColor = color;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setPosLight(const std::size_t light, const Vec4& pos)
 {
     m_data.lights[light].position = pos;
     m_data.lights[light].preCalcVectors();
+    setDataChangedFlag();
 }
 
 void LightingSetter::setConstantAttenuationLight(const std::size_t light, const float val)
 {
     m_data.lights[light].constantAttenuation = val;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setLinearAttenuationLight(const std::size_t light, const float val)
 {
     m_data.lights[light].linearAttenuation = val;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setQuadraticAttenuationLight(const std::size_t light, const float val)
 {
     m_data.lights[light].quadraticAttenuation = val;
+    setDataChangedFlag();
 }
 
 void LightingSetter::enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular)
@@ -240,36 +255,43 @@ void LightingSetter::enableColorMaterial(bool emission, bool ambient, bool diffu
     m_data.enableColorMaterialAmbient = ambient;
     m_data.enableColorMaterialDiffuse = diffuse;
     m_data.enableColorMaterialSpecular = specular;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setEmissiveColorMaterial(const Vec4& color)
 {
     m_data.material.emissiveColor = color;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setAmbientColorMaterial(const Vec4& color)
 {
     m_data.material.ambientColor = color;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setAmbientColorScene(const Vec4& color)
 {
     m_data.material.ambientColorScene = color;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setDiffuseColorMaterial(const Vec4& color)
 {
     m_data.material.diffuseColor = color;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setSpecularColorMaterial(const Vec4& color)
 {
     m_data.material.specularColor = color;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setSpecularExponentMaterial(const float val)
 {
     m_data.material.specularExponent = val;
+    setDataChangedFlag();
 }
 
 void LightingSetter::setColorMaterialTracking(const Face face, const ColorMaterialTracking material)
@@ -303,6 +325,7 @@ void LightingSetter::setColorMaterialTracking(const Face face, const ColorMateri
     }
     m_colorMaterialTracking = material;
     m_colorMaterialFace = face;
+    setDataChangedFlag();
 }
 
 void LightingSetter::enableColorMaterial(const bool enable)
@@ -316,6 +339,7 @@ void LightingSetter::enableColorMaterial(const bool enable)
     {
         enableColorMaterial(false, false, false, false);
     }
+    setDataChangedFlag();
 }
 
 } // namespace rr::lighting

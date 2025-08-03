@@ -357,13 +357,27 @@ private:
         return m_vertexTransform.pushVertex(cmd.payload()[0]);
     }
 
-    bool handleCommand(const SetVertexCtxCmd& cmd)
+    bool handleCommand(const SetElementGlobalCtxCmd& cmd)
     {
-        new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
-            cmd.payload()[0],
-            drawTriangleLambda,
-            setStencilBufferConfigLambda,
-        };
+        m_vertexCtx.elementGlobalData = cmd.payload()[0];
+        return true;
+    }
+
+    bool handleCommand(const SetElementLocalCtxCmd& cmd)
+    {
+        m_vertexCtx.elementLocalData = cmd.payload()[0];
+        return true;
+    }
+
+    bool handleCommand(const SetLightingCtxCmd& cmd)
+    {
+        m_vertexCtx.lighting = cmd.payload()[0];
+        return true;
+    }
+
+    bool handleCommand(const DrawNewElementCmd& cmd)
+    {
+        m_vertexTransform.init();
         return true;
     }
 
@@ -507,6 +521,10 @@ private:
         {
             swapAndUploadDisplayLists();
         }
+        else
+        {
+            SPDLOG_CRITICAL("Intermediate upload called, but display list is not single list. This might cause the renderer to crash ...");
+        }
     }
 
     bool setStencilBufferConfig(const StencilReg& stencilConf)
@@ -550,15 +568,16 @@ private:
 
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 
-    const std::function<bool(const TransformedTriangle&)> drawTriangleLambda = [this](const TransformedTriangle& triangle)
+    const std::function<bool(const TransformedTriangle&)> m_drawTriangleLambda = [this](const TransformedTriangle& triangle)
     { return addTriangleCmd(triangle); };
-    const std::function<bool(const StencilReg&)> setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
+    const std::function<bool(const StencilReg&)> m_setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
     { return setStencilBufferConfig(stencilConf); };
 
-    vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> m_vertexTransform {
-        {},
-        drawTriangleLambda,
-        setStencilBufferConfigLambda,
+    vertextransforming::VertexTransformingData m_vertexCtx {};
+    vertextransforming::VertexTransformingCalc<decltype(m_drawTriangleLambda), decltype(m_setStencilBufferConfigLambda)> m_vertexTransform {
+        m_vertexCtx,
+        m_drawTriangleLambda,
+        m_setStencilBufferConfigLambda,
     };
 
     uint32_t m_colorBufferAddr {};

@@ -40,9 +40,21 @@ private:
         {
             return deserializeCommand<PushVertexCmd>(srcList);
         }
-        else if (SetVertexCtxCmd::isThis(op))
+        else if (DrawNewElementCmd::isThis(op))
         {
-            return deserializeCommand<SetVertexCtxCmd>(srcList);
+            return deserializeCommand<DrawNewElementCmd>(srcList);
+        }
+        else if (SetElementLocalCtxCmd::isThis(op))
+        {
+            return deserializeCommand<SetElementLocalCtxCmd>(srcList);
+        }
+        else if (SetElementGlobalCtxCmd::isThis(op))
+        {
+            return deserializeCommand<SetElementGlobalCtxCmd>(srcList);
+        }
+        else if (SetLightingCtxCmd::isThis(op))
+        {
+            return deserializeCommand<SetLightingCtxCmd>(srcList);
         }
         else if (WriteRegisterCmd::isThis(op))
         {

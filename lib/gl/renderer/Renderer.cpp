@@ -63,22 +63,57 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
     return addCommand(triangleCmd);
 }
 
-void Renderer::setVertexContext(const vertextransforming::VertexTransformingData& ctx)
+void Renderer::setElementGlobalContext(const vertextransforming::VertexTransformingData::ElementGlobalData& ctx)
 {
     if constexpr (RenderConfig::THREADED_RASTERIZATION)
     {
-        if (!addCommand(SetVertexCtxCmd { ctx }))
+        if (!addCommand(SetElementGlobalCtxCmd { ctx }))
         {
-            SPDLOG_CRITICAL("Cannot push vertex context into queue. This may brake the rendering.");
+            SPDLOG_CRITICAL("Cannot push element global context into queue. This may brake the rendering.");
         }
     }
     else
     {
-        new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
-            ctx,
-            drawTriangleLambda,
-            setStencilBufferConfigLambda,
-        };
+        m_vertexCtx.elementGlobalData = ctx;
+    }
+}
+
+void Renderer::setElementLocalContext(const vertextransforming::VertexTransformingData::ElementLocalData& ctx)
+{
+    if constexpr (RenderConfig::THREADED_RASTERIZATION)
+    {
+        if (!addCommand(SetElementLocalCtxCmd { ctx }))
+        {
+            SPDLOG_CRITICAL("Cannot push element local context into queue. This may brake the rendering.");
+        }
+    }
+    else
+    {
+        m_vertexCtx.elementLocalData = ctx;
+    }
+}
+
+void Renderer::setLightingContext(const lighting::LightingData& ctx)
+{
+    if (!addCommand(SetLightingCtxCmd { ctx }))
+    {
+        SPDLOG_CRITICAL("Cannot push lighting context into queue. This may brake the rendering.");
+    }
+    else
+    {
+        m_vertexCtx.lighting = ctx;
+    }
+}
+
+void Renderer::drawNewElement()
+{
+    if constexpr (RenderConfig::THREADED_RASTERIZATION)
+    {
+        addCommand(DrawNewElementCmd {});
+    }
+    else
+    {
+        m_vertexTransform.init();
     }
 }
 

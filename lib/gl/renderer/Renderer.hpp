@@ -36,11 +36,14 @@
 #include <string.h>
 
 #include "RenderConfigs.hpp"
+#include "commands/DrawNewElementCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
 #include "commands/NopCmd.hpp"
 #include "commands/PushVertexCmd.hpp"
-#include "commands/SetVertexCtxCmd.hpp"
+#include "commands/SetElementGlobalCtxCmd.hpp"
+#include "commands/SetElementLocalCtxCmd.hpp"
+#include "commands/SetLightingCtxCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/TriangleStreamCmd.hpp"
 #include "commands/WriteRegisterCmd.hpp"
@@ -73,14 +76,34 @@ public:
 
     void deinit();
 
-    /// @brief Sets a new vertex context
-    /// @param ctx The vertex context with transformation matrices, light configs and others.
-    void setVertexContext(const vertextransforming::VertexTransformingData& ctx);
+    /// @brief Sets a new element global context
+    /// @note The element global context contains things which do not change often.
+    ///     Examples are the viewport, culling configs, and so on.
+    /// @param ctx The new global context
+    void setElementGlobalContext(const vertextransforming::VertexTransformingData::ElementGlobalData& ctx);
+
+    /// @brief Sets a new element local context
+    /// @note The element local context contains things which change from element to element.
+    ///     Examples are transformation matrices (one can assume that every new element gets its own transformation)
+    ///     or data for the primitive assembler, like the number of vertices the element contains.
+    /// @param ctx The new element local context
+    void setElementLocalContext(const vertextransforming::VertexTransformingData::ElementLocalData& ctx);
+
+    /// @brief Sets a new lighting context
+    /// @note The lighting context is a bit unusual here. It would be reasonable to put it into the global context.
+    ///     The reason why it has its own command is because it has a large memory footprint. The finer granularity
+    ///     reduces the memory consumption in the display list.
+    /// @param ctx The new lighting context.
+    void setLightingContext(const lighting::LightingData& ctx);
 
     /// @brief Pushes a vertex into the renderer
     /// @param vertex The new vertex
     /// @return true when the vertex was accepted. False could be a out of memory error.
     bool pushVertex(const VertexParameter& vertex) { return pushVertexImpl(vertex); }
+
+    /// @brief Resets the primitive assembler and other modules to draw a new element
+    ///     Must be called before a new element is drawn
+    void drawNewElement();
 
     /// @brief Starts the rendering process by uploading textures and the displaylist and also swapping
     /// the framebuffers
@@ -311,15 +334,16 @@ private:
     TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 
-    const std::function<bool(const TransformedTriangle&)> drawTriangleLambda = [this](const TransformedTriangle& triangle)
+    const std::function<bool(const TransformedTriangle&)> m_drawTriangleLambda = [this](const TransformedTriangle& triangle)
     { return drawTriangle(triangle); };
-    const std::function<bool(const StencilReg&)> setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
+    const std::function<bool(const StencilReg&)> m_setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
     { return setStencilBufferConfig(stencilConf); };
 
-    vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> m_vertexTransform {
-        {},
-        drawTriangleLambda,
-        setStencilBufferConfigLambda,
+    vertextransforming::VertexTransformingData m_vertexCtx {};
+    vertextransforming::VertexTransformingCalc<decltype(m_drawTriangleLambda), decltype(m_setStencilBufferConfigLambda)> m_vertexTransform {
+        m_vertexCtx,
+        m_drawTriangleLambda,
+        m_setStencilBufferConfigLambda,
     };
 
     // Instantiation of the displaylist assemblers
