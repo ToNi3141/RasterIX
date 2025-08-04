@@ -40,7 +40,6 @@
 namespace rr
 {
 
-template <std::size_t BUFFER_COUNT, std::size_t BUFFER_SIZE>
 class ThreadedRasterizer : public IDevice
 {
 public:
@@ -555,6 +554,7 @@ private:
     }
 
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
+    static constexpr std::size_t NUMBER_OF_DISPLAY_LISTS { 2 };
 
     IDevice& m_device;
     IThreadRunner& m_uploadThread;
@@ -562,9 +562,9 @@ private:
     std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};
     std::array<DisplayListDispatcherType, 2> m_displayListDispatcher { m_displayListAssembler[0], m_displayListAssembler[1] };
     DisplayListDoubleBufferType m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };
-    DeviceUploadList<BUFFER_SIZE, RenderConfig::TEXTURE_PAGE_SIZE> m_textureUploadList {};
+    DeviceUploadList<RenderConfig::THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE, RenderConfig::TEXTURE_PAGE_SIZE> m_textureUploadList {};
 
-    std::array<std::array<uint8_t, BUFFER_SIZE>, BUFFER_COUNT> m_buffer;
+    std::array<std::array<uint8_t, RenderConfig::THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE>, NUMBER_OF_DISPLAY_LISTS> m_buffer;
 
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 

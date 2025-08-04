@@ -56,10 +56,7 @@ public:
     }
 
     DSEC::DmaStreamEngine dmaStreamEngine;
-    ThreadedRasterizer<
-        RenderConfig::THREADED_RASTERIZATION_BUFFER_COUNT,
-        RenderConfig::THREADED_RASTERIZATION_BUFFER_SIZE>
-        device;
+    ThreadedRasterizer device;
 };
 
 class OnlyDse
