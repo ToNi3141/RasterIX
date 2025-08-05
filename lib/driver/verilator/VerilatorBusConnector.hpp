@@ -64,13 +64,14 @@ public:
         if (m_top.resetn == 0)
             return;
 
-        if (m_top.m_framebuffer_axis_tvalid && (m_framebuffer != nullptr))
+        const std::size_t framebufferSize = (m_resolutionW * m_resolutionH / (sizeof(FBType) / 2)); // 4 for 32 bit color
+        if (m_top.m_framebuffer_axis_tvalid && (m_streamAddr < framebufferSize) && (m_framebuffer != nullptr))
         {
             m_framebuffer[m_streamAddr] = m_top.m_framebuffer_axis_tdata;
             m_streamAddr++;
         }
 
-        if (m_streamAddr == (m_resolutionW * m_resolutionH / (sizeof(FBType) / 2))) // 4 for 32 bit color
+        if ((m_streamAddr >= framebufferSize) && m_top.m_framebuffer_axis_tlast)
         {
             m_streamAddr = 0;
         }
