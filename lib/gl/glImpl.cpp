@@ -3154,7 +3154,10 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             case GL_LINEAR_MIPMAP_NEAREST:
             case GL_NEAREST_MIPMAP_LINEAR:
             case GL_LINEAR_MIPMAP_LINEAR:
-                RIXGL::getInstance().pipeline().texture().setEnableMinFilter(true);
+                if (RIXGL::getInstance().isMipmappingAvailable())
+                {
+                    RIXGL::getInstance().pipeline().texture().setEnableMinFilter(true);
+                }
                 break;
             default:
                 RIXGL::getInstance().setError(GL_INVALID_ENUM);
