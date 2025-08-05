@@ -95,9 +95,12 @@ void Renderer::setElementLocalContext(const vertextransforming::VertexTransformi
 
 void Renderer::setLightingContext(const lighting::LightingData& ctx)
 {
-    if (!addCommand(SetLightingCtxCmd { ctx }))
+    if constexpr (RenderConfig::THREADED_RASTERIZATION)
     {
-        SPDLOG_CRITICAL("Cannot push lighting context into queue. This may brake the rendering.");
+        if (!addCommand(SetLightingCtxCmd { ctx }))
+        {
+            SPDLOG_CRITICAL("Cannot push lighting context into queue. This may brake the rendering.");
+        }
     }
     else
     {
