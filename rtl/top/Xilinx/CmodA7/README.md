@@ -72,9 +72,9 @@ platform = teensy
 board = teensy40
 framework = arduino
 lib_deps = toni3141-RasterIX=https://github.com/ToNi3141/RasterIX.git
-build_flags = ${rix.build_flags}
+build_flags = ${rixef.build_flags}
 
-[rix]
+[rixef]
 build_flags = 
     -Ofast 
     -std=c++17
@@ -95,7 +95,7 @@ build_flags =
     -DRIX_CORE_DEPTH_BUFFER_LOC=0x5A800
     -DRIX_CORE_STENCIL_BUFFER_LOC=0x22400
     -DRIX_CORE_THREADED_RASTERIZATION=false
-    -DRIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE=1024
+    -DRIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE=0
     -DRIX_CORE_ENABLE_VSYNC=false
 ```
 
