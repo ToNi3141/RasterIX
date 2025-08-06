@@ -20,6 +20,8 @@
 
 #include "Clipper.hpp"
 #include "Culling.hpp"
+#include "ElementGlobalData.hpp"
+#include "ElementLocalData.hpp"
 #include "Lighting.hpp"
 #include "MatrixStore.hpp"
 #include "PrimitiveAssembler.hpp"
@@ -36,23 +38,31 @@ namespace rr::vertextransforming
 
 struct VertexTransformingData
 {
-    struct ElementLocalData
+    void setElementLocalData(const transform::ElementLocalData& data)
     {
-        matrixstore::TransformMatricesData transformMatrices {};
-        primitiveassembler::PrimitiveAssemblerData primitiveAssembler {};
-        std::bitset<RenderConfig::TMU_COUNT> tmuEnabled {};
-    };
-    struct ElementGlobalData
+        transformMatrices = data.transformMatrices;
+        primitiveAssembler = data.primitiveAssembler;
+        tmuEnabled = data.tmuEnabled;
+    }
+
+    void setElementGlobalData(const transform::ElementGlobalData& data)
     {
-        viewport::ViewPortData viewPort {};
-        culling::CullingData culling {};
-        stencil::StencilData stencil {};
-        std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
-        bool normalizeLightNormal {};
-    };
+        viewPort = data.viewPort;
+        culling = data.culling;
+        stencil = data.stencil;
+        texGen = data.texGen;
+        normalizeLightNormal = data.normalizeLightNormal;
+    }
+
     lighting::LightingData lighting {};
-    ElementLocalData elementLocalData {};
-    ElementGlobalData elementGlobalData {};
+    matrixstore::TransformMatricesData transformMatrices {};
+    primitiveassembler::PrimitiveAssemblerData primitiveAssembler {};
+    std::bitset<RenderConfig::TMU_COUNT> tmuEnabled {};
+    viewport::ViewPortData viewPort {};
+    culling::CullingData culling {};
+    stencil::StencilData stencil {};
+    std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
+    bool normalizeLightNormal {};
 };
 
 template <typename TDrawTriangleFunc, typename TUpdateStencilFunc>
@@ -101,14 +111,14 @@ private:
     {
         for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
         {
-            if (m_data.elementLocalData.tmuEnabled[tu])
+            if (m_data.tmuEnabled[tu])
             {
-                texgen::TexGenCalc { m_data.elementGlobalData.texGen[tu] }.calculateTexGenCoords(
+                texgen::TexGenCalc { m_data.texGen[tu] }.calculateTexGenCoords(
                     parameter.tex[tu],
-                    m_data.elementLocalData.transformMatrices,
+                    m_data.transformMatrices,
                     parameter.vertex,
                     parameter.normal);
-                parameter.tex[tu] = m_data.elementLocalData.transformMatrices.texture[tu].transform(parameter.tex[tu]);
+                parameter.tex[tu] = m_data.transformMatrices.texture[tu].transform(parameter.tex[tu]);
             }
         }
 
@@ -116,17 +126,17 @@ private:
         // m_c[j].transform(color, color); // Calculate this in one batch to improve performance
         if (m_data.lighting.lightingEnabled)
         {
-            Vec3 normal = m_data.elementLocalData.transformMatrices.normal.transform(parameter.normal);
+            Vec3 normal = m_data.transformMatrices.normal.transform(parameter.normal);
 
-            if (m_data.elementGlobalData.normalizeLightNormal)
+            if (m_data.normalizeLightNormal)
             {
                 normal.normalize();
             }
-            const Vec4 vl = m_data.elementLocalData.transformMatrices.modelView.transform(parameter.vertex);
+            const Vec4 vl = m_data.transformMatrices.modelView.transform(parameter.vertex);
             const Vec4 c = parameter.color;
             lighting::LightingCalc { m_data.lighting }.calculateLights(parameter.color, c, vl, normal);
         }
-        parameter.vertex = m_data.elementLocalData.transformMatrices.modelViewProjection.transform(parameter.vertex);
+        parameter.vertex = m_data.transformMatrices.modelViewProjection.transform(parameter.vertex);
     }
 
     bool drawClippedTriangleList(tcb::span<VertexParameter> list)
@@ -135,19 +145,19 @@ private:
         for (std::size_t i = 0; i < clippedVertexListSize; i++)
         {
             list[i].vertex.perspectiveDivide();
-            viewport::ViewPortCalc { m_data.elementGlobalData.viewPort }.transform(list[i].vertex);
+            viewport::ViewPortCalc { m_data.viewPort }.transform(list[i].vertex);
         }
 
         // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
         // facing backwards, then all in the clipping list will do this and vice versa.
-        if (culling::CullingCalc { m_data.elementGlobalData.culling }.cull(list[0].vertex, list[1].vertex, list[2].vertex))
+        if (culling::CullingCalc { m_data.culling }.cull(list[0].vertex, list[1].vertex, list[2].vertex))
         {
             return true;
         }
 
-        if (m_data.elementGlobalData.stencil.enableTwoSideStencil)
+        if (m_data.stencil.enableTwoSideStencil)
         {
-            const StencilReg reg = stencil::StencilCalc { m_data.elementGlobalData.stencil }.updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex);
+            const StencilReg reg = stencil::StencilCalc { m_data.stencil }.updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex);
             if (!m_updateStencilFunc(reg))
             {
                 return false;
@@ -189,20 +199,20 @@ private:
         v2.perspectiveDivide();
 
         // Viewport transformation of the vertex
-        viewport::ViewPortCalc { m_data.elementGlobalData.viewPort }.transform(v0);
-        viewport::ViewPortCalc { m_data.elementGlobalData.viewPort }.transform(v1);
-        viewport::ViewPortCalc { m_data.elementGlobalData.viewPort }.transform(v2);
+        viewport::ViewPortCalc { m_data.viewPort }.transform(v0);
+        viewport::ViewPortCalc { m_data.viewPort }.transform(v1);
+        viewport::ViewPortCalc { m_data.viewPort }.transform(v2);
 
         // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
         // facing backwards, then all in the clipping list will do this and vice versa.
-        if (culling::CullingCalc { m_data.elementGlobalData.culling }.cull(v0, v1, v2))
+        if (culling::CullingCalc { m_data.culling }.cull(v0, v1, v2))
         {
             return true;
         }
 
-        if (m_data.elementGlobalData.stencil.enableTwoSideStencil)
+        if (m_data.stencil.enableTwoSideStencil)
         {
-            const StencilReg reg = stencil::StencilCalc { m_data.elementGlobalData.stencil }.updateStencilFace(v0, v1, v2);
+            const StencilReg reg = stencil::StencilCalc { m_data.stencil }.updateStencilFace(v0, v1, v2);
             if (!m_updateStencilFunc(reg))
             {
                 return false;
@@ -255,8 +265,8 @@ private:
     const TDrawTriangleFunc m_drawTriangleFunc;
     const TUpdateStencilFunc m_updateStencilFunc;
     primitiveassembler::PrimitiveAssemblerCalc m_primitiveAssembler {
-        m_data.elementGlobalData.viewPort,
-        m_data.elementLocalData.primitiveAssembler,
+        m_data.viewPort,
+        m_data.primitiveAssembler,
     };
 };
 

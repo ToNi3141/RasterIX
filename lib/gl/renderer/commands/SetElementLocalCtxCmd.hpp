@@ -21,12 +21,12 @@
 #include "DataTransferCmdBase.hpp"
 #include "Op.hpp"
 #include "RenderConfigs.hpp"
-#include "transform/VertexTransforming.hpp"
+#include "transform/ElementLocalData.hpp"
 
 namespace rr
 {
 
-using SetElementLocalCtxCmd = DataTransferCmdBase<vertextransforming::VertexTransformingData::ElementLocalData, op::SET_ELEMENT_LOCAL_CTX>;
+using SetElementLocalCtxCmd = DataTransferCmdBase<transform::ElementLocalData, op::SET_ELEMENT_LOCAL_CTX>;
 
 } // namespace rr
 

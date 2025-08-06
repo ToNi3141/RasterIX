@@ -64,6 +64,8 @@
 #include "registers/TexEnvReg.hpp"
 #include "registers/TmuTextureReg.hpp"
 #include "registers/YOffsetReg.hpp"
+#include "transform/ElementGlobalData.hpp"
+#include "transform/ElementLocalData.hpp"
 #include "transform/VertexTransforming.hpp"
 
 namespace rr
@@ -80,14 +82,14 @@ public:
     /// @note The element global context contains things which do not change often.
     ///     Examples are the viewport, culling configs, and so on.
     /// @param ctx The new global context
-    void setElementGlobalContext(const vertextransforming::VertexTransformingData::ElementGlobalData& ctx);
+    void setElementGlobalContext(const transform::ElementGlobalData& ctx);
 
     /// @brief Sets a new element local context
     /// @note The element local context contains things which change from element to element.
     ///     Examples are transformation matrices (one can assume that every new element gets its own transformation)
     ///     or data for the primitive assembler, like the number of vertices the element contains.
     /// @param ctx The new element local context
-    void setElementLocalContext(const vertextransforming::VertexTransformingData::ElementLocalData& ctx);
+    void setElementLocalContext(const transform::ElementLocalData& ctx);
 
     /// @brief Sets a new lighting context
     /// @note The lighting context is a bit unusual here. It would be reasonable to put it into the global context.

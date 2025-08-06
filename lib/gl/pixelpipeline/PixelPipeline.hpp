@@ -39,8 +39,8 @@ public:
     // Drawing
     bool pushVertex(const VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
     void drawNewElement() { m_renderer.drawNewElement(); }
-    void setElementGlobalContext(const vertextransforming::VertexTransformingData::ElementGlobalData& ctx) { m_renderer.setElementGlobalContext(ctx); }
-    void setElementLocalContext(const vertextransforming::VertexTransformingData::ElementLocalData& ctx) { m_renderer.setElementLocalContext(ctx); }
+    void setElementGlobalContext(const transform::ElementGlobalData& ctx) { m_renderer.setElementGlobalContext(ctx); }
+    void setElementLocalContext(const transform::ElementLocalData& ctx) { m_renderer.setElementLocalContext(ctx); }
     void setLightingContext(const lighting::LightingData& ctx) { m_renderer.setLightingContext(ctx); }
 
     // Switch and updating of display lists

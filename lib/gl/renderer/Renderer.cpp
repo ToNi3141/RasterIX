@@ -63,7 +63,7 @@ bool Renderer::drawTriangle(const TransformedTriangle& triangle)
     return addCommand(triangleCmd);
 }
 
-void Renderer::setElementGlobalContext(const vertextransforming::VertexTransformingData::ElementGlobalData& ctx)
+void Renderer::setElementGlobalContext(const transform::ElementGlobalData& ctx)
 {
     if constexpr (RenderConfig::THREADED_RASTERIZATION)
     {
@@ -74,11 +74,11 @@ void Renderer::setElementGlobalContext(const vertextransforming::VertexTransform
     }
     else
     {
-        m_vertexCtx.elementGlobalData = ctx;
+        m_vertexCtx.setElementGlobalData(ctx);
     }
 }
 
-void Renderer::setElementLocalContext(const vertextransforming::VertexTransformingData::ElementLocalData& ctx)
+void Renderer::setElementLocalContext(const transform::ElementLocalData& ctx)
 {
     if constexpr (RenderConfig::THREADED_RASTERIZATION)
     {
@@ -89,7 +89,7 @@ void Renderer::setElementLocalContext(const vertextransforming::VertexTransformi
     }
     else
     {
-        m_vertexCtx.elementLocalData = ctx;
+        m_vertexCtx.setElementLocalData(ctx);
     }
 }
 

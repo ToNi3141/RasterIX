@@ -358,13 +358,13 @@ private:
 
     bool handleCommand(const SetElementGlobalCtxCmd& cmd)
     {
-        m_vertexCtx.elementGlobalData = cmd.payload()[0];
+        m_vertexCtx.setElementGlobalData(cmd.payload()[0]);
         return true;
     }
 
     bool handleCommand(const SetElementLocalCtxCmd& cmd)
     {
-        m_vertexCtx.elementLocalData = cmd.payload()[0];
+        m_vertexCtx.setElementLocalData(cmd.payload()[0]);
         return true;
     }
 
