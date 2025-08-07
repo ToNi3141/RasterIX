@@ -64,7 +64,7 @@ public:
     {
         return m_renderer.setScissorBox(x, y, width, height);
     }
-    void setEnableNormalizing(const bool enable) { m_vertexCtx.normalizeLightNormal = enable; }
+    void setEnableNormalizing(const bool enable) { m_elementGlobalData.normalizeLightNormal = enable; }
     void enableVSync(const bool enable) { m_renderer.enableVSync(enable); }
 
     // Framebuffer
@@ -90,8 +90,12 @@ public:
 private:
     VertexParameter fetch(const RenderObj& obj, std::size_t i);
     bool updatePipeline();
+    void updateGlobalElementContext();
 
-    vertextransforming::VertexTransformingData m_vertexCtx {};
+    transform::ElementLocalData m_elementLocalData {};
+    lighting::LightingData m_lightingData {};
+    transform::ElementGlobalData m_elementGlobalDataTransferred {};
+    transform::ElementGlobalData m_elementGlobalData {};
 
     // Current active TMU
     std::size_t m_tmu {};
@@ -99,13 +103,13 @@ private:
     PixelPipeline& m_renderer;
     stencil::StencilSetter m_stencil { [this](const StencilReg& reg)
         { return m_renderer.setStencilBufferConfig(reg); },
-        m_vertexCtx.stencil };
-    lighting::LightingSetter m_lighting { m_vertexCtx.lighting };
-    viewport::ViewPortSetter m_viewPort { m_vertexCtx.viewPort };
-    matrixstore::MatrixStore m_matrixStore { m_vertexCtx.transformMatrices };
-    culling::CullingSetter m_culling { m_vertexCtx.culling };
+        m_elementGlobalData.stencil };
+    lighting::LightingSetter m_lighting { m_lightingData };
+    viewport::ViewPortSetter m_viewPort { m_elementGlobalData.viewPort };
+    matrixstore::MatrixStore m_matrixStore { m_elementLocalData.transformMatrices };
+    culling::CullingSetter m_culling { m_elementGlobalData.culling };
     std::array<texgen::TexGenSetter, RenderConfig::TMU_COUNT> m_texGen {};
-    primitiveassembler::PrimitiveAssemblerSetter m_primitiveAssembler { m_vertexCtx.primitiveAssembler };
+    primitiveassembler::PrimitiveAssemblerSetter m_primitiveAssembler { m_elementLocalData.primitiveAssembler };
 };
 
 } // namespace rr

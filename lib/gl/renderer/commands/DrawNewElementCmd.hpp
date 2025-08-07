@@ -15,19 +15,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _PUSH_VERTEX_CMD_HPP_
-#define _PUSH_VERTEX_CMD_HPP_
+#ifndef _DRAW_NEW_ELEMENT_CMD_HPP_
+#define _DRAW_NEW_ELEMENT_CMD_HPP_
 
-#include "DataTransferCmdBase.hpp"
 #include "Op.hpp"
-#include "RenderConfigs.hpp"
-#include "transform/Types.hpp"
+#include <array>
+#include <cstdint>
+#include <tcb/span.hpp>
 
 namespace rr
 {
 
-using PushVertexCmd = DataTransferCmdBase<VertexParameter, op::PUSH_VERTEX>;
+class DrawNewElementCmd
+{
+public:
+    using PayloadType = tcb::span<const uint8_t>;
+    using CommandType = uint32_t;
+    DrawNewElementCmd() = default;
+    DrawNewElementCmd(const CommandType, const PayloadType&, const bool) { }
+
+    const PayloadType& payload() const { return m_payload; }
+    CommandType command() const { return op::DRAW_NEW_ELEMENT; }
+    static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }
+    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::DRAW_NEW_ELEMENT; }
+
+private:
+    PayloadType m_payload {};
+};
 
 } // namespace rr
 
-#endif // _PUSH_VERTEX_CMD_HPP_
+#endif // _DRAW_NEW_ELEMENT_CMD_HPP_

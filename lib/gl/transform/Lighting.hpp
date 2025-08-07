@@ -141,10 +141,16 @@ public:
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);
 
+    bool dataHasChanged() const { return m_dataChanged; }
+    void clearDataChangedFlag() { m_dataChanged = false; }
+
 private:
+    void setDataChangedFlag() { m_dataChanged = true; }
     void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
 
     LightingData& m_data;
+
+    bool m_dataChanged { true };
 
     // Color material
     bool m_enableColorMaterial { false };

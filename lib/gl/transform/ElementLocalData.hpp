@@ -15,19 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _PUSH_VERTEX_CMD_HPP_
-#define _PUSH_VERTEX_CMD_HPP_
+#ifndef _ELEMENT_LOCAL_DATA_HPP_
+#define _ELEMENT_LOCAL_DATA_HPP_
 
-#include "DataTransferCmdBase.hpp"
-#include "Op.hpp"
 #include "RenderConfigs.hpp"
-#include "transform/Types.hpp"
+#include "transform/MatrixStore.hpp"
+#include "transform/PrimitiveAssembler.hpp"
+#include <bitset>
 
-namespace rr
+namespace rr::transform
 {
+struct ElementLocalData
+{
+    matrixstore::TransformMatricesData transformMatrices {};
+    primitiveassembler::PrimitiveAssemblerData primitiveAssembler {};
+    std::bitset<RenderConfig::TMU_COUNT> tmuEnabled {};
+};
 
-using PushVertexCmd = DataTransferCmdBase<VertexParameter, op::PUSH_VERTEX>;
+} // namespace rr::transform
 
-} // namespace rr
-
-#endif // _PUSH_VERTEX_CMD_HPP_
+#endif // _ELEMENT_LOCAL_DATA_HPP_

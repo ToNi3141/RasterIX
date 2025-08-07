@@ -71,7 +71,7 @@ private:
                 , wrapModeS { static_cast<uint32_t>(TextureWrapMode::REPEAT) }
                 , wrapModeT { static_cast<uint32_t>(TextureWrapMode::REPEAT) }
                 , enableMagFilter { false }
-                , enableMinFilter { true }
+                , enableMinFilter { false }
                 , pixelFormat { static_cast<uint32_t>(PixelFormat::RGBA4444) }
             {
             }

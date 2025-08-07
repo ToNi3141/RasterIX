@@ -34,9 +34,6 @@ namespace rr
 
 class TriangleStreamCmd
 {
-    static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
-    static constexpr uint32_t OP_MASK { 0xF000'0000 };
-
 public:
     // Both, the float and fix point variant expecting the triangle parameters as float.
     // Therefore: Set the interpolation by default to float.
@@ -74,7 +71,7 @@ public:
     bool isVisible() const { return m_visible; };
 
     PayloadType payload() const { return m_desc; }
-    static constexpr CommandType command() { return TRIANGLE_STREAM | (displaylist::DisplayList::template sizeOf<TrDesc>()); }
+    static constexpr CommandType command() { return op::TRIANGLE_STREAM | (displaylist::DisplayList::template sizeOf<TrDesc>()); }
 
     TriangleStreamCmd& operator=(const TriangleStreamCmd& rhs)
     {
@@ -85,7 +82,7 @@ public:
     }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadBuffer> {}; }
-    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == TRIANGLE_STREAM; }
+    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::TRIANGLE_STREAM; }
 
 private:
     using PayloadBuffer = std::array<TrDesc, 1>;

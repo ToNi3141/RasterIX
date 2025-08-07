@@ -18,6 +18,7 @@
 #ifndef _NOP_CMD_HPP_
 #define _NOP_CMD_HPP_
 
+#include "Op.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -27,9 +28,6 @@ namespace rr
 
 class NopCmd
 {
-    static constexpr uint32_t OP_NOP { 0 };
-    static constexpr uint32_t OP_MASK { 0xF000'0000 };
-
 public:
     using PayloadType = tcb::span<const uint8_t>;
     using CommandType = uint32_t;
@@ -37,9 +35,9 @@ public:
     NopCmd(const CommandType, const PayloadType&, const bool) { }
 
     const PayloadType& payload() const { return m_payload; }
-    CommandType command() const { return OP_NOP; }
+    CommandType command() const { return op::NOP; }
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }
-    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_NOP; }
+    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::NOP; }
 
 private:
     PayloadType m_payload {};

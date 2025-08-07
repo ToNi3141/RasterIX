@@ -44,6 +44,11 @@ public:
         : m_viewPortData { viewPortData }
         , m_primitiveAssemblerData { primitiveAssemblerData }
     {
+        init();
+    }
+
+    void init()
+    {
         updateMode();
         clear();
     }

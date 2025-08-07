@@ -15,19 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _PUSH_VERTEX_CMD_HPP_
-#define _PUSH_VERTEX_CMD_HPP_
+#ifndef _ELEMENT_GLOBAL_DATA_HPP_
+#define _ELEMENT_GLOBAL_DATA_HPP_
 
-#include "DataTransferCmdBase.hpp"
-#include "Op.hpp"
 #include "RenderConfigs.hpp"
-#include "transform/Types.hpp"
+#include "transform/Culling.hpp"
+#include "transform/Stencil.hpp"
+#include "transform/TexGen.hpp"
+#include "transform/ViewPort.hpp"
+#include <array>
 
-namespace rr
+namespace rr::transform
 {
+struct ElementGlobalData
+{
+    viewport::ViewPortData viewPort {};
+    culling::CullingData culling {};
+    stencil::StencilData stencil {};
+    std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
+    bool normalizeLightNormal {};
+};
 
-using PushVertexCmd = DataTransferCmdBase<VertexParameter, op::PUSH_VERTEX>;
+} // namespace rr::transform
 
-} // namespace rr
-
-#endif // _PUSH_VERTEX_CMD_HPP_
+#endif // _ELEMENT_GLOBAL_DATA_HPP_

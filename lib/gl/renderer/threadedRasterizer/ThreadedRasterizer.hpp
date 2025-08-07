@@ -40,7 +40,6 @@
 namespace rr
 {
 
-template <std::size_t BUFFER_COUNT, std::size_t BUFFER_SIZE>
 class ThreadedRasterizer : public IDevice
 {
 public:
@@ -354,16 +353,30 @@ private:
 
     bool handleCommand(const PushVertexCmd& cmd)
     {
-        return m_vertexTransform.pushVertex(cmd.payload()[0].vertex);
+        return m_vertexTransform.pushVertex(cmd.payload()[0]);
     }
 
-    bool handleCommand(const SetVertexCtxCmd& cmd)
+    bool handleCommand(const SetElementGlobalCtxCmd& cmd)
     {
-        new (&m_vertexTransform) vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> {
-            cmd.payload()[0].ctx,
-            drawTriangleLambda,
-            setStencilBufferConfigLambda,
-        };
+        m_vertexCtx.setElementGlobalData(cmd.payload()[0]);
+        return true;
+    }
+
+    bool handleCommand(const SetElementLocalCtxCmd& cmd)
+    {
+        m_vertexCtx.setElementLocalData(cmd.payload()[0]);
+        return true;
+    }
+
+    bool handleCommand(const SetLightingCtxCmd& cmd)
+    {
+        m_vertexCtx.lighting = cmd.payload()[0];
+        return true;
+    }
+
+    bool handleCommand(const DrawNewElementCmd& cmd)
+    {
+        m_vertexTransform.init();
         return true;
     }
 
@@ -507,6 +520,10 @@ private:
         {
             swapAndUploadDisplayLists();
         }
+        else
+        {
+            SPDLOG_CRITICAL("Intermediate upload called, but display list is not single list. This might cause the renderer to crash ...");
+        }
     }
 
     bool setStencilBufferConfig(const StencilReg& stencilConf)
@@ -537,6 +554,7 @@ private:
     }
 
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
+    static constexpr std::size_t NUMBER_OF_DISPLAY_LISTS { 2 };
 
     IDevice& m_device;
     IThreadRunner& m_uploadThread;
@@ -544,21 +562,22 @@ private:
     std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};
     std::array<DisplayListDispatcherType, 2> m_displayListDispatcher { m_displayListAssembler[0], m_displayListAssembler[1] };
     DisplayListDoubleBufferType m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };
-    DeviceUploadList<BUFFER_SIZE, RenderConfig::TEXTURE_PAGE_SIZE> m_textureUploadList {};
+    DeviceUploadList<RenderConfig::THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE, RenderConfig::TEXTURE_PAGE_SIZE> m_textureUploadList {};
 
-    std::array<std::array<uint8_t, BUFFER_SIZE>, BUFFER_COUNT> m_buffer;
+    std::array<std::array<uint8_t, RenderConfig::THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE>, NUMBER_OF_DISPLAY_LISTS> m_buffer;
 
     Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
 
-    const std::function<bool(const TransformedTriangle&)> drawTriangleLambda = [this](const TransformedTriangle& triangle)
+    const std::function<bool(const TransformedTriangle&)> m_drawTriangleLambda = [this](const TransformedTriangle& triangle)
     { return addTriangleCmd(triangle); };
-    const std::function<bool(const StencilReg&)> setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
+    const std::function<bool(const StencilReg&)> m_setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
     { return setStencilBufferConfig(stencilConf); };
 
-    vertextransforming::VertexTransformingCalc<decltype(drawTriangleLambda), decltype(setStencilBufferConfigLambda)> m_vertexTransform {
-        {},
-        drawTriangleLambda,
-        setStencilBufferConfigLambda,
+    vertextransforming::VertexTransformingData m_vertexCtx {};
+    vertextransforming::VertexTransformingCalc<decltype(m_drawTriangleLambda), decltype(m_setStencilBufferConfigLambda)> m_vertexTransform {
+        m_vertexCtx,
+        m_drawTriangleLambda,
+        m_setStencilBufferConfigLambda,
     };
 
     uint32_t m_colorBufferAddr {};

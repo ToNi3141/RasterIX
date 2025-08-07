@@ -15,19 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _PUSH_VERTEX_CMD_HPP_
-#define _PUSH_VERTEX_CMD_HPP_
+#ifndef _SET_ELEMENT_GLOBAL_CTX_CMD_HPP_
+#define _SET_ELEMENT_GLOBAL_CTX_CMD_HPP_
 
 #include "DataTransferCmdBase.hpp"
 #include "Op.hpp"
 #include "RenderConfigs.hpp"
-#include "transform/Types.hpp"
+#include "transform/ElementGlobalData.hpp"
 
 namespace rr
 {
 
-using PushVertexCmd = DataTransferCmdBase<VertexParameter, op::PUSH_VERTEX>;
+using SetElementGlobalCtxCmd = DataTransferCmdBase<transform::ElementGlobalData, op::SET_ELEMENT_GLOBAL_CTX>;
 
 } // namespace rr
 
-#endif // _PUSH_VERTEX_CMD_HPP_
+#endif // _SET_ELEMENT_GLOBAL_CTX_CMD_HPP_

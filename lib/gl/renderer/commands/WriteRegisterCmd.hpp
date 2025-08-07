@@ -18,6 +18,7 @@
 #ifndef _WRITE_REGISTER_CMD_HPP_
 #define _WRITE_REGISTER_CMD_HPP_
 
+#include "Op.hpp"
 #include "renderer/registers/RegisterVariant.hpp"
 #include <array>
 #include <cstdint>
@@ -28,9 +29,6 @@ namespace rr
 
 class WriteRegisterCmd
 {
-    static constexpr uint32_t OP_RENDER_CONFIG { 0x1000'0000 };
-    static constexpr uint32_t OP_MASK { 0xF000'0000 };
-
 public:
     using PayloadType = tcb::span<const uint32_t>;
     using CommandType = uint32_t;
@@ -45,7 +43,7 @@ public:
                 return r.getAddr();
             },
             reg);
-        m_op = OP_RENDER_CONFIG | regAddr;
+        m_op = op::RENDER_CONFIG | regAddr;
         m_payload = { m_val };
     }
 
@@ -59,9 +57,9 @@ public:
     CommandType command() const { return m_op; }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 1; }
-    static bool isThis(const CommandType cmd) { return (cmd & OP_MASK) == OP_RENDER_CONFIG; }
+    static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::RENDER_CONFIG; }
 
-    static uint32_t getRegAddr(const CommandType cmd) { return cmd & ~OP_MASK; };
+    static uint32_t getRegAddr(const CommandType cmd) { return cmd & ~op::MASK; };
     uint32_t getRegAddr() const { return getRegAddr(m_op); }
 
     RegisterVariant getRegister() const

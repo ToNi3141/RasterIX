@@ -35,8 +35,8 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 {
     for (std::size_t i = 0; i < m_texGen.size(); i++)
     {
-        m_texGen[i].setNormalMat(m_vertexCtx.transformMatrices.normal);
-        m_texGen[i].setTexGenData(m_vertexCtx.texGen[i]);
+        m_texGen[i].setNormalMat(m_elementLocalData.transformMatrices.normal);
+        m_texGen[i].setTexGenData(m_elementGlobalData.texGen[i]);
     }
     setEnableNormalizing(false);
 }
@@ -55,6 +55,21 @@ VertexParameter VertexPipeline::fetch(const RenderObj& obj, std::size_t i)
     return parameter;
 }
 
+void VertexPipeline::updateGlobalElementContext()
+{
+    if (m_lighting.dataHasChanged())
+    {
+        m_renderer.setLightingContext(m_lightingData);
+        m_lighting.clearDataChangedFlag();
+    }
+
+    if (std::memcmp(&m_elementGlobalDataTransferred, &m_elementGlobalData, sizeof(m_elementGlobalDataTransferred)) != 0)
+    {
+        m_renderer.setElementGlobalContext(m_elementGlobalData);
+        m_elementGlobalDataTransferred = m_elementGlobalData;
+    }
+}
+
 bool VertexPipeline::drawObj(const RenderObj& obj)
 {
     if (!obj.vertexArrayEnabled())
@@ -63,6 +78,8 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
         return true;
     }
     m_matrixStore.recalculateMatrices();
+
+    updateGlobalElementContext();
 
     if (!updatePipeline())
     {
@@ -76,9 +93,11 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
 
     for (std::size_t i = 0; i < RenderConfig::TMU_COUNT; i++)
     {
-        m_vertexCtx.tmuEnabled[i] = m_renderer.featureEnable().getEnableTmu(i);
+        m_elementLocalData.tmuEnabled[i] = m_renderer.featureEnable().getEnableTmu(i);
     }
-    m_renderer.setVertexContext(m_vertexCtx);
+
+    m_renderer.setElementLocalContext(m_elementLocalData);
+    m_renderer.drawNewElement();
 
     std::size_t count = obj.getCount();
     for (std::size_t it = 0; it < count; it++)

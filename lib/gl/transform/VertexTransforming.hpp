@@ -20,6 +20,8 @@
 
 #include "Clipper.hpp"
 #include "Culling.hpp"
+#include "ElementGlobalData.hpp"
+#include "ElementLocalData.hpp"
 #include "Lighting.hpp"
 #include "MatrixStore.hpp"
 #include "PrimitiveAssembler.hpp"
@@ -36,14 +38,30 @@ namespace rr::vertextransforming
 
 struct VertexTransformingData
 {
-    matrixstore::TransformMatricesData transformMatrices {};
-    viewport::ViewPortData viewPort {};
+    void setElementLocalData(const transform::ElementLocalData& data)
+    {
+        transformMatrices = data.transformMatrices;
+        primitiveAssembler = data.primitiveAssembler;
+        tmuEnabled = data.tmuEnabled;
+    }
+
+    void setElementGlobalData(const transform::ElementGlobalData& data)
+    {
+        viewPort = data.viewPort;
+        culling = data.culling;
+        stencil = data.stencil;
+        texGen = data.texGen;
+        normalizeLightNormal = data.normalizeLightNormal;
+    }
+
     lighting::LightingData lighting {};
+    matrixstore::TransformMatricesData transformMatrices {};
+    primitiveassembler::PrimitiveAssemblerData primitiveAssembler {};
+    std::bitset<RenderConfig::TMU_COUNT> tmuEnabled {};
+    viewport::ViewPortData viewPort {};
     culling::CullingData culling {};
     stencil::StencilData stencil {};
     std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
-    primitiveassembler::PrimitiveAssemblerData primitiveAssembler {};
-    std::bitset<RenderConfig::TMU_COUNT> tmuEnabled {};
     bool normalizeLightNormal {};
 };
 
@@ -79,6 +97,11 @@ public:
             m_primitiveAssembler.removePrimitive();
         }
         return true;
+    }
+
+    void init()
+    {
+        m_primitiveAssembler.init();
     }
 
     void* operator new(size_t, VertexTransformingCalc<TDrawTriangleFunc, TUpdateStencilFunc>* p) { return p; }
