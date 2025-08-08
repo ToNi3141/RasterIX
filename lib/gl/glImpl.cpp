@@ -770,6 +770,10 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST_TWO_SIDE_EXT called");
         RIXGL::getInstance().pipeline().stencil().enableTwoSideStencil(false);
         break;
+    case GL_COLOR_LOGIC_OP:
+        SPDLOG_DEBUG("glDisable GL_COLOR_LOGIC_OP called");
+        RIXGL::getInstance().pipeline().featureEnable().setEnableLogicOp(false);
+        break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -871,6 +875,10 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST_TWO_SIDE_EXT called");
         RIXGL::getInstance().pipeline().stencil().enableTwoSideStencil(true);
+        break;
+    case GL_COLOR_LOGIC_OP:
+        SPDLOG_DEBUG("glEnable GL_COLOR_LOGIC_OP called");
+        RIXGL::getInstance().pipeline().featureEnable().setEnableLogicOp(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
@@ -1526,9 +1534,9 @@ GLAPI void APIENTRY impl_glLoadName(GLuint name)
 
 GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
 {
-    SPDLOG_WARN("glLogicOp 0x{:X} not implemented", opcode);
+    SPDLOG_DEBUG("glLogicOp 0x{:X} called", opcode);
 
-    [[maybe_unused]] LogicOp logicOp { LogicOp::COPY };
+    LogicOp logicOp { LogicOp::COPY };
     switch (opcode)
     {
     case GL_CLEAR:
@@ -1546,9 +1554,9 @@ GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
     case GL_NOOP:
         logicOp = LogicOp::NOOP;
         break;
-        //    case GL_INVERTED:
-        //        logicOp = LogicOp::INVERTED;
-        //        break;
+    case GL_INVERT:
+        logicOp = LogicOp::INVERT;
+        break;
     case GL_AND:
         logicOp = LogicOp::AND;
         break;
@@ -1583,7 +1591,7 @@ GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
         logicOp = LogicOp::COPY;
         break;
     }
-    // vertexPipeline().setLogicOp(setLogicOp); // TODO: Not yet implemented
+    RIXGL::getInstance().pipeline().fragmentPipeline().setLogicOp(logicOp);
 }
 
 GLAPI void APIENTRY impl_glMap1d(GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble* points)

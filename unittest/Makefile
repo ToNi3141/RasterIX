@@ -147,5 +147,10 @@ axisToAxiCrossbar:
 	-make -C obj_dir -f VAxisToAxiCrossbar.mk
 	./obj_dir/VAxisToAxiCrossbar
 
+logicOp:
+	verilator -DUNITTEST -CFLAGS -std=c++20 --cc -exe ../rtl/RasterIX/LogicOp.v --top-module LogicOp cpp/sim_LogicOp.cpp -I../rtl/RasterIX/ -I../rtl/3rdParty/ -I../rtl/Float/rtl/float/ || exit 1
+	-make -C obj_dir -f VLogicOp.mk
+	./obj_dir/VLogicOp
+
 .SECONDARY:
 .PHONY: all clean

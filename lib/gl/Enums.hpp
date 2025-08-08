@@ -53,7 +53,7 @@ enum class LogicOp
     COPY,
     COPY_INVERTED,
     NOOP,
-    INVERTED,
+    INVERT,
     AND,
     NAND,
     OR,

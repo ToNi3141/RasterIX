@@ -134,7 +134,8 @@ module PerFragmentPipeline
     wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosY;
     wire [DEPTH_WIDTH - 1 : 0]              step1_depth;
-    wire [PIXEL_WIDTH - 1 : 0]              step1_color;
+    wire [PIXEL_WIDTH - 1 : 0]              step1_colorBlend;
+    wire [PIXEL_WIDTH - 1 : 0]              step1_colorLogicOp;
     wire                                    step1_writeFramebuffer;
     wire [STENCIL_WIDTH - 1 : 0 ]           step1_stencil;
     wire                                    step1_writeStencilBuffer;
@@ -179,7 +180,35 @@ module PerFragmentPipeline
         .sourceColor(step0_color),
         .destColor(step0_destcolor),
 
-        .color(step1_color)
+        .color(step1_colorBlend)
+    );
+
+    // Clocks: 1
+    wire [PIXEL_WIDTH - 1 : 0] step1_colorLogicOpTmp;
+    LogicOp #(
+        .PIXEL_WIDTH(PIXEL_WIDTH)
+    ) logicOp (
+        .aclk(aclk),
+        .resetn(resetn),
+        .ce(ce),
+
+        .op(conf[RENDER_CONFIG_FRAGMENT_LOGIC_OP_POS +: RENDER_CONFIG_FRAGMENT_LOGIC_OP_SIZE]),
+        .enable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_LOGIC_OP_POS]),
+
+        .source(step0_color),
+        .dest(step0_destcolor),
+
+        .out(step1_colorLogicOpTmp)
+    );
+
+    ValueDelay #(
+        .VALUE_SIZE(PIXEL_WIDTH), 
+        .DELAY(2)
+    ) step1_colorLogicOpDelay (
+        .clk(aclk), 
+        .ce(ce), 
+        .in(step1_colorLogicOpTmp), 
+        .out(step1_colorLogicOp)
     );
 
     // Clocks: 1
@@ -298,12 +327,15 @@ module PerFragmentPipeline
     always @(posedge aclk)
     if (ce) begin
         if (step1_valid)
-        begin
+        begin : step2
+            reg logicOpEnable;
+            logicOpEnable = conf[RENDER_CONFIG_FRAGMENT_LOGIC_OP_POS +: RENDER_CONFIG_FRAGMENT_LOGIC_OP_SIZE];
+            
             m_frag_taddr <= step1_index;
             m_frag_tscreenPosX <= step1_screenPosX;
             m_frag_tscreenPosY <= step1_screenPosY;
             m_frag_depth_tdata <= step1_depth;
-            m_frag_color_tdata <= step1_color;
+            m_frag_color_tdata <= (logicOpEnable) ? step1_colorLogicOp : step1_colorBlend;
             m_frag_stencil_tdata <= step1_stencil;
         end
         fragmentProcessed <= step1_valid;

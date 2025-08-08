@@ -43,7 +43,7 @@ public:
     static_assert(static_cast<uint32_t>(LogicOp::COPY) == 2);
     static_assert(static_cast<uint32_t>(LogicOp::COPY_INVERTED) == 3);
     static_assert(static_cast<uint32_t>(LogicOp::NOOP) == 4);
-    static_assert(static_cast<uint32_t>(LogicOp::INVERTED) == 5);
+    static_assert(static_cast<uint32_t>(LogicOp::INVERT) == 5);
     static_assert(static_cast<uint32_t>(LogicOp::AND) == 6);
     static_assert(static_cast<uint32_t>(LogicOp::NAND) == 7);
     static_assert(static_cast<uint32_t>(LogicOp::OR) == 8);
@@ -76,6 +76,7 @@ public:
     void setColorMaskB(const bool val) { m_regVal.fields.colorMaskB = val; }
     void setBlendFuncSFactor(const BlendFunc val) { m_regVal.fields.blendFuncSFactor = static_cast<uint32_t>(val); }
     void setBlendFuncDFactor(const BlendFunc val) { m_regVal.fields.blendFuncDFactor = static_cast<uint32_t>(val); }
+    void setLogicOp(const LogicOp val) { m_regVal.fields.logicOp = static_cast<uint32_t>(val); }
 
     TestFunc getDepthFunc() const { return static_cast<TestFunc>(m_regVal.fields.depthFunc); }
     TestFunc getAlphaFunc() const { return static_cast<TestFunc>(m_regVal.fields.alphaFunc); }
@@ -87,6 +88,7 @@ public:
     bool getColorMaskB() const { return m_regVal.fields.colorMaskB; }
     BlendFunc getBlendFuncSFactor() const { return static_cast<BlendFunc>(m_regVal.fields.blendFuncSFactor); }
     BlendFunc getBlendFuncDFactor() const { return static_cast<BlendFunc>(m_regVal.fields.blendFuncDFactor); }
+    LogicOp getLogicOp() const { return static_cast<LogicOp>(m_regVal.fields.logicOp); }
 
     uint32_t serialize() const { return m_regVal.data; }
     void deserialize(const uint32_t data) { m_regVal.data = data; }
@@ -109,6 +111,7 @@ private:
                 , colorMaskR { true }
                 , blendFuncSFactor { static_cast<uint32_t>(BlendFunc::ONE) }
                 , blendFuncDFactor { static_cast<uint32_t>(BlendFunc::ZERO) }
+                , logicOp { static_cast<uint32_t>(LogicOp::COPY) }
             {
             }
 
@@ -122,6 +125,7 @@ private:
             uint32_t colorMaskR : 1;
             uint32_t blendFuncSFactor : 4;
             uint32_t blendFuncDFactor : 4;
+            uint32_t logicOp : 4;
         } fields {};
         uint32_t data;
 #pragma pack(pop)

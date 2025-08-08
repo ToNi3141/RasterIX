@@ -146,9 +146,9 @@ localparam TEXTURE_STREAM_TMU_NR_SIZE = 2;
 // Description of the different registers:
 
 // OP_RENDER_CONFIG_FEATURE_ENABLE
-//  +-----------------------------------------------------------------------------------------------------------------------------------------------+
-//  | 25'hx reserved | 1'hx TMU1 | 1'hx TMU0 | 1'hx Scissor test | 1'hx Stencil test | 1'hx Alpha test | 1'hx Depth test | 1'hx Blending | 1'hx Fog |
-//  +-----------------------------------------------------------------------------------------------------------------------------------------------+
+//  +---------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 24'hx reserved | 1'hx Logic op | 1'hx TMU1 | 1'hx TMU0 | 1'hx Scissor test | 1'hx Stencil test | 1'hx Alpha test | 1'hx Depth test | 1'hx Blending | 1'hx Fog |
+//  +---------------------------------------------------------------------------------------------------------------------------------------------------------------+
 localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_POS = 0;
 localparam RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE = 1;
 localparam RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS = RENDER_CONFIG_FEATURE_ENABLE_FOG_POS + RENDER_CONFIG_FEATURE_ENABLE_FOG_SIZE;
@@ -165,11 +165,13 @@ localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS = RENDER_CONFIG_FEATURE_ENABLE_
 localparam RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE = 1;
 localparam RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS = RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS + RENDER_CONFIG_FEATURE_ENABLE_TMU0_SIZE;
 localparam RENDER_CONFIG_FEATURE_ENABLE_TMU1_SIZE = 1;
+localparam RENDER_CONFIG_FEATURE_ENABLE_LOGIC_OP_POS = RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS + RENDER_CONFIG_FEATURE_ENABLE_TMU1_SIZE;
+localparam RENDER_CONFIG_FEATURE_ENABLE_LOGIC_OP_SIZE = 1;
 
 // OP_RENDER_CONFIG_FRAGMENT_PIPELINE
-//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-//  | 5'hx reserved | 4'hx blend d | 4'hx blend s | 1'hx color mask R | 1'hx color mask G | 1'hx color mask B | 1'hx color mask A | 1'hx depth mask | 8'hx A ref | 3'hx A func | 3'hx depth func |
-//  +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+//  | 1'hx reserved | 4'hx logic op | 4'hx blend d | 4'hx blend s | 1'hx color mask R | 1'hx color mask G | 1'hx color mask B | 1'hx color mask A | 1'hx depth mask | 8'hx A ref | 3'hx A func | 3'hx depth func |
+//  +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 localparam RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_POS = 0;
 localparam RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_SIZE = 3;
 localparam RENDER_CONFIG_FRAGMENT_ALPHA_TEST_FUNC_POS = RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_POS + RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_SIZE;
@@ -190,6 +192,8 @@ localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_POS = RENDER_CONFIG_FRAGMEN
 localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_SIZE = 4;
 localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_POS = RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_POS + RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_SIZE;
 localparam RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_SIZE = 4;
+localparam RENDER_CONFIG_FRAGMENT_LOGIC_OP_POS = RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_POS + RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_SIZE;
+localparam RENDER_CONFIG_FRAGMENT_LOGIC_OP_SIZE = 4;
 
 // OP_RENDER_CONFIG_STENCIL_BUFFER
 //  +-----------------------------------------------------------------------------------------------------------------------------------------------+
@@ -353,23 +357,23 @@ localparam DST_ALPHA = 8;
 localparam ONE_MINUS_DST_ALPHA = 9;
 localparam SRC_ALPHA_SATURATE = 10;
 
-// Logic op defines (currently not implemented)
-// localparam CLEAR = 0;
-// localparam SET = 1;
-// localparam COPY = 2;
-// localparam COPY_INVERTED = 3;
-// localparam NOOP = 4;
-// localparam INVERTED = 5;
-// localparam AND = 6;
-// localparam NAND = 7;
-// localparam OR = 8;
-// localparam NOR = 9;
-// localparam XOR = 10;
-// localparam EQUIV = 11;
-// localparam AND_REVERSE = 12;
-// localparam AND_INVERTED = 13;
-// localparam OR_REVERSE = 14;
-// localparam OR_INVERTE = 15;
+// Logic op defines
+localparam CLEAR = 0;
+localparam SET = 1;
+localparam COPY = 2;
+localparam COPY_INVERTED = 3;
+localparam NOOP = 4;
+localparam INVERT = 5;
+localparam AND = 6;
+localparam NAND = 7;
+localparam OR = 8;
+localparam NOR = 9;
+localparam XOR = 10;
+localparam EQUIV = 11;
+localparam AND_REVERSE = 12;
+localparam AND_INVERTED = 13;
+localparam OR_REVERSE = 14;
+localparam OR_INVERTED = 15;
 
 // Clamping
 localparam REPEAT = 0;

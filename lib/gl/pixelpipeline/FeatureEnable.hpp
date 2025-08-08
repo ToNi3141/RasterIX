@@ -40,6 +40,7 @@ public:
     void setEnableFog(const bool enable) { m_featureEnable.setEnableFog(enable); }
     void setEnableScissor(const bool enable) { m_featureEnable.setEnableScissor(enable); }
     void setEnableStencil(const bool enable) { m_featureEnable.setEnableStencilTest(enable); }
+    void setEnableLogicOp(const bool enable) { m_featureEnable.setEnableLogicOp(enable); }
     bool getEnableTmu() const { return m_featureEnable.getEnableTmu(m_texture.getActiveTmu()); }
     bool getEnableTmu(const std::size_t tmu) const { return m_featureEnable.getEnableTmu(tmu); }
     bool getEnableAlphaTest() const { return m_featureEnable.getEnableAlphaTest(); }
@@ -48,6 +49,7 @@ public:
     bool getEnableFog() const { return m_featureEnable.getEnableFog(); }
     bool getEnableScissor() const { return m_featureEnable.getEnableScissor(); }
     bool getEnableStencil() const { return m_featureEnable.getEnableStencilTest(); }
+    bool getEnableLogicOp() const { return m_featureEnable.getEnableLogicOp(); }
 
     bool update()
     {
