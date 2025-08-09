@@ -37,7 +37,7 @@
 // Depth: 1 cycle
 module LogicOp 
 #(
-    parameter PIXEL_WIDTH = 4
+    parameter PIXEL_WIDTH = 32
 )
 (
     input  wire                         aclk,
@@ -54,7 +54,7 @@ module LogicOp
 `include "RegisterAndDescriptorDefines.vh"
 
     wire [PIXEL_WIDTH - 1 : 0] invertedSource = ~source;
-    wire [PIXEL_WIDTH - 1 : 0] invertedTest = ~dest; 
+    wire [PIXEL_WIDTH - 1 : 0] invertedDest = ~dest; 
 
     always @(posedge aclk)
     if (ce) begin : TestFunc
@@ -83,7 +83,7 @@ module LogicOp
         end
         INVERT:
         begin
-            tmp = invertedSource;
+            tmp = invertedDest;
         end
         AND:
         begin
@@ -111,7 +111,7 @@ module LogicOp
         end
         AND_REVERSE:
         begin
-            tmp = source & invertedTest;
+            tmp = source & invertedDest;
         end
         AND_INVERTED:
         begin
@@ -119,7 +119,7 @@ module LogicOp
         end
         OR_REVERSE:
         begin
-            tmp = source | invertedTest;
+            tmp = source | invertedDest;
         end
         OR_INVERTED:
         begin

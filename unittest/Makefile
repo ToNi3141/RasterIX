@@ -22,7 +22,10 @@ all: \
 	attributePerspectiveCorrectionX \
 	triangleStreamF2XConverter \
 	pagedMemoryReader \
-	internalFramebufferCommandHandler
+	internalFramebufferCommandHandler \
+	axisToAxiAdapter \
+	axisToAxiCrossbar \
+	logicOp
  
 clean:
 	rm -rf obj_dir
