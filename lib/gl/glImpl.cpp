@@ -1535,63 +1535,12 @@ GLAPI void APIENTRY impl_glLoadName(GLuint name)
 GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
 {
     SPDLOG_DEBUG("glLogicOp 0x{:X} called", opcode);
-
-    LogicOp logicOp { LogicOp::COPY };
-    switch (opcode)
+    RIXGL::getInstance().setError(GL_NO_ERROR);
+    const LogicOp logicOp = convertLogicOp(opcode);
+    if (RIXGL::getInstance().getError() == GL_NO_ERROR)
     {
-    case GL_CLEAR:
-        logicOp = LogicOp::CLEAR;
-        break;
-    case GL_SET:
-        logicOp = LogicOp::SET;
-        break;
-    case GL_COPY:
-        logicOp = LogicOp::COPY;
-        break;
-    case GL_COPY_INVERTED:
-        logicOp = LogicOp::COPY_INVERTED;
-        break;
-    case GL_NOOP:
-        logicOp = LogicOp::NOOP;
-        break;
-    case GL_INVERT:
-        logicOp = LogicOp::INVERT;
-        break;
-    case GL_AND:
-        logicOp = LogicOp::AND;
-        break;
-    case GL_NAND:
-        logicOp = LogicOp::NAND;
-        break;
-    case GL_OR:
-        logicOp = LogicOp::OR;
-        break;
-    case GL_NOR:
-        logicOp = LogicOp::NOR;
-        break;
-    case GL_XOR:
-        logicOp = LogicOp::XOR;
-        break;
-    case GL_EQUIV:
-        logicOp = LogicOp::EQUIV;
-        break;
-    case GL_AND_REVERSE:
-        logicOp = LogicOp::AND_REVERSE;
-        break;
-    case GL_AND_INVERTED:
-        logicOp = LogicOp::AND_INVERTED;
-        break;
-    case GL_OR_REVERSE:
-        logicOp = LogicOp::OR_REVERSE;
-        break;
-    case GL_OR_INVERTED:
-        logicOp = LogicOp::OR_INVERTED;
-        break;
-    default:
-        logicOp = LogicOp::COPY;
-        break;
+        RIXGL::getInstance().pipeline().fragmentPipeline().setLogicOp(logicOp);
     }
-    RIXGL::getInstance().pipeline().fragmentPipeline().setLogicOp(logicOp);
 }
 
 GLAPI void APIENTRY impl_glMap1d(GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble* points)
