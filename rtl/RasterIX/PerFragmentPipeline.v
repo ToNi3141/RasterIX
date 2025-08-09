@@ -53,14 +53,14 @@ module PerFragmentPipeline
     input  wire                                     s_frag_tlast,
     input  wire [KEEP_WIDTH - 1 : 0]                s_frag_tkeep,
     input  wire                                     s_frag_tvalid,
-    input  wire [PIXEL_WIDTH - 1 : 0]               s_frag_tcolor,
-    input  wire [31 : 0]                            s_frag_tdepth,
+    input  wire [PIXEL_WIDTH - 1 : 0]               s_frag_tcolor, // Source color
+    input  wire [31 : 0]                            s_frag_tdepth, // Source depth
     input  wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   s_frag_tindex,
     input  wire [SCREEN_POS_WIDTH - 1 : 0]          s_frag_tscreenPosX,
     input  wire [SCREEN_POS_WIDTH - 1 : 0]          s_frag_tscreenPosY,
-    input  wire [PIXEL_WIDTH - 1 : 0]               s_frag_color_tdata,
-    input  wire [DEPTH_WIDTH - 1 : 0]               s_frag_depth_tdata,
-    input  wire [STENCIL_WIDTH - 1 : 0]             s_frag_stencil_tdata,
+    input  wire [PIXEL_WIDTH - 1 : 0]               s_frag_tdestinationColor,
+    input  wire [DEPTH_WIDTH - 1 : 0]               s_frag_tdestinationDepth,
+    input  wire [STENCIL_WIDTH - 1 : 0]             s_frag_tdestinationStencil,
 
     // Signals when the fragment went through the pipeline
     output reg                                      fragmentProcessed,
@@ -119,7 +119,8 @@ module PerFragmentPipeline
     wire [DEPTH_WIDTH - 1 : 0]              step0_depth = clampDepth(s_frag_tdepth);
     wire [SCREEN_POS_WIDTH - 1 : 0]         step0_screenPosX = s_frag_tscreenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]         step0_screenPosY = s_frag_tscreenPosY;
-    wire [PIXEL_WIDTH - 1 : 0]              step0_fragmentColor = s_frag_tcolor;
+    wire [PIXEL_WIDTH - 1 : 0]              step0_color = s_frag_tcolor;
+    wire [PIXEL_WIDTH - 1 : 0]              step0_destcolor = s_frag_tdestinationColor;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
@@ -128,12 +129,13 @@ module PerFragmentPipeline
     ////////////////////////////////////////////////////////////////////////////
     wire                                    step1_valid;
     wire                                    step1_last;
-    wire [KEEP_WIDTH  - 1 : 0]              step1_tkeep;
+    wire [KEEP_WIDTH - 1 : 0]               step1_keep;
     wire [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]  step1_index;
     wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]         step1_screenPosY;
     wire [DEPTH_WIDTH - 1 : 0]              step1_depth;
-    wire [PIXEL_WIDTH - 1 : 0]              step1_fragmentColor;
+    wire [PIXEL_WIDTH - 1 : 0]              step1_colorBlend;
+    wire [PIXEL_WIDTH - 1 : 0]              step1_colorLogicOp;
     wire                                    step1_writeFramebuffer;
     wire [STENCIL_WIDTH - 1 : 0 ]           step1_stencil;
     wire                                    step1_writeStencilBuffer;
@@ -175,10 +177,38 @@ module PerFragmentPipeline
         .funcSFactor(conf[RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_POS +: RENDER_CONFIG_FRAGMENT_BLEND_FUNC_SFACTOR_SIZE]),
         .funcDFactor(conf[RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_POS +: RENDER_CONFIG_FRAGMENT_BLEND_FUNC_DFACTOR_SIZE]),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS]),
-        .sourceColor(step0_fragmentColor),
-        .destColor(s_frag_color_tdata),
+        .sourceColor(step0_color),
+        .destColor(step0_destcolor),
 
-        .color(step1_fragmentColor)
+        .color(step1_colorBlend)
+    );
+
+    // Clocks: 1
+    wire [PIXEL_WIDTH - 1 : 0] step1_colorLogicOpTmp;
+    LogicOp #(
+        .PIXEL_WIDTH(PIXEL_WIDTH)
+    ) logicOp (
+        .aclk(aclk),
+        .resetn(resetn),
+        .ce(ce),
+
+        .op(conf[RENDER_CONFIG_FRAGMENT_LOGIC_OP_POS +: RENDER_CONFIG_FRAGMENT_LOGIC_OP_SIZE]),
+        .enable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_LOGIC_OP_POS]),
+
+        .source(step0_color),
+        .dest(step0_destcolor),
+
+        .out(step1_colorLogicOpTmp)
+    );
+
+    ValueDelay #(
+        .VALUE_SIZE(PIXEL_WIDTH), 
+        .DELAY(2)
+    ) step1_colorLogicOpDelay (
+        .clk(aclk), 
+        .ce(ce), 
+        .in(step1_colorLogicOpTmp), 
+        .out(step1_colorLogicOp)
     );
 
     // Clocks: 1
@@ -192,7 +222,7 @@ module PerFragmentPipeline
         .func(conf[RENDER_CONFIG_FRAGMENT_ALPHA_TEST_FUNC_POS +: RENDER_CONFIG_FRAGMENT_ALPHA_TEST_FUNC_SIZE]),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_ALPHA_TEST_POS]),
         .refVal(conf[RENDER_CONFIG_FRAGMENT_ALPHA_TEST_REF_VALUE_POS +: RENDER_CONFIG_FRAGMENT_ALPHA_TEST_REF_VALUE_SIZE]),
-        .val(step0_fragmentColor[COLOR_A_POS +: SUB_PIXEL_WIDTH]),
+        .val(step0_color[COLOR_A_POS +: SUB_PIXEL_WIDTH]),
         .success(step1_alphaTestTmp)
     );
 
@@ -206,14 +236,14 @@ module PerFragmentPipeline
         .ce(ce),
         .func(conf[RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_TEST_FUNC_SIZE]),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS]),
-        .refVal(s_frag_depth_tdata),
+        .refVal(s_frag_tdestinationDepth),
         .val(step0_depth),
         .success(step1_depthTestTmp)
     );
 
     // Clocks: 1
     wire step1_stencilTestTmp;
-    wire [STENCIL_WIDTH - 1 : 0] step1_stencilBufferValTmp;
+    wire [STENCIL_WIDTH - 1 : 0] step1_destinationStencil;
     wire [STENCIL_WIDTH - 1 : 0] step1_stencilRefValTmp = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_REF_POS +: RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE - (STENCIL_WIDTH - RENDER_CONFIG_STENCIL_BUFFER_REF_SIZE)];
     wire [STENCIL_WIDTH - 1 : 0] step1_stencilMaskTmp = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_MASK_POS +: RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE - (STENCIL_WIDTH - RENDER_CONFIG_STENCIL_BUFFER_MASK_SIZE)];
     ValueDelay #(
@@ -222,8 +252,8 @@ module PerFragmentPipeline
     ) step1_stencilBufferDelay (
         .clk(aclk), 
         .ce(ce), 
-        .in(s_frag_stencil_tdata), 
-        .out(step1_stencilBufferValTmp)
+        .in(s_frag_tdestinationStencil), 
+        .out(step1_destinationStencil)
     ); 
     TestFunc #(
         .SUB_PIXEL_WIDTH(STENCIL_WIDTH)
@@ -233,7 +263,7 @@ module PerFragmentPipeline
         .ce(ce),
         .func(confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_FUNC_POS +: RENDER_CONFIG_STENCIL_BUFFER_FUNC_SIZE]),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS]),
-        .refVal(s_frag_stencil_tdata & step1_stencilMaskTmp),
+        .refVal(s_frag_tdestinationStencil & step1_stencilMaskTmp),
         .val(step1_stencilRefValTmp & step1_stencilMaskTmp),
         .success(step1_stencilTestTmp)
     );
@@ -254,7 +284,7 @@ module PerFragmentPipeline
         .enable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS]),
         .zTest(step1_depthTestTmp),
         .sTest(step1_stencilTestTmp),
-        .sValIn(step1_stencilBufferValTmp),
+        .sValIn(step1_destinationStencil),
         .sValOut(step1_stencilTmp),
         .write(step1_writeStencilBufferTmp)
     );
@@ -297,12 +327,15 @@ module PerFragmentPipeline
     always @(posedge aclk)
     if (ce) begin
         if (step1_valid)
-        begin
+        begin : step2
+            reg logicOpEnable;
+            logicOpEnable = conf[RENDER_CONFIG_FRAGMENT_LOGIC_OP_POS +: RENDER_CONFIG_FRAGMENT_LOGIC_OP_SIZE];
+            
             m_frag_taddr <= step1_index;
             m_frag_tscreenPosX <= step1_screenPosX;
             m_frag_tscreenPosY <= step1_screenPosY;
             m_frag_depth_tdata <= step1_depth;
-            m_frag_color_tdata <= step1_fragmentColor;
+            m_frag_color_tdata <= (logicOpEnable) ? step1_colorLogicOp : step1_colorBlend;
             m_frag_stencil_tdata <= step1_stencil;
         end
         fragmentProcessed <= step1_valid;

@@ -43,6 +43,7 @@ public:
     void setAlphaFunc(const TestFunc val) { config().setAlphaFunc(val); }
     void setBlendFuncSFactor(const BlendFunc val) { config().setBlendFuncSFactor(val); }
     void setBlendFuncDFactor(const BlendFunc val) { config().setBlendFuncDFactor(val); }
+    void setLogicOp(const LogicOp val) { config().setLogicOp(val); }
 
     uint8_t getRefAlphaValue() const { return config().getRefAlphaValue(); }
     bool getDepthMask() const { return config().getDepthMask(); }
@@ -54,6 +55,7 @@ public:
     TestFunc getAlphaFunc() const { return config().getAlphaFunc(); }
     BlendFunc getBlendFuncSFactor() const { return config().getBlendFuncSFactor(); }
     BlendFunc getBlendFuncDFactor() const { return config().getBlendFuncDFactor(); }
+    LogicOp getLogicOp() const { return config().getLogicOp(); }
 
     bool update()
     {

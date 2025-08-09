@@ -38,6 +38,7 @@ public:
     }
     void setEnableScissor(const bool val) { m_regVal.fields.scissor = val; }
     void setEnableStencilTest(const bool val) { m_regVal.fields.stencilTest = val; }
+    void setEnableLogicOp(const bool val) { m_regVal.fields.logicOp = val; }
 
     bool getEnableFog() const { return m_regVal.fields.fog; }
     bool getEnableBlending() const { return m_regVal.fields.blending; }
@@ -46,6 +47,7 @@ public:
     bool getEnableTmu(const std::size_t tmu) const { return (tmu == 0) ? m_regVal.fields.tmu0 : m_regVal.fields.tmu1; }
     bool getEnableScissor() const { return m_regVal.fields.scissor; }
     bool getEnableStencilTest() const { return m_regVal.fields.stencilTest; }
+    bool getEnableLogicOp() const { return m_regVal.fields.logicOp; }
 
     uint32_t serialize() const { return m_regVal.data; }
     void deserialize(const uint32_t data) { m_regVal.data = data; }
@@ -66,6 +68,7 @@ private:
                 , scissor { false }
                 , tmu0 { false }
                 , tmu1 { false }
+                , logicOp { false }
             {
             }
 
@@ -77,6 +80,7 @@ private:
             uint32_t scissor : 1;
             uint32_t tmu0 : 1;
             uint32_t tmu1 : 1;
+            uint32_t logicOp : 1;
         } fields {};
         uint32_t data;
 #pragma pack(pop)

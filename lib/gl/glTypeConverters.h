@@ -374,6 +374,49 @@ StencilOp convertStencilOp(const GLenum mode)
     }
 }
 
+LogicOp convertLogicOp(const GLenum opcode)
+{
+    switch (opcode)
+    {
+    case GL_CLEAR:
+        return LogicOp::CLEAR;
+    case GL_SET:
+        return LogicOp::SET;
+    case GL_COPY:
+        return LogicOp::COPY;
+    case GL_COPY_INVERTED:
+        return LogicOp::COPY_INVERTED;
+    case GL_NOOP:
+        return LogicOp::NOOP;
+    case GL_INVERT:
+        return LogicOp::INVERT;
+    case GL_AND:
+        return LogicOp::AND;
+    case GL_NAND:
+        return LogicOp::NAND;
+    case GL_OR:
+        return LogicOp::OR;
+    case GL_NOR:
+        return LogicOp::NOR;
+    case GL_XOR:
+        return LogicOp::XOR;
+    case GL_EQUIV:
+        return LogicOp::EQUIV;
+    case GL_AND_REVERSE:
+        return LogicOp::AND_REVERSE;
+    case GL_AND_INVERTED:
+        return LogicOp::AND_INVERTED;
+    case GL_OR_REVERSE:
+        return LogicOp::OR_REVERSE;
+    case GL_OR_INVERTED:
+        return LogicOp::OR_INVERTED;
+    default:
+        SPDLOG_WARN("convertLogicOp 0x{:X} not suppored", opcode);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return LogicOp::COPY;
+    }
+}
+
 } // namespace rr
 
 #endif // GL_TYPE_CONVERTERS_H
