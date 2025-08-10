@@ -65,18 +65,12 @@ private:
     };
 
     inline static float lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1);
-    inline static Vec4 lerpVert(const Vec4& v0, const Vec4& v1, const float amt);
-    inline static std::array<Vec4, RenderConfig::TMU_COUNT> lerpTexCoord(const std::array<Vec4, RenderConfig::TMU_COUNT>& v0,
-        const std::array<Vec4, RenderConfig::TMU_COUNT>& v1,
-        const float amt);
     inline static bool hasOutCode(const Vec4& v, const OutCode oc);
 
     static std::size_t clipAgainstPlane(ClipList& __restrict listOut,
         const OutCode clipPlane,
         const ClipList& listIn,
         const std::size_t listSize);
-
-    inline static VertexParameter lerp(const OutCode clipPlane, const VertexParameter& curr, const VertexParameter& next);
 
     static OutCode outCode(const Vec4& v)
     {
