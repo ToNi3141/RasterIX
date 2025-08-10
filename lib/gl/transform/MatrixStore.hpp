@@ -28,11 +28,9 @@ namespace rr::matrixstore
 
 struct TransformMatricesData
 {
-    Mat44 modelViewProjection {};
     std::array<Mat44, RenderConfig::TMU_COUNT> texture {};
     Mat44 modelView {};
     Mat44 projection {};
-    Mat44 normal {};
     Mat44 color {};
 };
 
@@ -49,16 +47,12 @@ public:
 
     MatrixStore(TransformMatricesData& transformMatrices);
 
-    const Mat44& getModelViewProjection() const { return m_data.modelViewProjection; }
     const Mat44& getModelView() const { return m_data.modelView; }
     const Mat44& getProjection() const { return m_data.projection; }
     const Mat44& getTexture(const std::size_t tmu) const { return m_data.texture[tmu]; }
     const Mat44& getColor() const { return m_data.color; }
-    const Mat44& getNormal() const { return m_data.normal; }
 
-    void setModelProjectionMatrix(const Mat44& m);
     void setModelMatrix(const Mat44& m);
-    void setNormalMatrix(const Mat44& m);
     void setProjectionMatrix(const Mat44& m);
     void setTextureMatrix(const Mat44& m);
     void setColorMatrix(const Mat44& m);
@@ -76,8 +70,6 @@ public:
     void setTmu(const std::size_t tmu);
     bool loadMatrix(const Mat44& m);
 
-    void recalculateMatrices();
-
     static std::size_t getModelMatrixStackDepth();
     static std::size_t getProjectionMatrixStackDepth();
 
@@ -87,17 +79,12 @@ private:
     static constexpr std::size_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
     static constexpr std::size_t COLOR_MATRIX_STACK_DEPTH { 16 };
 
-    void recalculateModelProjectionMatrix();
-    void recalculateNormalMatrix();
-
     MatrixMode m_matrixMode { MatrixMode::PROJECTION };
     Stack<Mat44, MODEL_MATRIX_STACK_DEPTH> m_mStack {};
     Stack<Mat44, PROJECTION_MATRIX_STACK_DEPTH> m_pStack {};
     std::array<Stack<Mat44, TEXTURE_MATRIX_STACK_DEPTH>, RenderConfig::TMU_COUNT> m_tmStack {};
     Stack<Mat44, COLOR_MATRIX_STACK_DEPTH> m_cStack {};
     TransformMatricesData& m_data;
-    bool m_modelMatrixChanged { true };
-    bool m_projectionMatrixChanged { true };
     std::size_t m_tmu { 0 };
 };
 

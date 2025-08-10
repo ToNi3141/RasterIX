@@ -102,11 +102,29 @@ public:
     void init()
     {
         m_primitiveAssembler.init();
+        if (m_data.lighting.lightingEnabled || texGenActive())
+        {
+            m_normalMatrix = createNormalMatrix();
+        }
+        m_modelViewProjectionMatrix = createModelProjectionMatrix();
     }
 
-    void* operator new(size_t, VertexTransformingCalc<TDrawTriangleFunc, TUpdateStencilFunc>* p) { return p; }
-
 private:
+    bool texGenActive() const
+    {
+        for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
+        {
+            if (m_data.tmuEnabled[tu])
+            {
+                if (texgen::TexGenCalc::texGenActive(m_data.texGen[tu]))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     void transform(VertexParameter& parameter)
     {
         for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
@@ -115,7 +133,8 @@ private:
             {
                 texgen::TexGenCalc { m_data.texGen[tu] }.calculateTexGenCoords(
                     parameter.tex[tu],
-                    m_data.transformMatrices,
+                    m_data.transformMatrices.modelView,
+                    m_normalMatrix,
                     parameter.vertex,
                     parameter.normal);
                 parameter.tex[tu] = m_data.transformMatrices.texture[tu].transform(parameter.tex[tu]);
@@ -126,7 +145,7 @@ private:
         // m_c[j].transform(color, color); // Calculate this in one batch to improve performance
         if (m_data.lighting.lightingEnabled)
         {
-            Vec3 normal = m_data.transformMatrices.normal.transform(parameter.normal);
+            Vec3 normal = m_normalMatrix.transform(parameter.normal);
 
             if (m_data.normalizeLightNormal)
             {
@@ -136,7 +155,7 @@ private:
             const Vec4 c = parameter.color;
             lighting::LightingCalc { m_data.lighting }.calculateLights(parameter.color, c, vl, normal);
         }
-        parameter.vertex = m_data.transformMatrices.modelViewProjection.transform(parameter.vertex);
+        parameter.vertex = m_modelViewProjectionMatrix.transform(parameter.vertex);
     }
 
     bool drawClippedTriangleList(tcb::span<VertexParameter> list)
@@ -260,6 +279,22 @@ private:
 
         return drawClippedTriangleList(clippedVertexParameter);
     }
+
+    Mat44 createModelProjectionMatrix() const
+    {
+        return m_data.transformMatrices.modelView * m_data.transformMatrices.projection;
+    }
+
+    Mat44 createNormalMatrix() const
+    {
+        Mat44 normalMat = m_data.transformMatrices.modelView;
+        normalMat.invert();
+        normalMat.transpose();
+        return normalMat;
+    }
+
+    Mat44 m_modelViewProjectionMatrix {};
+    Mat44 m_normalMatrix {};
 
     const VertexTransformingData& m_data;
     const TDrawTriangleFunc m_drawTriangleFunc;

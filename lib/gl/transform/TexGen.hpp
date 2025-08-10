@@ -21,25 +21,24 @@
 #include "Enums.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
-#include "transform/MatrixStore.hpp"
 
 namespace rr::texgen
 {
 
 struct TexGenData
 {
-    bool texGenEnableS { false };
-    bool texGenEnableT { false };
-    bool texGenEnableR { false };
-    TexGenMode texGenModeS { TexGenMode::EYE_LINEAR };
-    TexGenMode texGenModeT { TexGenMode::EYE_LINEAR };
-    TexGenMode texGenModeR { TexGenMode::EYE_LINEAR };
     Vec4 texGenVecObjS { { 1.0f, 0.0f, 0.0f, 0.0f } };
     Vec4 texGenVecObjT { { 0.0f, 1.0f, 0.0f, 0.0f } };
     Vec4 texGenVecObjR { { 0.0f, 0.0f, 1.0f, 0.0f } };
     Vec4 texGenVecEyeS { { 1.0f, 0.0f, 0.0f, 0.0f } };
     Vec4 texGenVecEyeT { { 0.0f, 1.0f, 0.0f, 0.0f } };
     Vec4 texGenVecEyeR { { 0.0f, 0.0f, 1.0f, 0.0f } };
+    TexGenMode texGenModeS { TexGenMode::EYE_LINEAR };
+    TexGenMode texGenModeT { TexGenMode::EYE_LINEAR };
+    TexGenMode texGenModeR { TexGenMode::EYE_LINEAR };
+    bool texGenEnableS { false };
+    bool texGenEnableT { false };
+    bool texGenEnableR { false };
 };
 
 class TexGenCalc
@@ -52,13 +51,19 @@ public:
 
     void calculateTexGenCoords(
         Vec4& st0,
-        const matrixstore::TransformMatricesData& matrices,
+        const Mat44& modelViewMatrix,
+        const Mat44& normalMatrix,
         const Vec4& v0,
         const Vec3& n0) const;
 
+    static bool texGenActive(const TexGenData& texGenData)
+    {
+        return texGenData.texGenEnableS || texGenData.texGenEnableT || texGenData.texGenEnableR;
+    }
+
 private:
     void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
-    void calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex) const;
+    void calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex, const Mat44& normalMatrix) const;
     void calculateSphereMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
     void calculateReflectionMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
     Vec3 calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) const;
@@ -83,11 +88,9 @@ public:
     void setTexGenVecEyeT(const Vec4& val);
     void setTexGenVecEyeR(const Vec4& val);
 
-    void setNormalMat(const Mat44& normalMat);
     void setTexGenData(TexGenData& texGenCalc);
 
 private:
-    const Mat44* m_normalMat { nullptr };
     TexGenData* m_data { nullptr };
 };
 
