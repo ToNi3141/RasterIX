@@ -18,7 +18,7 @@
 #ifndef CLIPPER_HPP
 #define CLIPPER_HPP
 
-#include "PrimitiveAssembler.hpp"
+#include "Types.hpp"
 #include "math/Vec.hpp"
 #include <array>
 #include <tcb/span.hpp>

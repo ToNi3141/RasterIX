@@ -12,6 +12,7 @@ add_library(gl STATIC
     transform/MatrixStore.cpp
     transform/Culling.cpp
     transform/PrimitiveAssembler.cpp
+    transform/PlaneClipper.cpp
     transform/Stencil.cpp
     pixelpipeline/PixelPipeline.cpp
     pixelpipeline/Fogging.cpp

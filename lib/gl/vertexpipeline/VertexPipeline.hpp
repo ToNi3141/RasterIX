@@ -26,6 +26,7 @@
 #include "transform/Culling.hpp"
 #include "transform/Lighting.hpp"
 #include "transform/MatrixStore.hpp"
+#include "transform/PlaneClipper.hpp"
 #include "transform/PrimitiveAssembler.hpp"
 #include "transform/Stencil.hpp"
 #include "transform/TexGen.hpp"
@@ -86,6 +87,7 @@ public:
     matrixstore::MatrixStore& getMatrixStore() { return m_matrixStore; }
     culling::CullingSetter& getCulling() { return m_culling; }
     primitiveassembler::PrimitiveAssemblerSetter& getPrimitiveAssembler() { return m_primitiveAssembler; }
+    planeclipper::PlaneClipperSetter& getPlaneClipper() { return m_planeClipper; }
 
 private:
     VertexParameter fetch(const RenderObj& obj, std::size_t i);
@@ -110,6 +112,7 @@ private:
     culling::CullingSetter m_culling { m_elementGlobalData.culling };
     std::array<texgen::TexGenSetter, RenderConfig::TMU_COUNT> m_texGen {};
     primitiveassembler::PrimitiveAssemblerSetter m_primitiveAssembler { m_elementLocalData.primitiveAssembler };
+    planeclipper::PlaneClipperSetter m_planeClipper { m_elementGlobalData.planeClipper, m_matrixStore.getModelView() };
 };
 
 } // namespace rr

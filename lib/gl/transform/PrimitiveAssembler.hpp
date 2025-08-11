@@ -38,7 +38,7 @@ struct PrimitiveAssemblerData
 class PrimitiveAssemblerCalc
 {
 public:
-    using Triangle = std::array<std::reference_wrapper<const VertexParameter>, 3>;
+    using Triangle = std::array<VertexParameter, 3>;
 
     PrimitiveAssemblerCalc(const viewport::ViewPortData& viewPortData, const PrimitiveAssemblerData& primitiveAssemblerData)
         : m_viewPortData { viewPortData }

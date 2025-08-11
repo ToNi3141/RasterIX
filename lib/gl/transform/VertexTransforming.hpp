@@ -24,6 +24,7 @@
 #include "ElementLocalData.hpp"
 #include "Lighting.hpp"
 #include "MatrixStore.hpp"
+#include "PlaneClipper.hpp"
 #include "PrimitiveAssembler.hpp"
 #include "RenderConfigs.hpp"
 #include "Stencil.hpp"
@@ -51,6 +52,7 @@ struct VertexTransformingData
         culling = data.culling;
         stencil = data.stencil;
         texGen = data.texGen;
+        planeClipper = data.planeClipper;
         normalizeLightNormal = data.normalizeLightNormal;
     }
 
@@ -62,6 +64,7 @@ struct VertexTransformingData
     culling::CullingData culling {};
     stencil::StencilData stencil {};
     std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
+    planeclipper::PlaneClipperData planeClipper {};
     bool normalizeLightNormal {};
 };
 
@@ -85,11 +88,24 @@ public:
         m_primitiveAssembler.pushParameter(param);
 
         const tcb::span<const primitiveassembler::PrimitiveAssemblerCalc::Triangle> triangles = m_primitiveAssembler.getPrimitive();
-        for (const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle : triangles)
+        for (primitiveassembler::PrimitiveAssemblerCalc::Triangle triangle : triangles)
         {
-            if (!drawTriangle(triangle))
+            if (m_planeClipper.enabled())
             {
-                return false;
+                if (!drawPlaneClippedTriangle(triangle))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                triangle[0].vertex = m_data.transformMatrices.projection.transform(triangle[0].vertex);
+                triangle[1].vertex = m_data.transformMatrices.projection.transform(triangle[1].vertex);
+                triangle[2].vertex = m_data.transformMatrices.projection.transform(triangle[2].vertex);
+                if (!drawTriangle(triangle))
+                {
+                    return false;
+                }
             }
         }
         if (!triangles.empty())
@@ -102,14 +118,46 @@ public:
     void init()
     {
         m_primitiveAssembler.init();
-        if (m_data.lighting.lightingEnabled || texGenActive())
+        if (m_data.lighting.lightingEnabled)
         {
             m_normalMatrix = createNormalMatrix();
         }
-        m_modelViewProjectionMatrix = createModelProjectionMatrix();
     }
 
 private:
+    bool drawPlaneClippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle)
+    {
+        planeclipper::PlaneClipperCalc::ClipList list;
+        planeclipper::PlaneClipperCalc::ClipList listBuffer;
+
+        list[0] = triangle[0];
+        list[1] = triangle[1];
+        list[2] = triangle[2];
+
+        tcb::span<VertexParameter> clippedVertexParameter = m_planeClipper.clip(list, listBuffer);
+
+        if (clippedVertexParameter.empty())
+        {
+            return true;
+        }
+
+        for (std::size_t i = 0; i < clippedVertexParameter.size(); i++)
+        {
+            clippedVertexParameter[i].vertex = m_data.transformMatrices.projection.transform(clippedVertexParameter[i].vertex);
+        }
+
+        bool ret = true;
+        for (std::size_t i = 3; i <= clippedVertexParameter.size(); i++)
+        {
+            ret = ret && drawTriangle({
+                      clippedVertexParameter[0],
+                      clippedVertexParameter[i - 2],
+                      clippedVertexParameter[i - 1],
+                  });
+        }
+        return ret;
+    }
+
     bool texGenActive() const
     {
         for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
@@ -155,7 +203,7 @@ private:
             const Vec4 c = parameter.color;
             lighting::LightingCalc { m_data.lighting }.calculateLights(parameter.color, c, vl, normal);
         }
-        parameter.vertex = m_modelViewProjectionMatrix.transform(parameter.vertex);
+        parameter.vertex = m_data.transformMatrices.modelView.transform(parameter.vertex);
     }
 
     bool drawClippedTriangleList(tcb::span<VertexParameter> list)
@@ -208,9 +256,9 @@ private:
     {
         // Optimized version of the drawTriangle when a triangle is not needed to be clipped.
 
-        Vec4 v0 = triangle[0].get().vertex;
-        Vec4 v1 = triangle[1].get().vertex;
-        Vec4 v2 = triangle[2].get().vertex;
+        Vec4 v0 = triangle[0].vertex;
+        Vec4 v1 = triangle[1].vertex;
+        Vec4 v2 = triangle[2].vertex;
 
         // Perspective division
         v0.perspectiveDivide();
@@ -242,27 +290,17 @@ private:
             v0,
             v1,
             v2,
-            triangle[0].get().tex,
-            triangle[1].get().tex,
-            triangle[2].get().tex,
-            triangle[0].get().color,
-            triangle[1].get().color,
-            triangle[2].get().color,
+            triangle[0].tex,
+            triangle[1].tex,
+            triangle[2].tex,
+            triangle[0].color,
+            triangle[1].color,
+            triangle[2].color,
         });
     }
 
-    bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle)
+    bool drawClippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle)
     {
-        if (Clipper::isInside(triangle[0].get().vertex, triangle[1].get().vertex, triangle[2].get().vertex))
-        {
-            return drawUnclippedTriangle(triangle);
-        }
-
-        if (Clipper::isOutside(triangle[0].get().vertex, triangle[1].get().vertex, triangle[2].get().vertex))
-        {
-            return true;
-        }
-
         Clipper::ClipList list;
         Clipper::ClipList listBuffer;
 
@@ -280,6 +318,20 @@ private:
         return drawClippedTriangleList(clippedVertexParameter);
     }
 
+    bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle)
+    {
+        if (Clipper::isInside(triangle[0].vertex, triangle[1].vertex, triangle[2].vertex))
+        {
+            return drawUnclippedTriangle(triangle);
+        }
+
+        if (Clipper::isOutside(triangle[0].vertex, triangle[1].vertex, triangle[2].vertex))
+        {
+            return true;
+        }
+        return drawClippedTriangle(triangle);
+    }
+
     Mat44 createModelProjectionMatrix() const
     {
         return m_data.transformMatrices.modelView * m_data.transformMatrices.projection;
@@ -293,7 +345,6 @@ private:
         return normalMat;
     }
 
-    Mat44 m_modelViewProjectionMatrix {};
     Mat44 m_normalMatrix {};
 
     const VertexTransformingData& m_data;
@@ -303,6 +354,7 @@ private:
         m_data.viewPort,
         m_data.primitiveAssembler,
     };
+    planeclipper::PlaneClipperCalc m_planeClipper { m_data.planeClipper };
 };
 
 } // namespace rr::vertextransforming
