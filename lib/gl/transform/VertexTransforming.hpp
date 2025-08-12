@@ -88,20 +88,26 @@ public:
         m_primitiveAssembler.pushParameter(param);
 
         const tcb::span<const primitiveassembler::PrimitiveAssemblerCalc::Triangle> triangles = m_primitiveAssembler.getPrimitive();
-        for (primitiveassembler::PrimitiveAssemblerCalc::Triangle triangle : triangles)
+        for (const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle : triangles)
         {
+            // TODO: Check how to improve the transformation.
+            // First problem: Before the clipping plane or everything else can be calculated, a
+            // full triangle from the primitive assembler is required.
+            // Second problem: Only the clipping plane requires vertices in eye coordinates after
+            // primitive assembly. Without clipping plane or after the clipping plane, only
+            // projected vertices are required. That means, without clipping plane, the projection
+            // could be applied in the transform() method is a precalculated modelViewProjection
+            // matrix. A modelViewProjection matrix in the transform() method can safe almost three
+            // projection transformations.
             if (m_planeClipper.enabled())
             {
-                if (!drawPlaneClippedTriangle(triangle))
+                if (!clipAtPlaneAndDrawTriangle(triangle))
                 {
                     return false;
                 }
             }
             else
             {
-                triangle[0].vertex = m_data.transformMatrices.projection.transform(triangle[0].vertex);
-                triangle[1].vertex = m_data.transformMatrices.projection.transform(triangle[1].vertex);
-                triangle[2].vertex = m_data.transformMatrices.projection.transform(triangle[2].vertex);
                 if (!drawTriangle(triangle))
                 {
                     return false;
@@ -125,7 +131,7 @@ public:
     }
 
 private:
-    bool drawPlaneClippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle)
+    bool clipAtPlaneAndDrawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle)
     {
         planeclipper::PlaneClipperCalc::ClipList list;
         planeclipper::PlaneClipperCalc::ClipList listBuffer;
@@ -141,11 +147,6 @@ private:
             return true;
         }
 
-        for (std::size_t i = 0; i < clippedVertexParameter.size(); i++)
-        {
-            clippedVertexParameter[i].vertex = m_data.transformMatrices.projection.transform(clippedVertexParameter[i].vertex);
-        }
-
         bool ret = true;
         for (std::size_t i = 3; i <= clippedVertexParameter.size(); i++)
         {
@@ -156,21 +157,6 @@ private:
                   });
         }
         return ret;
-    }
-
-    bool texGenActive() const
-    {
-        for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
-        {
-            if (m_data.tmuEnabled[tu])
-            {
-                if (texgen::TexGenCalc::texGenActive(m_data.texGen[tu]))
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     void transform(VertexParameter& parameter)
@@ -320,16 +306,21 @@ private:
 
     bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Triangle& triangle)
     {
-        if (Clipper::isInside(triangle[0].vertex, triangle[1].vertex, triangle[2].vertex))
+        primitiveassembler::PrimitiveAssemblerCalc::Triangle projectedTriangle = triangle;
+        projectedTriangle[0].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[0].vertex);
+        projectedTriangle[1].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[1].vertex);
+        projectedTriangle[2].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[2].vertex);
+
+        if (Clipper::isInside(projectedTriangle[0].vertex, projectedTriangle[1].vertex, projectedTriangle[2].vertex))
         {
-            return drawUnclippedTriangle(triangle);
+            return drawUnclippedTriangle(projectedTriangle);
         }
 
-        if (Clipper::isOutside(triangle[0].vertex, triangle[1].vertex, triangle[2].vertex))
+        if (Clipper::isOutside(projectedTriangle[0].vertex, projectedTriangle[1].vertex, projectedTriangle[2].vertex))
         {
             return true;
         }
-        return drawClippedTriangle(triangle);
+        return drawClippedTriangle(projectedTriangle);
     }
 
     Mat44 createModelProjectionMatrix() const

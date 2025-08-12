@@ -56,11 +56,6 @@ public:
         const Vec4& v0,
         const Vec3& n0) const;
 
-    static bool texGenActive(const TexGenData& texGenData)
-    {
-        return texGenData.texGenEnableS || texGenData.texGenEnableT || texGenData.texGenEnableR;
-    }
-
 private:
     void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
     void calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex) const;
