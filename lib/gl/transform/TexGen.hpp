@@ -63,7 +63,7 @@ public:
 
 private:
     void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;
-    void calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex, const Mat44& normalMatrix) const;
+    void calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex) const;
     void calculateSphereMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
     void calculateReflectionMap(Vec4& st0, const Vec4& eyeVertex, const Vec3& eyeNormal) const;
     Vec3 calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) const;
@@ -88,10 +88,13 @@ public:
     void setTexGenVecEyeT(const Vec4& val);
     void setTexGenVecEyeR(const Vec4& val);
 
-    void setTexGenData(TexGenData& texGenCalc);
+    void setTexGenData(TexGenData& texGenCalc, const Mat44& modelViewMatrix);
 
 private:
+    Mat44 getInvertedModelViewMatrix() const;
+
     TexGenData* m_data { nullptr };
+    const Mat44* m_modelViewMatrix { nullptr };
 };
 
 } // namespace rr::texgen

@@ -39,7 +39,7 @@ void TexGenCalc::calculateTexGenCoords(
             || (m_data.texGenModeT == TexGenMode::EYE_LINEAR)
             || (m_data.texGenModeR == TexGenMode::EYE_LINEAR))
         {
-            calculateEyeLinear(st0, modelViewMatrix.transform(v0), normalMatrix);
+            calculateEyeLinear(st0, modelViewMatrix.transform(v0));
         }
         if ((m_data.texGenModeS == TexGenMode::SPHERE_MAP)
             || (m_data.texGenModeT == TexGenMode::SPHERE_MAP)
@@ -72,19 +72,19 @@ void TexGenCalc::calculateObjectLinear(Vec4& st0, const Vec4& v0) const
     }
 }
 
-void TexGenCalc::calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex, const Mat44& normalMatrix) const
+void TexGenCalc::calculateEyeLinear(Vec4& st0, const Vec4& eyeVertex) const
 {
     if (m_data.texGenEnableS && (m_data.texGenModeS == TexGenMode::EYE_LINEAR))
     {
-        st0[0] = normalMatrix.transform(m_data.texGenVecEyeS).dot(eyeVertex);
+        st0[0] = m_data.texGenVecEyeS.dot(eyeVertex);
     }
     if (m_data.texGenEnableT && (m_data.texGenModeT == TexGenMode::EYE_LINEAR))
     {
-        st0[1] = normalMatrix.transform(m_data.texGenVecEyeT).dot(eyeVertex);
+        st0[1] = m_data.texGenVecEyeT.dot(eyeVertex);
     }
     if (m_data.texGenEnableR && (m_data.texGenModeR == TexGenMode::EYE_LINEAR))
     {
-        st0[2] = normalMatrix.transform(m_data.texGenVecEyeR).dot(eyeVertex);
+        st0[2] = m_data.texGenVecEyeR.dot(eyeVertex);
     }
 }
 
@@ -140,9 +140,10 @@ Vec3 TexGenCalc::calculateReflectionVector(Vec4 eyeVertex, const Vec3& eyeNormal
     return eyeVertex3 - (eyeNormal * dotResult);
 }
 
-void TexGenSetter::setTexGenData(TexGenData& texGenCalc)
+void TexGenSetter::setTexGenData(TexGenData& texGenCalc, const Mat44& modelViewMatrix)
 {
     m_data = &texGenCalc;
+    m_modelViewMatrix = &modelViewMatrix;
 }
 
 void TexGenSetter::enableTexGenS(bool enable)
@@ -192,17 +193,24 @@ void TexGenSetter::setTexGenVecObjR(const Vec4& val)
 
 void TexGenSetter::setTexGenVecEyeS(const Vec4& val)
 {
-    m_data->texGenVecEyeS = val;
+    m_data->texGenVecEyeS = getInvertedModelViewMatrix().transform(val);
 }
 
 void TexGenSetter::setTexGenVecEyeT(const Vec4& val)
 {
-    m_data->texGenVecEyeT = val;
+    m_data->texGenVecEyeT = getInvertedModelViewMatrix().transform(val);
 }
 
 void TexGenSetter::setTexGenVecEyeR(const Vec4& val)
 {
-    m_data->texGenVecEyeR = val;
+    m_data->texGenVecEyeR = getInvertedModelViewMatrix().transform(val);
+}
+
+Mat44 TexGenSetter::getInvertedModelViewMatrix() const
+{
+    Mat44 inverseModelViewMatrix = *m_modelViewMatrix;
+    inverseModelViewMatrix.invert();
+    return inverseModelViewMatrix;
 }
 
 } // namespace rr::texgen
