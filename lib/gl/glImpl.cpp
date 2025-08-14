@@ -1520,7 +1520,7 @@ GLAPI void APIENTRY impl_glLineWidth(GLfloat width)
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
     }
-    RIXGL::getInstance().pipeline().getPrimitiveAssembler().setLineWidth(width);
+    RIXGL::getInstance().pipeline().getLineAssembly().setLineWidth(width);
 }
 
 GLAPI void APIENTRY impl_glListBase(GLuint base)

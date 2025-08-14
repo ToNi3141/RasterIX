@@ -14,6 +14,7 @@ add_library(gl STATIC
     transform/PrimitiveAssembler.cpp
     transform/PlaneClipper.cpp
     transform/Stencil.cpp
+    transform/LineAssembly.cpp
     pixelpipeline/PixelPipeline.cpp
     pixelpipeline/Fogging.cpp
     pixelpipeline/Texture.cpp

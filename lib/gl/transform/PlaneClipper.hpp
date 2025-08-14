@@ -46,13 +46,15 @@ public:
     }
 
     bool enabled() { return m_data.enable; }
-    tcb::span<VertexParameter> clip(ClipList& __restrict list, ClipList& __restrict listBuffer);
+    tcb::span<VertexParameter> clipTriangle(ClipList& __restrict list, ClipList& __restrict listBuffer);
+    tcb::span<VertexParameter> clipLine(ClipList& __restrict list, ClipList& __restrict listBuffer);
 
 private:
     inline static float isInPlane(const float e) { return e > 0.0f; }
     inline static float planeEquationLerpAmount(const float e0, const float e1) { return e0 / (e0 - e1); }
     inline static float planeEquation(const Vec4& v, const Vec4& e) { return v.dot(e); }
-    std::size_t clipAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn, const std::size_t listSize);
+    tcb::span<VertexParameter> clipTriangleAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
+    tcb::span<VertexParameter> clipLineAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
 
     const PlaneClipperData& m_data;
 };

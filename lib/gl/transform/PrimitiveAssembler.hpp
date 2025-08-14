@@ -32,13 +32,12 @@ struct PrimitiveAssemblerData
 {
     DrawMode mode { DrawMode::TRIANGLES };
     std::size_t primitiveCount {};
-    float lineWidth { 1.0f };
 };
 
 class PrimitiveAssemblerCalc
 {
 public:
-    using Triangle = std::array<VertexParameter, 3>;
+    using Primitive = tcb::span<const VertexParameter>;
 
     PrimitiveAssemblerCalc(const viewport::ViewPortData& viewPortData, const PrimitiveAssemblerData& primitiveAssemblerData)
         : m_viewPortData { viewPortData }
@@ -53,7 +52,7 @@ public:
         clear();
     }
 
-    tcb::span<const Triangle> getPrimitive()
+    Primitive getPrimitive()
     {
         if (m_line)
         {
@@ -71,14 +70,8 @@ public:
 private:
     void clear();
     void updateMode();
-    tcb::span<const Triangle> constructTriangle();
-    tcb::span<const Triangle> constructLine();
-    tcb::span<const Triangle> drawLine(const Vec4& v0,
-        const Vec4& v1,
-        const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0,
-        const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1,
-        const Vec4& c0,
-        const Vec4& c1);
+    PrimitiveAssemblerCalc::Primitive constructTriangle();
+    PrimitiveAssemblerCalc::Primitive constructLine();
 
     FixedSizeQueue<VertexParameter, 3> m_queue {};
 
@@ -90,8 +83,7 @@ private:
     const viewport::ViewPortData& m_viewPortData;
     const PrimitiveAssemblerData& m_primitiveAssemblerData;
     bool m_line { false };
-    std::array<VertexParameter, 6> m_vertexParameters;
-    std::array<PrimitiveAssemblerCalc::Triangle, 2> m_triangleBuffer { { { { m_pTmp, m_pTmp, m_pTmp } }, { { m_pTmp, m_pTmp, m_pTmp } } } };
+    std::array<VertexParameter, 3> m_primitiveBuffer;
 };
 
 class PrimitiveAssemblerSetter
@@ -104,7 +96,6 @@ public:
 
     void setExpectedPrimitiveCount(const std::size_t count) { m_data.primitiveCount = count; }
     void setDrawMode(const DrawMode mode) { m_data.mode = mode; };
-    void setLineWidth(const float width) { m_data.lineWidth = width; }
 
 private:
     PrimitiveAssemblerData& m_data;

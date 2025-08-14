@@ -20,14 +20,19 @@
 namespace rr::planeclipper
 {
 
-tcb::span<VertexParameter> PlaneClipperCalc::clip(ClipList& __restrict list, ClipList& __restrict listBuffer)
+tcb::span<VertexParameter> PlaneClipperCalc::clipTriangle(ClipList& __restrict list, ClipList& __restrict listBuffer)
 {
-    const std::size_t numberOfVerts = clipAgainstPlane(listBuffer, list, 3);
-    return { listBuffer.data(), numberOfVerts };
+    return clipTriangleAgainstPlane(listBuffer, list);
 }
 
-std::size_t PlaneClipperCalc::clipAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn, const std::size_t listSize)
+tcb::span<VertexParameter> PlaneClipperCalc::clipLine(ClipList& __restrict list, ClipList& __restrict listBuffer)
 {
+    return clipLineAgainstPlane(listBuffer, list);
+}
+
+tcb::span<VertexParameter> PlaneClipperCalc::clipTriangleAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
+{
+    constexpr std::size_t listSize = 3;
     // Start Clipping
     std::size_t i = 0;
     bool flagIfSomeVertexIsInside = false;
@@ -39,7 +44,7 @@ std::size_t PlaneClipperCalc::clipAgainstPlane(ClipList& __restrict listOut, con
         {
             if (i == listOut.size())
             {
-                return 0;
+                return {};
             }
 
             // std::size_t vertPrev = (vert - 1) % listSize;
@@ -74,9 +79,41 @@ std::size_t PlaneClipperCalc::clipAgainstPlane(ClipList& __restrict listOut, con
 
     if (flagIfSomeVertexIsInside)
     {
-        return i;
+        return { listOut.data(), i };
     }
-    return 0;
+    return {};
+}
+
+tcb::span<VertexParameter> PlaneClipperCalc::clipLineAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
+{
+    listOut[0] = listIn[0];
+    listOut[1] = listIn[1];
+    const float a = planeEquation(listIn[0].vertex, m_data.equation);
+    const float b = planeEquation(listIn[1].vertex, m_data.equation);
+
+    if (!isInPlane(a) && !isInPlane(b))
+    {
+        return {};
+    }
+
+    if (isInPlane(a) && isInPlane(b))
+    {
+        return { listOut.data(), 2 };
+    }
+
+    if (!isInPlane(a) && isInPlane(b))
+    {
+        listOut[0] = clippinghelper::ClippingHelper::lerp(planeEquationLerpAmount(a, b), listIn[0], listIn[1]);
+        return { listOut.data(), 2 };
+    }
+
+    if (isInPlane(a) && !isInPlane(b))
+    {
+        listOut[1] = clippinghelper::ClippingHelper::lerp(planeEquationLerpAmount(b, a), listIn[1], listIn[0]);
+        return { listOut.data(), 2 };
+    }
+
+    return {};
 }
 
 } // namespace rr::planeclipper
