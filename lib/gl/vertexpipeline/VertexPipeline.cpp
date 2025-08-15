@@ -35,8 +35,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
 {
     for (std::size_t i = 0; i < m_texGen.size(); i++)
     {
-        m_texGen[i].setNormalMat(m_elementLocalData.transformMatrices.normal);
-        m_texGen[i].setTexGenData(m_elementGlobalData.texGen[i]);
+        m_texGen[i].setTexGenData(m_elementGlobalData.texGen[i], m_matrixStore.getModelView());
     }
     setEnableNormalizing(false);
 }
@@ -77,7 +76,6 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
         SPDLOG_INFO("drawObj(): Vertex array disabled. No primitive is rendered.");
         return true;
     }
-    m_matrixStore.recalculateMatrices();
 
     updateGlobalElementContext();
 

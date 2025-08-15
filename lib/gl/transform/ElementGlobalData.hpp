@@ -20,6 +20,8 @@
 
 #include "RenderConfigs.hpp"
 #include "transform/Culling.hpp"
+#include "transform/LineAssembly.hpp"
+#include "transform/PlaneClipper.hpp"
 #include "transform/Stencil.hpp"
 #include "transform/TexGen.hpp"
 #include "transform/ViewPort.hpp"
@@ -33,6 +35,8 @@ struct ElementGlobalData
     culling::CullingData culling {};
     stencil::StencilData stencil {};
     std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
+    planeclipper::PlaneClipperData planeClipper {};
+    lineassembly::LineAssemblyData lineAssemblyData {};
     bool normalizeLightNormal {};
 };
 

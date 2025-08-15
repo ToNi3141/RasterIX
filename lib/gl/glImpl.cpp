@@ -157,7 +157,18 @@ GLAPI void APIENTRY impl_glClearStencil(GLint s)
 
 GLAPI void APIENTRY impl_glClipPlane(GLenum plane, const GLdouble* equation)
 {
-    SPDLOG_WARN("glClipPlane not implemented");
+    SPDLOG_DEBUG("glClipPlane ({}, {}, {}, {}) called",
+        equation[0],
+        equation[1],
+        equation[2],
+        equation[3]);
+    const Vec4 equationFloat {
+        (static_cast<float>(equation[0])),
+        (static_cast<float>(equation[1])),
+        (static_cast<float>(equation[2])),
+        (static_cast<float>(equation[3]))
+    };
+    RIXGL::getInstance().pipeline().getPlaneClipper().setEquation(equationFloat);
 }
 
 GLAPI void APIENTRY impl_glColor3b(GLbyte red, GLbyte green, GLbyte blue)
@@ -774,6 +785,10 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         SPDLOG_DEBUG("glDisable GL_COLOR_LOGIC_OP called");
         RIXGL::getInstance().pipeline().featureEnable().setEnableLogicOp(false);
         break;
+    case GL_CLIP_PLANE0:
+        SPDLOG_DEBUG("glDisable GL_CLIP_PLANE0 called");
+        RIXGL::getInstance().pipeline().getPlaneClipper().setEnable(false);
+        break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -879,6 +894,10 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     case GL_COLOR_LOGIC_OP:
         SPDLOG_DEBUG("glEnable GL_COLOR_LOGIC_OP called");
         RIXGL::getInstance().pipeline().featureEnable().setEnableLogicOp(true);
+        break;
+    case GL_CLIP_PLANE0:
+        SPDLOG_DEBUG("glEnable GL_CLIP_PLANE0 called");
+        RIXGL::getInstance().pipeline().getPlaneClipper().setEnable(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
@@ -1166,6 +1185,9 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint* params)
         break;
     case GL_STENCIL_BITS:
         *params = rr::StencilReg::MAX_STENCIL_VAL;
+        break;
+    case GL_MAX_CLIP_PLANES:
+        *params = 1;
         break;
     default:
         *params = 0;
@@ -1498,7 +1520,7 @@ GLAPI void APIENTRY impl_glLineWidth(GLfloat width)
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
     }
-    RIXGL::getInstance().pipeline().getPrimitiveAssembler().setLineWidth(width);
+    RIXGL::getInstance().pipeline().getLineAssembly().setLineWidth(width);
 }
 
 GLAPI void APIENTRY impl_glListBase(GLuint base)

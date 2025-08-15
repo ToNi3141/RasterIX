@@ -16,29 +16,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Clipper.hpp"
+#include "ClippingHelper.hpp"
 
 namespace rr
 {
-
-Vec4 Clipper::lerpVert(const Vec4& v0, const Vec4& v1, const float amt)
-{
-    Vec4 vOut;
-    vOut[3] = ((v0[3] - v1[3]) * (1 - amt)) + v1[3];
-    vOut[2] = ((v0[2] - v1[2]) * (1 - amt)) + v1[2];
-    vOut[1] = ((v0[1] - v1[1]) * (1 - amt)) + v1[1];
-    vOut[0] = ((v0[0] - v1[0]) * (1 - amt)) + v1[0];
-    return vOut;
-}
-
-std::array<Vec4, RenderConfig::TMU_COUNT> Clipper::lerpTexCoord(const std::array<Vec4, RenderConfig::TMU_COUNT>& v0, const std::array<Vec4, RenderConfig::TMU_COUNT>& v1, const float amt)
-{
-    std::array<Vec4, RenderConfig::TMU_COUNT> vOut;
-    for (std::size_t i = 0; i < vOut.size(); i++)
-    {
-        vOut[i] = lerpVert(v0[i], v1[i], amt);
-    }
-    return vOut;
-}
 
 bool Clipper::hasOutCode(const Vec4& v, const OutCode oc)
 {
@@ -131,16 +112,6 @@ tcb::span<VertexParameter> Clipper::clip(ClipList& __restrict list, ClipList& __
     return { listIn->data(), numberOfVerts };
 }
 
-VertexParameter Clipper::lerp(const OutCode clipPlane, const VertexParameter& curr, const VertexParameter& next)
-{
-    VertexParameter out;
-    const float lerpw = lerpAmt(clipPlane, curr.vertex, next.vertex);
-    out.vertex = lerpVert(curr.vertex, next.vertex, lerpw);
-    out.color = lerpVert(curr.color, next.color, lerpw);
-    out.tex = lerpTexCoord(curr.tex, next.tex, lerpw);
-    return out;
-}
-
 std::size_t Clipper::clipAgainstPlane(ClipList& __restrict listOut, const OutCode clipPlane, const ClipList& listIn, const std::size_t listSize)
 {
     // Start Clipping
@@ -154,7 +125,7 @@ std::size_t Clipper::clipAgainstPlane(ClipList& __restrict listOut, const OutCod
             const std::size_t vertPrev = (vert - 1) < 0 ? listSize - 1 : static_cast<std::size_t>(vert - 1);
             if (!hasOutCode(listIn[vertPrev].vertex, clipPlane))
             {
-                listOut[i] = lerp(clipPlane, listIn[vert], listIn[vertPrev]);
+                listOut[i] = clippinghelper::ClippingHelper::lerp(lerpAmt(clipPlane, listIn[vert].vertex, listIn[vertPrev].vertex), listIn[vert], listIn[vertPrev]);
                 i++;
             }
 
@@ -162,7 +133,7 @@ std::size_t Clipper::clipAgainstPlane(ClipList& __restrict listOut, const OutCod
             const std::size_t vertNext = ((vert + 1) >= static_cast<int32_t>(listSize)) ? 0 : static_cast<std::size_t>(vert + 1);
             if (!hasOutCode(listIn[vertNext].vertex, clipPlane))
             {
-                listOut[i] = lerp(clipPlane, listIn[vert], listIn[vertNext]);
+                listOut[i] = clippinghelper::ClippingHelper::lerp(lerpAmt(clipPlane, listIn[vert].vertex, listIn[vertNext].vertex), listIn[vert], listIn[vertNext]);
                 i++;
             }
         }

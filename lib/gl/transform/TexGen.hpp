@@ -21,25 +21,24 @@
 #include "Enums.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
-#include "transform/MatrixStore.hpp"
 
 namespace rr::texgen
 {
 
 struct TexGenData
 {
-    bool texGenEnableS { false };
-    bool texGenEnableT { false };
-    bool texGenEnableR { false };
-    TexGenMode texGenModeS { TexGenMode::EYE_LINEAR };
-    TexGenMode texGenModeT { TexGenMode::EYE_LINEAR };
-    TexGenMode texGenModeR { TexGenMode::EYE_LINEAR };
     Vec4 texGenVecObjS { { 1.0f, 0.0f, 0.0f, 0.0f } };
     Vec4 texGenVecObjT { { 0.0f, 1.0f, 0.0f, 0.0f } };
     Vec4 texGenVecObjR { { 0.0f, 0.0f, 1.0f, 0.0f } };
     Vec4 texGenVecEyeS { { 1.0f, 0.0f, 0.0f, 0.0f } };
     Vec4 texGenVecEyeT { { 0.0f, 1.0f, 0.0f, 0.0f } };
     Vec4 texGenVecEyeR { { 0.0f, 0.0f, 1.0f, 0.0f } };
+    TexGenMode texGenModeS { TexGenMode::EYE_LINEAR };
+    TexGenMode texGenModeT { TexGenMode::EYE_LINEAR };
+    TexGenMode texGenModeR { TexGenMode::EYE_LINEAR };
+    bool texGenEnableS { false };
+    bool texGenEnableT { false };
+    bool texGenEnableR { false };
 };
 
 class TexGenCalc
@@ -52,7 +51,8 @@ public:
 
     void calculateTexGenCoords(
         Vec4& st0,
-        const matrixstore::TransformMatricesData& matrices,
+        const Mat44& modelViewMatrix,
+        const Mat44& normalMatrix,
         const Vec4& v0,
         const Vec3& n0) const;
 
@@ -83,12 +83,13 @@ public:
     void setTexGenVecEyeT(const Vec4& val);
     void setTexGenVecEyeR(const Vec4& val);
 
-    void setNormalMat(const Mat44& normalMat);
-    void setTexGenData(TexGenData& texGenCalc);
+    void setTexGenData(TexGenData& texGenCalc, const Mat44& modelViewMatrix);
 
 private:
-    const Mat44* m_normalMat { nullptr };
+    Mat44 getInvertedModelViewMatrix() const;
+
     TexGenData* m_data { nullptr };
+    const Mat44* m_modelViewMatrix { nullptr };
 };
 
 } // namespace rr::texgen
