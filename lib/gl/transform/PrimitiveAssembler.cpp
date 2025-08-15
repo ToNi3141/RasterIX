@@ -93,9 +93,7 @@ PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructLine()
         return {};
     }
 
-    std::size_t last = (m_count == (m_primitiveAssemblerData.primitiveCount - 1));
-    VertexParameter* p0;
-    VertexParameter* p1;
+    const std::size_t last = (m_count == (m_primitiveAssemblerData.primitiveCount - 1));
 
     switch (m_primitiveAssemblerData.mode)
     {
