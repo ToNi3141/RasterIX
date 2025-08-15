@@ -404,11 +404,6 @@ private:
         return true;
     }
 
-    Mat44 createModelProjectionMatrix() const
-    {
-        return m_data.transformMatrices.modelView * m_data.transformMatrices.projection;
-    }
-
     Mat44 createNormalMatrix() const
     {
         Mat44 normalMat = m_data.transformMatrices.modelView;
