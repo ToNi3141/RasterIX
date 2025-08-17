@@ -789,6 +789,10 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         SPDLOG_DEBUG("glDisable GL_CLIP_PLANE0 called");
         RIXGL::getInstance().pipeline().getPlaneClipper().setEnable(false);
         break;
+    case GL_POLYGON_OFFSET_FILL:
+        SPDLOG_DEBUG("glDisable GL_POLYGON_OFFSET_FILL called");
+        RIXGL::getInstance().pipeline().getPolygonOffset().setEnableFill(false);
+        break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -898,6 +902,10 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     case GL_CLIP_PLANE0:
         SPDLOG_DEBUG("glEnable GL_CLIP_PLANE0 called");
         RIXGL::getInstance().pipeline().getPlaneClipper().setEnable(true);
+        break;
+    case GL_POLYGON_OFFSET_FILL:
+        SPDLOG_DEBUG("glEnable GL_POLYGON_OFFSET_FILL called");
+        RIXGL::getInstance().pipeline().getPolygonOffset().setEnableFill(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
@@ -3680,7 +3688,10 @@ GLAPI void APIENTRY impl_glNormalPointer(GLenum type, GLsizei stride, const GLvo
 
 GLAPI void APIENTRY impl_glPolygonOffset(GLfloat factor, GLfloat units)
 {
-    SPDLOG_WARN("glPolygonOffset factor {} units {} not implemented", factor, units);
+    SPDLOG_DEBUG("glPolygonOffset factor {} units {} called", factor, units);
+
+    RIXGL::getInstance().pipeline().getPolygonOffset().setFactor(factor);
+    RIXGL::getInstance().pipeline().getPolygonOffset().setUnits(units);
 }
 
 GLAPI void APIENTRY impl_glPopClientAttrib(void)

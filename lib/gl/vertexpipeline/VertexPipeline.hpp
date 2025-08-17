@@ -27,6 +27,7 @@
 #include "transform/Lighting.hpp"
 #include "transform/MatrixStore.hpp"
 #include "transform/PlaneClipper.hpp"
+#include "transform/PolygonOffset.hpp"
 #include "transform/PrimitiveAssembler.hpp"
 #include "transform/Stencil.hpp"
 #include "transform/TexGen.hpp"
@@ -88,7 +89,8 @@ public:
     culling::CullingSetter& getCulling() { return m_culling; }
     primitiveassembler::PrimitiveAssemblerSetter& getPrimitiveAssembler() { return m_primitiveAssembler; }
     planeclipper::PlaneClipperSetter& getPlaneClipper() { return m_planeClipper; }
-    lineassembly::LineAssemblySetter& getLineAssembly() { return m_lineAssemblySetter; }
+    lineassembly::LineAssemblySetter& getLineAssembly() { return m_lineAssembly; }
+    polygonoffset::PolygonOffsetSetter& getPolygonOffset() { return m_polygonOffset; };
 
 private:
     VertexParameter fetch(const RenderObj& obj, std::size_t i);
@@ -114,7 +116,8 @@ private:
     std::array<texgen::TexGenSetter, RenderConfig::TMU_COUNT> m_texGen {};
     primitiveassembler::PrimitiveAssemblerSetter m_primitiveAssembler { m_elementLocalData.primitiveAssembler };
     planeclipper::PlaneClipperSetter m_planeClipper { m_elementGlobalData.planeClipper, m_matrixStore.getModelView() };
-    lineassembly::LineAssemblySetter m_lineAssemblySetter { m_elementGlobalData.lineAssemblyData };
+    lineassembly::LineAssemblySetter m_lineAssembly { m_elementGlobalData.lineAssembly };
+    polygonoffset::PolygonOffsetSetter m_polygonOffset { m_elementGlobalData.polygonOffset };
 };
 
 } // namespace rr

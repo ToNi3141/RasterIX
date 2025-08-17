@@ -13,6 +13,7 @@ add_library(gl STATIC
     transform/Culling.cpp
     transform/PrimitiveAssembler.cpp
     transform/PlaneClipper.cpp
+    transform/PolygonOffset.cpp
     transform/Stencil.cpp
     transform/LineAssembly.cpp
     pixelpipeline/PixelPipeline.cpp

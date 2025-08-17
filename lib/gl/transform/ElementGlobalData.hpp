@@ -22,6 +22,7 @@
 #include "transform/Culling.hpp"
 #include "transform/LineAssembly.hpp"
 #include "transform/PlaneClipper.hpp"
+#include "transform/PolygonOffset.hpp"
 #include "transform/Stencil.hpp"
 #include "transform/TexGen.hpp"
 #include "transform/ViewPort.hpp"
@@ -36,7 +37,8 @@ struct ElementGlobalData
     stencil::StencilData stencil {};
     std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
     planeclipper::PlaneClipperData planeClipper {};
-    lineassembly::LineAssemblyData lineAssemblyData {};
+    lineassembly::LineAssemblyData lineAssembly {};
+    polygonoffset::PolygonOffsetData polygonOffset {};
     bool normalizeLightNormal {};
 };
 
