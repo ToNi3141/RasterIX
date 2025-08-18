@@ -41,10 +41,9 @@ GLAPI void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref)
 {
     SPDLOG_DEBUG("glAlphaFunc func 0x{:X} ref {}", func, ref);
 
-    RIXGL::getInstance().setError(GL_NO_ERROR);
-    const TestFunc testFunc { convertTestFunc(func) };
-
-    if (RIXGL::getInstance().getError() == GL_NO_ERROR)
+    TestFunc testFunc;
+    const GLenum error = convertTestFunc(testFunc, func);
+    if (error == GL_NO_ERROR)
     {
         // Convert reference value from float to fix point
         ref = cv(ref);
@@ -55,6 +54,10 @@ GLAPI void APIENTRY impl_glAlphaFunc(GLenum func, GLclampf ref)
         }
         RIXGL::getInstance().pipeline().fragmentPipeline().setAlphaFunc(testFunc);
         RIXGL::getInstance().pipeline().fragmentPipeline().setRefAlphaValue(refFix);
+    }
+    else
+    {
+        RIXGL::getInstance().setError(error);
     }
 }
 
@@ -72,7 +75,7 @@ GLAPI void APIENTRY impl_glBitmap(GLsizei width, GLsizei height, GLfloat xOrig, 
 GLAPI void APIENTRY impl_glBlendFunc(GLenum srcFactor, GLenum dstFactor)
 {
     SPDLOG_DEBUG("glBlendFunc srcFactor 0x{:X} dstFactor 0x{:X} called", srcFactor, dstFactor);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+
     if (srcFactor == GL_SRC_ALPHA_SATURATE)
     {
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -98,11 +101,7 @@ GLAPI void APIENTRY impl_glClear(GLbitfield mask)
 {
     SPDLOG_DEBUG("glClear mask 0x{:X} called", mask);
 
-    if (RIXGL::getInstance().pipeline().clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT, mask & GL_STENCIL_BUFFER_BIT))
-    {
-        RIXGL::getInstance().setError(GL_NO_ERROR);
-    }
-    else
+    if (!RIXGL::getInstance().pipeline().clearFramebuffer(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT, mask & GL_STENCIL_BUFFER_BIT))
     {
         RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glClear Out Of Memory");
@@ -117,11 +116,7 @@ GLAPI void APIENTRY impl_glClearAccum(GLfloat red, GLfloat green, GLfloat blue, 
 GLAPI void APIENTRY impl_glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
     SPDLOG_DEBUG("glClearColor ({}, {}, {}, {}) called", red, green, blue, alpha);
-    if (RIXGL::getInstance().pipeline().setClearColor({ cv(red), cv(green), cv(blue), cv(alpha) }))
-    {
-        RIXGL::getInstance().setError(GL_NO_ERROR);
-    }
-    else
+    if (!RIXGL::getInstance().pipeline().setClearColor({ cv(red), cv(green), cv(blue), cv(alpha) }))
     {
         RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glClearColor Out Of Memory");
@@ -132,11 +127,7 @@ GLAPI void APIENTRY impl_glClearDepth(GLclampd depth)
 {
     SPDLOG_DEBUG("glClearDepth {} called", depth);
 
-    if (RIXGL::getInstance().pipeline().setClearDepth(cv(depth)))
-    {
-        RIXGL::getInstance().setError(GL_NO_ERROR);
-    }
-    else
+    if (!RIXGL::getInstance().pipeline().setClearDepth(cv(depth)))
     {
         RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glClearDepth Out Of Memory");
@@ -593,8 +584,8 @@ GLAPI void APIENTRY impl_glColorMask(GLboolean red, GLboolean green, GLboolean b
 GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
 {
     SPDLOG_DEBUG("glColorMaterial face 0x{:X} mode 0x{:X} called", face, mode);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
 
+    bool error = false;
     Face faceConverted {};
     switch (face)
     {
@@ -611,10 +602,11 @@ GLAPI void APIENTRY impl_glColorMaterial(GLenum face, GLenum mode)
         SPDLOG_WARN("glColorMaterial face 0x{:X} not supported", face);
         faceConverted = Face::FRONT_AND_BACK;
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        error = true;
         break;
     }
 
-    if (RIXGL::getInstance().getError() != GL_INVALID_ENUM)
+    if (!error)
     {
         switch (mode)
         {
@@ -677,12 +669,16 @@ GLAPI void APIENTRY impl_glDepthFunc(GLenum func)
 {
     SPDLOG_DEBUG("glDepthFunc 0x{:X} called", func);
 
-    RIXGL::getInstance().setError(GL_NO_ERROR);
-    const TestFunc testFunc { convertTestFunc(func) };
+    TestFunc testFunc;
+    const GLenum error = convertTestFunc(testFunc, func);
 
-    if (RIXGL::getInstance().getError() == GL_NO_ERROR)
+    if (error == GL_NO_ERROR)
     {
         RIXGL::getInstance().pipeline().fragmentPipeline().setDepthFunc(testFunc);
+    }
+    else
+    {
+        RIXGL::getInstance().setError(error);
     }
 }
 
@@ -788,6 +784,10 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
     case GL_CLIP_PLANE0:
         SPDLOG_DEBUG("glDisable GL_CLIP_PLANE0 called");
         RIXGL::getInstance().pipeline().getPlaneClipper().setEnable(false);
+        break;
+    case GL_POLYGON_OFFSET_FILL:
+        SPDLOG_DEBUG("glDisable GL_POLYGON_OFFSET_FILL called");
+        RIXGL::getInstance().pipeline().getPolygonOffset().setEnableFill(false);
         break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
@@ -899,6 +899,10 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         SPDLOG_DEBUG("glEnable GL_CLIP_PLANE0 called");
         RIXGL::getInstance().pipeline().getPlaneClipper().setEnable(true);
         break;
+    case GL_POLYGON_OFFSET_FILL:
+        SPDLOG_DEBUG("glEnable GL_POLYGON_OFFSET_FILL called");
+        RIXGL::getInstance().pipeline().getPolygonOffset().setEnableFill(true);
+        break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -995,7 +999,7 @@ GLAPI void APIENTRY impl_glFlush(void)
 GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
 {
     SPDLOG_DEBUG("glFogf pname 0x{:X} param {} called", pname, param);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+
     switch (pname)
     {
     case GL_FOG_MODE:
@@ -1041,7 +1045,7 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
 GLAPI void APIENTRY impl_glFogfv(GLenum pname, const GLfloat* params)
 {
     SPDLOG_DEBUG("glFogfv {} called", pname);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+
     switch (pname)
     {
     case GL_FOG_MODE:
@@ -1071,7 +1075,7 @@ GLAPI void APIENTRY impl_glFogi(GLenum pname, GLint param)
 GLAPI void APIENTRY impl_glFogiv(GLenum pname, const GLint* params)
 {
     SPDLOG_DEBUG("glFogiv pname 0x{:X} and params called", pname);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+
     switch (pname)
     {
     case GL_FOG_MODE:
@@ -1131,7 +1135,9 @@ GLAPI void APIENTRY impl_glGetDoublev(GLenum pname, GLdouble* params)
 GLAPI GLenum APIENTRY impl_glGetError(void)
 {
     SPDLOG_DEBUG("glGetError called");
-    return RIXGL::getInstance().getError();
+    const GLenum error = RIXGL::getInstance().getError();
+    RIXGL::getInstance().resetError();
+    return error;
 }
 
 GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
@@ -1557,11 +1563,16 @@ GLAPI void APIENTRY impl_glLoadName(GLuint name)
 GLAPI void APIENTRY impl_glLogicOp(GLenum opcode)
 {
     SPDLOG_DEBUG("glLogicOp 0x{:X} called", opcode);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
-    const LogicOp logicOp = convertLogicOp(opcode);
-    if (RIXGL::getInstance().getError() == GL_NO_ERROR)
+
+    LogicOp logicOp;
+    const GLenum error = convertLogicOp(logicOp, opcode);
+    if (error == GL_NO_ERROR)
     {
         RIXGL::getInstance().pipeline().fragmentPipeline().setLogicOp(logicOp);
+    }
+    else
+    {
+        RIXGL::getInstance().setError(error);
     }
 }
 
@@ -1608,7 +1619,7 @@ GLAPI void APIENTRY impl_glMapGrid2f(GLint un, GLfloat u1, GLfloat u2, GLint vn,
 GLAPI void APIENTRY impl_glMaterialf(GLenum face, GLenum pname, GLfloat param)
 {
     SPDLOG_DEBUG("glMaterialf face 0x{:X} pname 0x{:X} param {} called", face, pname, param);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+
     if (face == GL_FRONT_AND_BACK)
     {
         if ((pname == GL_SHININESS) && (param >= 0.0f) && (param <= 128.0f))
@@ -1631,7 +1642,7 @@ GLAPI void APIENTRY impl_glMaterialf(GLenum face, GLenum pname, GLfloat param)
 GLAPI void APIENTRY impl_glMaterialfv(GLenum face, GLenum pname, const GLfloat* params)
 {
     SPDLOG_DEBUG("glMaterialfv face 0x{:X} pname 0x{:X} called", face, pname);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+
     if (face == GL_FRONT_AND_BACK)
     {
         switch (pname)
@@ -1680,7 +1691,7 @@ GLAPI void APIENTRY impl_glMaterialiv(GLenum face, GLenum pname, const GLint* pa
 
 GLAPI void APIENTRY impl_glMatrixMode(GLenum mode)
 {
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+
     if (mode == GL_MODELVIEW)
     {
         SPDLOG_DEBUG("glMatrixMode GL_MODELVIEW called");
@@ -1927,7 +1938,7 @@ GLAPI void APIENTRY impl_glPixelStoref(GLenum pname, GLfloat param)
 GLAPI void APIENTRY impl_glPixelStorei(GLenum pname, GLint param)
 {
     SPDLOG_DEBUG("glPixelStorei pname 0x{:X} param 0x{:X} called", pname, param);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+
     // TODO: Implement GL_UNPACK_ROW_LENGTH
     if (pname == GL_PACK_ALIGNMENT)
     {
@@ -1978,11 +1989,7 @@ GLAPI void APIENTRY impl_glPopAttrib(void)
 GLAPI void APIENTRY impl_glPopMatrix(void)
 {
     SPDLOG_DEBUG("glPopMatrix called");
-    if (RIXGL::getInstance().pipeline().getMatrixStore().popMatrix())
-    {
-        RIXGL::getInstance().setError(GL_NO_ERROR);
-    }
-    else
+    if (!RIXGL::getInstance().pipeline().getMatrixStore().popMatrix())
     {
         RIXGL::getInstance().setError(GL_STACK_OVERFLOW);
     }
@@ -2002,11 +2009,7 @@ GLAPI void APIENTRY impl_glPushMatrix(void)
 {
     SPDLOG_DEBUG("glPushMatrix called");
 
-    if (RIXGL::getInstance().pipeline().getMatrixStore().pushMatrix())
-    {
-        RIXGL::getInstance().setError(GL_NO_ERROR);
-    }
-    else
+    if (!RIXGL::getInstance().pipeline().getMatrixStore().pushMatrix())
     {
         RIXGL::getInstance().setError(GL_STACK_OVERFLOW);
     }
@@ -2264,14 +2267,18 @@ GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
 {
     SPDLOG_DEBUG("glStencilFunc func 0x{:X} ref 0x{:X} mask 0x{:X} called", func, ref, mask);
 
-    RIXGL::getInstance().setError(GL_NO_ERROR);
-    const TestFunc testFunc { convertTestFunc(func) };
+    TestFunc testFunc;
+    const GLenum error = convertTestFunc(testFunc, func);
 
-    if (RIXGL::getInstance().getError() == GL_NO_ERROR)
+    if (error == GL_NO_ERROR)
     {
         RIXGL::getInstance().pipeline().stencil().setTestFunc(testFunc);
         RIXGL::getInstance().pipeline().stencil().setRef(ref);
         RIXGL::getInstance().pipeline().stencil().setMask(mask);
+    }
+    else
+    {
+        RIXGL::getInstance().setError(error);
     }
 }
 
@@ -2285,16 +2292,23 @@ GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 {
     SPDLOG_DEBUG("glStencilOp fail 0x{:X} zfail 0x{:X} zpass 0x{:X} called", fail, zfail, zpass);
 
-    RIXGL::getInstance().setError(GL_NO_ERROR);
-    const StencilOp failOp { convertStencilOp(fail) };
-    const StencilOp zfailOp { convertStencilOp(zfail) };
-    const StencilOp zpassOp { convertStencilOp(zpass) };
+    StencilOp failOp;
+    StencilOp zfailOp;
+    StencilOp zpassOp;
 
-    if (RIXGL::getInstance().getError() == GL_NO_ERROR)
+    const GLenum error0 = convertStencilOp(failOp, fail);
+    const GLenum error1 = convertStencilOp(zfailOp, zfail);
+    const GLenum error2 = convertStencilOp(zpassOp, zpass);
+
+    if ((error0 == GL_NO_ERROR) && (error1 == GL_NO_ERROR) == (error2 == GL_NO_ERROR))
     {
         RIXGL::getInstance().pipeline().stencil().setOpFail(failOp);
         RIXGL::getInstance().pipeline().stencil().setOpZFail(zfailOp);
         RIXGL::getInstance().pipeline().stencil().setOpZPass(zpassOp);
+    }
+    else
+    {
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
     }
 }
 
@@ -2680,12 +2694,9 @@ GLAPI void APIENTRY impl_glTexEnvfv(GLenum target, GLenum pname, const GLfloat* 
 
     if ((target == GL_TEXTURE_ENV) && (pname == GL_TEXTURE_ENV_COLOR))
     {
-        if (RIXGL::getInstance().pipeline().texture().setTexEnvColor({ params[0], params[1], params[2], params[3] }))
+        if (!RIXGL::getInstance().pipeline().texture().setTexEnvColor({ params[0], params[1], params[2], params[3] }))
         {
-            RIXGL::getInstance().setError(GL_NO_ERROR);
-        }
-        else
-        {
+            RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
             SPDLOG_ERROR("glTexEnvfv Out Of Memory");
         }
     }
@@ -2699,7 +2710,6 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
 {
     SPDLOG_DEBUG("glTexEnvi target 0x{:X} pname 0x{:X} param 0x{:X} called", target, pname, param);
 
-    RIXGL::getInstance().setError(GL_NO_ERROR);
     GLenum error { GL_NO_ERROR };
     if (target == GL_TEXTURE_ENV)
     {
@@ -2951,7 +2961,7 @@ GLAPI void APIENTRY impl_glTexGeni(GLenum coord, GLenum pname, GLint param)
 {
     SPDLOG_DEBUG("glTexGeni coord 0x{:X} pname 0x{:X} param 0x{:X} called", coord, pname, param);
     TexGenMode mode {};
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+    bool error { false };
     switch (param)
     {
     case GL_OBJECT_LINEAR:
@@ -2968,11 +2978,12 @@ GLAPI void APIENTRY impl_glTexGeni(GLenum coord, GLenum pname, GLint param)
         break;
     default:
         SPDLOG_WARN("glTexGeni param not supported");
+        error = true;
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
         break;
     }
 
-    if (RIXGL::getInstance().getError() == GL_NO_ERROR && pname == GL_TEXTURE_GEN_MODE)
+    if (!error && (pname == GL_TEXTURE_GEN_MODE))
     {
         switch (coord)
         {
@@ -3024,7 +3035,6 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
 
     (void)border; // Border is not supported and is ignored for now. What does border mean: https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
 
-    RIXGL::getInstance().setError(GL_NO_ERROR);
     const std::size_t maxTexSize { RIXGL::getInstance().getMaxTextureSize() };
 
     if (static_cast<std::size_t>(level) > RIXGL::getInstance().getMaxLOD())
@@ -3059,10 +3069,11 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    const TextureObject::IntendedInternalPixelFormat intendedInternalPixelFormat { TextureConverter::convertToIntendedPixelFormat(internalformat) };
-
-    if (RIXGL::getInstance().getError() != GL_NO_ERROR)
+    TextureObject::IntendedInternalPixelFormat intendedInternalPixelFormat;
+    const GLenum error = TextureConverter::convertToIntendedPixelFormat(intendedInternalPixelFormat, internalformat);
+    if (error != GL_NO_ERROR)
     {
+        RIXGL::getInstance().setError(error);
         return;
     }
 
@@ -3089,26 +3100,35 @@ GLAPI void APIENTRY impl_glTexParameterfv(GLenum target, GLenum pname, const GLf
 GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint param)
 {
     SPDLOG_DEBUG("glTexParameteri target 0x{:X} pname 0x{:X} param 0x{:X}", target, pname, param);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
     if (target == GL_TEXTURE_2D)
     {
         switch (pname)
         {
         case GL_TEXTURE_WRAP_S:
         {
-            auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
-            if (RIXGL::getInstance().getError() == GL_NO_ERROR)
+            TextureWrapMode mode;
+            const GLenum error = convertGlTextureWrapMode(mode, static_cast<GLenum>(param));
+            if (error == GL_NO_ERROR)
             {
                 RIXGL::getInstance().pipeline().texture().setTexWrapModeS(mode);
+            }
+            else
+            {
+                RIXGL::getInstance().setError(error);
             }
             break;
         }
         case GL_TEXTURE_WRAP_T:
         {
-            auto mode = convertGlTextureWrapMode(static_cast<GLenum>(param));
-            if (RIXGL::getInstance().getError() == GL_NO_ERROR)
+            TextureWrapMode mode;
+            const GLenum error = convertGlTextureWrapMode(mode, static_cast<GLenum>(param));
+            if (error == GL_NO_ERROR)
             {
                 RIXGL::getInstance().pipeline().texture().setTexWrapModeT(mode);
+            }
+            else
+            {
+                RIXGL::getInstance().setError(error);
             }
             break;
         }
@@ -3461,7 +3481,6 @@ GLAPI void APIENTRY impl_glArrayElement(GLint i)
 GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
 {
     SPDLOG_DEBUG("glBindTexture target 0x{:X} texture 0x{:X}", target, texture);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
     if (target != GL_TEXTURE_2D)
     {
         SPDLOG_WARN("glBindTexture target not supported");
@@ -3475,24 +3494,14 @@ GLAPI void APIENTRY impl_glBindTexture(GLenum target, GLuint texture)
         if (!ret)
         {
             // TODO: Free allocated textures to avoid leaks
+            RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
             SPDLOG_ERROR("glBindTexture cannot create texture {}", texture);
             return;
         }
     }
 
     RIXGL::getInstance().pipeline().texture().setBoundTexture(texture);
-
-    if (RIXGL::getInstance().getError() == GL_NO_ERROR)
-    {
-        RIXGL::getInstance().pipeline().texture().useTexture();
-    }
-    else
-    {
-        SPDLOG_ERROR("glBindTexture cannot bind texture");
-        // If the bound texture is 0 or if using an invalid texture, then use the default texture.
-        // Assume the default texture as no texture -> disable texture unit
-        impl_glDisable(GL_TEXTURE_2D);
-    }
+    RIXGL::getInstance().pipeline().texture().useTexture();
 }
 
 GLAPI void APIENTRY impl_glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid* pointer)
@@ -3528,7 +3537,6 @@ GLAPI void APIENTRY impl_glCopyTexSubImage2D(GLenum target, GLint level, GLint x
 GLAPI void APIENTRY impl_glDeleteTextures(GLsizei n, const GLuint* textures)
 {
     SPDLOG_DEBUG("glDeleteTextures 0x{:X} called", n);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
     if (n < 0)
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
@@ -3569,7 +3577,7 @@ GLAPI void APIENTRY impl_glDrawArrays(GLenum mode, GLint first, GLsizei count)
 GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid* indices)
 {
     SPDLOG_DEBUG("glDrawElements mode 0x{:X} count {} type 0x{:X} called", mode, count, type);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+    bool error = false;
     switch (type)
     {
     case GL_UNSIGNED_BYTE:
@@ -3583,6 +3591,7 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
         break;
     default:
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        error = true;
         SPDLOG_WARN("glDrawElements type 0x{:X} not supported", type);
         return;
     }
@@ -3594,7 +3603,7 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
     RIXGL::getInstance().vertexArray().setIndicesPointer(indices);
     RIXGL::getInstance().vertexArray().enableIndices(true);
 
-    if (RIXGL::getInstance().getError() == GL_NO_ERROR)
+    if (!error)
     {
         RIXGL::getInstance().pipeline().drawObj(RIXGL::getInstance().vertexArray().renderObj());
     }
@@ -3614,7 +3623,6 @@ GLAPI void APIENTRY impl_glEnableClientState(GLenum cap)
 GLAPI void APIENTRY impl_glGenTextures(GLsizei n, GLuint* textures)
 {
     SPDLOG_DEBUG("glGenTextures 0x{:X} called", n);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
     if (n < 0)
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
@@ -3632,6 +3640,7 @@ GLAPI void APIENTRY impl_glGenTextures(GLsizei n, GLuint* textures)
         else
         {
             // TODO: Free allocated textures to avoid leaks
+            RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
             SPDLOG_ERROR("glGenTextures Out Of Memory");
             return;
         }
@@ -3680,7 +3689,10 @@ GLAPI void APIENTRY impl_glNormalPointer(GLenum type, GLsizei stride, const GLvo
 
 GLAPI void APIENTRY impl_glPolygonOffset(GLfloat factor, GLfloat units)
 {
-    SPDLOG_WARN("glPolygonOffset factor {} units {} not implemented", factor, units);
+    SPDLOG_DEBUG("glPolygonOffset factor {} units {} called", factor, units);
+
+    RIXGL::getInstance().pipeline().getPolygonOffset().setFactor(factor);
+    RIXGL::getInstance().pipeline().getPolygonOffset().setUnits(units);
 }
 
 GLAPI void APIENTRY impl_glPopClientAttrib(void)
@@ -3717,8 +3729,6 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 {
     SPDLOG_DEBUG("glTexSubImage2D target 0x{:X} level 0x{:X} xoffset {} yoffset {} width {} height {} format 0x{:X} type 0x{:X} called", target, level, xoffset, yoffset, width, height, format, type);
 
-    RIXGL::getInstance().setError(GL_NO_ERROR);
-
     if (static_cast<std::size_t>(level) > RIXGL::getInstance().getMaxLOD())
     {
         SPDLOG_ERROR("glTexSubImage2D invalid lod.");
@@ -3738,6 +3748,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         { delete[] p; });
     if (!texMemShared)
     {
+        RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
         SPDLOG_ERROR("glTexSubImage2D Out Of Memory");
         return;
     }
@@ -4304,7 +4315,7 @@ GLAPI void APIENTRY impl_glUnlockArrays()
 GLAPI void APIENTRY impl_glActiveStencilFaceEXT(GLenum face)
 {
     SPDLOG_DEBUG("impl_glActiveStencilFaceEXT face 0x{:X} called", face);
-    RIXGL::getInstance().setError(GL_NO_ERROR);
+
     if (face == GL_FRONT)
     {
         RIXGL::getInstance().pipeline().stencil().setStencilFace(StencilFace::FRONT);

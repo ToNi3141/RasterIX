@@ -29,6 +29,7 @@ SOURCES += main.cpp\
     $${RIXGL_PATH}/transform/Culling.cpp \
     $${RIXGL_PATH}/transform/PrimitiveAssembler.cpp \
     $${RIXGL_PATH}/transform/PlaneClipper.cpp \
+    $${RIXGL_PATH}/transform/PolygonOffset.cpp \
     $${RIXGL_PATH}/transform/Stencil.cpp \
     $${RIXGL_PATH}/transform/LineAssembly.cpp \
     $${RIXGL_PATH}/vertexpipeline/VertexPipeline.cpp \

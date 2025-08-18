@@ -26,6 +26,7 @@
 #include "LineAssembly.hpp"
 #include "MatrixStore.hpp"
 #include "PlaneClipper.hpp"
+#include "PolygonOffset.hpp"
 #include "PrimitiveAssembler.hpp"
 #include "RenderConfigs.hpp"
 #include "Stencil.hpp"
@@ -54,7 +55,8 @@ struct VertexTransformingData
         stencil = data.stencil;
         texGen = data.texGen;
         planeClipper = data.planeClipper;
-        lineAssembly = data.lineAssemblyData;
+        lineAssembly = data.lineAssembly;
+        polygonOffset = data.polygonOffset;
         normalizeLightNormal = data.normalizeLightNormal;
     }
 
@@ -68,6 +70,7 @@ struct VertexTransformingData
     std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
     planeclipper::PlaneClipperData planeClipper {};
     lineassembly::LineAssemblyData lineAssembly {};
+    polygonoffset::PolygonOffsetData polygonOffset {};
     bool normalizeLightNormal {};
 };
 
@@ -277,6 +280,11 @@ private:
             {
                 return false;
             }
+        }
+
+        if (m_data.polygonOffset.enable)
+        {
+            polygonoffset::PolygonOffsetCalc { m_data.polygonOffset }.addOffset(v0, v1, v2);
         }
 
         return m_drawTriangleFunc({

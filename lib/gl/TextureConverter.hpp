@@ -86,15 +86,11 @@ public:
                     RIXGL::getInstance().setError(GL_INVALID_ENUM);
                     return;
                 }
-                if (RIXGL::getInstance().getError() != GL_NO_ERROR)
-                {
-                    return;
-                }
             }
         }
     }
 
-    static TextureObject::IntendedInternalPixelFormat convertToIntendedPixelFormat(const GLint internalFormat)
+    static GLenum convertToIntendedPixelFormat(TextureObject::IntendedInternalPixelFormat& conf, const GLint internalFormat)
     {
         switch (internalFormat)
         {
@@ -103,21 +99,24 @@ public:
         case GL_ALPHA8:
         case GL_ALPHA12:
         case GL_ALPHA16:
-            return TextureObject::IntendedInternalPixelFormat::ALPHA;
+            conf = TextureObject::IntendedInternalPixelFormat::ALPHA;
+            break;
         case GL_COMPRESSED_LUMINANCE:
         case GL_LUMINANCE:
         case GL_LUMINANCE4:
         case GL_LUMINANCE8:
         case GL_LUMINANCE12:
         case GL_LUMINANCE16:
-            return TextureObject::IntendedInternalPixelFormat::LUMINANCE;
+            conf = TextureObject::IntendedInternalPixelFormat::LUMINANCE;
+            break;
         case GL_COMPRESSED_INTENSITY:
         case GL_INTENSITY:
         case GL_INTENSITY4:
         case GL_INTENSITY8:
         case GL_INTENSITY12:
         case GL_INTENSITY16:
-            return TextureObject::IntendedInternalPixelFormat::INTENSITY;
+            conf = TextureObject::IntendedInternalPixelFormat::INTENSITY;
+            break;
         case 2:
         case GL_COMPRESSED_LUMINANCE_ALPHA:
         case GL_LUMINANCE_ALPHA:
@@ -127,7 +126,8 @@ public:
         case GL_LUMINANCE12_ALPHA4:
         case GL_LUMINANCE12_ALPHA12:
         case GL_LUMINANCE16_ALPHA16:
-            return TextureObject::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
+            conf = TextureObject::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
+            break;
         case 3:
         case GL_COMPRESSED_RGB:
         case GL_R3_G3_B2:
@@ -138,7 +138,8 @@ public:
         case GL_RGB10:
         case GL_RGB12:
         case GL_RGB16:
-            return TextureObject::IntendedInternalPixelFormat::RGB;
+            conf = TextureObject::IntendedInternalPixelFormat::RGB;
+            break;
         case 4:
         case GL_COMPRESSED_RGBA:
         case GL_RGBA:
@@ -148,18 +149,21 @@ public:
         case GL_RGB10_A2:
         case GL_RGBA12:
         case GL_RGBA16:
-            return TextureObject::IntendedInternalPixelFormat::RGBA;
+            conf = TextureObject::IntendedInternalPixelFormat::RGBA;
+            break;
         case GL_RGB5_A1:
-            return TextureObject::IntendedInternalPixelFormat::RGBA1;
+            conf = TextureObject::IntendedInternalPixelFormat::RGBA1;
+            break;
         case GL_DEPTH_COMPONENT:
             SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
-            return TextureObject::IntendedInternalPixelFormat::RGBA;
+            conf = TextureObject::IntendedInternalPixelFormat::RGBA;
+            break;
         default:
             SPDLOG_ERROR("glTexImage2D invalid internalformat");
-            RIXGL::getInstance().setError(GL_INVALID_ENUM);
-            return TextureObject::IntendedInternalPixelFormat::RGBA;
+            conf = TextureObject::IntendedInternalPixelFormat::RGBA;
+            return GL_INVALID_ENUM;
         }
-        return TextureObject::IntendedInternalPixelFormat::RGBA;
+        return GL_NO_ERROR;
     }
 
 private:
