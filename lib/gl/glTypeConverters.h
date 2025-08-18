@@ -301,120 +301,158 @@ DrawMode convertDrawMode(GLenum drawMode)
     }
 }
 
-TextureWrapMode convertGlTextureWrapMode(const GLenum mode)
+GLenum convertGlTextureWrapMode(TextureWrapMode& conf, const GLenum mode)
 {
     switch (mode)
     {
     case GL_CLAMP:
         SPDLOG_WARN("GL_CLAMP is not fully supported and emulated with GL_CLAMP_TO_EDGE");
     case GL_CLAMP_TO_EDGE:
-        return TextureWrapMode::CLAMP_TO_EDGE;
+        conf = TextureWrapMode::CLAMP_TO_EDGE;
+        break;
     case GL_REPEAT:
-        return TextureWrapMode::REPEAT;
+        conf = TextureWrapMode::REPEAT;
+        break;
     default:
         SPDLOG_WARN("convertGlTextureWarpMode 0x{:X} not suppored", mode);
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        return TextureWrapMode::REPEAT;
+        conf = TextureWrapMode::REPEAT;
+        return GL_INVALID_ENUM;
     }
+    return GL_NO_ERROR;
 }
 
-TestFunc convertTestFunc(const GLenum mode)
+GLenum convertTestFunc(TestFunc& conf, const GLenum mode)
 {
     switch (mode)
     {
     case GL_ALWAYS:
-        return TestFunc::ALWAYS;
+        conf = TestFunc::ALWAYS;
+        break;
     case GL_NEVER:
-        return TestFunc::NEVER;
+        conf = TestFunc::NEVER;
+        break;
     case GL_LESS:
-        return TestFunc::LESS;
+        conf = TestFunc::LESS;
+        break;
     case GL_EQUAL:
-        return TestFunc::EQUAL;
+        conf = TestFunc::EQUAL;
+        break;
     case GL_LEQUAL:
-        return TestFunc::LEQUAL;
+        conf = TestFunc::LEQUAL;
+        break;
     case GL_GREATER:
-        return TestFunc::GREATER;
+        conf = TestFunc::GREATER;
+        break;
     case GL_NOTEQUAL:
-        return TestFunc::NOTEQUAL;
+        conf = TestFunc::NOTEQUAL;
+        break;
     case GL_GEQUAL:
-        return TestFunc::GEQUAL;
+        conf = TestFunc::GEQUAL;
+        break;
 
     default:
         SPDLOG_WARN("convertTestFunc 0x{:X} not suppored", mode);
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        return TestFunc::ALWAYS;
+        conf = TestFunc::ALWAYS;
+        return GL_INVALID_ENUM;
     }
+    return GL_NO_ERROR;
 }
 
-StencilOp convertStencilOp(const GLenum mode)
+GLenum convertStencilOp(StencilOp& conf, const GLenum mode)
 {
     switch (mode)
     {
     case GL_KEEP:
-        return StencilOp::KEEP;
+        conf = StencilOp::KEEP;
+        break;
     case GL_ZERO:
-        return StencilOp::ZERO;
+        conf = StencilOp::ZERO;
+        break;
     case GL_REPLACE:
-        return StencilOp::REPLACE;
+        conf = StencilOp::REPLACE;
+        break;
     case GL_INCR:
-        return StencilOp::INCR;
+        conf = StencilOp::INCR;
+        break;
     case GL_INCR_WRAP_EXT:
-        return StencilOp::INCR_WRAP;
+        conf = StencilOp::INCR_WRAP;
+        break;
     case GL_DECR:
-        return StencilOp::DECR;
+        conf = StencilOp::DECR;
+        break;
     case GL_DECR_WRAP_EXT:
-        return StencilOp::DECR_WRAP;
+        conf = StencilOp::DECR_WRAP;
+        break;
     case GL_INVERT:
-        return StencilOp::INVERT;
+        conf = StencilOp::INVERT;
+        break;
 
     default:
         SPDLOG_WARN("convertStencilOp 0x{:X} not suppored", mode);
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        return StencilOp::KEEP;
+        conf = StencilOp::KEEP;
+        return GL_INVALID_ENUM;
     }
+    return GL_NO_ERROR;
 }
 
-LogicOp convertLogicOp(const GLenum opcode)
+GLenum convertLogicOp(LogicOp& conf, const GLenum opcode)
 {
     switch (opcode)
     {
     case GL_CLEAR:
-        return LogicOp::CLEAR;
+        conf = LogicOp::CLEAR;
+        break;
     case GL_SET:
-        return LogicOp::SET;
+        conf = LogicOp::SET;
+        break;
     case GL_COPY:
-        return LogicOp::COPY;
+        conf = LogicOp::COPY;
+        break;
     case GL_COPY_INVERTED:
-        return LogicOp::COPY_INVERTED;
+        conf = LogicOp::COPY_INVERTED;
+        break;
     case GL_NOOP:
-        return LogicOp::NOOP;
+        conf = LogicOp::NOOP;
+        break;
     case GL_INVERT:
-        return LogicOp::INVERT;
+        conf = LogicOp::INVERT;
+        break;
     case GL_AND:
-        return LogicOp::AND;
+        conf = LogicOp::AND;
+        break;
     case GL_NAND:
-        return LogicOp::NAND;
+        conf = LogicOp::NAND;
+        break;
     case GL_OR:
-        return LogicOp::OR;
+        conf = LogicOp::OR;
+        break;
     case GL_NOR:
-        return LogicOp::NOR;
+        conf = LogicOp::NOR;
+        break;
     case GL_XOR:
-        return LogicOp::XOR;
+        conf = LogicOp::XOR;
+        break;
     case GL_EQUIV:
-        return LogicOp::EQUIV;
+        conf = LogicOp::EQUIV;
+        break;
     case GL_AND_REVERSE:
-        return LogicOp::AND_REVERSE;
+        conf = LogicOp::AND_REVERSE;
+        break;
     case GL_AND_INVERTED:
-        return LogicOp::AND_INVERTED;
+        conf = LogicOp::AND_INVERTED;
+        break;
     case GL_OR_REVERSE:
-        return LogicOp::OR_REVERSE;
+        conf = LogicOp::OR_REVERSE;
+        break;
     case GL_OR_INVERTED:
-        return LogicOp::OR_INVERTED;
+        conf = LogicOp::OR_INVERTED;
+        break;
     default:
         SPDLOG_WARN("convertLogicOp 0x{:X} not suppored", opcode);
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        return LogicOp::COPY;
+        conf = LogicOp::COPY;
+        return GL_INVALID_ENUM;
     }
+    return GL_NO_ERROR;
 }
 
 } // namespace rr

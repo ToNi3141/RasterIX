@@ -56,8 +56,9 @@ public:
     ///     and frees all allocated memory.
     static void destroy();
 
-    void setError(const uint32_t error) { m_error = error; }
+    void setError(const uint32_t error) { m_error = (m_error == 0) ? error : m_error; }
     uint32_t getError() const { return m_error; }
+    void resetError() { m_error = 0; }
 
     VertexPipeline& pipeline();
     VertexQueue& vertexQueue();
