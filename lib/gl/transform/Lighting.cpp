@@ -157,7 +157,7 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
         }
     }
 
-    float dotDirSpecular = nDotDir;
+    float dotDirSpecular = n0.dot(dir);
 
     // Optimization: pows are expensive
     if (materialSpecularExponent == 0.0f) // x^0 == 1.0
@@ -166,7 +166,7 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
     }
     else if (materialSpecularExponent != 1.0f) // x^1 == x
     {
-        dotDirSpecular = powf(nDotDir, materialSpecularExponent);
+        dotDirSpecular = powf(dotDirSpecular, materialSpecularExponent);
     }
 
     float spot = 1.0;
