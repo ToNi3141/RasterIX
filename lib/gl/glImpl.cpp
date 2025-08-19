@@ -1459,12 +1459,10 @@ GLAPI void APIENTRY impl_glLightf(GLenum light, GLenum pname, GLfloat param)
     switch (pname)
     {
     case GL_SPOT_EXPONENT:
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        SPDLOG_WARN("glLightf GL_SPOT_EXPONENT not implemented");
+        RIXGL::getInstance().pipeline().getLighting().setSpotlightExponent(light - GL_LIGHT0, param);
         break;
     case GL_SPOT_CUTOFF:
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        SPDLOG_WARN("glLightf GL_SPOT_CUTOFF not implemented");
+        RIXGL::getInstance().pipeline().getLighting().setSpotlightCutoff(light - GL_LIGHT0, param);
         break;
     case GL_CONSTANT_ATTENUATION:
         RIXGL::getInstance().pipeline().getLighting().setConstantAttenuationLight(light - GL_LIGHT0, param);
@@ -1511,8 +1509,7 @@ GLAPI void APIENTRY impl_glLightfv(GLenum light, GLenum pname, const GLfloat* pa
         break;
     }
     case GL_SPOT_DIRECTION:
-        SPDLOG_WARN("glLightfv GL_SPOT_DIRECTION not implemented");
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        RIXGL::getInstance().pipeline().getLighting().setSpotlightDirection(light - GL_LIGHT0, { params });
         break;
     default:
         SPDLOG_DEBUG("glLightfv redirected to glLightf");

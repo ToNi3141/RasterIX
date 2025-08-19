@@ -109,9 +109,9 @@ private:
     stencil::StencilSetter m_stencil { [this](const StencilReg& reg)
         { return m_renderer.setStencilBufferConfig(reg); },
         m_elementGlobalData.stencil };
-    lighting::LightingSetter m_lighting { m_lightingData };
-    viewport::ViewPortSetter m_viewPort { m_elementGlobalData.viewPort };
     matrixstore::MatrixStore m_matrixStore { m_elementLocalData.transformMatrices };
+    lighting::LightingSetter m_lighting { m_lightingData, m_matrixStore.getModelView() };
+    viewport::ViewPortSetter m_viewPort { m_elementGlobalData.viewPort };
     culling::CullingSetter m_culling { m_elementGlobalData.culling };
     std::array<texgen::TexGenSetter, RenderConfig::TMU_COUNT> m_texGen {};
     primitiveassembler::PrimitiveAssemblerSetter m_primitiveAssembler { m_elementLocalData.primitiveAssembler };

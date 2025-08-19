@@ -20,6 +20,7 @@
 
 #include "Enums.hpp"
 #include "Types.hpp"
+#include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 #include <array>
 
@@ -52,7 +53,7 @@ struct LightingData
         float linearAttenuation { 0.0f };
         float quadraticAttenuation { 0.0f };
 
-        Vec4 preCalcDirectionalLightDir {};
+        Vec4 preCalcPositionNormalized {};
         Vec4 preCalcHalfWayVectorInfinite {};
 
         static constexpr bool localViewer { false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
@@ -60,12 +61,12 @@ struct LightingData
         void preCalcVectors()
         {
             // Directional Light Direction
-            preCalcDirectionalLightDir = position;
-            preCalcDirectionalLightDir.unit();
+            preCalcPositionNormalized = position;
+            preCalcPositionNormalized.unit();
 
             // Half Way Vector from infinite viewer
             const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
-            preCalcHalfWayVectorInfinite = preCalcDirectionalLightDir;
+            preCalcHalfWayVectorInfinite = preCalcPositionNormalized;
             preCalcHalfWayVectorInfinite += pointEye;
             preCalcHalfWayVectorInfinite.unit();
         }
@@ -120,7 +121,7 @@ private:
 class LightingSetter
 {
 public:
-    LightingSetter(LightingData& lightingData);
+    LightingSetter(LightingData& lightingData, const Mat44& modelViewMatrix);
 
     bool lightingEnabled() const { return m_data.lightingEnabled; }
 
@@ -140,6 +141,9 @@ public:
     void setLinearAttenuationLight(const std::size_t light, const float val);
     void setQuadraticAttenuationLight(const std::size_t light, const float val);
     void enableTwoSideModel(const bool enable);
+    void setSpotlightDirection(const std::size_t light, const Vec3& dir);
+    void setSpotlightExponent(const std::size_t light, const float exponent);
+    void setSpotlightCutoff(const std::size_t light, const float cutoff);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);
@@ -152,6 +156,7 @@ private:
     void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
 
     LightingData& m_data;
+    const Mat44& m_modelViewMatrix;
 
     bool m_dataChanged { true };
 

@@ -19,8 +19,9 @@
 
 namespace rr::lighting
 {
-LightingSetter::LightingSetter(LightingData& lightingData)
+LightingSetter::LightingSetter(LightingData& lightingData, const Mat44& modelViewMatrix)
     : m_data { lightingData }
+    , m_modelViewMatrix { modelViewMatrix }
 {
     setEmissiveColorMaterial({ { 0.0f, 0.0f, 0.0f, 1.0f } });
     setAmbientColorMaterial({ { 0.2f, 0.2f, 0.2f, 1.0 } });
@@ -113,7 +114,7 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
     else
     {
         // Directional light, direction is the unit vector
-        dir = lightConfig.preCalcDirectionalLightDir;
+        dir = lightConfig.preCalcPositionNormalized;
     }
     float nDotDir = n0.dot(dir);
     if (enableTwoSideModel)
@@ -168,9 +169,30 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
         dotDirSpecular = powf(nDotDir, materialSpecularExponent);
     }
 
+    float spot = 1.0;
+    if (lightConfig.spotlightCutoff != 180.0f)
+    {
+        Vec4 p = v0 - lightConfig.position;
+        p.unit();
+        Vec4 sdl;
+        sdl.init();
+        sdl.fromArray(lightConfig.spotlightDirection.data(), 3);
+        sdl.unit();
+        const float val = p.dot(sdl);
+        const float cosCO = std::cos(lightConfig.spotlightCutoff * 3.1418f / 180.0f);
+        if (val >= std::abs(cosCO))
+        {
+            spot = pow(val, lightConfig.spotlightExponent);
+        }
+        else
+        {
+            spot = 0.0f;
+        }
+    }
+
     const Vec4 colorLightSpecular = lightConfig.specularColor * materialSpecularColor * (f * dotDirSpecular);
     const Vec4 ambientColor = lightConfig.ambientColor * materialAmbientColor;
-    const Vec4 colorLight = ((lightConfig.diffuseColor * materialDiffuseColor * dotDirDiffuse) + ambientColor + colorLightSpecular) * att;
+    const Vec4 colorLight = ((lightConfig.diffuseColor * materialDiffuseColor * dotDirDiffuse) + ambientColor + colorLightSpecular) * att * spot;
 
     // TODO: Spotlight has to be implemented. Please see in the OpenGL 1.5 spec equation 2.5.
     // Basically it is a val = dot(normalize(v0 - lightConfig.position), unit(lightConfig.spotlightDirectionLight))
@@ -352,6 +374,24 @@ void LightingSetter::enableColorMaterial(const bool enable)
     {
         enableColorMaterial(false, false, false, false);
     }
+    setDataChangedFlag();
+}
+
+void LightingSetter::setSpotlightDirection(const std::size_t light, const Vec3& dir)
+{
+    m_data.lights[light].spotlightDirection = m_modelViewMatrix.transform(dir);
+    setDataChangedFlag();
+}
+
+void LightingSetter::setSpotlightExponent(const std::size_t light, const float exponent)
+{
+    m_data.lights[light].spotlightExponent = exponent;
+    setDataChangedFlag();
+}
+
+void LightingSetter::setSpotlightCutoff(const std::size_t light, const float cutoff)
+{
+    m_data.lights[light].spotlightCutoff = cutoff;
     setDataChangedFlag();
 }
 
