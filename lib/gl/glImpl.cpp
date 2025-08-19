@@ -1396,7 +1396,26 @@ GLAPI GLboolean APIENTRY impl_glIsList(GLuint list)
 
 GLAPI void APIENTRY impl_glLightModelf(GLenum pname, GLfloat param)
 {
-    SPDLOG_WARN("glLightModelf not implemented");
+    SPDLOG_DEBUG("glLightModelf pname 0x{:X} param {} called", pname, param);
+    if (pname == GL_LIGHT_MODEL_TWO_SIDE)
+    {
+        if (param == GL_TRUE)
+        {
+            RIXGL::getInstance().pipeline().getLighting().enableTwoSideModel(true);
+        }
+        else if (param == GL_FALSE)
+        {
+            RIXGL::getInstance().pipeline().getLighting().enableTwoSideModel(false);
+        }
+        else
+        {
+            RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        }
+    }
+    else
+    {
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+    }
 }
 
 GLAPI void APIENTRY impl_glLightModelfv(GLenum pname, const GLfloat* params)
@@ -1409,13 +1428,15 @@ GLAPI void APIENTRY impl_glLightModelfv(GLenum pname, const GLfloat* params)
     }
     else
     {
+        SPDLOG_DEBUG("glLightModelfv pname 0x{:X} params[0] {} redirected to glLightModelf", pname, params[0]);
         impl_glLightModelf(pname, params[0]);
     }
 }
 
 GLAPI void APIENTRY impl_glLightModeli(GLenum pname, GLint param)
 {
-    SPDLOG_WARN("glLightModeli pname 0x{:X} param 0x{:X} not implemented", pname, param);
+    SPDLOG_DEBUG("glLightModeli pname 0x{:X} param 0x{:X} redirected to glLightModelf", pname, param);
+    impl_glLightModelf(pname, param);
 }
 
 GLAPI void APIENTRY impl_glLightModeliv(GLenum pname, const GLint* params)

@@ -68,6 +68,7 @@ void LightingCalc::calculateLights(
                 continue;
             calculateLight(colorTmp,
                 m_data.lights[i],
+                m_data.enableTwoSideModel,
                 m_data.material.specularExponent,
                 ambientColor,
                 diffuseColor,
@@ -83,6 +84,7 @@ void LightingCalc::calculateLights(
 
 void LightingCalc::calculateLight(Vec4& __restrict color,
     const LightingData::LightConfig& lightConfig,
+    const bool enableTwoSideModel,
     const float materialSpecularExponent,
     const Vec4& materialAmbientColor,
     const Vec4& materialDiffuseColor,
@@ -113,8 +115,13 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
         // Directional light, direction is the unit vector
         dir = lightConfig.preCalcDirectionalLightDir;
     }
-    float dotDirDiffuse = n0.dot(dir);
-    dotDirDiffuse = (dotDirDiffuse < 0.01f) ? 0.0f : dotDirDiffuse;
+    float nDotDir = n0.dot(dir);
+    if (enableTwoSideModel)
+    {
+        nDotDir = std::abs(nDotDir);
+    }
+
+    const float dotDirDiffuse = (nDotDir < 0.01f) ? 0.0f : nDotDir;
 
     // Calculate specular light
     float f = 0.0f;
@@ -149,7 +156,7 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
         }
     }
 
-    float dotDirSpecular = n0.dot(dir);
+    float dotDirSpecular = nDotDir;
 
     // Optimization: pows are expensive
     if (materialSpecularExponent == 0.0f) // x^0 == 1.0
@@ -158,7 +165,7 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
     }
     else if (materialSpecularExponent != 1.0f) // x^1 == x
     {
-        dotDirSpecular = powf(dotDirSpecular, materialSpecularExponent);
+        dotDirSpecular = powf(nDotDir, materialSpecularExponent);
     }
 
     const Vec4 colorLightSpecular = lightConfig.specularColor * materialSpecularColor * (f * dotDirSpecular);
@@ -246,6 +253,12 @@ void LightingSetter::setLinearAttenuationLight(const std::size_t light, const fl
 void LightingSetter::setQuadraticAttenuationLight(const std::size_t light, const float val)
 {
     m_data.lights[light].quadraticAttenuation = val;
+    setDataChangedFlag();
+}
+
+void LightingSetter::enableTwoSideModel(const bool enable)
+{
+    m_data.enableTwoSideModel = enable;
     setDataChangedFlag();
 }
 

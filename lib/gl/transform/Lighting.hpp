@@ -52,10 +52,10 @@ struct LightingData
         float linearAttenuation { 0.0f };
         float quadraticAttenuation { 0.0f };
 
-        static constexpr bool localViewer { false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
-
         Vec4 preCalcDirectionalLightDir {};
         Vec4 preCalcHalfWayVectorInfinite {};
+
+        static constexpr bool localViewer { false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
 
         void preCalcVectors()
         {
@@ -79,6 +79,7 @@ struct LightingData
     bool enableColorMaterialAmbient { false };
     bool enableColorMaterialDiffuse { false };
     bool enableColorMaterialSpecular { false };
+    bool enableTwoSideModel { false };
 };
 
 class LightingCalc
@@ -98,6 +99,7 @@ public:
     void calculateLight(
         Vec4& __restrict color,
         const LightingData::LightConfig& lightConfig,
+        const bool enableTwoSideModel,
         const float materialSpecularExponent,
         const Vec4& materialAmbientColor,
         const Vec4& materialDiffuseColor,
@@ -137,6 +139,7 @@ public:
     void setConstantAttenuationLight(const std::size_t light, const float val);
     void setLinearAttenuationLight(const std::size_t light, const float val);
     void setQuadraticAttenuationLight(const std::size_t light, const float val);
+    void enableTwoSideModel(const bool enable);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);
