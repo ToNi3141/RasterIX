@@ -110,8 +110,15 @@ private:
         const Vec4& v0,
         const Vec4& n0) const;
 
+    Vec4 calculateDirectionFromV0ToLightPos(const Vec4& lightPos, const Vec4& normalizedLightPos, const Vec4& v0) const;
     float calculateAttenuation(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
-    float calculateSpecular(const Vec4& n0, const Vec4& dir, const float materialSpecularExponent) const;
+    float calculateSpecular(
+        const Vec4& lightPos,
+        const Vec4& preCalcHalfWayVecInfinite,
+        const float nDotDir,
+        const Vec4& n0,
+        const Vec4& dir,
+        const float materialSpecularExponent) const;
     float calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
 
     const LightingData& m_data;
