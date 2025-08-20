@@ -69,6 +69,7 @@ void LightingCalc::calculateLights(
                 continue;
             calculateLight(colorTmp,
                 m_data.lights[i],
+                m_preCalculatedParameters[i],
                 m_data.enableTwoSideModel,
                 m_data.material.specularExponent,
                 ambientColor,
@@ -86,6 +87,7 @@ void LightingCalc::calculateLights(
 void LightingCalc::calculateLight(
     Vec4& __restrict color,
     const LightingData::LightConfig& lightConfig,
+    const PreCalculatedParameters& preCalcParameters,
     const bool enableTwoSideModel,
     const float materialSpecularExponent,
     const Vec4& materialAmbientColor,
@@ -97,17 +99,28 @@ void LightingCalc::calculateLight(
     // Calculate light from lights
     Vec4 dir;
 
-    // Point light, is the normalized direction vector
-    dir = lightConfig.position - v0;
-    dir.normalize();
-
+    // Calculate Diffuse Light
+    // w unequal zero means: Point light
+    // w equal to zero means: Directional light
+    // It seems that mac os is interpolating between 0.0 and 1.0 so that the different
+    // light sources can lerp to each other. We will not do this here.
+    if (lightConfig.position[3] != 0.0f)
+    {
+        // Point light, is the normalized direction vector
+        dir = lightConfig.position - v0;
+        dir.normalize();
+    }
+    else
+    {
+        // Directional light, direction is the unit vector
+        dir = preCalcParameters.positionNormalized;
+    }
     float nDotDir = n0.dot(dir);
     if (enableTwoSideModel)
     {
         nDotDir = std::abs(nDotDir);
     }
 
-    // Gives more plausible results when it is clamped
     nDotDir = std::clamp(nDotDir, 0.0f, 1.0f);
 
     // Calculate specular light
@@ -120,19 +133,29 @@ void LightingCalc::calculateLight(
     // Convert now the direction in dir to the half way vector
     if (lightConfig.localViewer)
     {
-        // Not supported in OpenGL ES
-        // Vec4 dirEye { 0.0f, 0.0f, 0.0f, 1.0f };
-        // dirEye -= v0;
-        // dirEye.normalize();
-        // dir += dirEye;
-        // dir.unit();
+        Vec4 dirEye { 0.0f, 0.0f, 0.0f, 1.0f };
+        dirEye -= v0;
+        dirEye.normalize();
+        dir += dirEye;
+        dir.unit();
     }
     else
     {
-        const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
-        dir += pointEye;
-        dir.unit();
+        // Optimization: When position.w is equal to zero, then dirDiffuse is constant and
+        // we can precompute with this constant value the half way vector.
+        // Otherwise dirDiffuse depends on the vertex and no pre computation is possible
+        if (lightConfig.position[3] != 0.0f)
+        {
+            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
+            dir += pointEye;
+            dir.unit();
+        }
+        else
+        {
+            dir = preCalcParameters.halfWayVectorInfinite;
+        }
     }
+
     const float att = calculateAttenuation(lightConfig, v0);
     const float specular = calculateSpecular(n0, dir, materialSpecularExponent);
     const float spot = calculateSpotlight(lightConfig, v0);
@@ -211,6 +234,28 @@ void LightingCalc::calculateSceneLight(
     sceneLight *= ambientColorScene;
     // Emission color of material
     sceneLight += emissiveColor;
+}
+
+void LightingCalc::preCalcParameters()
+{
+    for (std::size_t i = 0; i < m_data.lights.size(); i++)
+    {
+        if (m_data.lightEnable[i] && (m_data.lights[i].position != m_preCalculatedParameters[i].position))
+        {
+            PreCalculatedParameters& p = m_preCalculatedParameters[i];
+            p.position = m_data.lights[i].position;
+
+            // Directional Light Direction
+            p.positionNormalized = p.position;
+            p.positionNormalized.unit();
+
+            // Half Way Vector from infinite viewer
+            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
+            p.halfWayVectorInfinite = p.positionNormalized;
+            p.halfWayVectorInfinite += pointEye;
+            p.halfWayVectorInfinite.unit();
+        }
+    }
 }
 
 void LightingSetter::enableLighting(bool enable)

@@ -114,6 +114,10 @@ public:
     {
         m_primitiveAssembler.init();
         m_normalMatrix = createNormalMatrix();
+        if (m_data.lighting.lightingEnabled)
+        {
+            m_lighting.preCalcParameters();
+        }
     }
 
 private:
