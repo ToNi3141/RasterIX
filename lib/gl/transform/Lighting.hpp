@@ -53,23 +53,7 @@ struct LightingData
         float linearAttenuation { 0.0f };
         float quadraticAttenuation { 0.0f };
 
-        Vec4 preCalcPositionNormalized {};
-        Vec4 preCalcHalfWayVectorInfinite {};
-
         static constexpr bool localViewer { false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
-
-        void preCalcVectors()
-        {
-            // Directional Light Direction
-            preCalcPositionNormalized = position;
-            preCalcPositionNormalized.unit();
-
-            // Half Way Vector from infinite viewer
-            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
-            preCalcHalfWayVectorInfinite = preCalcPositionNormalized;
-            preCalcHalfWayVectorInfinite += pointEye;
-            preCalcHalfWayVectorInfinite.unit();
-        }
     };
 
     std::array<LightConfig, MAX_LIGHTS> lights {};
@@ -91,6 +75,23 @@ public:
     {
     }
 
+    void calculateLights(
+        Vec4& __restrict color,
+        const Vec4& triangleColor,
+        const Vec4& vertex,
+        const Vec3& normal) const;
+
+    void preCalcParameters();
+
+private:
+    struct PreCalculatedParameters
+    {
+        Vec4 positionNormalized {};
+        Vec4 halfWayVectorInfinite {};
+
+        Vec4 position {};
+    };
+
     void calculateSceneLight(
         Vec4& __restrict sceneLight,
         const Vec4& emissiveColor,
@@ -100,6 +101,7 @@ public:
     void calculateLight(
         Vec4& __restrict color,
         const LightingData::LightConfig& lightConfig,
+        const PreCalculatedParameters& preCalcParameters,
         const bool enableTwoSideModel,
         const float materialSpecularExponent,
         const Vec4& materialAmbientColor,
@@ -108,14 +110,8 @@ public:
         const Vec4& v0,
         const Vec4& n0) const;
 
-    void calculateLights(
-        Vec4& __restrict color,
-        const Vec4& triangleColor,
-        const Vec4& vertex,
-        const Vec3& normal) const;
-
-private:
     const LightingData& m_data;
+    std::array<PreCalculatedParameters, LightingData::MAX_LIGHTS> m_preCalculatedParameters {};
 };
 
 class LightingSetter

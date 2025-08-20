@@ -69,6 +69,7 @@ void LightingCalc::calculateLights(
                 continue;
             calculateLight(colorTmp,
                 m_data.lights[i],
+                m_preCalculatedParameters[i],
                 m_data.enableTwoSideModel,
                 m_data.material.specularExponent,
                 ambientColor,
@@ -83,8 +84,10 @@ void LightingCalc::calculateLights(
     }
 }
 
-void LightingCalc::calculateLight(Vec4& __restrict color,
+void LightingCalc::calculateLight(
+    Vec4& __restrict color,
     const LightingData::LightConfig& lightConfig,
+    const PreCalculatedParameters& preCalcParameters,
     const bool enableTwoSideModel,
     const float materialSpecularExponent,
     const Vec4& materialAmbientColor,
@@ -114,7 +117,7 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
     else
     {
         // Directional light, direction is the unit vector
-        dir = lightConfig.preCalcPositionNormalized;
+        dir = preCalcParameters.positionNormalized;
     }
     float nDotDir = n0.dot(dir);
     if (enableTwoSideModel)
@@ -153,7 +156,7 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
         }
         else
         {
-            dir = lightConfig.preCalcHalfWayVectorInfinite;
+            dir = preCalcParameters.halfWayVectorInfinite;
         }
     }
 
@@ -205,7 +208,8 @@ void LightingCalc::calculateLight(Vec4& __restrict color,
     color += colorLight;
 }
 
-void LightingCalc::calculateSceneLight(Vec4& __restrict sceneLight,
+void LightingCalc::calculateSceneLight(
+    Vec4& __restrict sceneLight,
     const Vec4& emissiveColor,
     const Vec4& ambientColor,
     const Vec4& ambientColorScene) const
@@ -215,6 +219,28 @@ void LightingCalc::calculateSceneLight(Vec4& __restrict sceneLight,
     sceneLight *= ambientColorScene;
     // Emission color of material
     sceneLight += emissiveColor;
+}
+
+void LightingCalc::preCalcParameters()
+{
+    for (std::size_t i = 0; i < m_data.lights.size(); i++)
+    {
+        if (m_data.lightEnable[i] && (m_data.lights[i].position != m_preCalculatedParameters[i].position))
+        {
+            PreCalculatedParameters& p = m_preCalculatedParameters[i];
+            p.position = m_data.lights[i].position;
+
+            // Directional Light Direction
+            p.positionNormalized = p.position;
+            p.positionNormalized.unit();
+
+            // Half Way Vector from infinite viewer
+            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
+            p.halfWayVectorInfinite = p.positionNormalized;
+            p.halfWayVectorInfinite += pointEye;
+            p.halfWayVectorInfinite.unit();
+        }
+    }
 }
 
 void LightingSetter::enableLighting(bool enable)
@@ -256,7 +282,6 @@ void LightingSetter::setSpecularColorLight(const std::size_t light, const Vec4& 
 void LightingSetter::setPosLight(const std::size_t light, const Vec4& pos)
 {
     m_data.lights[light].position = pos;
-    m_data.lights[light].preCalcVectors();
     setDataChangedFlag();
 }
 
