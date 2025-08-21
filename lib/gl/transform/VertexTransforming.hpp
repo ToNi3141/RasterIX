@@ -29,6 +29,7 @@
 #include "PolygonOffset.hpp"
 #include "PrimitiveAssembler.hpp"
 #include "RenderConfigs.hpp"
+#include "ShadeModel.hpp"
 #include "Stencil.hpp"
 #include "TexGen.hpp"
 #include "ViewPort.hpp"
@@ -58,6 +59,7 @@ struct VertexTransformingData
         lineAssembly = data.lineAssembly;
         polygonOffset = data.polygonOffset;
         normalizeLightNormal = data.normalizeLightNormal;
+        shadeModel = data.shadeModel;
     }
 
     lighting::LightingData lighting {};
@@ -71,6 +73,7 @@ struct VertexTransformingData
     planeclipper::PlaneClipperData planeClipper {};
     lineassembly::LineAssemblyData lineAssembly {};
     polygonoffset::PolygonOffsetData polygonOffset {};
+    shademodel::ShadeModelData shadeModel {};
     bool normalizeLightNormal {};
 };
 
@@ -333,6 +336,12 @@ private:
     bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
         Triangle projectedTriangle { primitive[0], primitive[1], primitive[2] };
+
+        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle(
+            projectedTriangle[0],
+            projectedTriangle[1],
+            projectedTriangle[2]);
+
         projectedTriangle[0].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[0].vertex);
         projectedTriangle[1].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[1].vertex);
         projectedTriangle[2].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[2].vertex);
@@ -344,6 +353,8 @@ private:
     {
         VertexParameter vp0 = primitive[0];
         VertexParameter vp1 = primitive[1];
+
+        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelLine(vp0, vp1);
 
         // Transform vertices to get the projected ones in NDC
         vp0.vertex = m_data.transformMatrices.projection.transform(vp0.vertex);
