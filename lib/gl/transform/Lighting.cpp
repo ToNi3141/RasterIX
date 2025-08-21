@@ -76,7 +76,7 @@ void LightingCalc::calculateLights(
                 diffuseColor,
                 specularColor,
                 vertex,
-                n);
+                normal);
         }
 
         color = colorTmp;
@@ -94,10 +94,10 @@ void LightingCalc::calculateLight(
     const Vec4& materialDiffuseColor,
     const Vec4& materialSpecularColor,
     const Vec4& v0,
-    const Vec4& n0) const
+    const Vec3& n0) const
 {
     // Calculate light from lights
-    const Vec4 dir = calculateDirectionFromV0ToLightPos(lightConfig.position, preCalcParameters.positionNormalized, v0);
+    const Vec3 dir = calculateDirection(v0, lightConfig.position);
 
     float nDotDir = n0.dot(dir);
     if (enableTwoSideModel)
@@ -118,27 +118,40 @@ void LightingCalc::calculateLight(
     color += colorLight;
 }
 
-Vec4 LightingCalc::calculateDirectionFromV0ToLightPos(const Vec4& lightPos, const Vec4& normalizedLightPos, const Vec4& v0) const
+Vec3 LightingCalc::calculateDirection(const Vec4& p1, const Vec4& p2) const
 {
-    Vec4 dir;
-
-    // Calculate Diffuse Light
-    // w unequal zero means: Point light
-    // w equal to zero means: Directional light
-    // It seems that mac os is interpolating between 0.0 and 1.0 so that the different
-    // light sources can lerp to each other. We will not do this here.
-    if (lightPos[3] != 0.0f)
+    if ((p1[3] != 0.0f) && (p2[3] == 0.0f))
     {
-        // Point light, is the normalized direction vector
-        dir = lightPos - v0;
-        dir.normalize();
+        Vec3 dir { p2[0], p2[1], p2[2] };
+        dir.unit();
+        return dir;
     }
-    else
+    if ((p1[3] == 0.0f) && (p2[3] != 0.0f))
     {
-        // Directional light, direction is the unit vector
-        dir = normalizedLightPos;
+        Vec3 dir { p1[0], p1[1], p1[2] };
+        dir *= -1.0f;
+        dir.unit();
+        return dir;
     }
-    return dir;
+    if ((p1[3] == 0.0f) && (p2[3] == 0.0f))
+    {
+        Vec3 dir { p2[0], p2[1], p2[2] };
+        dir -= Vec3 { p1[0], p1[1], p1[2] };
+        dir.unit();
+        return dir;
+    }
+    if ((p1[3] != 0.0f) && (p2[3] != 0.0f))
+    {
+        Vec4 p1p = p1;
+        p1p.perspectiveDivide();
+        Vec4 p2p = p2;
+        p2p.perspectiveDivide();
+        Vec3 dir { p2p[0], p2p[1], p2p[2] };
+        dir -= Vec3 { p1p[0], p1p[1], p1p[2] };
+        dir.unit();
+        return dir;
+    }
+    return Vec3 { 0.0f, 0.0f, 0.0f };
 }
 
 float LightingCalc::calculateAttenuation(const LightingData::LightConfig& lightConfig, const Vec4& v0) const
@@ -158,11 +171,11 @@ float LightingCalc::calculateSpecular(
     const Vec4& lightPos,
     const Vec4& preCalcHalfWayVecInfinite,
     const float nDotDir,
-    const Vec4& n0,
-    const Vec4& dir,
+    const Vec3& n0,
+    const Vec3& dir,
     const float materialSpecularExponent) const
 {
-    Vec4 halfWayVector = dir;
+    Vec3 halfWayVector = dir;
 
     // Convert now the direction in dir to the half way vector
     // Not supported in OpenGL ES
@@ -176,19 +189,9 @@ float LightingCalc::calculateSpecular(
     // }
     // else
     // {
-    // Optimization: When position.w is equal to zero, then dirDiffuse is constant and
-    // we can precompute with this constant value the half way vector.
-    // Otherwise dirDiffuse depends on the vertex and no pre computation is possible
-    if (lightPos[3] != 0.0f)
-    {
-        const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
-        halfWayVector += pointEye;
-        halfWayVector.unit();
-    }
-    else
-    {
-        halfWayVector = preCalcHalfWayVecInfinite;
-    }
+    const Vec3 pointEye { 0.0f, 0.0f, 1.0f };
+    halfWayVector += pointEye;
+    halfWayVector.unit();
     // }
 
     float specular = n0.dot(halfWayVector);

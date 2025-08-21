@@ -108,18 +108,18 @@ private:
         const Vec4& materialDiffuseColor,
         const Vec4& materialSpecularColor,
         const Vec4& v0,
-        const Vec4& n0) const;
+        const Vec3& n0) const;
 
-    Vec4 calculateDirectionFromV0ToLightPos(const Vec4& lightPos, const Vec4& normalizedLightPos, const Vec4& v0) const;
     float calculateAttenuation(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
     float calculateSpecular(
         const Vec4& lightPos,
         const Vec4& preCalcHalfWayVecInfinite,
         const float nDotDir,
-        const Vec4& n0,
-        const Vec4& dir,
+        const Vec3& n0,
+        const Vec3& dir,
         const float materialSpecularExponent) const;
     float calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
+    Vec3 calculateDirection(const Vec4& p1, const Vec4& p2) const;
 
     const LightingData& m_data;
     std::array<PreCalculatedParameters, LightingData::MAX_LIGHTS> m_preCalculatedParameters {};
