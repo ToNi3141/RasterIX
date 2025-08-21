@@ -81,17 +81,7 @@ public:
         const Vec4& vertex,
         const Vec3& normal) const;
 
-    void preCalcParameters();
-
 private:
-    struct PreCalculatedParameters
-    {
-        Vec4 positionNormalized {};
-        Vec4 halfWayVectorInfinite {};
-
-        Vec4 position {};
-    };
-
     void calculateSceneLight(
         Vec4& __restrict sceneLight,
         const Vec4& emissiveColor,
@@ -101,7 +91,6 @@ private:
     void calculateLight(
         Vec4& __restrict color,
         const LightingData::LightConfig& lightConfig,
-        const PreCalculatedParameters& preCalcParameters,
         const bool enableTwoSideModel,
         const float materialSpecularExponent,
         const Vec4& materialAmbientColor,
@@ -113,7 +102,6 @@ private:
     float calculateAttenuation(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
     float calculateSpecular(
         const Vec4& lightPos,
-        const Vec4& preCalcHalfWayVecInfinite,
         const float nDotDir,
         const Vec3& n0,
         const Vec3& dir,
@@ -122,7 +110,6 @@ private:
     Vec3 calculateDirection(const Vec4& p1, const Vec4& p2) const;
 
     const LightingData& m_data;
-    std::array<PreCalculatedParameters, LightingData::MAX_LIGHTS> m_preCalculatedParameters {};
 };
 
 class LightingSetter

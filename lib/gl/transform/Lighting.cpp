@@ -69,7 +69,6 @@ void LightingCalc::calculateLights(
                 continue;
             calculateLight(colorTmp,
                 m_data.lights[i],
-                m_preCalculatedParameters[i],
                 m_data.enableTwoSideModel,
                 m_data.material.specularExponent,
                 ambientColor,
@@ -87,7 +86,6 @@ void LightingCalc::calculateLights(
 void LightingCalc::calculateLight(
     Vec4& __restrict color,
     const LightingData::LightConfig& lightConfig,
-    const PreCalculatedParameters& preCalcParameters,
     const bool enableTwoSideModel,
     const float materialSpecularExponent,
     const Vec4& materialAmbientColor,
@@ -107,7 +105,7 @@ void LightingCalc::calculateLight(
     nDotDir = std::clamp(nDotDir, 0.0f, 1.0f);
 
     const float att = calculateAttenuation(lightConfig, v0);
-    const float specular = calculateSpecular(lightConfig.position, preCalcParameters.halfWayVectorInfinite, nDotDir, n0, dir, materialSpecularExponent);
+    const float specular = calculateSpecular(lightConfig.position, nDotDir, n0, dir, materialSpecularExponent);
     const float spot = calculateSpotlight(lightConfig, v0);
 
     const Vec4 ambientColor = lightConfig.ambientColor * materialAmbientColor;
@@ -169,7 +167,6 @@ float LightingCalc::calculateAttenuation(const LightingData::LightConfig& lightC
 
 float LightingCalc::calculateSpecular(
     const Vec4& lightPos,
-    const Vec4& preCalcHalfWayVecInfinite,
     const float nDotDir,
     const Vec3& n0,
     const Vec3& dir,
@@ -220,13 +217,10 @@ float LightingCalc::calculateSpotlight(const LightingData::LightConfig& lightCon
     float spot = 1.0;
     if (lightConfig.spotlightCutoff != 180.0f)
     {
-        Vec4 p = v0 - lightConfig.position;
-        p.unit();
-        Vec4 sdl;
-        sdl.init();
-        sdl.fromArray(lightConfig.spotlightDirection.data(), 3);
+        const Vec3 dir = calculateDirection(lightConfig.position, v0);
+        Vec3 sdl = lightConfig.spotlightDirection;
         sdl.unit();
-        const float val = p.dot(sdl);
+        const float val = dir.dot(sdl);
         const float cosCutoff = std::cos(lightConfig.spotlightCutoff * 3.1418f / 180.0f);
         if (val >= std::abs(cosCutoff))
         {
@@ -251,28 +245,6 @@ void LightingCalc::calculateSceneLight(
     sceneLight *= ambientColorScene;
     // Emission color of material
     sceneLight += emissiveColor;
-}
-
-void LightingCalc::preCalcParameters()
-{
-    for (std::size_t i = 0; i < m_data.lights.size(); i++)
-    {
-        if (m_data.lightEnable[i] && (m_data.lights[i].position != m_preCalculatedParameters[i].position))
-        {
-            PreCalculatedParameters& p = m_preCalculatedParameters[i];
-            p.position = m_data.lights[i].position;
-
-            // Directional Light Direction
-            p.positionNormalized = p.position;
-            p.positionNormalized.unit();
-
-            // Half Way Vector from infinite viewer
-            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
-            p.halfWayVectorInfinite = p.positionNormalized;
-            p.halfWayVectorInfinite += pointEye;
-            p.halfWayVectorInfinite.unit();
-        }
-    }
 }
 
 void LightingSetter::enableLighting(bool enable)

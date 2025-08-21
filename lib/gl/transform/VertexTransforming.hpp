@@ -114,10 +114,6 @@ public:
     {
         m_primitiveAssembler.init();
         m_normalMatrix = createNormalMatrix();
-        // if (m_data.lighting.lightingEnabled)
-        // {
-        //     m_lighting.preCalcParameters();
-        // }
     }
 
 private:
@@ -198,7 +194,7 @@ private:
             }
             const Vec4 vl = m_data.transformMatrices.modelView.transform(parameter.vertex);
             const Vec4 c = parameter.color;
-            m_lighting.calculateLights(parameter.color, c, vl, normal);
+            lighting::LightingCalc { m_data.lighting }.calculateLights(parameter.color, c, vl, normal);
         }
         parameter.vertex = m_data.transformMatrices.modelView.transform(parameter.vertex);
     }
@@ -436,7 +432,6 @@ private:
         m_data.viewPort.viewportWidth,
         m_data.viewPort.viewportHeight
     };
-    lighting::LightingCalc m_lighting { m_data.lighting };
 };
 
 } // namespace rr::vertextransforming
