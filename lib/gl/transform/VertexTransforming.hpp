@@ -116,10 +116,27 @@ public:
     void init()
     {
         m_primitiveAssembler.init();
-        m_normalMatrix = createNormalMatrix();
+        updateNormalMatrix();
     }
 
 private:
+    void updateNormalMatrix()
+    {
+        bool calculateNormalMatrix = false;
+        for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
+        {
+            if (m_data.tmuEnabled[tu])
+            {
+                calculateNormalMatrix = calculateNormalMatrix || texgen::TexGenCalc { m_data.texGen[tu] }.isEnabled();
+            }
+        }
+        calculateNormalMatrix = calculateNormalMatrix || lighting::LightingCalc { m_data.lighting }.isEnabled();
+        if (calculateNormalMatrix)
+        {
+            m_normalMatrix = createNormalMatrix();
+        }
+    }
+
     bool clipAtPlaneAndDrawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
         planeclipper::PlaneClipperCalc::ClipList list;

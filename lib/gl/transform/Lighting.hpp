@@ -81,6 +81,8 @@ public:
         const Vec4& vertex,
         const Vec3& normal) const;
 
+    bool isEnabled() const { return m_data.lightingEnabled; }
+
 private:
     void calculateSceneLight(
         Vec4& __restrict sceneLight,
