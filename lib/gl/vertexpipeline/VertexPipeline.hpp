@@ -81,7 +81,7 @@ public:
     FeatureEnable& featureEnable() { return m_renderer.featureEnable(); }
 
     // Vertex pipeline configs
-    stencil::StencilSetter& stencil() { return m_stencil; }
+    stencil::StencilSetter& getStencil() { return m_stencil; }
     lighting::LightingSetter& getLighting() { return m_lighting; }
     texgen::TexGenSetter& getTexGen() { return m_texGen[m_tmu]; }
     viewport::ViewPortSetter& getViewPort() { return m_viewPort; }
@@ -90,7 +90,8 @@ public:
     primitiveassembler::PrimitiveAssemblerSetter& getPrimitiveAssembler() { return m_primitiveAssembler; }
     planeclipper::PlaneClipperSetter& getPlaneClipper() { return m_planeClipper; }
     lineassembly::LineAssemblySetter& getLineAssembly() { return m_lineAssembly; }
-    polygonoffset::PolygonOffsetSetter& getPolygonOffset() { return m_polygonOffset; };
+    polygonoffset::PolygonOffsetSetter& getPolygonOffset() { return m_polygonOffset; }
+    shademodel::ShadeModelSetter& getShadeModel() { return m_shadeModel; }
 
 private:
     VertexParameter fetch(const RenderObj& obj, std::size_t i);
@@ -109,15 +110,16 @@ private:
     stencil::StencilSetter m_stencil { [this](const StencilReg& reg)
         { return m_renderer.setStencilBufferConfig(reg); },
         m_elementGlobalData.stencil };
-    lighting::LightingSetter m_lighting { m_lightingData };
-    viewport::ViewPortSetter m_viewPort { m_elementGlobalData.viewPort };
     matrixstore::MatrixStore m_matrixStore { m_elementLocalData.transformMatrices };
+    lighting::LightingSetter m_lighting { m_lightingData, m_matrixStore.getModelView() };
+    viewport::ViewPortSetter m_viewPort { m_elementGlobalData.viewPort };
     culling::CullingSetter m_culling { m_elementGlobalData.culling };
     std::array<texgen::TexGenSetter, RenderConfig::TMU_COUNT> m_texGen {};
     primitiveassembler::PrimitiveAssemblerSetter m_primitiveAssembler { m_elementLocalData.primitiveAssembler };
     planeclipper::PlaneClipperSetter m_planeClipper { m_elementGlobalData.planeClipper, m_matrixStore.getModelView() };
     lineassembly::LineAssemblySetter m_lineAssembly { m_elementGlobalData.lineAssembly };
     polygonoffset::PolygonOffsetSetter m_polygonOffset { m_elementGlobalData.polygonOffset };
+    shademodel::ShadeModelSetter m_shadeModel { m_elementGlobalData.shadeModel };
 };
 
 } // namespace rr

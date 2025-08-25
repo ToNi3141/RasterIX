@@ -27,7 +27,7 @@ void TexGenCalc::calculateTexGenCoords(
     const Vec4& v0,
     const Vec3& n0) const
 {
-    if (m_data.texGenEnableS || m_data.texGenEnableT || m_data.texGenEnableR)
+    if (isEnabled())
     {
         if ((m_data.texGenModeS == TexGenMode::OBJECT_LINEAR)
             || (m_data.texGenModeT == TexGenMode::OBJECT_LINEAR)
@@ -54,6 +54,11 @@ void TexGenCalc::calculateTexGenCoords(
             calculateReflectionMap(st0, modelViewMatrix.transform(v0), normalMatrix.transform(n0));
         }
     }
+}
+
+bool TexGenCalc::isEnabled() const
+{
+    return m_data.texGenEnableS || m_data.texGenEnableT || m_data.texGenEnableR;
 }
 
 void TexGenCalc::calculateObjectLinear(Vec4& st0, const Vec4& v0) const

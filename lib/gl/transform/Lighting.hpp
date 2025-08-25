@@ -20,6 +20,7 @@
 
 #include "Enums.hpp"
 #include "Types.hpp"
+#include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 #include <array>
 
@@ -53,22 +54,6 @@ struct LightingData
         float quadraticAttenuation { 0.0f };
 
         static constexpr bool localViewer { false }; // Not necessary, local viewer is not supported in OpenGL ES because of performance degradation (GL_LIGHT_MODEL_LOCAL_VIEWER)
-
-        Vec4 preCalcDirectionalLightDir {};
-        Vec4 preCalcHalfWayVectorInfinite {};
-
-        void preCalcVectors()
-        {
-            // Directional Light Direction
-            preCalcDirectionalLightDir = position;
-            preCalcDirectionalLightDir.unit();
-
-            // Half Way Vector from infinite viewer
-            const Vec4 pointEye { 0.0f, 0.0f, 1.0f, 1.0f };
-            preCalcHalfWayVectorInfinite = preCalcDirectionalLightDir;
-            preCalcHalfWayVectorInfinite += pointEye;
-            preCalcHalfWayVectorInfinite.unit();
-        }
     };
 
     std::array<LightConfig, MAX_LIGHTS> lights {};
@@ -79,6 +64,7 @@ struct LightingData
     bool enableColorMaterialAmbient { false };
     bool enableColorMaterialDiffuse { false };
     bool enableColorMaterialSpecular { false };
+    bool enableTwoSideModel { false };
 };
 
 class LightingCalc
@@ -89,6 +75,15 @@ public:
     {
     }
 
+    void calculateLights(
+        Vec4& __restrict color,
+        const Vec4& triangleColor,
+        const Vec4& vertex,
+        const Vec3& normal) const;
+
+    bool isEnabled() const { return m_data.lightingEnabled; }
+
+private:
     void calculateSceneLight(
         Vec4& __restrict sceneLight,
         const Vec4& emissiveColor,
@@ -98,27 +93,31 @@ public:
     void calculateLight(
         Vec4& __restrict color,
         const LightingData::LightConfig& lightConfig,
+        const bool enableTwoSideModel,
         const float materialSpecularExponent,
         const Vec4& materialAmbientColor,
         const Vec4& materialDiffuseColor,
         const Vec4& materialSpecularColor,
         const Vec4& v0,
-        const Vec4& n0) const;
+        const Vec3& n0) const;
 
-    void calculateLights(
-        Vec4& __restrict color,
-        const Vec4& triangleColor,
-        const Vec4& vertex,
-        const Vec3& normal) const;
+    float calculateAttenuation(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
+    float calculateSpecular(
+        const Vec4& lightPos,
+        const float nDotDir,
+        const Vec3& n0,
+        const Vec3& dir,
+        const float materialSpecularExponent) const;
+    float calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
+    Vec3 calculateDirection(const Vec4& p1, const Vec4& p2) const;
 
-private:
     const LightingData& m_data;
 };
 
 class LightingSetter
 {
 public:
-    LightingSetter(LightingData& lightingData);
+    LightingSetter(LightingData& lightingData, const Mat44& modelViewMatrix);
 
     bool lightingEnabled() const { return m_data.lightingEnabled; }
 
@@ -137,6 +136,10 @@ public:
     void setConstantAttenuationLight(const std::size_t light, const float val);
     void setLinearAttenuationLight(const std::size_t light, const float val);
     void setQuadraticAttenuationLight(const std::size_t light, const float val);
+    void enableTwoSideModel(const bool enable);
+    void setSpotlightDirection(const std::size_t light, const Vec3& dir);
+    void setSpotlightExponent(const std::size_t light, const float exponent);
+    void setSpotlightCutoff(const std::size_t light, const float cutoff);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);
@@ -149,6 +152,7 @@ private:
     void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);
 
     LightingData& m_data;
+    const Mat44& m_modelViewMatrix;
 
     bool m_dataChanged { true };
 

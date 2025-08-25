@@ -104,7 +104,7 @@ private:
                 : depthFunc { static_cast<uint32_t>(TestFunc::LESS) }
                 , alphaFunc { static_cast<uint32_t>(TestFunc::ALWAYS) }
                 , referenceAlphaValue { 0xff }
-                , depthMask { false }
+                , depthMask { true }
                 , colorMaskA { true }
                 , colorMaskB { true }
                 , colorMaskG { true }

@@ -143,7 +143,7 @@ GLAPI void APIENTRY impl_glClearStencil(GLint s)
 {
     SPDLOG_DEBUG("glClearStencil {} called", s);
 
-    RIXGL::getInstance().pipeline().stencil().setClearStencil(s);
+    RIXGL::getInstance().pipeline().getStencil().setClearStencil(s);
 }
 
 GLAPI void APIENTRY impl_glClipPlane(GLenum plane, const GLdouble* equation)
@@ -775,7 +775,7 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST_TWO_SIDE_EXT called");
-        RIXGL::getInstance().pipeline().stencil().enableTwoSideStencil(false);
+        RIXGL::getInstance().pipeline().getStencil().enableTwoSideStencil(false);
         break;
     case GL_COLOR_LOGIC_OP:
         SPDLOG_DEBUG("glDisable GL_COLOR_LOGIC_OP called");
@@ -889,7 +889,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         break;
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST_TWO_SIDE_EXT called");
-        RIXGL::getInstance().pipeline().stencil().enableTwoSideStencil(true);
+        RIXGL::getInstance().pipeline().getStencil().enableTwoSideStencil(true);
         break;
     case GL_COLOR_LOGIC_OP:
         SPDLOG_DEBUG("glEnable GL_COLOR_LOGIC_OP called");
@@ -1035,7 +1035,7 @@ GLAPI void APIENTRY impl_glFogf(GLenum pname, GLfloat param)
         RIXGL::getInstance().pipeline().fog().setFogEnd(param);
         break;
     default:
-        SPDLOG_ERROR("Unknown pname 0x{:X} received. Deactivate fog to avoid artefacts.");
+        SPDLOG_ERROR("Unknown pname 0x{:X} received. Deactivate fog to avoid artifacts.");
         impl_glDisable(GL_FOG);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
         break;
@@ -1396,7 +1396,26 @@ GLAPI GLboolean APIENTRY impl_glIsList(GLuint list)
 
 GLAPI void APIENTRY impl_glLightModelf(GLenum pname, GLfloat param)
 {
-    SPDLOG_WARN("glLightModelf not implemented");
+    SPDLOG_DEBUG("glLightModelf pname 0x{:X} param {} called", pname, param);
+    if (pname == GL_LIGHT_MODEL_TWO_SIDE)
+    {
+        if (param == GL_TRUE)
+        {
+            RIXGL::getInstance().pipeline().getLighting().enableTwoSideModel(true);
+        }
+        else if (param == GL_FALSE)
+        {
+            RIXGL::getInstance().pipeline().getLighting().enableTwoSideModel(false);
+        }
+        else
+        {
+            RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        }
+    }
+    else
+    {
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+    }
 }
 
 GLAPI void APIENTRY impl_glLightModelfv(GLenum pname, const GLfloat* params)
@@ -1409,13 +1428,15 @@ GLAPI void APIENTRY impl_glLightModelfv(GLenum pname, const GLfloat* params)
     }
     else
     {
+        SPDLOG_DEBUG("glLightModelfv pname 0x{:X} params[0] {} redirected to glLightModelf", pname, params[0]);
         impl_glLightModelf(pname, params[0]);
     }
 }
 
 GLAPI void APIENTRY impl_glLightModeli(GLenum pname, GLint param)
 {
-    SPDLOG_WARN("glLightModeli pname 0x{:X} param 0x{:X} not implemented", pname, param);
+    SPDLOG_DEBUG("glLightModeli pname 0x{:X} param 0x{:X} redirected to glLightModelf", pname, param);
+    impl_glLightModelf(pname, param);
 }
 
 GLAPI void APIENTRY impl_glLightModeliv(GLenum pname, const GLint* params)
@@ -1438,12 +1459,10 @@ GLAPI void APIENTRY impl_glLightf(GLenum light, GLenum pname, GLfloat param)
     switch (pname)
     {
     case GL_SPOT_EXPONENT:
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        SPDLOG_WARN("glLightf GL_SPOT_EXPONENT not implemented");
+        RIXGL::getInstance().pipeline().getLighting().setSpotlightExponent(light - GL_LIGHT0, param);
         break;
     case GL_SPOT_CUTOFF:
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        SPDLOG_WARN("glLightf GL_SPOT_CUTOFF not implemented");
+        RIXGL::getInstance().pipeline().getLighting().setSpotlightCutoff(light - GL_LIGHT0, param);
         break;
     case GL_CONSTANT_ATTENUATION:
         RIXGL::getInstance().pipeline().getLighting().setConstantAttenuationLight(light - GL_LIGHT0, param);
@@ -1490,8 +1509,7 @@ GLAPI void APIENTRY impl_glLightfv(GLenum light, GLenum pname, const GLfloat* pa
         break;
     }
     case GL_SPOT_DIRECTION:
-        SPDLOG_WARN("glLightfv GL_SPOT_DIRECTION not implemented");
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        RIXGL::getInstance().pipeline().getLighting().setSpotlightDirection(light - GL_LIGHT0, { params });
         break;
     default:
         SPDLOG_DEBUG("glLightfv redirected to glLightf");
@@ -2260,7 +2278,20 @@ GLAPI void APIENTRY impl_glSelectBuffer(GLsizei size, GLuint* buffer)
 
 GLAPI void APIENTRY impl_glShadeModel(GLenum mode)
 {
-    SPDLOG_WARN("glShadeModel not implemented");
+    SPDLOG_DEBUG("glShadeModel 0x{:X} called", mode);
+    if (mode == GL_FLAT)
+    {
+        RIXGL::getInstance().pipeline().getShadeModel().setShadeModelFlat(true);
+    }
+    else if (mode == GL_SMOOTH)
+    {
+        RIXGL::getInstance().pipeline().getShadeModel().setShadeModelFlat(false);
+    }
+    else
+    {
+        SPDLOG_ERROR("glShadeModel unknown mode received.");
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+    }
 }
 
 GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
@@ -2272,9 +2303,9 @@ GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
 
     if (error == GL_NO_ERROR)
     {
-        RIXGL::getInstance().pipeline().stencil().setTestFunc(testFunc);
-        RIXGL::getInstance().pipeline().stencil().setRef(ref);
-        RIXGL::getInstance().pipeline().stencil().setMask(mask);
+        RIXGL::getInstance().pipeline().getStencil().setTestFunc(testFunc);
+        RIXGL::getInstance().pipeline().getStencil().setRef(ref);
+        RIXGL::getInstance().pipeline().getStencil().setMask(mask);
     }
     else
     {
@@ -2285,7 +2316,7 @@ GLAPI void APIENTRY impl_glStencilFunc(GLenum func, GLint ref, GLuint mask)
 GLAPI void APIENTRY impl_glStencilMask(GLuint mask)
 {
     SPDLOG_DEBUG("glStencilMask 0x{:X} called", mask);
-    RIXGL::getInstance().pipeline().stencil().setStencilMask(mask);
+    RIXGL::getInstance().pipeline().getStencil().setStencilMask(mask);
 }
 
 GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
@@ -2302,9 +2333,9 @@ GLAPI void APIENTRY impl_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass)
 
     if ((error0 == GL_NO_ERROR) && (error1 == GL_NO_ERROR) == (error2 == GL_NO_ERROR))
     {
-        RIXGL::getInstance().pipeline().stencil().setOpFail(failOp);
-        RIXGL::getInstance().pipeline().stencil().setOpZFail(zfailOp);
-        RIXGL::getInstance().pipeline().stencil().setOpZPass(zpassOp);
+        RIXGL::getInstance().pipeline().getStencil().setOpFail(failOp);
+        RIXGL::getInstance().pipeline().getStencil().setOpZFail(zfailOp);
+        RIXGL::getInstance().pipeline().getStencil().setOpZPass(zpassOp);
     }
     else
     {
@@ -4318,11 +4349,11 @@ GLAPI void APIENTRY impl_glActiveStencilFaceEXT(GLenum face)
 
     if (face == GL_FRONT)
     {
-        RIXGL::getInstance().pipeline().stencil().setStencilFace(StencilFace::FRONT);
+        RIXGL::getInstance().pipeline().getStencil().setStencilFace(StencilFace::FRONT);
     }
     else if (face == GL_BACK)
     {
-        RIXGL::getInstance().pipeline().stencil().setStencilFace(StencilFace::BACK);
+        RIXGL::getInstance().pipeline().getStencil().setStencilFace(StencilFace::BACK);
     }
     else
     {

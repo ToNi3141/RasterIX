@@ -109,7 +109,7 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
 bool VertexPipeline::updatePipeline()
 {
     bool ret = m_renderer.updatePipeline();
-    ret = ret && stencil().update();
+    ret = ret && getStencil().update();
     return ret;
 }
 
