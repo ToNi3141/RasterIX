@@ -28,6 +28,11 @@ module top #(
     input  wire                             s_cmd_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
+    output wire                             m_cmd_resp_axis_tvalid,
+    input  wire                             m_cmd_resp_axis_tready,
+    output wire                             m_cmd_resp_axis_tlast,
+    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_resp_axis_tdata,
+
     // AXI Stream framebuffer
     output wire                             m_framebuffer_axis_tvalid,
     input  wire                             m_framebuffer_axis_tready,
@@ -313,6 +318,11 @@ module top #(
         .s_cmd_axis_tready(s_cmd_axis_tready),
         .s_cmd_axis_tlast(s_cmd_axis_tlast),
         .s_cmd_axis_tdata(s_cmd_axis_tdata),
+
+        .m_cmd_resp_axis_tvalid(m_cmd_resp_axis_tvalid),
+        .m_cmd_resp_axis_tready(m_cmd_resp_axis_tready),
+        .m_cmd_resp_axis_tlast(m_cmd_resp_axis_tlast),
+        .m_cmd_resp_axis_tdata(m_cmd_resp_axis_tdata),
 
         .swap_fb(swap_fb),
         .swap_fb_enable_vsync(),

@@ -69,6 +69,11 @@ void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
     m_busyBufferId = index;
 }
 
+void DMAProxyBusConnector::readData(const uint8_t index, const uint32_t size)
+{
+    // TODO: Implement
+}
+
 void DMAProxyBusConnector::blockUntilWriteComplete()
 {
     waitForDma();

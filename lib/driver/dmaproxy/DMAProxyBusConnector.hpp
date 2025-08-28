@@ -32,6 +32,7 @@ public:
     DMAProxyBusConnector();
 
     virtual void writeData(const uint8_t index, const uint32_t size) override;
+    virtual void readData(const uint8_t index, const uint32_t size) override;
     virtual void blockUntilWriteComplete() override;
     virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override;
     virtual uint8_t getBufferCount() const override;

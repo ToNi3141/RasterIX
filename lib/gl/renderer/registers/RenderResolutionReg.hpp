@@ -25,6 +25,14 @@ namespace rr
 class RenderResolutionReg : public BaseXYReg<0x7ff, 0x7ff>
 {
 public:
+    RenderResolutionReg(const uint16_t w, const uint16_t h)
+        : BaseXYReg<0x7ff, 0x7ff> { w, h }
+    {
+    }
+    RenderResolutionReg()
+        : BaseXYReg<0x7ff, 0x7ff> { 320, 240 }
+    {
+    }
     static constexpr uint32_t getAddr() { return 0x9; }
 };
 } // namespace rr

@@ -51,7 +51,22 @@ public:
             (std::max)(static_cast<uint32_t>(data.size()), DEVICE_MIN_TRANSFER_SIZE),
             addr + RenderConfig::GRAM_MEMORY_LOC);
         addDseStorePayload(commandSize, data);
-        m_busConnector.writeData(getStoreBufferIndex(), commandSize + data.size());
+        m_busConnector.writeData(getLoadStoreBufferIndex(), commandSize + data.size());
+        return true;
+    }
+
+    bool readFromDeviceMemory(tcb::span<uint8_t> data, const uint32_t addr) override
+    {
+        // TODO: Handle transfers, which are bigger than the displaylist
+        blockUntilDeviceIsIdle();
+        const uint32_t commandSize = addDseLoadCommand(
+            (std::max)(static_cast<uint32_t>(data.size()), DEVICE_MIN_TRANSFER_SIZE),
+            addr + RenderConfig::GRAM_MEMORY_LOC);
+        m_busConnector.writeData(getLoadStoreBufferIndex(), commandSize);
+
+        m_busConnector.readData(getLoadStoreBufferIndex(), data.size());
+        tcb::span<uint8_t> loadedData = m_busConnector.requestBuffer(getLoadStoreBufferIndex()).subspan(0, data.size());
+        std::copy(loadedData.begin(), loadedData.end(), data.begin());
         return true;
     }
 
@@ -72,7 +87,7 @@ public:
     }
 
 private:
-    uint32_t getStoreBufferIndex() const
+    uint32_t getLoadStoreBufferIndex() const
     {
         return m_busConnector.getBufferCount() - 1;
     }
@@ -84,12 +99,17 @@ private:
 
     uint32_t addDseStoreCommand(const uint32_t size, const uint32_t addr)
     {
-        return addDseCommand(getStoreBufferIndex(), OP_STORE, size, addr);
+        return addDseCommand(getLoadStoreBufferIndex(), OP_STORE, size, addr);
+    }
+
+    uint32_t addDseLoadCommand(const uint32_t size, const uint32_t addr)
+    {
+        return addDseCommand(getLoadStoreBufferIndex(), OP_LOAD, size, addr);
     }
 
     uint32_t addDseStorePayload(const std::size_t offset, const tcb::span<const uint8_t> payload)
     {
-        tcb::span<uint8_t> s = m_busConnector.requestBuffer(getStoreBufferIndex());
+        tcb::span<uint8_t> s = m_busConnector.requestBuffer(getLoadStoreBufferIndex());
         std::copy(payload.begin(), payload.end(), s.last(s.size() - offset).begin());
         return (std::max)(static_cast<uint32_t>(payload.size()), DEVICE_MIN_TRANSFER_SIZE);
     }

@@ -3064,7 +3064,11 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
 {
     SPDLOG_DEBUG("glTexImage2D target 0x{:X} level 0x{:X} internalformat 0x{:X} width {} height {} border 0x{:X} format 0x{:X} type 0x{:X} called", target, level, internalformat, width, height, border, format, type);
 
-    (void)border; // Border is not supported and is ignored for now. What does border mean: https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
+    // Border is not supported in OpenGL ES and is ignored. What does border mean: https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
+    if ((border != 0) || (level < 0))
+    {
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+    }
 
     const std::size_t maxTexSize { RIXGL::getInstance().getMaxTextureSize() };
 
@@ -3545,14 +3549,57 @@ GLAPI void APIENTRY impl_glColorPointer(GLint size, GLenum type, GLsizei stride,
     RIXGL::getInstance().vertexArray().setColorPointer(pointer);
 }
 
-GLAPI void APIENTRY impl_glCopyTexImage1D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border)
+GLAPI void APIENTRY impl_glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
 {
     SPDLOG_WARN("glCopyTexImage1D not implemented");
 }
 
-GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 {
-    SPDLOG_WARN("glCopyTexImage2D not implemented");
+    SPDLOG_DEBUG("glCopyTexImage2D target 0x{:X} level 0x{:X} internalformat 0x{:X} x {} y {} width {} height {} border 0x{:X} called",
+        target, level, internalformat, x, y, width, height, border);
+
+    TextureObject::IntendedInternalPixelFormat internalPixelFormat;
+    const GLenum error = TextureConverter::convertToIntendedPixelFormat(internalPixelFormat, internalformat);
+    if (error != GL_NO_ERROR)
+    {
+        RIXGL::getInstance().setError(error);
+        return;
+    }
+
+    switch (internalPixelFormat)
+    {
+    case TextureObject::IntendedInternalPixelFormat::ALPHA:
+    case TextureObject::IntendedInternalPixelFormat::LUMINANCE_ALPHA:
+    case TextureObject::IntendedInternalPixelFormat::RGBA:
+    case TextureObject::IntendedInternalPixelFormat::RGBA1:
+        RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+        return;
+    default:
+        break;
+    }
+    const GLint cbw = RIXGL::getInstance().pipeline().getFramebufferWidth();
+    const GLint cbh = RIXGL::getInstance().pipeline().getFramebufferHeight();
+    const GLint colorBufferSize = cbw * cbh;
+
+    uint16_t* colorBuffer = new uint16_t[colorBufferSize];
+    RIXGL::getInstance().pipeline().readBackColorBuffer({ reinterpret_cast<uint8_t*>(colorBuffer), static_cast<std::size_t>(colorBufferSize * 2) });
+
+    uint16_t* texBuffer = new uint16_t[width * height];
+
+    for (GLint ih = 0; ih < height; ih++)
+    {
+        for (GLint iw = 0; iw < width; iw++)
+        {
+            GLint cba = ((cbh - ih + y) * cbw) + iw + x;
+            cba = std::min(cba, colorBufferSize - 1);
+            texBuffer[(ih * width) + iw] = colorBuffer[cba];
+        }
+    }
+
+    impl_glTexImage2D(target, level, internalformat, width, height, border, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, texBuffer);
+    delete texBuffer;
+    delete colorBuffer;
 }
 
 GLAPI void APIENTRY impl_glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width)
@@ -3834,7 +3881,7 @@ GLAPI void APIENTRY impl_glDrawRangeElements(GLenum mode, GLuint start, GLuint e
     SPDLOG_WARN("glDrawRangeElements not implemented");
 }
 
-GLAPI void APIENTRY impl_glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+GLAPI void APIENTRY impl_glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
     SPDLOG_WARN("glTexImage3D not implemented");
 }

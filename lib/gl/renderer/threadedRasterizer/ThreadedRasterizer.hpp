@@ -96,6 +96,13 @@ public:
         return true;
     }
 
+    bool readFromDeviceMemory(tcb::span<uint8_t> data, const uint32_t addr) override
+    {
+        m_workerThread.wait();
+        m_uploadThread.wait();
+        return m_device.readFromDeviceMemory(data, addr);
+    }
+
     void blockUntilDeviceIsIdle() override
     {
         m_workerThread.wait();
@@ -209,7 +216,6 @@ private:
 
     void switchDisplayLists()
     {
-        m_uploadThread.wait();
         m_displayListBuffer.swap();
         m_displayListBuffer.getBack().clearDisplayListAssembler();
     }
@@ -509,6 +515,7 @@ private:
 
     void swapAndUploadDisplayLists()
     {
+        m_uploadThread.wait();
         switchDisplayLists();
         textureUpload();
         uploadDisplayList();

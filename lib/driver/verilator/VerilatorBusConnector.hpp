@@ -50,6 +50,24 @@ public:
         m_top.s_cmd_axis_tvalid = 0;
     }
 
+    virtual void readData(const uint8_t index, const uint32_t size) override
+    {
+        // Convert data to 32 bit variables to ease the access
+        uint32_t* data32 = reinterpret_cast<uint32_t*>(this->m_dlMem[index].data());
+        const uint32_t bytes32 = size / sizeof(*data32);
+        m_top.m_cmd_resp_axis_tready = 1;
+        for (uint32_t i = 0; i < bytes32;)
+        {
+            if (m_top.m_cmd_resp_axis_tvalid)
+            {
+                data32[i] = m_top.m_cmd_resp_axis_tdata;
+                i++;
+            }
+            clk();
+        }
+        m_top.m_cmd_resp_axis_tready = 0;
+    }
+
     virtual void blockUntilWriteComplete() override
     {
     }

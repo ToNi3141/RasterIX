@@ -34,6 +34,13 @@ public:
     ///     As long as the previous one is ongoing, this function blocks.
     virtual void writeData(const uint8_t index, const uint32_t size) = 0;
 
+    /// @brief Downloads a chunk of data
+    /// @param index The index of the buffer to download
+    /// @param size How many bytes of this buffer to download
+    /// @note: A new transfer is started when the previous one is finished.
+    ///     As long as the previous one is ongoing, this function blocks.
+    virtual void readData(const uint8_t index, const uint32_t size) = 0;
+
     /// @brief Blocks until a new writeData() can be called without blocking.
     ///     This also implies that the currently transferred buffer is free for reuse.
     virtual void blockUntilWriteComplete() = 0;

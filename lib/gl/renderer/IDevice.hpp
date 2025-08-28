@@ -31,16 +31,23 @@ public:
 
     /// @brief Streams a display list to the device.
     ///
-    /// @param index The index of the display list in the device's memory.
+    /// @param index The index of the display list in the devices memory.
     /// @param size The size of the display list in bytes.
     virtual void streamDisplayList(const uint8_t index, const uint32_t size) = 0;
 
-    /// @brief Writes data to a specific address in the device's memory.
+    /// @brief Writes data to a specific address in the devices memory.
     ///
     /// @param data The data to write.
     /// @param addr The address to write to.
     /// @return True if the write operation was successful, false otherwise.
     virtual bool writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) = 0;
+
+    /// @brief Reads data from a specific address in the devices memory.
+    ///
+    /// @param data The data where to store the loaded data.
+    /// @param addr The address to read from.
+    /// @return True if the read operation was successful, false otherwise.
+    virtual bool readFromDeviceMemory(tcb::span<uint8_t> data, const uint32_t addr) = 0;
 
     /// @brief Waits until the device is idle and ready for new commands.
     ///     When this method returns, the buffer used in streamDisplayList can be safely reused.
