@@ -33,9 +33,11 @@ public:
 
     virtual void writeData(const uint8_t index, const uint32_t size) override;
     virtual void readData(const uint8_t index, const uint32_t size) override;
-    virtual void blockUntilWriteComplete() override;
-    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override;
-    virtual uint8_t getBufferCount() const override;
+    virtual void blockUntilTransferIsComplete() override;
+    virtual tcb::span<uint8_t> requestWriteBuffer(const uint8_t index) override;
+    virtual tcb::span<uint8_t> requestReadBuffer(const uint8_t index) override;
+    virtual uint8_t getWriteBufferCount() const override;
+    virtual uint8_t getReadBufferCount() const override;
 
 private:
     struct Channel
@@ -45,11 +47,14 @@ private:
     };
 
     void waitForDma();
+    void openChannel(Channel& channel, const char* channelName[]);
 
     static const std::size_t INVALID_BUFFER;
     Channel m_txChannel;
-    tcb::span<uint8_t> m_tmpBuffer {};
+    Channel m_rxChannel;
+
     std::size_t m_busyBufferId { INVALID_BUFFER };
+    Channel m_busyChannel {};
 };
 
 } // namespace rr

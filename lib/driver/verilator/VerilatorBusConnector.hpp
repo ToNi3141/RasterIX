@@ -35,7 +35,7 @@ public:
     virtual void writeData(const uint8_t index, const uint32_t size) override
     {
         // Convert data to 32 bit variables to ease the access
-        const uint32_t* data32 = reinterpret_cast<const uint32_t*>(this->m_dlMem[index].data());
+        const uint32_t* data32 = reinterpret_cast<const uint32_t*>(this->m_dlMemTx[index].data());
         const uint32_t bytes32 = size / sizeof(*data32);
         for (uint32_t i = 0; i < bytes32;)
         {
@@ -53,7 +53,7 @@ public:
     virtual void readData(const uint8_t index, const uint32_t size) override
     {
         // Convert data to 32 bit variables to ease the access
-        uint32_t* data32 = reinterpret_cast<uint32_t*>(this->m_dlMem[index].data());
+        uint32_t* data32 = reinterpret_cast<uint32_t*>(this->m_dlMemRx[index].data());
         const uint32_t bytes32 = size / sizeof(*data32);
         m_top.m_cmd_resp_axis_tready = 1;
         for (uint32_t i = 0; i < bytes32;)
@@ -68,7 +68,7 @@ public:
         m_top.m_cmd_resp_axis_tready = 0;
     }
 
-    virtual void blockUntilWriteComplete() override
+    virtual void blockUntilTransferIsComplete() override
     {
     }
 

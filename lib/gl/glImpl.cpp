@@ -3591,8 +3591,9 @@ GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum int
     {
         for (GLint iw = 0; iw < width; iw++)
         {
-            GLint cba = ((cbh - ih + y) * cbw) + iw + x;
+            GLint cba = ((cbh - ih - y) * cbw) + iw + x;
             cba = std::min(cba, colorBufferSize - 1);
+            cba = std::max(0, cba);
             texBuffer[(ih * width) + iw] = colorBuffer[cba];
         }
     }
@@ -3822,7 +3823,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
 
-    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [](const uint16_t* p)
+    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height)], [](const uint16_t* p)
         { delete[] p; });
     if (!texMemShared)
     {
