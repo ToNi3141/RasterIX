@@ -57,18 +57,17 @@ public:
 
     bool readFromDeviceMemory(tcb::span<uint8_t> data, const uint32_t addr) override
     {
-        // TODO: Handle transfers, which are bigger than the displaylist
         blockUntilDeviceIsIdle();
-        const uint32_t commandSize = addDseLoadCommand(
-            (std::max)(static_cast<uint32_t>(data.size()), DEVICE_MIN_TRANSFER_SIZE),
-            addr + RenderConfig::GRAM_MEMORY_LOC);
-        m_busConnector.writeData(getStoreBufferIndex(), commandSize);
-
-        blockUntilDeviceIsIdle();
-        m_busConnector.readData(getLoadBufferIndex(), data.size());
-        blockUntilDeviceIsIdle();
-        tcb::span<uint8_t> loadedData = m_busConnector.requestReadBuffer(getLoadBufferIndex()).subspan(0, data.size());
-        std::copy(loadedData.begin(), loadedData.end(), data.begin());
+        const std::size_t alignedSize = ((data.size() + DEVICE_MIN_TRANSFER_SIZE - 1) / DEVICE_MIN_TRANSFER_SIZE) * DEVICE_MIN_TRANSFER_SIZE;
+        const std::size_t loadBufferSize = m_busConnector.requestReadBuffer(getLoadBufferIndex()).size();
+        const std::size_t chunkSize = (loadBufferSize / DEVICE_MIN_TRANSFER_SIZE) * DEVICE_MIN_TRANSFER_SIZE;
+        for (std::size_t i = 0; i < alignedSize; i += (std::min)(chunkSize, alignedSize - i))
+        {
+            loadChunk(
+                data.subspan(i, (std::min)(data.size() - i, chunkSize)),
+                (std::min)(alignedSize - i, chunkSize),
+                addr + RenderConfig::GRAM_MEMORY_LOC + i);
+        }
         return true;
     }
 
@@ -142,6 +141,19 @@ private:
             std::fill(buffer.begin(), buffer.end(), 0);
         }
         return (std::max)(size, DEVICE_MIN_TRANSFER_SIZE);
+    }
+
+    void loadChunk(const tcb::span<uint8_t> data, const std::size_t alignedSize, const uint32_t addr)
+    {
+        const uint32_t commandSize = addDseLoadCommand(alignedSize, addr);
+        m_busConnector.writeData(getStoreBufferIndex(), commandSize);
+        blockUntilDeviceIsIdle();
+
+        m_busConnector.readData(getLoadBufferIndex(), alignedSize);
+        blockUntilDeviceIsIdle();
+
+        tcb::span<uint8_t> loadedData = m_busConnector.requestReadBuffer(getLoadBufferIndex()).subspan(0, data.size());
+        std::copy(loadedData.begin(), loadedData.end(), data.begin());
     }
 
     IBusConnector& m_busConnector;
