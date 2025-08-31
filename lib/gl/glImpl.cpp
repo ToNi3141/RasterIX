@@ -3823,8 +3823,12 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
 
-    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height)], [](const uint16_t* p)
+    using PixelType = std::remove_const<TextureObject::PixelsType::element_type>::type;
+    const std::size_t sharedTexMemSize = texObj.width * texObj.height * sizeof(TextureObject::PixelsType::element_type);
+    std::shared_ptr<PixelType> texMemShared(
+        new PixelType[sharedTexMemSize / sizeof(PixelType)], [](const PixelType* p)
         { delete[] p; });
+
     if (!texMemShared)
     {
         RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
@@ -3835,20 +3839,21 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     // In case, the current object contains pixel data, copy the data. Otherwise just initialize the memory.
     if (texObj.pixels)
     {
-        memcpy(texMemShared.get(), texObj.pixels.get(), texObj.width * texObj.height * 2);
+        memcpy(texMemShared.get(), texObj.pixels.get(), texObj.sizeInBytes);
     }
     else
     {
         // Initialize the memory with zero for non power of two textures.
         // Its probably the most reasonable init, because if the alpha channel is activated,
         // then the not used area is then just transparent.
-        memset(texMemShared.get(), 0, texObj.width * texObj.height * 2);
+        memset(texMemShared.get(), 0, sharedTexMemSize);
     }
 
     // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
     if (pixels != nullptr)
     {
-        TextureConverter::convert(texMemShared,
+        TextureConverter::convert(
+            texMemShared,
             texObj.intendedPixelFormat,
             texObj.width,
             xoffset,
@@ -3861,6 +3866,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     }
 
     texObj.pixels = texMemShared;
+    texObj.sizeInBytes = sharedTexMemSize;
 }
 
 GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid* pointer)

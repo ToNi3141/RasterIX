@@ -26,6 +26,7 @@ namespace rr
 {
 struct TextureObject
 {
+    using PixelsType = std::shared_ptr<const uint16_t>;
     static constexpr std::size_t MAX_LOD { 8 };
     enum class IntendedInternalPixelFormat
     {
@@ -123,7 +124,8 @@ struct TextureObject
         return format;
     }
 
-    std::shared_ptr<const uint16_t> pixels {}; ///< The texture in the format defined by PixelFormat
+    PixelsType pixels {}; ///< The texture in the format defined by PixelFormat
+    std::size_t sizeInBytes {}; // The size of the pixels pointer in bytes
     std::size_t width {}; ///< The width of the texture
     std::size_t height {}; ///< The height of the texture
     IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat

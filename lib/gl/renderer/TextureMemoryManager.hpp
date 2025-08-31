@@ -293,7 +293,7 @@ private:
             std::size_t counter = 0;
             for (auto& e : textures)
             {
-                counter += e.width * e.height * 2;
+                counter += e.sizeInBytes;
             }
             return counter;
         }
@@ -305,19 +305,19 @@ private:
             uint32_t mipMapAddr = 0;
             for (level = 0; level < textures.size(); level++)
             {
-                if (addr < (mipMapAddr + textures[level].width * textures[level].height * 2))
+                if (addr < (mipMapAddr + textures[level].sizeInBytes))
                 {
                     mipMapAddr = addr - mipMapAddr;
                     break;
                 }
-                mipMapAddr += textures[level].width * textures[level].height * 2;
+                mipMapAddr += textures[level].sizeInBytes;
             }
 
             tcb::span<const uint8_t> ret {};
             std::size_t bufferSize = 0;
             for (; level < textures.size(); level++)
             {
-                const std::size_t texSize = textures[level].width * textures[level].height * 2;
+                const std::size_t texSize = textures[level].sizeInBytes;
                 const uint8_t* pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textures[level].pixels).get() + mipMapAddr;
                 const std::size_t dataSize = (std::min)(texSize - static_cast<std::size_t>(mipMapAddr), buffer.size() - bufferSize);
                 std::memcpy(buffer.data() + bufferSize, pixels, dataSize);
