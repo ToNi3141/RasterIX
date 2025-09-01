@@ -19,6 +19,7 @@
 #include "glImpl.h"
 #include "RIXGL.hpp"
 #include "TextureConverter.hpp"
+#include "glHelpers.hpp"
 #include "glTypeConverters.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "vertexpipeline/VertexArray.hpp"
@@ -3574,33 +3575,26 @@ GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum int
     case TextureObject::IntendedInternalPixelFormat::RGBA:
     case TextureObject::IntendedInternalPixelFormat::RGBA1:
         RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+        SPDLOG_ERROR("Invalid internal format used (framebuffer does not support an alpha channel)");
         return;
     default:
         break;
     }
-    const GLint cbw = RIXGL::getInstance().pipeline().getFramebufferWidth();
-    const GLint cbh = RIXGL::getInstance().pipeline().getFramebufferHeight();
-    const GLint colorBufferSize = cbw * cbh;
 
-    uint16_t* colorBuffer = new uint16_t[colorBufferSize];
-    RIXGL::getInstance().pipeline().readBackColorBuffer({ reinterpret_cast<uint8_t*>(colorBuffer), static_cast<std::size_t>(colorBufferSize * 2) });
-
-    uint16_t* texBuffer = new uint16_t[width * height];
-
-    for (GLint ih = 0; ih < height; ih++)
+    const GLsizei maxTexSize { static_cast<GLsizei>(RIXGL::getInstance().getMaxTextureSize()) };
+    if ((width > maxTexSize) || (height > maxTexSize))
     {
-        for (GLint iw = 0; iw < width; iw++)
-        {
-            GLint cba = ((cbh - ih - y) * cbw) + iw + x;
-            cba = std::min(cba, colorBufferSize - 1);
-            cba = std::max(0, cba);
-            texBuffer[(ih * width) + iw] = colorBuffer[cba];
-        }
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glCopyTexImage2D texture is too big.");
+        return;
     }
 
+    const uint16_t* texBuffer = getTextureFromFramebuffer(x, y, width, height);
+
+    SPDLOG_DEBUG("glCopyTexImage2D redirect to glTexImage2D");
     impl_glTexImage2D(target, level, internalformat, width, height, border, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, texBuffer);
+
     delete texBuffer;
-    delete colorBuffer;
 }
 
 GLAPI void APIENTRY impl_glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width)
@@ -3610,7 +3604,15 @@ GLAPI void APIENTRY impl_glCopyTexSubImage1D(GLenum target, GLint level, GLint x
 
 GLAPI void APIENTRY impl_glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
 {
-    SPDLOG_WARN("glCopyTexSubImage2D not implemented");
+    SPDLOG_DEBUG("glCopyTexSubImage2D target 0x{:X} level 0x{:X} xoffset {} yoffset {} x {} y {} width {} height {} called",
+        target, level, xoffset, yoffset, x, y, width, height);
+
+    const uint16_t* texBuffer = getTextureFromFramebuffer(x, y, width, height);
+
+    SPDLOG_DEBUG("glCopyTexSubImage2D redirect to glTexSubImage2D");
+    impl_glTexSubImage2D(target, level, xoffset, yoffset, width, height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, texBuffer);
+
+    delete texBuffer;
 }
 
 GLAPI void APIENTRY impl_glDeleteTextures(GLsizei n, const GLuint* textures)
@@ -3817,11 +3819,18 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     if (!RIXGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Mipmapping on hardware not supported.");
+        SPDLOG_ERROR("glTexSubImage2D mipmapping on hardware not supported.");
         return;
     }
 
     TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
+    if (((xoffset + width) > static_cast<GLint>(texObj.width))
+        || ((yoffset + height) > static_cast<GLint>(texObj.height)))
+    {
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glTexSubImage2D offsets or texture sizes are too big");
+        return;
+    }
 
     using PixelType = std::remove_const<TextureObject::PixelsType::element_type>::type;
     const std::size_t sharedTexMemSize = texObj.width * texObj.height * sizeof(TextureObject::PixelsType::element_type);
