@@ -26,7 +26,7 @@ namespace rr
 {
 struct TextureObject
 {
-    using PixelsType = std::shared_ptr<const uint16_t>;
+    using PixelsType = std::shared_ptr<uint16_t>;
     static constexpr std::size_t MAX_LOD { 8 };
     enum class IntendedInternalPixelFormat
     {
