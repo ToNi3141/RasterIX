@@ -3114,9 +3114,34 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     }
 
     TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
-    texObj.width = widthRounded;
-    texObj.height = heightRounded;
-    texObj.intendedPixelFormat = intendedInternalPixelFormat;
+    if ((texObj.width != widthRounded)
+        || (texObj.height != heightRounded)
+        || (texObj.intendedPixelFormat != intendedInternalPixelFormat))
+    {
+        using PixelType = TextureObject::PixelsType::element_type;
+        const std::size_t sharedTexMemSize = widthRounded * heightRounded * sizeof(TextureObject::PixelsType::element_type);
+        std::shared_ptr<PixelType> texMemShared(
+            new PixelType[sharedTexMemSize / sizeof(PixelType)], [](const PixelType* p)
+            { delete[] p; });
+
+        if (!texMemShared)
+        {
+            RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
+            SPDLOG_ERROR("glTexSubImage2D Out Of Memory");
+            return;
+        }
+
+        // Initialize the memory with zero for non power of two textures.
+        // Its probably the most reasonable init, because if the alpha channel is activated,
+        // then the not used area is then just transparent.
+        memset(texMemShared.get(), 0, sharedTexMemSize);
+
+        texObj.width = widthRounded;
+        texObj.height = heightRounded;
+        texObj.intendedPixelFormat = intendedInternalPixelFormat;
+        texObj.pixels = texMemShared;
+        texObj.sizeInBytes = sharedTexMemSize;
+    }
 
     SPDLOG_DEBUG("glTexImage2D redirect to glTexSubImage2D");
     impl_glTexSubImage2D(target, level, 0, 0, width, height, format, type, pixels);
@@ -3832,37 +3857,11 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         return;
     }
 
-    using PixelType = std::remove_const<TextureObject::PixelsType::element_type>::type;
-    const std::size_t sharedTexMemSize = texObj.width * texObj.height * sizeof(TextureObject::PixelsType::element_type);
-    std::shared_ptr<PixelType> texMemShared(
-        new PixelType[sharedTexMemSize / sizeof(PixelType)], [](const PixelType* p)
-        { delete[] p; });
-
-    if (!texMemShared)
-    {
-        RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
-        SPDLOG_ERROR("glTexSubImage2D Out Of Memory");
-        return;
-    }
-
-    // In case, the current object contains pixel data, copy the data. Otherwise just initialize the memory.
-    if (texObj.pixels)
-    {
-        memcpy(texMemShared.get(), texObj.pixels.get(), texObj.sizeInBytes);
-    }
-    else
-    {
-        // Initialize the memory with zero for non power of two textures.
-        // Its probably the most reasonable init, because if the alpha channel is activated,
-        // then the not used area is then just transparent.
-        memset(texMemShared.get(), 0, sharedTexMemSize);
-    }
-
     // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
     if (pixels != nullptr)
     {
         TextureConverter::convert(
-            texMemShared,
+            texObj.pixels,
             texObj.intendedPixelFormat,
             texObj.width,
             xoffset,
@@ -3873,9 +3872,6 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
             type,
             reinterpret_cast<const uint8_t*>(pixels));
     }
-
-    texObj.pixels = texMemShared;
-    texObj.sizeInBytes = sharedTexMemSize;
 }
 
 GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid* pointer)
