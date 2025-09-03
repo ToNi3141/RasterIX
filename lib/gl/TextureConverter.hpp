@@ -32,7 +32,7 @@ class TextureConverter
 public:
     void convert(
         std::shared_ptr<uint16_t> texelsDevice,
-        const TextureObject::IntendedInternalPixelFormat ipf,
+        const TextureObject::InternalPixelFormat ipf,
         const std::size_t rowLength,
         const GLint xoffset,
         const GLint yoffset,
@@ -42,7 +42,6 @@ public:
         const GLenum type,
         const uint8_t* texelsClient)
     {
-        std::size_t i = 0;
         const uint8_t* texelsClientRow = texelsClient;
         // TODO: Also use GL_UNPACK_ROW_LENGTH configured via glPixelStorei
         for (std::size_t row = yoffset; row < static_cast<std::size_t>(height + yoffset); row++)
@@ -62,7 +61,7 @@ public:
         }
     }
 
-    static GLenum convertToIntendedPixelFormat(TextureObject::IntendedInternalPixelFormat& conf, const GLint internalFormat)
+    static GLenum convertInternalPixelFormat(TextureObject::InternalPixelFormat& conf, const GLint internalFormat)
     {
         switch (internalFormat)
         {
@@ -71,7 +70,7 @@ public:
         case GL_ALPHA8:
         case GL_ALPHA12:
         case GL_ALPHA16:
-            conf = TextureObject::IntendedInternalPixelFormat::ALPHA;
+            conf = TextureObject::InternalPixelFormat::ALPHA;
             break;
         case GL_COMPRESSED_LUMINANCE:
         case GL_LUMINANCE:
@@ -79,7 +78,7 @@ public:
         case GL_LUMINANCE8:
         case GL_LUMINANCE12:
         case GL_LUMINANCE16:
-            conf = TextureObject::IntendedInternalPixelFormat::LUMINANCE;
+            conf = TextureObject::InternalPixelFormat::LUMINANCE;
             break;
         case GL_COMPRESSED_INTENSITY:
         case GL_INTENSITY:
@@ -87,7 +86,7 @@ public:
         case GL_INTENSITY8:
         case GL_INTENSITY12:
         case GL_INTENSITY16:
-            conf = TextureObject::IntendedInternalPixelFormat::INTENSITY;
+            conf = TextureObject::InternalPixelFormat::INTENSITY;
             break;
         case 2:
         case GL_COMPRESSED_LUMINANCE_ALPHA:
@@ -98,7 +97,7 @@ public:
         case GL_LUMINANCE12_ALPHA4:
         case GL_LUMINANCE12_ALPHA12:
         case GL_LUMINANCE16_ALPHA16:
-            conf = TextureObject::IntendedInternalPixelFormat::LUMINANCE_ALPHA;
+            conf = TextureObject::InternalPixelFormat::LUMINANCE_ALPHA;
             break;
         case 3:
         case GL_COMPRESSED_RGB:
@@ -110,7 +109,7 @@ public:
         case GL_RGB10:
         case GL_RGB12:
         case GL_RGB16:
-            conf = TextureObject::IntendedInternalPixelFormat::RGB;
+            conf = TextureObject::InternalPixelFormat::RGB;
             break;
         case 4:
         case GL_COMPRESSED_RGBA:
@@ -121,18 +120,18 @@ public:
         case GL_RGB10_A2:
         case GL_RGBA12:
         case GL_RGBA16:
-            conf = TextureObject::IntendedInternalPixelFormat::RGBA;
+            conf = TextureObject::InternalPixelFormat::RGBA;
             break;
         case GL_RGB5_A1:
-            conf = TextureObject::IntendedInternalPixelFormat::RGBA1;
+            conf = TextureObject::InternalPixelFormat::RGBA1;
             break;
         case GL_DEPTH_COMPONENT:
             SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
-            conf = TextureObject::IntendedInternalPixelFormat::RGBA;
+            conf = TextureObject::InternalPixelFormat::RGBA;
             break;
         default:
             SPDLOG_ERROR("glTexImage2D invalid internalformat");
-            conf = TextureObject::IntendedInternalPixelFormat::RGBA;
+            conf = TextureObject::InternalPixelFormat::RGBA;
             return GL_INVALID_ENUM;
         }
         return GL_NO_ERROR;
@@ -143,7 +142,7 @@ public:
 private:
     std::size_t convertTexel(
         uint16_t& deviceTexel,
-        const TextureObject::IntendedInternalPixelFormat ipf,
+        const TextureObject::InternalPixelFormat ipf,
         const GLenum format,
         const GLenum type,
         const uint8_t* clientTexel)
@@ -181,7 +180,7 @@ private:
         return (((color >> ColorPos) & Mask) << ComponentShift) | (((color >> ColorPos) & Mask) >> ComponentShiftFill);
     }
 
-    static std::size_t convertRgbTexel(uint16_t& texel, const TextureObject::IntendedInternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
+    static std::size_t convertRgbTexel(uint16_t& texel, const TextureObject::InternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
     {
         switch (type)
         {
@@ -234,7 +233,7 @@ private:
         return 0;
     }
 
-    static std::size_t convertRgbaTexel(uint16_t& texel, const TextureObject::IntendedInternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
+    static std::size_t convertRgbaTexel(uint16_t& texel, const TextureObject::InternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
     {
         switch (type)
         {
@@ -297,7 +296,7 @@ private:
         return 0;
     }
 
-    static std::size_t convertBgraTexel(uint16_t& texel, const TextureObject::IntendedInternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
+    static std::size_t convertBgraTexel(uint16_t& texel, const TextureObject::InternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
     {
         switch (type)
         {
