@@ -30,63 +30,35 @@ namespace rr
 class TextureConverter
 {
 public:
-    static void convert(
-        std::shared_ptr<uint16_t> texMemShared,
+    void convert(
+        std::shared_ptr<uint16_t> texelsDevice,
         const TextureObject::IntendedInternalPixelFormat ipf,
-        const std::size_t originalTextureWidth,
+        const std::size_t rowLength,
         const GLint xoffset,
         const GLint yoffset,
         const GLsizei width,
         const GLsizei height,
         const GLenum format,
         const GLenum type,
-        const uint8_t* pixels)
+        const uint8_t* texelsClient)
     {
         std::size_t i = 0;
+        const uint8_t* texelsClientRow = texelsClient;
         // TODO: Also use GL_UNPACK_ROW_LENGTH configured via glPixelStorei
-        for (std::size_t y = yoffset; y < static_cast<std::size_t>(height + yoffset); y++)
+        for (std::size_t row = yoffset; row < static_cast<std::size_t>(height + yoffset); row++)
         {
-            for (std::size_t x = xoffset; x < static_cast<std::size_t>(width + xoffset); x++)
+            std::size_t currentRow { 0 };
+            for (std::size_t column = xoffset; column < static_cast<std::size_t>(width + xoffset); column++)
             {
-                const std::size_t texPos { (y * originalTextureWidth) + x };
-                switch (format)
-                {
-                case GL_RGB:
-                    i += convertRgbTexel(
-                        texMemShared.get()[texPos],
-                        ipf,
-                        type,
-                        pixels + i);
-                    break;
-                case GL_RGBA:
-                    i += convertRgbaTexel(
-                        texMemShared.get()[texPos],
-                        ipf,
-                        type,
-                        pixels + i);
-                    break;
-                case GL_ALPHA:
-                case GL_RED:
-                case GL_GREEN:
-                case GL_BLUE:
-                case GL_BGR:
-                case GL_BGRA:
-                    i += convertBgraTexel(
-                        texMemShared.get()[texPos],
-                        ipf,
-                        type,
-                        pixels + i);
-                    break;
-                case GL_LUMINANCE:
-                case GL_LUMINANCE_ALPHA:
-                    SPDLOG_WARN("glTexSubImage2D unsupported format");
-                    return;
-                default:
-                    SPDLOG_WARN("glTexSubImage2D invalid format");
-                    RIXGL::getInstance().setError(GL_INVALID_ENUM);
-                    return;
-                }
+                const std::size_t texPos { (row * rowLength) + column };
+                currentRow += convertTexel(texelsDevice.get()[texPos], ipf, format, type, texelsClientRow + currentRow);
             }
+            // Align row
+            if (currentRow % m_unpackAlignment != 0)
+            {
+                currentRow += m_unpackAlignment - (currentRow % m_unpackAlignment);
+            }
+            texelsClientRow = texelsClientRow + currentRow;
         }
     }
 
@@ -166,7 +138,41 @@ public:
         return GL_NO_ERROR;
     }
 
+    void setUnpackAlignment(const std::size_t unpackAlignment) { m_unpackAlignment = unpackAlignment; }
+
 private:
+    std::size_t convertTexel(
+        uint16_t& deviceTexel,
+        const TextureObject::IntendedInternalPixelFormat ipf,
+        const GLenum format,
+        const GLenum type,
+        const uint8_t* clientTexel)
+    {
+        switch (format)
+        {
+        case GL_RGB:
+            return convertRgbTexel(deviceTexel, ipf, type, clientTexel);
+        case GL_RGBA:
+            return convertRgbaTexel(deviceTexel, ipf, type, clientTexel);
+        case GL_ALPHA:
+        case GL_RED:
+        case GL_GREEN:
+        case GL_BLUE:
+        case GL_BGR:
+        case GL_BGRA:
+            return convertBgraTexel(deviceTexel, ipf, type, clientTexel);
+        case GL_LUMINANCE:
+        case GL_LUMINANCE_ALPHA:
+            SPDLOG_WARN("glTexSubImage2D unsupported format");
+            return 1; // Avoiding to get stuck
+        default:
+            SPDLOG_WARN("glTexSubImage2D invalid format");
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            return 1; // Avoiding to get stuck
+        }
+        return 1; // Avoiding to get stuck
+    }
+
     template <uint8_t ColorPos, uint8_t ComponentSize, uint8_t Mask>
     static uint8_t convertColorComponentToUint8(const uint16_t color)
     {
@@ -360,6 +366,8 @@ private:
         }
         return 0;
     }
+
+    std::size_t m_unpackAlignment { 4 };
 };
 } // namespace rr
 

@@ -1959,15 +1959,27 @@ GLAPI void APIENTRY impl_glPixelStorei(GLenum pname, GLint param)
     SPDLOG_DEBUG("glPixelStorei pname 0x{:X} param 0x{:X} called", pname, param);
 
     // TODO: Implement GL_UNPACK_ROW_LENGTH
-    if (pname == GL_PACK_ALIGNMENT)
+    if (pname == GL_UNPACK_ALIGNMENT)
     {
-        SPDLOG_WARN("glPixelStorei pname GL_PACK_ALIGNMENT not supported");
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        return;
+        switch (param)
+        {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+            RIXGL::getInstance().textureConverter().setUnpackAlignment(param);
+            break;
+        default:
+            SPDLOG_ERROR("glPixelStorei pname GL_PACK_ALIGNMENT and param 0x{:X} not supported", param);
+            RIXGL::getInstance().setError(GL_INVALID_VALUE);
+            break;
+        }
     }
-
-    SPDLOG_WARN("glPixelStorei pname 0x{:X} and param 0x{:X} not supported", pname, param);
-    RIXGL::getInstance().setError(GL_INVALID_ENUM);
+    else
+    {
+        SPDLOG_WARN("glPixelStorei pname 0x{:X} and param 0x{:X} not supported", pname, param);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+    }
 }
 
 GLAPI void APIENTRY impl_glPixelTransferf(GLenum pname, GLfloat param)
@@ -3857,10 +3869,9 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         return;
     }
 
-    // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
     if (pixels != nullptr)
     {
-        TextureConverter::convert(
+        RIXGL::getInstance().textureConverter().convert(
             texObj.pixels,
             texObj.intendedPixelFormat,
             texObj.width,
