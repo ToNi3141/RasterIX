@@ -17,7 +17,7 @@
 
 #include "RIXGL.hpp"
 #include "RenderConfigs.hpp"
-#include "TextureConverter.hpp"
+#include "ImageConverter.hpp"
 #include "glImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"
@@ -100,7 +100,7 @@ public:
     VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};
     VertexArray vertexArray {};
-    TextureConverter textureConverter {};
+    ImageConverter imageConverter {};
 };
 
 bool RIXGL::createInstance(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
@@ -648,9 +648,9 @@ VertexArray& RIXGL::vertexArray()
     return m_renderDevice->vertexArray;
 }
 
-TextureConverter& RIXGL::textureConverter()
+ImageConverter& RIXGL::imageConverter()
 {
-    return m_renderDevice->textureConverter;
+    return m_renderDevice->imageConverter;
 }
 
 std::size_t RIXGL::getMaxTextureSize() const

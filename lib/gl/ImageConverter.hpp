@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GL_TEXTURE_CONVERTER_HPP_
-#define GL_TEXTURE_CONVERTER_HPP_
+#ifndef GL_IMAGE_CONVERTER_HPP_
+#define GL_IMAGE_CONVERTER_HPP_
 
 #include "gl.h"
 #include "pixelpipeline/Texture.hpp"
@@ -27,10 +27,10 @@
 namespace rr
 {
 
-class TextureConverter
+class ImageConverter
 {
 public:
-    void convert(
+    void convertUnpack(
         std::shared_ptr<uint16_t> texelsDevice,
         const TextureObject::InternalPixelFormat ipf,
         const std::size_t rowLength,
@@ -43,7 +43,6 @@ public:
         const uint8_t* texelsClient)
     {
         const uint8_t* texelsClientRow = texelsClient;
-        // TODO: Also use GL_UNPACK_ROW_LENGTH configured via glPixelStorei
         for (std::size_t row = yoffset; row < static_cast<std::size_t>(height + yoffset); row++)
         {
             std::size_t currentRow { 0 };
@@ -138,6 +137,7 @@ public:
     }
 
     void setUnpackAlignment(const std::size_t unpackAlignment) { m_unpackAlignment = unpackAlignment; }
+    void setPackAlignment(const std::size_t packAlignment) { m_packAlignment = packAlignment; }
 
 private:
     std::size_t convertTexel(
@@ -367,7 +367,8 @@ private:
     }
 
     std::size_t m_unpackAlignment { 4 };
+    std::size_t m_packAlignment { 4 };
 };
 } // namespace rr
 
-#endif // GL_TEXTURE_CONVERTER_HPP_
+#endif // GL_IMAGE_CONVERTER_HPP_

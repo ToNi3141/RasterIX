@@ -18,7 +18,7 @@
 #define NOMINMAX // Windows workaround
 #include "glImpl.h"
 #include "RIXGL.hpp"
-#include "TextureConverter.hpp"
+#include "ImageConverter.hpp"
 #include "glHelpers.hpp"
 #include "glTypeConverters.h"
 #include "pixelpipeline/PixelPipeline.hpp"
@@ -1958,7 +1958,7 @@ GLAPI void APIENTRY impl_glPixelStorei(GLenum pname, GLint param)
 {
     SPDLOG_DEBUG("glPixelStorei pname 0x{:X} param 0x{:X} called", pname, param);
 
-    // TODO: Implement GL_UNPACK_ROW_LENGTH
+    // TODO: Implement GL_PACK_ALIGNMENT 
     if (pname == GL_UNPACK_ALIGNMENT)
     {
         switch (param)
@@ -1967,7 +1967,7 @@ GLAPI void APIENTRY impl_glPixelStorei(GLenum pname, GLint param)
         case 2:
         case 4:
         case 8:
-            RIXGL::getInstance().textureConverter().setUnpackAlignment(param);
+            RIXGL::getInstance().imageConverter().setUnpackAlignment(param);
             break;
         default:
             SPDLOG_ERROR("glPixelStorei pname GL_PACK_ALIGNMENT and param 0x{:X} not supported", param);
@@ -2178,7 +2178,10 @@ GLAPI void APIENTRY impl_glReadBuffer(GLenum mode)
 
 GLAPI void APIENTRY impl_glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)
 {
-    SPDLOG_WARN("glReadPixels not implemented");
+    // SPDLOG_DEBUG("glReadPixels x {} y {} width {} height {} format 0x{:X} type {:X} called",
+    //     x, y, width, height, format, type);
+
+    // const uint16_t* texBuffer = getTextureFromFramebuffer(x, y, width, height);
 }
 
 GLAPI void APIENTRY impl_glRectd(GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2)
@@ -3118,7 +3121,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     }
 
     TextureObject::InternalPixelFormat internalPixelFormat;
-    const GLenum error = TextureConverter::convertInternalPixelFormat(internalPixelFormat, internalformat);
+    const GLenum error = ImageConverter::convertInternalPixelFormat(internalPixelFormat, internalformat);
     if (error != GL_NO_ERROR)
     {
         RIXGL::getInstance().setError(error);
@@ -3598,7 +3601,7 @@ GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum int
         target, level, internalformat, x, y, width, height, border);
 
     TextureObject::InternalPixelFormat internalPixelFormat;
-    const GLenum error = TextureConverter::convertInternalPixelFormat(internalPixelFormat, internalformat);
+    const GLenum error = ImageConverter::convertInternalPixelFormat(internalPixelFormat, internalformat);
     if (error != GL_NO_ERROR)
     {
         RIXGL::getInstance().setError(error);
@@ -3871,7 +3874,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     if (pixels != nullptr)
     {
-        RIXGL::getInstance().textureConverter().convert(
+        RIXGL::getInstance().imageConverter().convertUnpack(
             texObj.pixels,
             texObj.intendedPixelFormat,
             texObj.width,
