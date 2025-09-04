@@ -578,6 +578,7 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net Dvi_0_m_mem_axi [get_bd_intf_pins Dvi_0/m_mem_axi] [get_bd_intf_pins axi_smc/S01_AXI]
   connect_bd_intf_net -intf_net MainInterface_0_m_axis [get_bd_intf_pins MainInterface_0/m_axis] [get_bd_intf_pins axis_data_fifo_1/S_AXIS]
   connect_bd_intf_net -intf_net RasterIX_0_m_axi [get_bd_intf_pins RasterIX_0/m_axi] [get_bd_intf_pins axi_smc/S00_AXI]
+  connect_bd_intf_net -intf_net RasterIX_0_m_cmd_resp_axis [get_bd_intf_pins MainInterface_0/s_axis] [get_bd_intf_pins RasterIX_0/m_cmd_resp_axis]
   connect_bd_intf_net -intf_net axi_smc_M00_AXI [get_bd_intf_pins axi_smc/M00_AXI] [get_bd_intf_pins mig_7series_0/S_AXI]
   connect_bd_intf_net -intf_net axis_data_fifo_1_M_AXIS [get_bd_intf_pins RasterIX_0/s_cmd_axis] [get_bd_intf_pins axis_data_fifo_1/M_AXIS]
   connect_bd_intf_net -intf_net mig_7series_0_DDR3 [get_bd_intf_ports ddr3_sdram] [get_bd_intf_pins mig_7series_0/DDR3]

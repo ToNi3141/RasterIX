@@ -57,6 +57,11 @@ module MainInterface
     output wire             m_axis_tlast,
     output wire [31 : 0]    m_axis_tdata,
 
+    input  wire             s_axis_tvalid,
+    output wire             s_axis_tready,
+    input  wire             s_axis_tlast,
+    input  wire [31 : 0]    s_axis_tdata,
+
     // System reset
     output wire             concatinated_reset
 );
@@ -81,6 +86,8 @@ module MainInterface
     wire            mux_axis_tready;
     wire            mux_axis_tlast;
     wire [31 : 0]   mux_axis_tdata;
+
+    assign s_axis_tready = 1'b1;
 
     FT245X2AXIS ft245x2axisInst (
         .aclk(aclk),
@@ -117,7 +124,11 @@ module MainInterface
         .m_axis_tvalid(serial_axis_tvalid),
         .m_axis_tready(serial_axis_tready),
         .m_axis_tlast(serial_axis_tlast),
-        .m_axis_tdata(serial_axis_tdata)
+        .m_axis_tdata(serial_axis_tdata),
+        .s_axis_tvalid(0),
+        .s_axis_tready(),
+        .s_axis_tlast(0),
+        .s_axis_tdata(0)
     );
 
     axis_adapter #(

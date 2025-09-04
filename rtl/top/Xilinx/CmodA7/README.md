@@ -12,6 +12,7 @@ There is one variant available:
   - Fixpoint
   - 10MPixel maximum (because of slow SRAM)
 
+Note: glReadPixels, glCopyTexImage2d and glCopyTexSubImage2d are not available. The SPI MISO channel is not used and needs to be implemented.
 
 To build the binaries, use the following commands.
 ```sh
