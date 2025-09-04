@@ -347,8 +347,8 @@ private:
     // In a single list case, this is always zero. It is required for the threaded renderer and the multi list support
     bool setYOffset() { return writeReg(YOffsetReg { 0, 0 }); }
     void loadFramebuffer();
-    uint32_t getCurrentColorBufferAddr() const;
-    uint32_t getCurrentFrontColorBufferAddr() const;
+    // If back is true, then the back buffer is returned, otherwise the front buffer address
+    uint32_t getCurrentColorBufferAddr(const bool back) const;
 
     void endFrame(const bool swapScreen);
     void initAndUploadDisplayList();

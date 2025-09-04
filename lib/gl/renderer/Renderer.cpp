@@ -339,35 +339,23 @@ bool Renderer::readBackColorBuffer(const tcb::span<uint8_t> buffer)
     endFrame(false);
     initAndUploadDisplayList();
     initNewFrame(false);
-    return readFromDeviceMemory(buffer, getCurrentColorBufferAddr());
+    return readFromDeviceMemory(buffer, getCurrentColorBufferAddr(true));
 }
 
 bool Renderer::readFrontColorBuffer(const tcb::span<uint8_t> buffer)
 {
-    return readFromDeviceMemory(buffer, getCurrentFrontColorBufferAddr());
+    return readFromDeviceMemory(buffer, getCurrentColorBufferAddr(false));
 }
 
 void Renderer::swapFramebuffer()
 {
     m_selectedColorBuffer = !m_selectedColorBuffer;
-    setColorBufferAddress(getCurrentColorBufferAddr());
+    setColorBufferAddress(getCurrentColorBufferAddr(true));
 }
 
-uint32_t Renderer::getCurrentColorBufferAddr() const
+uint32_t Renderer::getCurrentColorBufferAddr(const bool back) const
 {
-    if (m_selectedColorBuffer)
-    {
-        return RenderConfig::COLOR_BUFFER_LOC_2;
-    }
-    else
-    {
-        return RenderConfig::COLOR_BUFFER_LOC_1;
-    }
-}
-
-uint32_t Renderer::getCurrentFrontColorBufferAddr() const
-{
-    if (!m_selectedColorBuffer)
+    if (m_selectedColorBuffer && back)
     {
         return RenderConfig::COLOR_BUFFER_LOC_2;
     }
