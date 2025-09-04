@@ -18,6 +18,7 @@
 #ifndef GL_IMAGE_CONVERTER_HPP_
 #define GL_IMAGE_CONVERTER_HPP_
 
+#include "RIXGL.hpp"
 #include "gl.h"
 #include "pixelpipeline/Texture.hpp"
 #include <algorithm>
@@ -51,12 +52,27 @@ public:
                 const std::size_t texPos { (row * rowLength) + column };
                 currentRow += convertTexel(texelsDevice.get()[texPos], ipf, format, type, texelsClientRow + currentRow);
             }
-            // Align row
-            if (currentRow % m_unpackAlignment != 0)
+            texelsClientRow = texelsClientRow + alignRow(currentRow, m_unpackAlignment);
+        }
+    }
+
+    void convertPackRgb565ToRGBA8888(
+        uint8_t* pixelsClient,
+        const GLsizei width,
+        const GLsizei height,
+        const uint16_t* pixelsDevice)
+    {
+        uint8_t* pixelsClientRow = pixelsClient;
+        for (std::size_t row = 0; row < static_cast<std::size_t>(height); row++)
+        {
+            std::size_t currentRow { 0 };
+            for (std::size_t column = 0; column < static_cast<std::size_t>(width); column++)
             {
-                currentRow += m_unpackAlignment - (currentRow % m_unpackAlignment);
+                const std::size_t pixelPos { (row * width) + column };
+                convertRgbPixelRgba(pixelsClientRow + currentRow, pixelsDevice[pixelPos]);
+                currentRow += 4;
             }
-            texelsClientRow = texelsClientRow + currentRow;
+            pixelsClientRow = pixelsClientRow + alignRow(currentRow, m_packAlignment);
         }
     }
 
@@ -140,6 +156,30 @@ public:
     void setPackAlignment(const std::size_t packAlignment) { m_packAlignment = packAlignment; }
 
 private:
+    static std::size_t alignRow(const std::size_t row, const std::size_t alignment)
+    {
+        std::size_t currentRow = row;
+        if (currentRow % alignment != 0)
+        {
+            currentRow += alignment - (currentRow % alignment);
+        }
+        return currentRow;
+    }
+
+    void convertRgbPixelRgba(uint8_t* clientPixels, const uint16_t devicePixels)
+    {
+        // Extract RGB565 components
+        uint8_t r5 = (devicePixels >> 11) & 0x1F;
+        uint8_t g6 = (devicePixels >> 5) & 0x3F;
+        uint8_t b5 = devicePixels & 0x1F;
+
+        // Expand to 8 bits and repeat low bits
+        clientPixels[0] = (r5 << 3) | (r5 >> 2); // Red: 5 bits to 8 bits
+        clientPixels[1] = (g6 << 2) | (g6 >> 4); // Green: 6 bits to 8 bits
+        clientPixels[2] = (b5 << 3) | (b5 >> 2); // Blue: 5 bits to 8 bits
+        clientPixels[3] = 0xff;
+    }
+
     std::size_t convertTexel(
         uint16_t& deviceTexel,
         const TextureObject::InternalPixelFormat ipf,

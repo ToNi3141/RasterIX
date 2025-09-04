@@ -17,8 +17,8 @@
 
 #define NOMINMAX // Windows workaround
 #include "glImpl.h"
-#include "RIXGL.hpp"
 #include "ImageConverter.hpp"
+#include "RIXGL.hpp"
 #include "glHelpers.hpp"
 #include "glTypeConverters.h"
 #include "pixelpipeline/PixelPipeline.hpp"
@@ -1951,34 +1951,37 @@ GLAPI void APIENTRY impl_glPixelMapusv(GLenum map, GLsizei mapsize, const GLusho
 
 GLAPI void APIENTRY impl_glPixelStoref(GLenum pname, GLfloat param)
 {
-    SPDLOG_WARN("glPixelStoref not implemented");
+    SPDLOG_DEBUG("glPixelStoref redirected to glPixelStorei");
+    impl_glPixelStorei(pname, static_cast<GLint>(param));
 }
 
 GLAPI void APIENTRY impl_glPixelStorei(GLenum pname, GLint param)
 {
     SPDLOG_DEBUG("glPixelStorei pname 0x{:X} param 0x{:X} called", pname, param);
-
-    // TODO: Implement GL_PACK_ALIGNMENT 
-    if (pname == GL_UNPACK_ALIGNMENT)
+    switch (param)
     {
-        switch (param)
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+        if (pname == GL_UNPACK_ALIGNMENT)
         {
-        case 1:
-        case 2:
-        case 4:
-        case 8:
             RIXGL::getInstance().imageConverter().setUnpackAlignment(param);
-            break;
-        default:
-            SPDLOG_ERROR("glPixelStorei pname GL_PACK_ALIGNMENT and param 0x{:X} not supported", param);
-            RIXGL::getInstance().setError(GL_INVALID_VALUE);
-            break;
         }
-    }
-    else
-    {
-        SPDLOG_WARN("glPixelStorei pname 0x{:X} and param 0x{:X} not supported", pname, param);
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        else if (pname == GL_PACK_ALIGNMENT)
+        {
+            RIXGL::getInstance().imageConverter().setPackAlignment(param);
+        }
+        else
+        {
+            SPDLOG_WARN("glPixelStorei pname 0x{:X} and param 0x{:X} not supported", pname, param);
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        }
+        break;
+    default:
+        SPDLOG_ERROR("glPixelStorei pname GL_PACK_ALIGNMENT and param 0x{:X} not supported", param);
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        break;
     }
 }
 
@@ -2178,10 +2181,30 @@ GLAPI void APIENTRY impl_glReadBuffer(GLenum mode)
 
 GLAPI void APIENTRY impl_glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)
 {
-    // SPDLOG_DEBUG("glReadPixels x {} y {} width {} height {} format 0x{:X} type {:X} called",
-    //     x, y, width, height, format, type);
+    SPDLOG_DEBUG("glReadPixels x {} y {} width {} height {} format 0x{:X} type {:X} called",
+        x, y, width, height, format, type);
 
-    // const uint16_t* texBuffer = getTextureFromFramebuffer(x, y, width, height);
+    if (format != GL_RGBA)
+    {
+        SPDLOG_WARN("glReadPixels format not supported");
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+    if (type != GL_UNSIGNED_BYTE)
+    {
+        SPDLOG_WARN("glReadPixels type not supported");
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+    if (!((format == GL_RGBA) && (type == GL_UNSIGNED_BYTE)))
+    {
+        SPDLOG_WARN("glReadPixels only GL_RGBA/GL_UNSIGNED_BYTE is supported");
+        RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+        return;
+    }
+    const uint16_t* pixelsDevice = readFromColorBuffer(x, y, width, height, false);
+    RIXGL::getInstance().imageConverter().convertPackRgb565ToRGBA8888(reinterpret_cast<uint8_t*>(pixels), width, height, pixelsDevice);
+    delete pixelsDevice;
 }
 
 GLAPI void APIENTRY impl_glRectd(GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2)
@@ -3629,7 +3652,7 @@ GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum int
         return;
     }
 
-    const uint16_t* texBuffer = getTextureFromFramebuffer(x, y, width, height);
+    const uint16_t* texBuffer = readFromColorBuffer(x, y, width, height, true);
 
     SPDLOG_DEBUG("glCopyTexImage2D redirect to glTexImage2D");
     impl_glTexImage2D(target, level, internalformat, width, height, border, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, texBuffer);
@@ -3647,7 +3670,7 @@ GLAPI void APIENTRY impl_glCopyTexSubImage2D(GLenum target, GLint level, GLint x
     SPDLOG_DEBUG("glCopyTexSubImage2D target 0x{:X} level 0x{:X} xoffset {} yoffset {} x {} y {} width {} height {} called",
         target, level, xoffset, yoffset, x, y, width, height);
 
-    const uint16_t* texBuffer = getTextureFromFramebuffer(x, y, width, height);
+    const uint16_t* texBuffer = readFromColorBuffer(x, y, width, height, true);
 
     SPDLOG_DEBUG("glCopyTexSubImage2D redirect to glTexSubImage2D");
     impl_glTexSubImage2D(target, level, xoffset, yoffset, width, height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, texBuffer);

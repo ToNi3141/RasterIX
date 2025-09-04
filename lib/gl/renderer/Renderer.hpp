@@ -263,6 +263,11 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool readBackColorBuffer(const tcb::span<uint8_t> buffer);
 
+    /// @brief Reads data from the current front color buffer
+    /// @param data The data where to store the data from the font color buffer
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool readFrontColorBuffer(const tcb::span<uint8_t> buffer);
+
     /// @brief Get the current frame buffer width
     /// @return The current frame buffer width
     std::size_t getFramebufferWidth() const { return m_resolutionX; }
@@ -343,6 +348,7 @@ private:
     bool setYOffset() { return writeReg(YOffsetReg { 0, 0 }); }
     void loadFramebuffer();
     uint32_t getCurrentColorBufferAddr() const;
+    uint32_t getCurrentFrontColorBufferAddr() const;
 
     void endFrame(const bool swapScreen);
     void initAndUploadDisplayList();

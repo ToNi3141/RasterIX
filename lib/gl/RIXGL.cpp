@@ -16,8 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "RIXGL.hpp"
-#include "RenderConfigs.hpp"
 #include "ImageConverter.hpp"
+#include "RenderConfigs.hpp"
 #include "glImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"

@@ -69,6 +69,7 @@ public:
     void setEnableNormalizing(const bool enable) { m_elementGlobalData.normalizeLightNormal = enable; }
     void enableVSync(const bool enable) { m_renderer.enableVSync(enable); }
     bool readBackColorBuffer(tcb::span<uint8_t> buffer) { return m_renderer.readBackColorBuffer(buffer); }
+    bool readFrontColorBuffer(tcb::span<uint8_t> buffer) { return m_renderer.readFrontColorBuffer(buffer); }
     std::size_t getFramebufferWidth() const { return m_renderer.getFramebufferWidth(); }
     std::size_t getFramebufferHeight() const { return m_renderer.getFramebufferHeight(); }
 

@@ -25,14 +25,21 @@
 namespace rr
 {
 
-const uint16_t* getTextureFromFramebuffer(const GLint x, const GLint y, const GLint width, const GLint height)
+const uint16_t* readFromColorBuffer(const GLint x, const GLint y, const GLint width, const GLint height, const bool readFromBackBuffer)
 {
     const GLint cbw = RIXGL::getInstance().pipeline().getFramebufferWidth();
     const GLint cbh = RIXGL::getInstance().pipeline().getFramebufferHeight();
     const GLint colorBufferSize = cbw * cbh;
 
     uint16_t* colorBuffer = new uint16_t[colorBufferSize];
-    RIXGL::getInstance().pipeline().readBackColorBuffer({ reinterpret_cast<uint8_t*>(colorBuffer), static_cast<std::size_t>(colorBufferSize * 2) });
+    if (readFromBackBuffer)
+    {
+        RIXGL::getInstance().pipeline().readBackColorBuffer({ reinterpret_cast<uint8_t*>(colorBuffer), static_cast<std::size_t>(colorBufferSize * 2) });
+    }
+    else
+    {
+        RIXGL::getInstance().pipeline().readFrontColorBuffer({ reinterpret_cast<uint8_t*>(colorBuffer), static_cast<std::size_t>(colorBufferSize * 2) });
+    }
 
     uint16_t* texBuffer = new uint16_t[width * height];
 
@@ -40,7 +47,7 @@ const uint16_t* getTextureFromFramebuffer(const GLint x, const GLint y, const GL
     {
         for (GLint iw = 0; iw < width; iw++)
         {
-            GLint cba = ((cbh - ih - y) * cbw) + iw + x;
+            GLint cba = ((cbh - ih - y - 1) * cbw) + iw + x;
             cba = std::min(cba, colorBufferSize - 1);
             cba = std::max(0, cba);
             texBuffer[(ih * width) + iw] = colorBuffer[cba];
