@@ -67,6 +67,10 @@ if (RIX_BUILD_RPPICO)
         pico_sdk_init()
 endif()
 
+if (CMAKE_HOST_WIN32)
+    add_compile_definitions(NOMINMAX)
+endif()
+
 if (CMAKE_HOST_APPLE AND RIX_BUILD_NATIVE)
     set(CMAKE_OSX_ARCHITECTURES "x86_64") # The FTDI library is only available for X86 (at least for mac os)
 endif()
