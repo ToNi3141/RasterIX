@@ -57,16 +57,19 @@ public:
 
     bool readFromDeviceMemory(tcb::span<uint8_t> data, const uint32_t addr) override
     {
-        blockUntilDeviceIsIdle();
-        const std::size_t alignedSize = ((data.size() + DEVICE_MIN_TRANSFER_SIZE - 1) / DEVICE_MIN_TRANSFER_SIZE) * DEVICE_MIN_TRANSFER_SIZE;
-        const std::size_t loadBufferSize = m_busConnector.requestReadBuffer(getLoadBufferIndex()).size();
-        const std::size_t chunkSize = (loadBufferSize / DEVICE_MIN_TRANSFER_SIZE) * DEVICE_MIN_TRANSFER_SIZE;
-        for (std::size_t i = 0; i < alignedSize; i += (std::min)(chunkSize, alignedSize - i))
+        if (hasLoadBuffer())
         {
-            loadChunk(
-                data.subspan(i, (std::min)(data.size() - i, chunkSize)),
-                (std::min)(alignedSize - i, chunkSize),
-                addr + RenderConfig::GRAM_MEMORY_LOC + i);
+            blockUntilDeviceIsIdle();
+            const std::size_t alignedSize = ((data.size() + DEVICE_MIN_TRANSFER_SIZE - 1) / DEVICE_MIN_TRANSFER_SIZE) * DEVICE_MIN_TRANSFER_SIZE;
+            const std::size_t loadBufferSize = m_busConnector.requestReadBuffer(getLoadBufferIndex()).size();
+            const std::size_t chunkSize = (loadBufferSize / DEVICE_MIN_TRANSFER_SIZE) * DEVICE_MIN_TRANSFER_SIZE;
+            for (std::size_t i = 0; i < alignedSize; i += (std::min)(chunkSize, alignedSize - i))
+            {
+                loadChunk(
+                    data.subspan(i, (std::min)(data.size() - i, chunkSize)),
+                    (std::min)(alignedSize - i, chunkSize),
+                    addr + RenderConfig::GRAM_MEMORY_LOC + i);
+            }
         }
         return true;
     }
@@ -88,6 +91,11 @@ public:
     }
 
 private:
+    bool hasLoadBuffer() const
+    {
+        return m_busConnector.getReadBufferCount() != 0;
+    }
+
     uint32_t getLoadBufferIndex() const
     {
         return m_busConnector.getReadBufferCount() - 1;
