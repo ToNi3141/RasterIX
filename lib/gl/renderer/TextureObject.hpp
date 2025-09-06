@@ -18,6 +18,7 @@
 #ifndef TEXTURE_OBJECT_HPP
 #define TEXTURE_OBJECT_HPP
 
+#include "Enums.hpp"
 #include "renderer/registers/TmuTextureReg.hpp"
 #include <array>
 #include <memory>
@@ -28,95 +29,32 @@ struct TextureObject
 {
     using PixelsType = std::shared_ptr<uint16_t>;
     static constexpr std::size_t MAX_LOD { 8 };
-    enum class InternalPixelFormat
-    {
-        ALPHA,
-        LUMINANCE,
-        INTENSITY,
-        LUMINANCE_ALPHA,
-        RGB,
-        RGBA,
-        RGBA1,
-    };
 
-    static uint16_t convertColor(
-        const InternalPixelFormat ipf,
-        const uint8_t r,
-        const uint8_t g,
-        const uint8_t b,
-        const uint8_t a)
+    DevicePixelFormat getDevicePixelFormat() const
     {
-        uint16_t color {};
-        switch (ipf)
-        {
-        case InternalPixelFormat::ALPHA: // RGBA4444
-            color = static_cast<uint16_t>(a >> 4);
-            break;
-        case InternalPixelFormat::LUMINANCE: // RGB565
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(r >> 2) << 5;
-            color |= static_cast<uint16_t>(r >> 3) << 0;
-            break;
-        case InternalPixelFormat::INTENSITY: // RGBA4444
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(r >> 4) << 8;
-            color |= static_cast<uint16_t>(r >> 4) << 4;
-            color |= static_cast<uint16_t>(r >> 4) << 0;
-            break;
-        case InternalPixelFormat::LUMINANCE_ALPHA: // RGBA4444
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(r >> 4) << 8;
-            color |= static_cast<uint16_t>(r >> 4) << 4;
-            color |= static_cast<uint16_t>(a >> 4) << 0;
-            break;
-        case InternalPixelFormat::RGB: // RGB565
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(g >> 2) << 5;
-            color |= static_cast<uint16_t>(b >> 3) << 0;
-            break;
-        case InternalPixelFormat::RGBA: // RGBA4444
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(g >> 4) << 8;
-            color |= static_cast<uint16_t>(b >> 4) << 4;
-            color |= static_cast<uint16_t>(a >> 4) << 0;
-            break;
-        case InternalPixelFormat::RGBA1: // RGBA5551
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(g >> 3) << 6;
-            color |= static_cast<uint16_t>(b >> 3) << 1;
-            color |= static_cast<uint16_t>(a >> 7) << 0;
-            break;
-        default:
-            break;
-        }
-        return color;
-    }
-
-    PixelFormat getPixelFormat() const
-    {
-        PixelFormat format {};
-        switch (intendedPixelFormat)
+        DevicePixelFormat format {};
+        switch (internalPixelFormat)
         {
         case InternalPixelFormat::ALPHA:
-            format = PixelFormat::RGBA4444;
+            format = DevicePixelFormat::RGBA4444;
             break;
         case InternalPixelFormat::LUMINANCE:
-            format = PixelFormat::RGB565;
+            format = DevicePixelFormat::RGB565;
             break;
         case InternalPixelFormat::INTENSITY:
-            format = PixelFormat::RGBA4444;
+            format = DevicePixelFormat::RGBA4444;
             break;
         case InternalPixelFormat::LUMINANCE_ALPHA:
-            format = PixelFormat::RGBA4444;
+            format = DevicePixelFormat::RGBA4444;
             break;
         case InternalPixelFormat::RGB:
-            format = PixelFormat::RGB565;
+            format = DevicePixelFormat::RGB565;
             break;
         case InternalPixelFormat::RGBA:
-            format = PixelFormat::RGBA4444;
+            format = DevicePixelFormat::RGBA4444;
             break;
         case InternalPixelFormat::RGBA1:
-            format = PixelFormat::RGBA5551;
+            format = DevicePixelFormat::RGBA5551;
             break;
         default:
             break;
@@ -124,11 +62,11 @@ struct TextureObject
         return format;
     }
 
-    PixelsType pixels {}; ///< The texture in the format defined by PixelFormat
+    PixelsType pixels {}; ///< The texture in the format defined by DevicePixelFormat
     std::size_t sizeInBytes {}; // The size of the pixels pointer in bytes
     std::size_t width {}; ///< The width of the texture
     std::size_t height {}; ///< The height of the texture
-    InternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
+    InternalPixelFormat internalPixelFormat {}; ///< The intended pixel format which is converted to a type of DevicePixelFormat
 };
 
 using TextureObjectMipmap = std::array<TextureObject, TextureObject::MAX_LOD + 1>;

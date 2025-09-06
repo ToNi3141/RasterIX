@@ -31,9 +31,9 @@ public:
     static_assert(static_cast<uint32_t>(TextureWrapMode::REPEAT) == 0);
     static_assert(static_cast<uint32_t>(TextureWrapMode::CLAMP_TO_EDGE) == 1);
 
-    static_assert(static_cast<uint32_t>(PixelFormat::RGBA4444) == 0);
-    static_assert(static_cast<uint32_t>(PixelFormat::RGBA5551) == 1);
-    static_assert(static_cast<uint32_t>(PixelFormat::RGB565) == 2);
+    static_assert(static_cast<uint32_t>(DevicePixelFormat::RGBA4444) == 0);
+    static_assert(static_cast<uint32_t>(DevicePixelFormat::RGBA5551) == 1);
+    static_assert(static_cast<uint32_t>(DevicePixelFormat::RGB565) == 2);
 
     TmuTextureReg() = default;
     void setTextureWidth(const uint16_t val) { m_regVal.fields.texWidth = static_cast<uint32_t>(log2f(static_cast<float>(val))); }
@@ -42,7 +42,7 @@ public:
     void setWarpModeT(const TextureWrapMode val) { m_regVal.fields.wrapModeT = static_cast<uint32_t>(val); }
     void setEnableMagFilter(const bool val) { m_regVal.fields.enableMagFilter = val; }
     void setEnableMinFilter(const bool val) { m_regVal.fields.enableMinFilter = val; }
-    void setPixelFormat(const PixelFormat val) { m_regVal.fields.pixelFormat = static_cast<uint32_t>(val); }
+    void setPixelFormat(const DevicePixelFormat val) { m_regVal.fields.pixelFormat = static_cast<uint32_t>(val); }
 
     uint16_t getTextureWidth() const { return powf(2.0f, m_regVal.fields.texWidth); }
     uint16_t getTextureHeight() const { return powf(2.0f, m_regVal.fields.texHeight); }
@@ -50,7 +50,7 @@ public:
     TextureWrapMode getWrapModeT() const { return static_cast<TextureWrapMode>(m_regVal.fields.wrapModeT); }
     bool getEnableMagFilter() const { return m_regVal.fields.enableMagFilter; }
     bool getEnableMinFilter() const { return m_regVal.fields.enableMinFilter; }
-    PixelFormat getPixelFormat() const { return static_cast<PixelFormat>(m_regVal.fields.pixelFormat); }
+    DevicePixelFormat getDevicePixelFormat() const { return static_cast<DevicePixelFormat>(m_regVal.fields.pixelFormat); }
 
     void setTmu(const std::size_t tmu) { m_tmu = tmu; }
     uint32_t serialize() const { return m_regVal.data; }
@@ -72,7 +72,7 @@ private:
                 , wrapModeT { static_cast<uint32_t>(TextureWrapMode::REPEAT) }
                 , enableMagFilter { false }
                 , enableMinFilter { false }
-                , pixelFormat { static_cast<uint32_t>(PixelFormat::RGBA4444) }
+                , pixelFormat { static_cast<uint32_t>(DevicePixelFormat::RGBA4444) }
             {
             }
 

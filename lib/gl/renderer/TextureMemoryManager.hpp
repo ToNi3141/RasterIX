@@ -108,7 +108,7 @@ public:
         m_textures[textureSlot].tmuConfig.setEnableMagFilter(m_textures[textureSlotOld].tmuConfig.getEnableMagFilter());
         m_textures[textureSlot].tmuConfig.setEnableMinFilter(m_textures[textureSlotOld].tmuConfig.getEnableMinFilter());
 
-        m_textures[textureSlot].tmuConfig.setPixelFormat(textureObject[0].getPixelFormat());
+        m_textures[textureSlot].tmuConfig.setPixelFormat(textureObject[0].getDevicePixelFormat());
         m_textures[textureSlot].tmuConfig.setTextureWidth(textureObject[0].width);
         m_textures[textureSlot].tmuConfig.setTextureHeight(textureObject[0].height);
 

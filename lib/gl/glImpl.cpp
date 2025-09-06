@@ -3143,7 +3143,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    TextureObject::InternalPixelFormat internalPixelFormat;
+    InternalPixelFormat internalPixelFormat;
     const GLenum error = ImageConverter::convertInternalPixelFormat(internalPixelFormat, internalformat);
     if (error != GL_NO_ERROR)
     {
@@ -3154,7 +3154,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
     if ((texObj.width != widthRounded)
         || (texObj.height != heightRounded)
-        || (texObj.intendedPixelFormat != internalPixelFormat))
+        || (texObj.internalPixelFormat != internalPixelFormat))
     {
         using PixelType = TextureObject::PixelsType::element_type;
         const std::size_t sharedTexMemSize = widthRounded * heightRounded * sizeof(TextureObject::PixelsType::element_type);
@@ -3176,7 +3176,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
 
         texObj.width = widthRounded;
         texObj.height = heightRounded;
-        texObj.intendedPixelFormat = internalPixelFormat;
+        texObj.internalPixelFormat = internalPixelFormat;
         texObj.pixels = texMemShared;
         texObj.sizeInBytes = sharedTexMemSize;
     }
@@ -3623,7 +3623,7 @@ GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum int
     SPDLOG_DEBUG("glCopyTexImage2D target 0x{:X} level 0x{:X} internalformat 0x{:X} x {} y {} width {} height {} border 0x{:X} called",
         target, level, internalformat, x, y, width, height, border);
 
-    TextureObject::InternalPixelFormat internalPixelFormat;
+    InternalPixelFormat internalPixelFormat;
     const GLenum error = ImageConverter::convertInternalPixelFormat(internalPixelFormat, internalformat);
     if (error != GL_NO_ERROR)
     {
@@ -3633,10 +3633,10 @@ GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum int
 
     switch (internalPixelFormat)
     {
-    case TextureObject::InternalPixelFormat::ALPHA:
-    case TextureObject::InternalPixelFormat::LUMINANCE_ALPHA:
-    case TextureObject::InternalPixelFormat::RGBA:
-    case TextureObject::InternalPixelFormat::RGBA1:
+    case InternalPixelFormat::ALPHA:
+    case InternalPixelFormat::LUMINANCE_ALPHA:
+    case InternalPixelFormat::RGBA:
+    case InternalPixelFormat::RGBA1:
         RIXGL::getInstance().setError(GL_INVALID_OPERATION);
         SPDLOG_ERROR("Invalid internal format used (framebuffer does not support an alpha channel)");
         return;
@@ -3899,7 +3899,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     {
         RIXGL::getInstance().imageConverter().convertUnpack(
             texObj.pixels,
-            texObj.intendedPixelFormat,
+            texObj.internalPixelFormat,
             texObj.width,
             xoffset,
             yoffset,
