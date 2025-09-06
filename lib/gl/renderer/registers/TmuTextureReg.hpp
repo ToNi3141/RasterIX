@@ -50,7 +50,7 @@ public:
     TextureWrapMode getWrapModeT() const { return static_cast<TextureWrapMode>(m_regVal.fields.wrapModeT); }
     bool getEnableMagFilter() const { return m_regVal.fields.enableMagFilter; }
     bool getEnableMinFilter() const { return m_regVal.fields.enableMinFilter; }
-    DevicePixelFormat getDevicePixelFormat() const { return static_cast<DevicePixelFormat>(m_regVal.fields.pixelFormat); }
+    DevicePixelFormat getPixelFormat() const { return static_cast<DevicePixelFormat>(m_regVal.fields.pixelFormat); }
 
     void setTmu(const std::size_t tmu) { m_tmu = tmu; }
     uint32_t serialize() const { return m_regVal.data; }
