@@ -142,11 +142,11 @@ public:
             conf = InternalPixelFormat::RGBA1;
             break;
         case GL_DEPTH_COMPONENT:
-            SPDLOG_WARN("glTexImage2D internal format GL_DEPTH_COMPONENT not supported");
+            SPDLOG_WARN("Internal format GL_DEPTH_COMPONENT not supported");
             conf = InternalPixelFormat::RGBA;
             break;
         default:
-            SPDLOG_ERROR("glTexImage2D invalid internalformat");
+            SPDLOG_ERROR("Invalid internalformat");
             conf = InternalPixelFormat::RGBA;
             return GL_INVALID_ENUM;
         }
@@ -256,13 +256,14 @@ private:
             return convertBgraTexel(deviceTexel, ipf, type, clientTexel);
         case GL_LUMINANCE:
         case GL_LUMINANCE_ALPHA:
-            SPDLOG_WARN("glTexSubImage2D unsupported format");
+            SPDLOG_WARN("Unsupported format");
             return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("glTexSubImage2D invalid format");
+            SPDLOG_WARN("Invalid format");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
+        SPDLOG_ERROR("General Error");
         return 1; // Avoiding to get stuck
     }
 
@@ -306,8 +307,8 @@ private:
         case GL_UNSIGNED_BYTE_3_3_2:
         case GL_UNSIGNED_BYTE_2_3_3_REV:
         case GL_UNSIGNED_SHORT_5_6_5_REV:
-            SPDLOG_WARN("glTexSubImage2D unsupported type 0x{:X}", type);
-            return 0;
+            SPDLOG_WARN("Unsupported type 0x{:X}", type);
+            return 1; // Avoiding to get stuck
         case GL_UNSIGNED_SHORT_5_5_5_1:
         case GL_UNSIGNED_SHORT_1_5_5_5_REV:
         case GL_UNSIGNED_SHORT_4_4_4_4:
@@ -316,15 +317,15 @@ private:
         case GL_UNSIGNED_INT_8_8_8_8_REV:
         case GL_UNSIGNED_INT_10_10_10_2:
         case GL_UNSIGNED_INT_2_10_10_10_REV:
-            SPDLOG_WARN("glTexSubImage2D invalid operation");
+            SPDLOG_WARN("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
-            return 0;
+            return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("glTexSubImage2D invalid type");
+            SPDLOG_WARN("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
-            return 0;
+            return 1; // Avoiding to get stuck
         }
-        return 0;
+        return 1; // Avoiding to get stuck
     }
 
     static std::size_t convertRgbaTexel(uint16_t& texel, const InternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
@@ -373,21 +374,21 @@ private:
         case GL_UNSIGNED_INT_8_8_8_8_REV:
         case GL_UNSIGNED_INT_10_10_10_2:
         case GL_UNSIGNED_INT_2_10_10_10_REV:
-            SPDLOG_WARN("glTexSubImage2D unsupported type 0x{:X}", type);
-            return 0;
+            SPDLOG_WARN("Unsupported type 0x{:X}", type);
+            return 1; // Avoiding to get stuck
         case GL_UNSIGNED_BYTE_3_3_2:
         case GL_UNSIGNED_BYTE_2_3_3_REV:
         case GL_UNSIGNED_SHORT_5_6_5:
         case GL_UNSIGNED_SHORT_5_6_5_REV:
-            SPDLOG_WARN("glTexSubImage2D invalid operation");
+            SPDLOG_WARN("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
-            return 0;
+            return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("glTexSubImage2D invalid type");
+            SPDLOG_WARN("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
-            return 0;
+            return 1; // Avoiding to get stuck
         }
-        return 0;
+        return 1; // Avoiding to get stuck
     }
 
     static std::size_t convertBgraTexel(uint16_t& texel, const InternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
@@ -443,21 +444,21 @@ private:
         case GL_UNSIGNED_INT_8_8_8_8:
         case GL_UNSIGNED_INT_10_10_10_2:
         case GL_UNSIGNED_INT_2_10_10_10_REV:
-            SPDLOG_WARN("glTexSubImage2D unsupported type 0x{:X}", type);
-            return 0;
+            SPDLOG_WARN("Unsupported type 0x{:X}", type);
+            return 1; // Avoiding to get stuck
         case GL_UNSIGNED_BYTE_3_3_2:
         case GL_UNSIGNED_BYTE_2_3_3_REV:
         case GL_UNSIGNED_SHORT_5_6_5:
         case GL_UNSIGNED_SHORT_5_6_5_REV:
-            SPDLOG_WARN("glTexSubImage2D invalid operation");
+            SPDLOG_WARN("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
-            return 0;
+            return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("glTexSubImage2D invalid type");
+            SPDLOG_WARN("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
-            return 0;
+            return 1; // Avoiding to get stuck
         }
-        return 0;
+        return 1; // Avoiding to get stuck
     }
 
     std::size_t m_unpackAlignment { 4 };

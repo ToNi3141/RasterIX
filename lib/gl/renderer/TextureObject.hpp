@@ -62,7 +62,10 @@ struct TextureObject
         return format;
     }
 
-    PixelsType pixels {}; ///< The texture in the format defined by DevicePixelFormat
+    /// @brief The texture in the format defined by DevicePixelFormat. Do not reuse this pointer.
+    /// The memory allocated in this pointer might be already queued for texture upload.
+    /// It is save to read from this pointer, but not save to write to it.
+    PixelsType pixels {};
     std::size_t sizeInBytes {}; // The size of the pixels pointer in bytes
     std::size_t width {}; ///< The width of the texture
     std::size_t height {}; ///< The height of the texture

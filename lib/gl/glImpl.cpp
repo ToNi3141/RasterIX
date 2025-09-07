@@ -3107,20 +3107,22 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     if ((border != 0) || (level < 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("Border or level invalid");
+        return;
     }
 
     const std::size_t maxTexSize { RIXGL::getInstance().getMaxTextureSize() };
 
     if (static_cast<std::size_t>(level) > RIXGL::getInstance().getMaxLOD())
     {
-        SPDLOG_ERROR("glTexImage2d invalid lod.");
+        SPDLOG_ERROR("Invalid lod.");
         return;
     }
 
     if ((static_cast<std::size_t>(width) > maxTexSize) || (static_cast<std::size_t>(height) > maxTexSize))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("glTexImage2d texture is too big.");
+        SPDLOG_ERROR("Texture is too big.");
         return;
     }
 
@@ -3148,38 +3150,15 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     if (error != GL_NO_ERROR)
     {
         RIXGL::getInstance().setError(error);
+        SPDLOG_ERROR("Internal Pixel Format 0x{:X} not supported", internalformat);
         return;
     }
 
     TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
-    if ((texObj.width != widthRounded)
-        || (texObj.height != heightRounded)
-        || (texObj.internalPixelFormat != internalPixelFormat))
-    {
-        using PixelType = TextureObject::PixelsType::element_type;
-        const std::size_t sharedTexMemSize = widthRounded * heightRounded * sizeof(TextureObject::PixelsType::element_type);
-        std::shared_ptr<PixelType> texMemShared(
-            new PixelType[sharedTexMemSize / sizeof(PixelType)], [](const PixelType* p)
-            { delete[] p; });
 
-        if (!texMemShared)
-        {
-            RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
-            SPDLOG_ERROR("glTexSubImage2D Out Of Memory");
-            return;
-        }
-
-        // Initialize the memory with zero for non power of two textures.
-        // Its probably the most reasonable init, because if the alpha channel is activated,
-        // then the not used area is then just transparent.
-        memset(texMemShared.get(), 0, sharedTexMemSize);
-
-        texObj.width = widthRounded;
-        texObj.height = heightRounded;
-        texObj.internalPixelFormat = internalPixelFormat;
-        texObj.pixels = texMemShared;
-        texObj.sizeInBytes = sharedTexMemSize;
-    }
+    texObj.width = widthRounded;
+    texObj.height = heightRounded;
+    texObj.internalPixelFormat = internalPixelFormat;
 
     SPDLOG_DEBUG("glTexImage2D redirect to glTexSubImage2D");
     impl_glTexSubImage2D(target, level, 0, 0, width, height, format, type, pixels);
@@ -3875,14 +3854,14 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     if (static_cast<std::size_t>(level) > RIXGL::getInstance().getMaxLOD())
     {
-        SPDLOG_ERROR("glTexSubImage2D invalid lod.");
+        SPDLOG_ERROR("Invalid lod.");
         return;
     }
 
     if (!RIXGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("glTexSubImage2D mipmapping on hardware not supported.");
+        SPDLOG_ERROR("Mipmapping on hardware not supported.");
         return;
     }
 
@@ -3891,10 +3870,37 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         || ((yoffset + height) > static_cast<GLint>(texObj.height)))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("glTexSubImage2D offsets or texture sizes are too big");
+        SPDLOG_ERROR("Offsets or texture sizes are too big");
         return;
     }
 
+    const std::size_t texMemSize = texObj.width * texObj.height * 2;
+    if (texMemSize == 0)
+    {
+        SPDLOG_DEBUG("Texture with zero dimensions loaded.");
+        return;
+    }
+
+    std::shared_ptr<uint16_t> texMemShared(new uint16_t[texMemSize / 2], [](const uint16_t* p)
+        { delete[] p; });
+    if (!texMemShared)
+    {
+        RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
+        SPDLOG_ERROR("Out Of Memory");
+        return;
+    }
+    if (texObj.pixels)
+    {
+        std::memcpy(texMemShared.get(), texObj.pixels.get(), std::min(texObj.sizeInBytes, texMemSize));
+    }
+    else
+    {
+        std::memset(texMemShared.get(), 0, texMemSize);
+    }
+    texObj.pixels = texMemShared;
+    texObj.sizeInBytes = texMemSize;
+
+    // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
     if (pixels != nullptr)
     {
         RIXGL::getInstance().imageConverter().convertUnpack(
