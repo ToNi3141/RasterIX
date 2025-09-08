@@ -35,7 +35,12 @@ module Serial2AXIS
     output reg          m_axis_tvalid,
     input  wire         m_axis_tready,
     output reg          m_axis_tlast,
-    output reg  [31:0]  m_axis_tdata
+    output reg  [31:0]  m_axis_tdata,
+
+    input  wire         s_axis_tvalid,
+    output wire         s_axis_tready,
+    input  wire         s_axis_tlast,
+    input  wire [31:0]  s_axis_tdata
 );
     localparam BW = 8;
     localparam LGFLEN = $clog2(FIFO_SIZE);
@@ -80,6 +85,8 @@ module Serial2AXIS
             .o_data(fifoReadData),
             .o_empty(fifoEmpty)
         );
+
+    assign s_axis_tready = 1'b1;
 
     always @(posedge aclk)
         serial_cts <= fill <= FIFO_TRESHOLD;

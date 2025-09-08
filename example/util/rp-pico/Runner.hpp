@@ -25,12 +25,12 @@ public:
 
     virtual void writeData(const uint8_t index, const uint32_t size) override
     {
-        tcb::span<const uint8_t> data = requestBuffer(index);
+        tcb::span<const uint8_t> data = requestWriteBuffer(index);
         uint32_t dataToSend = size;
         uint32_t counter = 0;
         while (dataToSend != 0)
         {
-            blockUntilWriteComplete();
+            blockUntilTransferIsComplete();
             // SPI has no flow control. Therefore the flow control must be implemented in software.
             // Divide the data into smaller chunks. Check after each chunk, if the fifo has enough space
             // before sending the next chunk.
@@ -48,13 +48,17 @@ public:
         }
     }
 
-    virtual void blockUntilWriteComplete() override
+    virtual void readData(const uint8_t, const uint32_t) override
+    {
+    }
+
+    virtual void blockUntilTransferIsComplete() override
     {
         while (dma_channel_is_busy(dma_tx) || !gpio_get(CTS))
             ;
     }
 
-    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override
+    virtual tcb::span<uint8_t> requestWriteBuffer(const uint8_t index) override
     {
         switch (index)
         {
@@ -65,9 +69,20 @@ public:
         }
         return {};
     }
-    virtual uint8_t getBufferCount() const override
+
+    virtual tcb::span<uint8_t> requestReadBuffer(const uint8_t index) override
+    {
+        return {};
+    }
+
+    virtual uint8_t getWriteBufferCount() const override
     {
         return m_dlMem.size() + 1;
+    }
+
+    virtual uint8_t getReadBufferCount() const override
+    {
+        return 0;
     }
 
     void init()

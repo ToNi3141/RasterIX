@@ -34,18 +34,33 @@ public:
     ///     As long as the previous one is ongoing, this function blocks.
     virtual void writeData(const uint8_t index, const uint32_t size) = 0;
 
-    /// @brief Blocks until a new writeData() can be called without blocking.
+    /// @brief Downloads a chunk of data
+    /// @param index The index of the buffer to download
+    /// @param size How many bytes of this buffer to download
+    /// @note: This function blocks until the read operation is done.
+    virtual void readData(const uint8_t index, const uint32_t size) = 0;
+
+    /// @brief Blocks until a new read()/write() can be called without blocking.
     ///     This also implies that the currently transferred buffer is free for reuse.
-    virtual void blockUntilWriteComplete() = 0;
+    virtual void blockUntilTransferIsComplete() = 0;
 
     /// @brief Requests a buffer which supports the requirements for the given device (for instance DMA capabilities).
     /// @param index The index of the requested buffer
-    /// @return Returns the requested buffer, or an empty optional if no buffer is available for the given index
-    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) = 0;
+    /// @return Returns the requested buffer, or an empty span if no buffer is available for the given index
+    virtual tcb::span<uint8_t> requestWriteBuffer(const uint8_t index) = 0;
+
+    /// @brief Requests a buffer which supports the requirements for the given device (for instance DMA capabilities).
+    /// @param index The index of the requested buffer
+    /// @return Returns the requested buffer, or an empty span if no buffer is available for the given index
+    virtual tcb::span<uint8_t> requestReadBuffer(const uint8_t index) = 0;
 
     /// @brief Returns the number of buffers available to request
     /// @return The number of buffers which can be requested
-    virtual uint8_t getBufferCount() const = 0;
+    virtual uint8_t getWriteBufferCount() const = 0;
+
+    /// @brief Returns the number of buffers available to request
+    /// @return The number of buffers which can be requested
+    virtual uint8_t getReadBufferCount() const = 0;
 };
 
 } // namespace rr

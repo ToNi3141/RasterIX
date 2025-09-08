@@ -17,8 +17,9 @@
 
 #define NOMINMAX // Windows workaround
 #include "glImpl.h"
+#include "ImageConverter.hpp"
 #include "RIXGL.hpp"
-#include "TextureConverter.hpp"
+#include "glHelpers.hpp"
 #include "glTypeConverters.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "vertexpipeline/VertexArray.hpp"
@@ -1950,23 +1951,38 @@ GLAPI void APIENTRY impl_glPixelMapusv(GLenum map, GLsizei mapsize, const GLusho
 
 GLAPI void APIENTRY impl_glPixelStoref(GLenum pname, GLfloat param)
 {
-    SPDLOG_WARN("glPixelStoref not implemented");
+    SPDLOG_DEBUG("glPixelStoref redirected to glPixelStorei");
+    impl_glPixelStorei(pname, static_cast<GLint>(param));
 }
 
 GLAPI void APIENTRY impl_glPixelStorei(GLenum pname, GLint param)
 {
     SPDLOG_DEBUG("glPixelStorei pname 0x{:X} param 0x{:X} called", pname, param);
-
-    // TODO: Implement GL_UNPACK_ROW_LENGTH
-    if (pname == GL_PACK_ALIGNMENT)
+    switch (param)
     {
-        SPDLOG_WARN("glPixelStorei pname GL_PACK_ALIGNMENT not supported");
-        RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        return;
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+        if (pname == GL_UNPACK_ALIGNMENT)
+        {
+            RIXGL::getInstance().imageConverter().setUnpackAlignment(param);
+        }
+        else if (pname == GL_PACK_ALIGNMENT)
+        {
+            RIXGL::getInstance().imageConverter().setPackAlignment(param);
+        }
+        else
+        {
+            SPDLOG_WARN("glPixelStorei pname 0x{:X} and param 0x{:X} not supported", pname, param);
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        }
+        break;
+    default:
+        SPDLOG_ERROR("glPixelStorei pname GL_PACK_ALIGNMENT and param 0x{:X} not supported", param);
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        break;
     }
-
-    SPDLOG_WARN("glPixelStorei pname 0x{:X} and param 0x{:X} not supported", pname, param);
-    RIXGL::getInstance().setError(GL_INVALID_ENUM);
 }
 
 GLAPI void APIENTRY impl_glPixelTransferf(GLenum pname, GLfloat param)
@@ -2165,7 +2181,30 @@ GLAPI void APIENTRY impl_glReadBuffer(GLenum mode)
 
 GLAPI void APIENTRY impl_glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid* pixels)
 {
-    SPDLOG_WARN("glReadPixels not implemented");
+    SPDLOG_DEBUG("glReadPixels x {} y {} width {} height {} format 0x{:X} type {:X} called",
+        x, y, width, height, format, type);
+
+    if (format != GL_RGBA)
+    {
+        SPDLOG_WARN("glReadPixels format not supported");
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+    if (type != GL_UNSIGNED_BYTE)
+    {
+        SPDLOG_WARN("glReadPixels type not supported");
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+    if (!((format == GL_RGBA) && (type == GL_UNSIGNED_BYTE)))
+    {
+        SPDLOG_WARN("glReadPixels only GL_RGBA/GL_UNSIGNED_BYTE is supported");
+        RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+        return;
+    }
+    const uint16_t* pixelsDevice = readFromColorBuffer(x, y, width, height, false);
+    RIXGL::getInstance().imageConverter().convertPackRgb565ToRGBA8888(reinterpret_cast<uint8_t*>(pixels), width, height, pixelsDevice);
+    delete pixelsDevice;
 }
 
 GLAPI void APIENTRY impl_glRectd(GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2)
@@ -3064,27 +3103,33 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
 {
     SPDLOG_DEBUG("glTexImage2D target 0x{:X} level 0x{:X} internalformat 0x{:X} width {} height {} border 0x{:X} format 0x{:X} type 0x{:X} called", target, level, internalformat, width, height, border, format, type);
 
-    (void)border; // Border is not supported and is ignored for now. What does border mean: https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
+    // Border is not supported in OpenGL ES and is ignored. What does border mean: https://stackoverflow.com/questions/913801/what-does-border-mean-in-the-glteximage2d-function
+    if ((border != 0) || (level < 0))
+    {
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glTexImage2D border or level invalid");
+        return;
+    }
 
     const std::size_t maxTexSize { RIXGL::getInstance().getMaxTextureSize() };
 
     if (static_cast<std::size_t>(level) > RIXGL::getInstance().getMaxLOD())
     {
-        SPDLOG_ERROR("glTexImage2d invalid lod.");
+        SPDLOG_ERROR("glTexImage2D invalid lod.");
         return;
     }
 
     if ((static_cast<std::size_t>(width) > maxTexSize) || (static_cast<std::size_t>(height) > maxTexSize))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("glTexImage2d texture is too big.");
+        SPDLOG_ERROR("glTexImage2D texture is too big.");
         return;
     }
 
     if (!RIXGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Mipmapping on hardware not supported.");
+        SPDLOG_ERROR("glTexImage2D mipmapping on hardware not supported.");
         return;
     }
 
@@ -3096,22 +3141,24 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     if ((widthRounded == 0) || (heightRounded == 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Texture with invalid size detected ({} (rounded to {}), {} (rounded to {}))", width, widthRounded, height, heightRounded);
+        SPDLOG_ERROR("glTexImage2D texture with invalid size detected ({} (rounded to {}), {} (rounded to {}))", width, widthRounded, height, heightRounded);
         return;
     }
 
-    TextureObject::IntendedInternalPixelFormat intendedInternalPixelFormat;
-    const GLenum error = TextureConverter::convertToIntendedPixelFormat(intendedInternalPixelFormat, internalformat);
+    InternalPixelFormat internalPixelFormat;
+    const GLenum error = ImageConverter::convertInternalPixelFormat(internalPixelFormat, internalformat);
     if (error != GL_NO_ERROR)
     {
         RIXGL::getInstance().setError(error);
+        SPDLOG_ERROR("glTexImage2D internal Pixel Format 0x{:X} not supported", internalformat);
         return;
     }
 
     TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
+
     texObj.width = widthRounded;
     texObj.height = heightRounded;
-    texObj.intendedPixelFormat = intendedInternalPixelFormat;
+    texObj.internalPixelFormat = internalPixelFormat;
 
     SPDLOG_DEBUG("glTexImage2D redirect to glTexSubImage2D");
     impl_glTexSubImage2D(target, level, 0, 0, width, height, format, type, pixels);
@@ -3545,14 +3592,51 @@ GLAPI void APIENTRY impl_glColorPointer(GLint size, GLenum type, GLsizei stride,
     RIXGL::getInstance().vertexArray().setColorPointer(pointer);
 }
 
-GLAPI void APIENTRY impl_glCopyTexImage1D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLint border)
+GLAPI void APIENTRY impl_glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
 {
     SPDLOG_WARN("glCopyTexImage1D not implemented");
 }
 
-GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 {
-    SPDLOG_WARN("glCopyTexImage2D not implemented");
+    SPDLOG_DEBUG("glCopyTexImage2D target 0x{:X} level 0x{:X} internalformat 0x{:X} x {} y {} width {} height {} border 0x{:X} called",
+        target, level, internalformat, x, y, width, height, border);
+
+    InternalPixelFormat internalPixelFormat;
+    const GLenum error = ImageConverter::convertInternalPixelFormat(internalPixelFormat, internalformat);
+    if (error != GL_NO_ERROR)
+    {
+        RIXGL::getInstance().setError(error);
+        return;
+    }
+
+    switch (internalPixelFormat)
+    {
+    case InternalPixelFormat::ALPHA:
+    case InternalPixelFormat::LUMINANCE_ALPHA:
+    case InternalPixelFormat::RGBA:
+    case InternalPixelFormat::RGBA1:
+        RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+        SPDLOG_ERROR("glCopyTexImage2D invalid internal format used (framebuffer does not support an alpha channel)");
+        return;
+    default:
+        break;
+    }
+
+    const GLsizei maxTexSize { static_cast<GLsizei>(RIXGL::getInstance().getMaxTextureSize()) };
+    if ((width > maxTexSize) || (height > maxTexSize))
+    {
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glCopyTexImage2D texture is too big.");
+        return;
+    }
+
+    const uint16_t* texBuffer = readFromColorBuffer(x, y, width, height, true);
+
+    SPDLOG_DEBUG("glCopyTexImage2D redirect to glTexImage2D");
+    impl_glTexImage2D(target, level, internalformat, width, height, border, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, texBuffer);
+
+    delete texBuffer;
 }
 
 GLAPI void APIENTRY impl_glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width)
@@ -3562,7 +3646,15 @@ GLAPI void APIENTRY impl_glCopyTexSubImage1D(GLenum target, GLint level, GLint x
 
 GLAPI void APIENTRY impl_glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
 {
-    SPDLOG_WARN("glCopyTexSubImage2D not implemented");
+    SPDLOG_DEBUG("glCopyTexSubImage2D target 0x{:X} level 0x{:X} xoffset {} yoffset {} x {} y {} width {} height {} called",
+        target, level, xoffset, yoffset, x, y, width, height);
+
+    const uint16_t* texBuffer = readFromColorBuffer(x, y, width, height, true);
+
+    SPDLOG_DEBUG("glCopyTexSubImage2D redirect to glTexSubImage2D");
+    impl_glTexSubImage2D(target, level, xoffset, yoffset, width, height, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, texBuffer);
+
+    delete texBuffer;
 }
 
 GLAPI void APIENTRY impl_glDeleteTextures(GLsizei n, const GLuint* textures)
@@ -3769,13 +3861,27 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     if (!RIXGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Mipmapping on hardware not supported.");
+        SPDLOG_ERROR("glTexSubImage2D mipmapping on hardware not supported.");
         return;
     }
 
     TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
+    if (((xoffset + width) > static_cast<GLint>(texObj.width))
+        || ((yoffset + height) > static_cast<GLint>(texObj.height)))
+    {
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glTexSubImage2D offsets or texture sizes are too big");
+        return;
+    }
 
-    std::shared_ptr<uint16_t> texMemShared(new uint16_t[(texObj.width * texObj.height * 2)], [](const uint16_t* p)
+    const std::size_t texMemSize = texObj.width * texObj.height * 2;
+    if (texMemSize == 0)
+    {
+        SPDLOG_DEBUG("glTexSubImage2D texture with zero dimensions loaded.");
+        return;
+    }
+
+    std::shared_ptr<uint16_t> texMemShared(new uint16_t[texMemSize / 2], [](const uint16_t* p)
         { delete[] p; });
     if (!texMemShared)
     {
@@ -3783,25 +3889,23 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         SPDLOG_ERROR("glTexSubImage2D Out Of Memory");
         return;
     }
-
-    // In case, the current object contains pixel data, copy the data. Otherwise just initialize the memory.
     if (texObj.pixels)
     {
-        memcpy(texMemShared.get(), texObj.pixels.get(), texObj.width * texObj.height * 2);
+        std::memcpy(texMemShared.get(), texObj.pixels.get(), std::min(texObj.sizeInBytes, texMemSize));
     }
     else
     {
-        // Initialize the memory with zero for non power of two textures.
-        // Its probably the most reasonable init, because if the alpha channel is activated,
-        // then the not used area is then just transparent.
-        memset(texMemShared.get(), 0, texObj.width * texObj.height * 2);
+        std::memset(texMemShared.get(), 0, texMemSize);
     }
+    texObj.pixels = texMemShared;
+    texObj.sizeInBytes = texMemSize;
 
     // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
     if (pixels != nullptr)
     {
-        TextureConverter::convert(texMemShared,
-            texObj.intendedPixelFormat,
+        RIXGL::getInstance().imageConverter().convertUnpack(
+            texObj.pixels,
+            texObj.internalPixelFormat,
             texObj.width,
             xoffset,
             yoffset,
@@ -3811,8 +3915,6 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
             type,
             reinterpret_cast<const uint8_t*>(pixels));
     }
-
-    texObj.pixels = texMemShared;
 }
 
 GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid* pointer)
@@ -3834,7 +3936,7 @@ GLAPI void APIENTRY impl_glDrawRangeElements(GLenum mode, GLuint start, GLuint e
     SPDLOG_WARN("glDrawRangeElements not implemented");
 }
 
-GLAPI void APIENTRY impl_glTexImage3D(GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+GLAPI void APIENTRY impl_glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
 {
     SPDLOG_WARN("glTexImage3D not implemented");
 }

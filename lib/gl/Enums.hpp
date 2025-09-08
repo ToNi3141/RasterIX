@@ -112,7 +112,7 @@ enum class TextureWrapMode
     CLAMP_TO_EDGE
 };
 
-enum class PixelFormat
+enum class DevicePixelFormat
 {
     RGBA4444,
     RGBA5551,
@@ -153,7 +153,7 @@ enum class ColorMaterialTracking
     EMISSION
 };
 
-enum DrawMode
+enum class DrawMode
 {
     TRIANGLES,
     TRIANGLE_FAN,
@@ -166,7 +166,7 @@ enum DrawMode
     LINE_LOOP
 };
 
-enum Type
+enum class Type
 {
     BYTE,
     UNSIGNED_BYTE,
@@ -181,6 +181,17 @@ enum class Face
     BACK,
     FRONT,
     FRONT_AND_BACK
+};
+
+enum class InternalPixelFormat
+{
+    ALPHA,
+    LUMINANCE,
+    INTENSITY,
+    LUMINANCE_ALPHA,
+    RGB,
+    RGBA,
+    RGBA1,
 };
 
 } // namespace rr

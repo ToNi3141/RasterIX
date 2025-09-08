@@ -31,10 +31,15 @@ FT60XBusConnector::FT60XBusConnector()
 void FT60XBusConnector::writeData(const uint8_t index, const uint32_t size)
 {
     ULONG transferred;
-    FT_WritePipe(fthandle, 0x2, (PUCHAR)(this->m_dlMem[index].data()), size, &transferred, NULL);
+    FT_WritePipe(fthandle, 0x2, (PUCHAR)(this->m_dlMemTx[index].data()), size, &transferred, NULL);
 }
 
-void FT60XBusConnector::blockUntilWriteComplete()
+void FT60XBusConnector::readData(const uint8_t, const uint32_t)
+{
+    // TODO: Implement
+}
+
+void FT60XBusConnector::blockUntilTransferIsComplete()
 {
 }
 

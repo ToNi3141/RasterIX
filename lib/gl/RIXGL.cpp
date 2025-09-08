@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "RIXGL.hpp"
+#include "ImageConverter.hpp"
 #include "RenderConfigs.hpp"
 #include "glImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
@@ -99,6 +100,7 @@ public:
     VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};
     VertexArray vertexArray {};
+    ImageConverter imageConverter {};
 };
 
 bool RIXGL::createInstance(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
@@ -644,6 +646,11 @@ VertexQueue& RIXGL::vertexQueue()
 VertexArray& RIXGL::vertexArray()
 {
     return m_renderDevice->vertexArray;
+}
+
+ImageConverter& RIXGL::imageConverter()
+{
+    return m_renderDevice->imageConverter;
 }
 
 std::size_t RIXGL::getMaxTextureSize() const

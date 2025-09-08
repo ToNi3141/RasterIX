@@ -74,6 +74,12 @@ module RasterIX_EF #(
     input  wire                             s_cmd_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]  s_cmd_axis_tdata,
 
+    // AXI Stream command response interface
+    output wire                             m_cmd_resp_axis_tvalid,
+    input  wire                             m_cmd_resp_axis_tready,
+    output wire                             m_cmd_resp_axis_tlast,
+    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_cmd_resp_axis_tdata,
+
     // Framebuffer
     output wire                             swap_fb,
     output wire                             swap_fb_enable_vsync,
@@ -452,10 +458,10 @@ module RasterIX_EF #(
         .s_st1_axis_tlast(0),
         .s_st1_axis_tdata(0),
 
-        .m_st0_axis_tvalid(),
-        .m_st0_axis_tready(0),
-        .m_st0_axis_tlast(),
-        .m_st0_axis_tdata(),
+        .m_st0_axis_tvalid(m_cmd_resp_axis_tvalid),
+        .m_st0_axis_tready(m_cmd_resp_axis_tready),
+        .m_st0_axis_tlast(m_cmd_resp_axis_tlast),
+        .m_st0_axis_tdata(m_cmd_resp_axis_tdata),
 
         .s_st0_axis_tvalid(s_cmd_axis_tvalid),
         .s_st0_axis_tready(s_cmd_axis_tready),

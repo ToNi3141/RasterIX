@@ -61,13 +61,20 @@ public:
         waitForDma();
     }
 
-    virtual void blockUntilWriteComplete()
+    virtual void readData(const uint8_t, const uint32_t)
+    {
+        // TODO: Implement
+    }
+
+    virtual void blockUntilTransferIsComplete()
     {
         waitForDma();
     }
 
-    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) { return { m_dlMem[index] }; }
-    virtual uint8_t getBufferCount() const { return m_dlMem.size(); }
+    virtual tcb::span<uint8_t> requestWriteBuffer(const uint8_t index) { return { m_dlMem[index] }; }
+    virtual tcb::span<uint8_t> requestReadBuffer(const uint8_t index) { return {}; }
+    virtual uint8_t getWriteBufferCount() const { return m_dlMem.size(); }
+    virtual uint8_t getReadBufferCount() const { return 0; }
 
 protected:
     void waitForDma()

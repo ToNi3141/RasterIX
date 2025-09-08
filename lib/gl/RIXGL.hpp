@@ -33,6 +33,7 @@ class VertexPipeline;
 class PixelPipeline;
 class VertexArray;
 class VertexQueue;
+class ImageConverter;
 class RIXGL
 {
 public:
@@ -63,6 +64,7 @@ public:
     VertexPipeline& pipeline();
     VertexQueue& vertexQueue();
     VertexArray& vertexArray();
+    ImageConverter& imageConverter();
 
     void swapDisplayList();
 

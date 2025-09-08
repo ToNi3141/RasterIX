@@ -175,7 +175,7 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool enableTextureMinFiltering(const std::size_t tmu, const uint16_t texId, bool filter);
 
-    /// @brief Sets the resolution of the renderer
+    /// @brief Sets the resolution of the framebuffer
     /// @param x X is the width of the produced image
     /// @param y Y is the height of the produced image
     /// @return true if success
@@ -252,6 +252,30 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setFeatureEnableConfig(const FeatureEnableReg& featureEnable);
 
+    /// @brief Reads data from device memory
+    /// @param data The data where to store the data from the device
+    /// @param deviceAddr The address in the devices memory to read from
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool readFromDeviceMemory(const tcb::span<uint8_t> data, const uint32_t deviceAddr);
+
+    /// @brief Reads data from the current back color buffer
+    /// @param data The data where to store the data from the back color buffer
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool readBackColorBuffer(const tcb::span<uint8_t> buffer);
+
+    /// @brief Reads data from the current front color buffer
+    /// @param data The data where to store the data from the font color buffer
+    /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
+    bool readFrontColorBuffer(const tcb::span<uint8_t> buffer);
+
+    /// @brief Get the current frame buffer width
+    /// @return The current frame buffer width
+    std::size_t getFramebufferWidth() const { return m_resolutionX; }
+
+    /// @brief Get the current frame buffer height
+    /// @return The current frame buffer height
+    std::size_t getFramebufferHeight() const { return m_resolutionY; }
+
 private:
     using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList>;
     using TextureManagerType = TextureMemoryManager<RenderConfig>;
@@ -319,13 +343,17 @@ private:
     void intermediateUpload();
     void initDisplayLists();
     void addCommitFramebufferCommand();
-    void addColorBufferAddressOfTheScreen() { writeReg(ColorBufferAddrReg { m_colorBufferAddr }); }
     void swapScreenToNewColorBuffer();
     // In a single list case, this is always zero. It is required for the threaded renderer and the multi list support
-    void setYOffset() { writeReg(YOffsetReg { 0, 0 }); }
+    bool setYOffset() { return writeReg(YOffsetReg { 0, 0 }); }
     void loadFramebuffer();
+    // If back is true, then the back buffer is returned, otherwise the front buffer address
+    uint32_t getCurrentColorBufferAddr(const bool back) const;
 
-    uint32_t m_colorBufferAddr {};
+    void endFrame(const bool swapScreen);
+    void initAndUploadDisplayList();
+    void initNewFrame(const bool swapScreen);
+
     bool m_selectedColorBuffer { true };
     bool m_enableVSync { RenderConfig::ENABLE_VSYNC };
 

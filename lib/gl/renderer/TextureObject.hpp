@@ -18,6 +18,7 @@
 #ifndef TEXTURE_OBJECT_HPP
 #define TEXTURE_OBJECT_HPP
 
+#include "Enums.hpp"
 #include "renderer/registers/TmuTextureReg.hpp"
 #include <array>
 #include <memory>
@@ -26,96 +27,34 @@ namespace rr
 {
 struct TextureObject
 {
+    using PixelsType = std::shared_ptr<uint16_t>;
     static constexpr std::size_t MAX_LOD { 8 };
-    enum class IntendedInternalPixelFormat
-    {
-        ALPHA,
-        LUMINANCE,
-        INTENSITY,
-        LUMINANCE_ALPHA,
-        RGB,
-        RGBA,
-        RGBA1,
-    };
 
-    static uint16_t convertColor(
-        const IntendedInternalPixelFormat ipf,
-        const uint8_t r,
-        const uint8_t g,
-        const uint8_t b,
-        const uint8_t a)
+    DevicePixelFormat getDevicePixelFormat() const
     {
-        uint16_t color {};
-        switch (ipf)
+        DevicePixelFormat format {};
+        switch (internalPixelFormat)
         {
-        case IntendedInternalPixelFormat::ALPHA: // RGBA4444
-            color = static_cast<uint16_t>(a >> 4);
+        case InternalPixelFormat::ALPHA:
+            format = DevicePixelFormat::RGBA4444;
             break;
-        case IntendedInternalPixelFormat::LUMINANCE: // RGB565
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(r >> 2) << 5;
-            color |= static_cast<uint16_t>(r >> 3) << 0;
+        case InternalPixelFormat::LUMINANCE:
+            format = DevicePixelFormat::RGB565;
             break;
-        case IntendedInternalPixelFormat::INTENSITY: // RGBA4444
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(r >> 4) << 8;
-            color |= static_cast<uint16_t>(r >> 4) << 4;
-            color |= static_cast<uint16_t>(r >> 4) << 0;
+        case InternalPixelFormat::INTENSITY:
+            format = DevicePixelFormat::RGBA4444;
             break;
-        case IntendedInternalPixelFormat::LUMINANCE_ALPHA: // RGBA4444
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(r >> 4) << 8;
-            color |= static_cast<uint16_t>(r >> 4) << 4;
-            color |= static_cast<uint16_t>(a >> 4) << 0;
+        case InternalPixelFormat::LUMINANCE_ALPHA:
+            format = DevicePixelFormat::RGBA4444;
             break;
-        case IntendedInternalPixelFormat::RGB: // RGB565
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(g >> 2) << 5;
-            color |= static_cast<uint16_t>(b >> 3) << 0;
+        case InternalPixelFormat::RGB:
+            format = DevicePixelFormat::RGB565;
             break;
-        case IntendedInternalPixelFormat::RGBA: // RGBA4444
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(g >> 4) << 8;
-            color |= static_cast<uint16_t>(b >> 4) << 4;
-            color |= static_cast<uint16_t>(a >> 4) << 0;
+        case InternalPixelFormat::RGBA:
+            format = DevicePixelFormat::RGBA4444;
             break;
-        case IntendedInternalPixelFormat::RGBA1: // RGBA5551
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(g >> 3) << 6;
-            color |= static_cast<uint16_t>(b >> 3) << 1;
-            color |= static_cast<uint16_t>(a >> 7) << 0;
-            break;
-        default:
-            break;
-        }
-        return color;
-    }
-
-    PixelFormat getPixelFormat() const
-    {
-        PixelFormat format {};
-        switch (intendedPixelFormat)
-        {
-        case IntendedInternalPixelFormat::ALPHA:
-            format = PixelFormat::RGBA4444;
-            break;
-        case IntendedInternalPixelFormat::LUMINANCE:
-            format = PixelFormat::RGB565;
-            break;
-        case IntendedInternalPixelFormat::INTENSITY:
-            format = PixelFormat::RGBA4444;
-            break;
-        case IntendedInternalPixelFormat::LUMINANCE_ALPHA:
-            format = PixelFormat::RGBA4444;
-            break;
-        case IntendedInternalPixelFormat::RGB:
-            format = PixelFormat::RGB565;
-            break;
-        case IntendedInternalPixelFormat::RGBA:
-            format = PixelFormat::RGBA4444;
-            break;
-        case IntendedInternalPixelFormat::RGBA1:
-            format = PixelFormat::RGBA5551;
+        case InternalPixelFormat::RGBA1:
+            format = DevicePixelFormat::RGBA5551;
             break;
         default:
             break;
@@ -123,10 +62,14 @@ struct TextureObject
         return format;
     }
 
-    std::shared_ptr<const uint16_t> pixels {}; ///< The texture in the format defined by PixelFormat
+    /// @brief The texture in the format defined by DevicePixelFormat. Do not reuse this pointer.
+    /// The memory allocated in this pointer might be already queued for texture upload.
+    /// It is save to read from this pointer, but not save to write to it.
+    PixelsType pixels {};
+    std::size_t sizeInBytes {}; // The size of the pixels pointer in bytes
     std::size_t width {}; ///< The width of the texture
     std::size_t height {}; ///< The height of the texture
-    IntendedInternalPixelFormat intendedPixelFormat {}; ///< The intended pixel format which is converted to a type of PixelFormat
+    InternalPixelFormat internalPixelFormat {}; ///< The intended pixel format which is converted to a type of DevicePixelFormat
 };
 
 using TextureObjectMipmap = std::array<TextureObject, TextureObject::MAX_LOD + 1>;

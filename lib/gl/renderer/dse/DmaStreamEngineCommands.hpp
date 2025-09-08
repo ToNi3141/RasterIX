@@ -46,11 +46,8 @@ static constexpr SCT OP_MASK { 0xF000'0000 };
 static constexpr SCT IMM_MASK { ~OP_MASK };
 static constexpr SCT OP_NOP { 0x0000'0000 };
 static constexpr SCT OP_STORE { 0xD000'0000 };
-static constexpr SCT OP_LOAD { 0xB000'0000 };
+static constexpr SCT OP_LOAD { 0x7000'0000 };
 static constexpr SCT OP_STREAM { 0x9000'0000 };
-static constexpr SCT OP_COMMIT_TO_STREAM { 0x6000'0000 };
-static constexpr SCT OP_COMMIT_TO_MEMORY { 0xE000'0000 };
-static constexpr SCT OP_STREAM_FROM_MEMORY { 0x7000'0000 };
 
 static constexpr uint32_t DEVICE_MIN_TRANSFER_SIZE { 64 }; // The DSE only supports 16 * 4 byte transfers
 

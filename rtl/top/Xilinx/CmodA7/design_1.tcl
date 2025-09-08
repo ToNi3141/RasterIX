@@ -406,6 +406,7 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net AxisFramebufferReader_0_m_disp_axis [get_bd_intf_pins AxisFramebufferReader_0/m_disp_axis] [get_bd_intf_pins axis_dwidth_converter_0/S_AXIS]
   connect_bd_intf_net -intf_net AxisFramebufferReader_0_m_mem_axi [get_bd_intf_pins AxisFramebufferReader_0/m_mem_axi] [get_bd_intf_pins axi_crossbar_0/S01_AXI]
   connect_bd_intf_net -intf_net RasterIX_0_m_axi [get_bd_intf_pins RasterIX_0/m_axi] [get_bd_intf_pins axi_crossbar_0/S00_AXI]
+  connect_bd_intf_net -intf_net RasterIX_0_m_cmd_resp_axis [get_bd_intf_pins RasterIX_0/m_cmd_resp_axis] [get_bd_intf_pins Serial2AXIS_0/s_axis]
   connect_bd_intf_net -intf_net Serial2AXIS_0_m_axis [get_bd_intf_pins RasterIX_0/s_cmd_axis] [get_bd_intf_pins Serial2AXIS_0/m_axis]
   connect_bd_intf_net -intf_net axi_crossbar_0_M00_AXI [get_bd_intf_pins AsyncSramController_0/s_axi] [get_bd_intf_pins axi_crossbar_0/M00_AXI]
   connect_bd_intf_net -intf_net axis_dwidth_converter_0_M_AXIS [get_bd_intf_pins DisplayController8Bi_1/s_axis] [get_bd_intf_pins axis_dwidth_converter_0/M_AXIS]

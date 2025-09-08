@@ -27,6 +27,8 @@ There are two variants available:
   - Mip mapping
   - 25 bit fix point
 
+Note: glReadPixels, glCopyTexImage2d and glCopyTexSubImage2d are not available. The FT60x read channel is not used and needs to be implemented.
+
 You can build it in two variants, `rixif` and `rixef`. Depending on the variant, you must choose the preset with the `_rixif` or `_rixef` suffix.
 
 To build the binaries use the following commands.

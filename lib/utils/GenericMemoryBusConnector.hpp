@@ -31,11 +31,14 @@ class GenericMemoryBusConnector : public IBusConnector
 public:
     virtual ~GenericMemoryBusConnector() = default;
 
-    virtual tcb::span<uint8_t> requestBuffer(const uint8_t index) override { return { m_dlMem[index] }; }
-    virtual uint8_t getBufferCount() const override { return m_dlMem.size(); }
+    virtual tcb::span<uint8_t> requestWriteBuffer(const uint8_t index) override { return { m_dlMemTx[index] }; }
+    virtual tcb::span<uint8_t> requestReadBuffer(const uint8_t index) override { return { m_dlMemRx[index] }; }
+    virtual uint8_t getWriteBufferCount() const override { return m_dlMemTx.size(); }
+    virtual uint8_t getReadBufferCount() const override { return m_dlMemRx.size(); }
 
 protected:
-    std::array<std::array<uint8_t, DISPLAY_LIST_SIZE>, NUMBER_OF_DISPLAY_LISTS> m_dlMem;
+    std::array<std::array<uint8_t, DISPLAY_LIST_SIZE>, 1> m_dlMemRx;
+    std::array<std::array<uint8_t, DISPLAY_LIST_SIZE>, NUMBER_OF_DISPLAY_LISTS> m_dlMemTx;
 };
 
 } // namespace rr

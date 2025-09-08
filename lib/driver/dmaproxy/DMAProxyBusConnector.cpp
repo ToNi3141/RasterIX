@@ -26,39 +26,44 @@ const std::size_t DMAProxyBusConnector::INVALID_BUFFER { BUFFER_SIZE + 1 };
 DMAProxyBusConnector::DMAProxyBusConnector()
 {
     const char* tx_channel_names[] = { "dma_proxy_tx" };
-    // const char *rx_channel_names[] = { "dma_proxy_rx" };
+    const char* rx_channel_names[] = { "dma_proxy_rx" };
 
+    openChannel(m_txChannel, tx_channel_names);
+    openChannel(m_rxChannel, rx_channel_names);
+}
+
+void DMAProxyBusConnector::openChannel(Channel& channel, const char* channelName[])
+{
     char channel_name[64] = "/dev/";
-    strcat(channel_name, tx_channel_names[0]);
-    m_txChannel.fd = open(channel_name, O_RDWR);
-    if (m_txChannel.fd < 1)
+    strcat(channel_name, channelName[0]);
+    channel.fd = open(channel_name, O_RDWR);
+    if (channel.fd < 1)
     {
         SPDLOG_ERROR("Unable to open DMA proxy device file: {}", channel_name);
         exit(EXIT_FAILURE);
     }
-    m_txChannel.buf_ptr = reinterpret_cast<struct channel_buffer*>(mmap(NULL, sizeof(channel_buffer) * TX_BUFFER_COUNT,
-        PROT_READ | PROT_WRITE, MAP_SHARED, m_txChannel.fd, 0));
-    if (m_txChannel.buf_ptr == MAP_FAILED)
+    channel.buf_ptr = reinterpret_cast<struct channel_buffer*>(mmap(NULL, sizeof(channel_buffer) * BUFFER_COUNT,
+        PROT_READ | PROT_WRITE, MAP_SHARED, channel.fd, 0));
+    if (channel.buf_ptr == MAP_FAILED)
     {
-        printf("Failed to mmap tx channel\n");
-        SPDLOG_ERROR("Failed to mmap tx channel");
+        SPDLOG_ERROR("Failed to mmap channel");
         exit(EXIT_FAILURE);
     }
 }
 
 DMAProxyBusConnector::~DMAProxyBusConnector()
 {
-    blockUntilWriteComplete();
+    blockUntilTransferIsComplete();
 }
 
 void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
 {
-    if (index >= BUFFER_COUNT)
+    if (index >= TX_BUFFER_COUNT)
     {
         SPDLOG_ERROR("Index {} out of bounds.", index);
         return;
     }
-    blockUntilWriteComplete();
+    blockUntilTransferIsComplete();
     int buffer_id = index;
     m_txChannel.buf_ptr[buffer_id].length = size;
     ioctl(m_txChannel.fd, START_XFER, &buffer_id);
@@ -67,16 +72,38 @@ void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
         SPDLOG_ERROR("Proxy tx transfer error");
     }
     m_busyBufferId = index;
+    m_busyChannel = m_txChannel;
 }
 
-void DMAProxyBusConnector::blockUntilWriteComplete()
+void DMAProxyBusConnector::readData(const uint8_t index, const uint32_t size)
+{
+    if (index >= RX_BUFFER_COUNT)
+    {
+        SPDLOG_ERROR("Index {} out of bounds.", index);
+        return;
+    }
+    blockUntilTransferIsComplete();
+    int buffer_id = index;
+    m_rxChannel.buf_ptr[buffer_id].length = size;
+    ioctl(m_rxChannel.fd, START_XFER, &buffer_id);
+    if (m_rxChannel.buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR)
+    {
+        SPDLOG_ERROR("Proxy rx transfer error 0x{:X}", m_rxChannel.buf_ptr[buffer_id].status);
+        return;
+    }
+    blockUntilTransferIsComplete();
+    m_busyBufferId = index;
+    m_busyChannel = m_rxChannel;
+}
+
+void DMAProxyBusConnector::blockUntilTransferIsComplete()
 {
     waitForDma();
 }
 
-tcb::span<uint8_t> DMAProxyBusConnector::requestBuffer(const uint8_t index)
+tcb::span<uint8_t> DMAProxyBusConnector::requestWriteBuffer(const uint8_t index)
 {
-    if (index >= BUFFER_COUNT)
+    if (index >= TX_BUFFER_COUNT)
     {
         SPDLOG_ERROR("Index {} out of bounds.", index);
         return {};
@@ -85,16 +112,36 @@ tcb::span<uint8_t> DMAProxyBusConnector::requestBuffer(const uint8_t index)
     return { reinterpret_cast<uint8_t*>(&m_txChannel.buf_ptr[index].buffer[0]), BUFFER_SIZE };
 }
 
-uint8_t DMAProxyBusConnector::getBufferCount() const
+tcb::span<uint8_t> DMAProxyBusConnector::requestReadBuffer(const uint8_t index)
 {
-    return BUFFER_COUNT;
+    if (index >= RX_BUFFER_COUNT)
+    {
+        SPDLOG_ERROR("Index {} out of bounds.", index);
+        return {};
+    }
+    SPDLOG_DEBUG("Requested memory for index {} with size {}", index, BUFFER_SIZE);
+    return { reinterpret_cast<uint8_t*>(&m_rxChannel.buf_ptr[index].buffer[0]), BUFFER_SIZE };
+}
+
+uint8_t DMAProxyBusConnector::getWriteBufferCount() const
+{
+    return TX_BUFFER_COUNT;
+}
+
+uint8_t DMAProxyBusConnector::getReadBufferCount() const
+{
+    return RX_BUFFER_COUNT;
 }
 
 void DMAProxyBusConnector::waitForDma()
 {
     if (m_busyBufferId == INVALID_BUFFER)
         return;
-    ioctl(m_txChannel.fd, FINISH_XFER, &m_busyBufferId);
+    ioctl(m_busyChannel.fd, FINISH_XFER, &m_busyBufferId);
+    if (m_busyChannel.buf_ptr[m_busyBufferId].status != channel_buffer::proxy_status::PROXY_NO_ERROR)
+    {
+        SPDLOG_ERROR("wait for dma error 0x{:X}", m_busyChannel.buf_ptr[m_busyBufferId].status);
+    }
     m_busyBufferId = INVALID_BUFFER;
 }
 

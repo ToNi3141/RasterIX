@@ -26,15 +26,12 @@ Renderer::Renderer(IDevice& device)
 
     initDisplayLists();
 
-    setYOffset();
-
     setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
     setDepthBufferAddress(RenderConfig::DEPTH_BUFFER_LOC);
     setStencilBufferAddress(RenderConfig::STENCIL_BUFFER_LOC);
 
-    setRenderResolution(RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT);
-
     // Set initial values
+    writeReg(RenderResolutionReg { RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT });
     setTexEnvColor({ 0, Vec4i { 0, 0, 0, 0 } });
     setClearColor({ Vec4i { 0, 0, 0, 0 } });
     setClearDepth({ 65535 });
@@ -136,16 +133,41 @@ void Renderer::intermediateUpload()
 
 void Renderer::swapDisplayList()
 {
+    endFrame(true);
+    initAndUploadDisplayList();
+    initNewFrame(true);
+}
+
+void Renderer::endFrame(const bool swapScreen)
+{
+    // Finish frame
     addCommitFramebufferCommand();
-    addColorBufferAddressOfTheScreen();
-    swapScreenToNewColorBuffer();
+    if (swapScreen)
+    {
+        swapScreenToNewColorBuffer();
+    }
+}
+
+void Renderer::initAndUploadDisplayList()
+{
+    // Upload new constructed displaylist
     uploadTextures();
     uploadDisplayList();
+
+    // Swap to a new display list
     switchDisplayLists();
     clearDisplayListAssembler();
-    loadFramebuffer();
+}
+
+void Renderer::initNewFrame(const bool swapScreen)
+{
+    // Prepare the new display list
     setYOffset();
-    swapFramebuffer();
+    if (swapScreen)
+    {
+        swapFramebuffer();
+    }
+    loadFramebuffer();
 }
 
 void Renderer::loadFramebuffer()
@@ -275,7 +297,16 @@ bool Renderer::setRenderResolution(const std::size_t x, const std::size_t y)
     RenderResolutionReg reg;
     reg.setX(x);
     reg.setY(y);
-    return writeReg(reg);
+
+    // End current frame, and render it. Initialize the new display list and add as the first
+    // command the new resolution. The initNewFrame contains commands which are based on the
+    // current resolution
+    endFrame(false);
+    initAndUploadDisplayList();
+    writeReg(reg);
+    initNewFrame(false);
+
+    return true;
 }
 
 bool Renderer::writeToTextureConfig(const std::size_t tmu, TmuTextureReg tmuConfig)
@@ -286,7 +317,6 @@ bool Renderer::writeToTextureConfig(const std::size_t tmu, TmuTextureReg tmuConf
 
 bool Renderer::setColorBufferAddress(const uint32_t addr)
 {
-    m_colorBufferAddr = addr;
     return writeReg(ColorBufferAddrReg { addr });
 }
 
@@ -299,17 +329,40 @@ void Renderer::uploadTextures()
         });
 }
 
+bool Renderer::readFromDeviceMemory(const tcb::span<uint8_t> data, const uint32_t deviceAddr)
+{
+    return m_device.readFromDeviceMemory(data, deviceAddr);
+}
+
+bool Renderer::readBackColorBuffer(const tcb::span<uint8_t> buffer)
+{
+    endFrame(false);
+    initAndUploadDisplayList();
+    initNewFrame(false);
+    return readFromDeviceMemory(buffer, getCurrentColorBufferAddr(true));
+}
+
+bool Renderer::readFrontColorBuffer(const tcb::span<uint8_t> buffer)
+{
+    return readFromDeviceMemory(buffer, getCurrentColorBufferAddr(false));
+}
+
 void Renderer::swapFramebuffer()
 {
-    if (m_selectedColorBuffer)
+    m_selectedColorBuffer = !m_selectedColorBuffer;
+    setColorBufferAddress(getCurrentColorBufferAddr(true));
+}
+
+uint32_t Renderer::getCurrentColorBufferAddr(const bool back) const
+{
+    if (m_selectedColorBuffer && back)
     {
-        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_2);
+        return RenderConfig::COLOR_BUFFER_LOC_2;
     }
     else
     {
-        setColorBufferAddress(RenderConfig::COLOR_BUFFER_LOC_1);
+        return RenderConfig::COLOR_BUFFER_LOC_1;
     }
-    m_selectedColorBuffer = !m_selectedColorBuffer;
 }
 
 } // namespace rr

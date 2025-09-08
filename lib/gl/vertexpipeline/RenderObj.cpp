@@ -105,31 +105,31 @@ const char* RenderObj::drawModeToString(const DrawMode drawMode) const
 {
     switch (drawMode)
     {
-    case TRIANGLES:
+    case DrawMode::TRIANGLES:
         return "TRIANGLES";
 
-    case TRIANGLE_FAN:
+    case DrawMode::TRIANGLE_FAN:
         return "TRIANGLE_FAN";
 
-    case TRIANGLE_STRIP:
+    case DrawMode::TRIANGLE_STRIP:
         return "TRIANGLE_STRIP";
 
-    case POLYGON:
+    case DrawMode::POLYGON:
         return "POLYGON";
 
-    case QUADS:
+    case DrawMode::QUADS:
         return "QUADS";
 
-    case QUAD_STRIP:
+    case DrawMode::QUAD_STRIP:
         return "QUAD_STRIP";
 
-    case LINES:
+    case DrawMode::LINES:
         return "LINES";
 
-    case LINE_STRIP:
+    case DrawMode::LINE_STRIP:
         return "LINE_STRIP";
 
-    case LINE_LOOP:
+    case DrawMode::LINE_LOOP:
         return "LINE_LOOP";
 
     default:
@@ -141,22 +141,22 @@ const char* RenderObj::typeToString(const Type type) const
 {
     switch (type)
     {
-    case BYTE:
+    case Type::BYTE:
         return "BYTE";
 
-    case UNSIGNED_BYTE:
+    case Type::UNSIGNED_BYTE:
         return "UNSIGNED_BYTE";
 
-    case SHORT:
+    case Type::SHORT:
         return "SHORT";
 
-    case UNSIGNED_SHORT:
+    case Type::UNSIGNED_SHORT:
         return "UNSIGNED_SHORT";
 
-    case FLOAT:
+    case Type::FLOAT:
         return "FLOAT";
 
-    case UNSIGNED_INT:
+    case Type::UNSIGNED_INT:
         return "UNSIGNED_INT";
 
     default:
