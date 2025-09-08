@@ -3854,14 +3854,14 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     if (static_cast<std::size_t>(level) > RIXGL::getInstance().getMaxLOD())
     {
-        SPDLOG_ERROR("glTexImage2D invalid lod.");
+        SPDLOG_ERROR("glTexSubImage2D invalid lod.");
         return;
     }
 
     if (!RIXGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("glTexImage2D mipmapping on hardware not supported.");
+        SPDLOG_ERROR("glTexSubImage2D mipmapping on hardware not supported.");
         return;
     }
 
@@ -3870,14 +3870,14 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         || ((yoffset + height) > static_cast<GLint>(texObj.height)))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("glTexImage2D offsets or texture sizes are too big");
+        SPDLOG_ERROR("glTexSubImage2D offsets or texture sizes are too big");
         return;
     }
 
     const std::size_t texMemSize = texObj.width * texObj.height * 2;
     if (texMemSize == 0)
     {
-        SPDLOG_DEBUG("glTexImage2D texture with zero dimensions loaded.");
+        SPDLOG_DEBUG("glTexSubImage2D texture with zero dimensions loaded.");
         return;
     }
 
@@ -3886,7 +3886,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     if (!texMemShared)
     {
         RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
-        SPDLOG_ERROR("glTexImage2D Out Of Memory");
+        SPDLOG_ERROR("glTexSubImage2D Out Of Memory");
         return;
     }
     if (texObj.pixels)
