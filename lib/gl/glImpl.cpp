@@ -3107,7 +3107,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     if ((border != 0) || (level < 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Border or level invalid");
+        SPDLOG_ERROR("glTexImage2D border or level invalid");
         return;
     }
 
@@ -3115,21 +3115,21 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
 
     if (static_cast<std::size_t>(level) > RIXGL::getInstance().getMaxLOD())
     {
-        SPDLOG_ERROR("Invalid lod.");
+        SPDLOG_ERROR("glTexImage2D invalid lod.");
         return;
     }
 
     if ((static_cast<std::size_t>(width) > maxTexSize) || (static_cast<std::size_t>(height) > maxTexSize))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Texture is too big.");
+        SPDLOG_ERROR("glTexImage2D texture is too big.");
         return;
     }
 
     if (!RIXGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Mipmapping on hardware not supported.");
+        SPDLOG_ERROR("glTexImage2D mipmapping on hardware not supported.");
         return;
     }
 
@@ -3141,7 +3141,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     if ((widthRounded == 0) || (heightRounded == 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Texture with invalid size detected ({} (rounded to {}), {} (rounded to {}))", width, widthRounded, height, heightRounded);
+        SPDLOG_ERROR("glTexImage2D texture with invalid size detected ({} (rounded to {}), {} (rounded to {}))", width, widthRounded, height, heightRounded);
         return;
     }
 
@@ -3150,7 +3150,7 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     if (error != GL_NO_ERROR)
     {
         RIXGL::getInstance().setError(error);
-        SPDLOG_ERROR("Internal Pixel Format 0x{:X} not supported", internalformat);
+        SPDLOG_ERROR("glTexImage2D internal Pixel Format 0x{:X} not supported", internalformat);
         return;
     }
 
@@ -3617,7 +3617,7 @@ GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum int
     case InternalPixelFormat::RGBA:
     case InternalPixelFormat::RGBA1:
         RIXGL::getInstance().setError(GL_INVALID_OPERATION);
-        SPDLOG_ERROR("Invalid internal format used (framebuffer does not support an alpha channel)");
+        SPDLOG_ERROR("glCopyTexImage2D invalid internal format used (framebuffer does not support an alpha channel)");
         return;
     default:
         break;
@@ -3854,14 +3854,14 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     if (static_cast<std::size_t>(level) > RIXGL::getInstance().getMaxLOD())
     {
-        SPDLOG_ERROR("Invalid lod.");
+        SPDLOG_ERROR("glTexImage2D invalid lod.");
         return;
     }
 
     if (!RIXGL::getInstance().isMipmappingAvailable() && (level != 0))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Mipmapping on hardware not supported.");
+        SPDLOG_ERROR("glTexImage2D mipmapping on hardware not supported.");
         return;
     }
 
@@ -3870,14 +3870,14 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         || ((yoffset + height) > static_cast<GLint>(texObj.height)))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        SPDLOG_ERROR("Offsets or texture sizes are too big");
+        SPDLOG_ERROR("glTexImage2D offsets or texture sizes are too big");
         return;
     }
 
     const std::size_t texMemSize = texObj.width * texObj.height * 2;
     if (texMemSize == 0)
     {
-        SPDLOG_DEBUG("Texture with zero dimensions loaded.");
+        SPDLOG_DEBUG("glTexImage2D texture with zero dimensions loaded.");
         return;
     }
 
@@ -3886,7 +3886,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     if (!texMemShared)
     {
         RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
-        SPDLOG_ERROR("Out Of Memory");
+        SPDLOG_ERROR("glTexImage2D Out Of Memory");
         return;
     }
     if (texObj.pixels)
