@@ -249,18 +249,19 @@ private:
             return clientBGRToRGBA8888(rgba, type, clientTexel);
         case GL_BGRA:
             return clientBGRAToRGBA8888(rgba, type, clientTexel);
-        case GL_LUMINANCE: // TODO Implement
-        case GL_LUMINANCE_ALPHA: // TODO Implement
-            SPDLOG_WARN("Unsupported format");
-            return 1; // Avoiding to get stuck
-        case GL_ALPHA: // TODO implement
+        case GL_LUMINANCE:
+            return clientLuminanceToRGBA8888(rgba, type, clientTexel);
+        case GL_LUMINANCE_ALPHA:
+            return clientLuminanceAlphaToRGBA8888(rgba, type, clientTexel);
+        case GL_ALPHA:
+            return clientAlphaToRGBA8888(rgba, type, clientTexel);
         case GL_RED:
         case GL_GREEN:
         case GL_BLUE:
             SPDLOG_WARN("Unsupported format");
             return 1;
         default:
-            SPDLOG_WARN("Invalid format");
+            SPDLOG_ERROR("Invalid format");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
@@ -314,11 +315,11 @@ private:
         case GL_UNSIGNED_INT_8_8_8_8_REV:
         case GL_UNSIGNED_INT_10_10_10_2:
         case GL_UNSIGNED_INT_2_10_10_10_REV:
-            SPDLOG_WARN("Invalid operation");
+            SPDLOG_ERROR("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("Invalid type");
+            SPDLOG_ERROR("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
@@ -373,11 +374,11 @@ private:
         case GL_UNSIGNED_BYTE_2_3_3_REV:
         case GL_UNSIGNED_SHORT_5_6_5:
         case GL_UNSIGNED_SHORT_5_6_5_REV:
-            SPDLOG_WARN("Invalid operation");
+            SPDLOG_ERROR("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("Invalid type");
+            SPDLOG_ERROR("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
@@ -439,11 +440,11 @@ private:
         case GL_UNSIGNED_BYTE_2_3_3_REV:
         case GL_UNSIGNED_SHORT_5_6_5:
         case GL_UNSIGNED_SHORT_5_6_5_REV:
-            SPDLOG_WARN("Invalid operation");
+            SPDLOG_ERROR("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("Invalid type");
+            SPDLOG_ERROR("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
@@ -467,7 +468,7 @@ private:
             rgba.b = pixels[0];
             rgba.g = pixels[1];
             rgba.r = pixels[2];
-            rgba.a = 3;
+            rgba.a = 0;
             return 3;
         case GL_BYTE:
         case GL_BITMAP:
@@ -488,11 +489,128 @@ private:
         case GL_UNSIGNED_BYTE_3_3_2:
         case GL_UNSIGNED_BYTE_2_3_3_REV:
         case GL_UNSIGNED_SHORT_5_6_5:
-            SPDLOG_WARN("Invalid operation");
+            SPDLOG_ERROR("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("Invalid type");
+            SPDLOG_ERROR("Invalid type");
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            return 1; // Avoiding to get stuck
+        }
+        return 1; // Avoiding to get stuck
+    }
+
+    static std::size_t clientAlphaToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
+    {
+        switch (type)
+        {
+        case GL_UNSIGNED_BYTE:
+            rgba.r = 0;
+            rgba.g = 0;
+            rgba.b = 0;
+            rgba.a = pixels[0];
+            return 1;
+        case GL_UNSIGNED_SHORT_5_6_5_REV:
+        case GL_BYTE:
+        case GL_BITMAP:
+        case GL_UNSIGNED_SHORT:
+        case GL_UNSIGNED_INT:
+        case GL_INT:
+        case GL_FLOAT:
+        case GL_UNSIGNED_SHORT_5_5_5_1:
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4:
+        case GL_UNSIGNED_INT_8_8_8_8_REV:
+        case GL_UNSIGNED_INT_8_8_8_8:
+        case GL_UNSIGNED_INT_10_10_10_2:
+        case GL_UNSIGNED_INT_2_10_10_10_REV:
+        case GL_UNSIGNED_BYTE_3_3_2:
+        case GL_UNSIGNED_BYTE_2_3_3_REV:
+        case GL_UNSIGNED_SHORT_5_6_5:
+            SPDLOG_ERROR("Invalid operation");
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+            return 1; // Avoiding to get stuck
+        default:
+            SPDLOG_ERROR("Invalid type");
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            return 1; // Avoiding to get stuck
+        }
+        return 1; // Avoiding to get stuck
+    }
+
+    static std::size_t clientLuminanceToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
+    {
+        switch (type)
+        {
+        case GL_UNSIGNED_BYTE:
+            rgba.r = pixels[0];
+            rgba.g = pixels[0];
+            rgba.b = pixels[0];
+            rgba.a = 0xff;
+            return 1;
+        case GL_UNSIGNED_SHORT_5_6_5_REV:
+        case GL_BYTE:
+        case GL_BITMAP:
+        case GL_UNSIGNED_SHORT:
+        case GL_UNSIGNED_INT:
+        case GL_INT:
+        case GL_FLOAT:
+        case GL_UNSIGNED_SHORT_5_5_5_1:
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4:
+        case GL_UNSIGNED_INT_8_8_8_8_REV:
+        case GL_UNSIGNED_INT_8_8_8_8:
+        case GL_UNSIGNED_INT_10_10_10_2:
+        case GL_UNSIGNED_INT_2_10_10_10_REV:
+        case GL_UNSIGNED_BYTE_3_3_2:
+        case GL_UNSIGNED_BYTE_2_3_3_REV:
+        case GL_UNSIGNED_SHORT_5_6_5:
+            SPDLOG_ERROR("Invalid operation");
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+            return 1; // Avoiding to get stuck
+        default:
+            SPDLOG_ERROR("Invalid type");
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            return 1; // Avoiding to get stuck
+        }
+        return 1; // Avoiding to get stuck
+    }
+
+    static std::size_t clientLuminanceAlphaToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
+    {
+        switch (type)
+        {
+        case GL_UNSIGNED_BYTE:
+            rgba.r = pixels[0];
+            rgba.g = pixels[0];
+            rgba.b = pixels[0];
+            rgba.a = pixels[1];
+            return 2;
+        case GL_UNSIGNED_SHORT_5_6_5_REV:
+        case GL_BYTE:
+        case GL_BITMAP:
+        case GL_UNSIGNED_SHORT:
+        case GL_UNSIGNED_INT:
+        case GL_INT:
+        case GL_FLOAT:
+        case GL_UNSIGNED_SHORT_5_5_5_1:
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4:
+        case GL_UNSIGNED_INT_8_8_8_8_REV:
+        case GL_UNSIGNED_INT_8_8_8_8:
+        case GL_UNSIGNED_INT_10_10_10_2:
+        case GL_UNSIGNED_INT_2_10_10_10_REV:
+        case GL_UNSIGNED_BYTE_3_3_2:
+        case GL_UNSIGNED_BYTE_2_3_3_REV:
+        case GL_UNSIGNED_SHORT_5_6_5:
+            SPDLOG_ERROR("Invalid operation");
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+            return 1; // Avoiding to get stuck
+        default:
+            SPDLOG_ERROR("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
