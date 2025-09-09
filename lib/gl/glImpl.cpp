@@ -1196,6 +1196,12 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint* params)
     case GL_MAX_CLIP_PLANES:
         *params = 1;
         break;
+    case GL_NUM_COMPRESSED_TEXTURE_FORMATS:
+        *params = 0;
+        break;
+    case GL_COMPRESSED_TEXTURE_FORMATS:
+        *params = 0;
+        break;
     default:
         *params = 0;
         break;
@@ -2203,7 +2209,7 @@ GLAPI void APIENTRY impl_glReadPixels(GLint x, GLint y, GLsizei width, GLsizei h
         return;
     }
     const uint16_t* pixelsDevice = readFromColorBuffer(x, y, width, height, false);
-    RIXGL::getInstance().imageConverter().convertPackRgb565ToRGBA8888(reinterpret_cast<uint8_t*>(pixels), width, height, pixelsDevice);
+    RIXGL::getInstance().imageConverter().convertRGB565ToPackedRGBA8888(reinterpret_cast<uint8_t*>(pixels), width, height, pixelsDevice);
     delete pixelsDevice;
 }
 
