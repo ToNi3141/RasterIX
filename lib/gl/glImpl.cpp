@@ -3880,15 +3880,20 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         return;
     }
 
-    const std::size_t texMemSize = texObj.width * texObj.height * 2;
+    using PixelType = TextureObject::PixelsType::element_type;
+
+    const std::size_t texMemSize = texObj.width * texObj.height * sizeof(PixelType);
     if (texMemSize == 0)
     {
         SPDLOG_DEBUG("glTexSubImage2D texture with zero dimensions loaded.");
         return;
     }
 
-    std::shared_ptr<uint16_t> texMemShared(new uint16_t[texMemSize / 2], [](const uint16_t* p)
+    std::shared_ptr<PixelType> texMemShared(
+        new PixelType[texMemSize / sizeof(PixelType)],
+        [](const PixelType* p)
         { delete[] p; });
+
     if (!texMemShared)
     {
         RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
