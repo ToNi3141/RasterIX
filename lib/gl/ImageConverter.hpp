@@ -172,10 +172,10 @@ public:
         {
             for (std::size_t h = 0; h < newHeight; h++)
             {
-                const uint16_t baseDeviceColor00 = baseImage.get()[(baseWidth * ((w * 2) + 0)) + ((h * 2) + 0)];
-                const uint16_t baseDeviceColor10 = baseImage.get()[(baseWidth * ((w * 2) + 1)) + ((h * 2) + 0)];
-                const uint16_t baseDeviceColor01 = baseImage.get()[(baseWidth * ((w * 2) + 0)) + ((h * 2) + 1)];
-                const uint16_t baseDeviceColor11 = baseImage.get()[(baseWidth * ((w * 2) + 1)) + ((h * 2) + 1)];
+                const uint16_t baseDeviceColor00 = baseImage.get()[(baseWidth * ((h * 2) + 0)) + ((w * 2) + 0)];
+                const uint16_t baseDeviceColor10 = baseImage.get()[(baseWidth * ((h * 2) + 1)) + ((w * 2) + 0)];
+                const uint16_t baseDeviceColor01 = baseImage.get()[(baseWidth * ((h * 2) + 0)) + ((w * 2) + 1)];
+                const uint16_t baseDeviceColor11 = baseImage.get()[(baseWidth * ((h * 2) + 1)) + ((w * 2) + 1)];
                 const RGBA baseRgbaColor00 = deviceToRGBA8888(baseDeviceColor00, ipf);
                 const RGBA baseRgbaColor10 = deviceToRGBA8888(baseDeviceColor10, ipf);
                 const RGBA baseRgbaColor01 = deviceToRGBA8888(baseDeviceColor01, ipf);
@@ -199,7 +199,7 @@ public:
                     .a = subPixelCombiner(baseRgbaColor00.a, baseRgbaColor01.a, baseRgbaColor10.a, baseRgbaColor11.a),
                 };
 
-                newMipMapLevel.get()[(newWidth * w) + h] = RGBA8888ToDevice(ipf, mipMapColor);
+                newMipMapLevel.get()[(newWidth * h) + w] = RGBA8888ToDevice(ipf, mipMapColor);
             }
         }
         return true;

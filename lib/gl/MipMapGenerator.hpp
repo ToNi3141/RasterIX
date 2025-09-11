@@ -63,7 +63,7 @@ private:
 
             std::shared_ptr<PixelType> texMemShared(
                 new PixelType[textureObject[i + 1].sizeInBytes / sizeof(PixelType)],
-                [](const uint16_t* p)
+                [](const PixelType* p)
                 { delete[] p; });
 
             if (!texMemShared)
