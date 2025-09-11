@@ -17,6 +17,7 @@
 
 #include "RIXGL.hpp"
 #include "ImageConverter.hpp"
+#include "MipMapGenerator.hpp"
 #include "RenderConfigs.hpp"
 #include "glImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
@@ -101,6 +102,7 @@ public:
     VertexQueue vertexQueue {};
     VertexArray vertexArray {};
     ImageConverter imageConverter {};
+    MipMapGenerator mipMapGenerator {};
 };
 
 bool RIXGL::createInstance(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
@@ -651,6 +653,11 @@ VertexArray& RIXGL::vertexArray()
 ImageConverter& RIXGL::imageConverter()
 {
     return m_renderDevice->imageConverter;
+}
+
+MipMapGenerator& RIXGL::mipMapGenerator()
+{
+    return m_renderDevice->mipMapGenerator;
 }
 
 std::size_t RIXGL::getMaxTextureSize() const

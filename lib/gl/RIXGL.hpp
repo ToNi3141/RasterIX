@@ -34,6 +34,7 @@ class PixelPipeline;
 class VertexArray;
 class VertexQueue;
 class ImageConverter;
+class MipMapGenerator;
 class RIXGL
 {
 public:
@@ -65,6 +66,7 @@ public:
     VertexQueue& vertexQueue();
     VertexArray& vertexArray();
     ImageConverter& imageConverter();
+    MipMapGenerator& mipMapGenerator();
 
     void swapDisplayList();
 

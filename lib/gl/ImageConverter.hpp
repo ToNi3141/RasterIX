@@ -21,7 +21,6 @@
 #include "Enums.hpp"
 #include "RIXGL.hpp"
 #include "gl.h"
-#include "pixelpipeline/Texture.hpp"
 #include <algorithm>
 #include <cstring>
 #include <spdlog/spdlog.h>
@@ -155,6 +154,57 @@ public:
         return GL_NO_ERROR;
     }
 
+    static bool computeMipMapLevel(
+        std::shared_ptr<uint16_t> newMipMapLevel,
+        const InternalPixelFormat ipf,
+        const std::size_t baseWidth,
+        const std::size_t baseHeight,
+        const std::shared_ptr<uint16_t> baseImage)
+    {
+        if ((baseWidth <= 1) || (baseHeight <= 1))
+        {
+            return false;
+        }
+        const std::size_t newWidth = baseWidth / 2;
+        const std::size_t newHeight = baseHeight / 2;
+
+        for (std::size_t w = 0; w < newWidth; w++)
+        {
+            for (std::size_t h = 0; h < newHeight; h++)
+            {
+                const uint16_t baseDeviceColor00 = baseImage.get()[(baseWidth * ((w * 2) + 0)) + ((h * 2) + 0)];
+                const uint16_t baseDeviceColor10 = baseImage.get()[(baseWidth * ((w * 2) + 1)) + ((h * 2) + 0)];
+                const uint16_t baseDeviceColor01 = baseImage.get()[(baseWidth * ((w * 2) + 0)) + ((h * 2) + 1)];
+                const uint16_t baseDeviceColor11 = baseImage.get()[(baseWidth * ((w * 2) + 1)) + ((h * 2) + 1)];
+                const RGBA baseRgbaColor00 = deviceToRGBA8888(baseDeviceColor00, ipf);
+                const RGBA baseRgbaColor10 = deviceToRGBA8888(baseDeviceColor10, ipf);
+                const RGBA baseRgbaColor01 = deviceToRGBA8888(baseDeviceColor01, ipf);
+                const RGBA baseRgbaColor11 = deviceToRGBA8888(baseDeviceColor11, ipf);
+
+                std::function<uint8_t(const uint8_t, const uint8_t, const uint8_t, const uint8_t)> subPixelCombiner =
+                    [](const uint8_t c00, const uint8_t c01, const uint8_t c10, const uint8_t c11)
+                {
+                    const uint16_t c1600 = static_cast<uint16_t>(c00);
+                    const uint16_t c1601 = static_cast<uint16_t>(c01);
+                    const uint16_t c1610 = static_cast<uint16_t>(c10);
+                    const uint16_t c1611 = static_cast<uint16_t>(c11);
+                    const uint16_t cSum = c1600 + c1601 + c1610 + c1611;
+                    return static_cast<uint8_t>(cSum / 4);
+                };
+
+                const RGBA mipMapColor {
+                    .r = subPixelCombiner(baseRgbaColor00.r, baseRgbaColor01.r, baseRgbaColor10.r, baseRgbaColor11.r),
+                    .g = subPixelCombiner(baseRgbaColor00.g, baseRgbaColor01.g, baseRgbaColor10.g, baseRgbaColor11.g),
+                    .b = subPixelCombiner(baseRgbaColor00.b, baseRgbaColor01.b, baseRgbaColor10.b, baseRgbaColor11.b),
+                    .a = subPixelCombiner(baseRgbaColor00.a, baseRgbaColor01.a, baseRgbaColor10.a, baseRgbaColor11.a),
+                };
+
+                newMipMapLevel.get()[(newWidth * w) + h] = RGBA8888ToDevice(ipf, mipMapColor);
+            }
+        }
+        return true;
+    }
+
     void setUnpackAlignment(const std::size_t unpackAlignment) { m_unpackAlignment = unpackAlignment; }
     void setPackAlignment(const std::size_t packAlignment) { m_packAlignment = packAlignment; }
 
@@ -166,6 +216,39 @@ private:
         uint8_t b;
         uint8_t a;
     };
+
+    static RGBA deviceToRGBA8888(const uint16_t deviceColor, const InternalPixelFormat ipf)
+    {
+        RGBA color {};
+        switch (ipf)
+        {
+        case InternalPixelFormat::ALPHA: // RGBA4444
+        case InternalPixelFormat::INTENSITY: // RGBA4444
+        case InternalPixelFormat::LUMINANCE_ALPHA: // RGBA4444
+        case InternalPixelFormat::RGBA: // RGBA4444
+            color.r = convertColorComponentToUint8<12, 4, 0xf>(deviceColor);
+            color.g = convertColorComponentToUint8<8, 4, 0xf>(deviceColor);
+            color.b = convertColorComponentToUint8<4, 4, 0xf>(deviceColor);
+            color.a = convertColorComponentToUint8<0, 4, 0xf>(deviceColor);
+            break;
+        case InternalPixelFormat::LUMINANCE: // RGB565
+        case InternalPixelFormat::RGB: // RGB565
+            color.r = convertColorComponentToUint8<11, 5, 0x1f>(deviceColor);
+            color.g = convertColorComponentToUint8<5, 6, 0x3f>(deviceColor);
+            color.b = convertColorComponentToUint8<0, 5, 0x1f>(deviceColor);
+            color.a = 0;
+            break;
+        case InternalPixelFormat::RGBA1: // RGBA5551
+            color.r = convertColorComponentToUint8<11, 5, 0x1f>(deviceColor);
+            color.g = convertColorComponentToUint8<6, 5, 0x1f>(deviceColor);
+            color.b = convertColorComponentToUint8<1, 5, 0x1f>(deviceColor);
+            color.a = (deviceColor & 0x1) ? 0xff : 0;
+            break;
+        default:
+            break;
+        }
+        return color;
+    }
 
     static uint16_t RGBA8888ToDevice(const InternalPixelFormat ipf, const RGBA& rgba)
     {

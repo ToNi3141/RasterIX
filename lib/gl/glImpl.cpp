@@ -18,6 +18,7 @@
 #define NOMINMAX // Windows workaround
 #include "glImpl.h"
 #include "ImageConverter.hpp"
+#include "MipMapGenerator.hpp"
 #include "RIXGL.hpp"
 #include "glHelpers.hpp"
 #include "glTypeConverters.h"
@@ -3199,6 +3200,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             else
             {
                 RIXGL::getInstance().setError(error);
+                SPDLOG_ERROR("glTexParameteri GL_TEXTURE_WRAP_S param 0x{:X} not supported", param);
             }
             break;
         }
@@ -3213,6 +3215,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             else
             {
                 RIXGL::getInstance().setError(error);
+                SPDLOG_ERROR("glTexParameteri GL_TEXTURE_WRAP_T param 0x{:X} not supported", param);
             }
             break;
         }
@@ -3224,6 +3227,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             else
             {
                 RIXGL::getInstance().setError(GL_INVALID_ENUM);
+                SPDLOG_ERROR("glTexParameteri GL_TEXTURE_MAG_FILTER param 0x{:X} not supported", param);
             }
             break;
         case GL_TEXTURE_MIN_FILTER:
@@ -3243,10 +3247,21 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
                 }
                 break;
             default:
+                SPDLOG_ERROR("glTexParameteri GL_TEXTURE_MIN_FILTER param 0x{:X} not supported", param);
                 RIXGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             }
             break;
+        case GL_GENERATE_MIPMAP:
+            if ((param == GL_TRUE) || (param == GL_FALSE))
+            {
+                RIXGL::getInstance().mipMapGenerator().setEnableMipMapGeneration(param == GL_TRUE);
+            }
+            else
+            {
+                SPDLOG_ERROR("glTexParameteri GL_GENERATE_MIPMAP param 0x{:X} not supported", param);
+                RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            }
         default:
             SPDLOG_WARN("glTexParameteri pname 0x{:X} not supported", pname);
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -3925,6 +3940,8 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
             format,
             type,
             reinterpret_cast<const uint8_t*>(pixels));
+
+        RIXGL::getInstance().mipMapGenerator().generateMipMap(RIXGL::getInstance().pipeline().texture().getTexture(), level);
     }
 }
 
