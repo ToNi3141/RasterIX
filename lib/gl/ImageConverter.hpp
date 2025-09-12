@@ -193,10 +193,10 @@ public:
                 };
 
                 const RGBA mipMapColor {
-                    .r = subPixelCombiner(baseRgbaColor00.r, baseRgbaColor01.r, baseRgbaColor10.r, baseRgbaColor11.r),
-                    .g = subPixelCombiner(baseRgbaColor00.g, baseRgbaColor01.g, baseRgbaColor10.g, baseRgbaColor11.g),
-                    .b = subPixelCombiner(baseRgbaColor00.b, baseRgbaColor01.b, baseRgbaColor10.b, baseRgbaColor11.b),
-                    .a = subPixelCombiner(baseRgbaColor00.a, baseRgbaColor01.a, baseRgbaColor10.a, baseRgbaColor11.a),
+                    subPixelCombiner(baseRgbaColor00.r, baseRgbaColor01.r, baseRgbaColor10.r, baseRgbaColor11.r),
+                    subPixelCombiner(baseRgbaColor00.g, baseRgbaColor01.g, baseRgbaColor10.g, baseRgbaColor11.g),
+                    subPixelCombiner(baseRgbaColor00.b, baseRgbaColor01.b, baseRgbaColor10.b, baseRgbaColor11.b),
+                    subPixelCombiner(baseRgbaColor00.a, baseRgbaColor01.a, baseRgbaColor10.a, baseRgbaColor11.a),
                 };
 
                 newMipMapLevel.get()[(newWidth * h) + w] = RGBA8888ToDevice(ipf, mipMapColor);
