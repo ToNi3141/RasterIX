@@ -19,7 +19,6 @@
 #define TEXTURE_OBJECT_HPP
 
 #include "Enums.hpp"
-#include "renderer/registers/TmuTextureReg.hpp"
 #include <array>
 #include <memory>
 

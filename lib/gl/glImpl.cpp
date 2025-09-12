@@ -18,6 +18,7 @@
 #define NOMINMAX // Windows workaround
 #include "glImpl.h"
 #include "ImageConverter.hpp"
+#include "MipMapGenerator.hpp"
 #include "RIXGL.hpp"
 #include "glHelpers.hpp"
 #include "glTypeConverters.h"
@@ -1196,6 +1197,12 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint* params)
     case GL_MAX_CLIP_PLANES:
         *params = 1;
         break;
+    case GL_NUM_COMPRESSED_TEXTURE_FORMATS:
+        *params = 0;
+        break;
+    case GL_COMPRESSED_TEXTURE_FORMATS:
+        *params = 0;
+        break;
     default:
         *params = 0;
         break;
@@ -2203,7 +2210,7 @@ GLAPI void APIENTRY impl_glReadPixels(GLint x, GLint y, GLsizei width, GLsizei h
         return;
     }
     const uint16_t* pixelsDevice = readFromColorBuffer(x, y, width, height, false);
-    RIXGL::getInstance().imageConverter().convertPackRgb565ToRGBA8888(reinterpret_cast<uint8_t*>(pixels), width, height, pixelsDevice);
+    RIXGL::getInstance().imageConverter().convertRGB565ToPackedRGBA8888(reinterpret_cast<uint8_t*>(pixels), width, height, pixelsDevice);
     delete pixelsDevice;
 }
 
@@ -3193,6 +3200,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             else
             {
                 RIXGL::getInstance().setError(error);
+                SPDLOG_ERROR("glTexParameteri GL_TEXTURE_WRAP_S param 0x{:X} not supported", param);
             }
             break;
         }
@@ -3207,6 +3215,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             else
             {
                 RIXGL::getInstance().setError(error);
+                SPDLOG_ERROR("glTexParameteri GL_TEXTURE_WRAP_T param 0x{:X} not supported", param);
             }
             break;
         }
@@ -3218,6 +3227,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
             else
             {
                 RIXGL::getInstance().setError(GL_INVALID_ENUM);
+                SPDLOG_ERROR("glTexParameteri GL_TEXTURE_MAG_FILTER param 0x{:X} not supported", param);
             }
             break;
         case GL_TEXTURE_MIN_FILTER:
@@ -3237,10 +3247,21 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
                 }
                 break;
             default:
+                SPDLOG_ERROR("glTexParameteri GL_TEXTURE_MIN_FILTER param 0x{:X} not supported", param);
                 RIXGL::getInstance().setError(GL_INVALID_ENUM);
                 break;
             }
             break;
+        case GL_GENERATE_MIPMAP:
+            if ((param == GL_TRUE) || (param == GL_FALSE))
+            {
+                RIXGL::getInstance().mipMapGenerator().setEnableMipMapGeneration(param == GL_TRUE);
+            }
+            else
+            {
+                SPDLOG_ERROR("glTexParameteri GL_GENERATE_MIPMAP param 0x{:X} not supported", param);
+                RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            }
         default:
             SPDLOG_WARN("glTexParameteri pname 0x{:X} not supported", pname);
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -3874,15 +3895,20 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         return;
     }
 
-    const std::size_t texMemSize = texObj.width * texObj.height * 2;
+    using PixelType = TextureObject::PixelsType::element_type;
+
+    const std::size_t texMemSize = texObj.width * texObj.height * sizeof(PixelType);
     if (texMemSize == 0)
     {
         SPDLOG_DEBUG("glTexSubImage2D texture with zero dimensions loaded.");
         return;
     }
 
-    std::shared_ptr<uint16_t> texMemShared(new uint16_t[texMemSize / 2], [](const uint16_t* p)
+    std::shared_ptr<PixelType> texMemShared(
+        new PixelType[texMemSize / sizeof(PixelType)],
+        [](const PixelType* p)
         { delete[] p; });
+
     if (!texMemShared)
     {
         RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
@@ -3914,6 +3940,8 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
             format,
             type,
             reinterpret_cast<const uint8_t*>(pixels));
+
+        RIXGL::getInstance().mipMapGenerator().generateMipMap(RIXGL::getInstance().pipeline().texture().getTexture(), level);
     }
 }
 

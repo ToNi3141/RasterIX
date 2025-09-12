@@ -21,7 +21,6 @@
 #include "Enums.hpp"
 #include "RIXGL.hpp"
 #include "gl.h"
-#include "pixelpipeline/Texture.hpp"
 #include <algorithm>
 #include <cstring>
 #include <spdlog/spdlog.h>
@@ -51,13 +50,15 @@ public:
             for (std::size_t column = xoffset; column < static_cast<std::size_t>(width + xoffset); column++)
             {
                 const std::size_t texPos { (row * rowLength) + column };
-                currentRow += convertTexel(texelsDevice.get()[texPos], ipf, format, type, texelsClientRow + currentRow);
+                RGBA rgba {};
+                currentRow += clientToRGBA8888(rgba, format, type, texelsClientRow + currentRow);
+                texelsDevice.get()[texPos] = RGBA8888ToDevice(ipf, rgba);
             }
             texelsClientRow = texelsClientRow + alignRow(currentRow, m_unpackAlignment);
         }
     }
 
-    void convertPackRgb565ToRGBA8888(
+    void convertRGB565ToPackedRGBA8888(
         uint8_t* pixelsClient,
         const GLsizei width,
         const GLsizei height,
@@ -70,7 +71,7 @@ public:
             for (std::size_t column = 0; column < static_cast<std::size_t>(width); column++)
             {
                 const std::size_t pixelPos { (row * width) + column };
-                convertRgbPixelRgba(pixelsClientRow + currentRow, pixelsDevice[pixelPos]);
+                clientColorToRGBA8888(pixelsClientRow + currentRow, pixelsDevice[pixelPos]);
                 currentRow += 4;
             }
             pixelsClientRow = pixelsClientRow + alignRow(currentRow, m_packAlignment);
@@ -153,56 +154,143 @@ public:
         return GL_NO_ERROR;
     }
 
+    static bool computeMipMapLevel(
+        std::shared_ptr<uint16_t> newMipMapLevel,
+        const InternalPixelFormat ipf,
+        const std::size_t baseWidth,
+        const std::size_t baseHeight,
+        const std::shared_ptr<uint16_t> baseImage)
+    {
+        if ((baseWidth <= 1) || (baseHeight <= 1))
+        {
+            return false;
+        }
+        const std::size_t newWidth = baseWidth / 2;
+        const std::size_t newHeight = baseHeight / 2;
+
+        for (std::size_t w = 0; w < newWidth; w++)
+        {
+            for (std::size_t h = 0; h < newHeight; h++)
+            {
+                const uint16_t baseDeviceColor00 = baseImage.get()[(baseWidth * ((h * 2) + 0)) + ((w * 2) + 0)];
+                const uint16_t baseDeviceColor10 = baseImage.get()[(baseWidth * ((h * 2) + 1)) + ((w * 2) + 0)];
+                const uint16_t baseDeviceColor01 = baseImage.get()[(baseWidth * ((h * 2) + 0)) + ((w * 2) + 1)];
+                const uint16_t baseDeviceColor11 = baseImage.get()[(baseWidth * ((h * 2) + 1)) + ((w * 2) + 1)];
+                const RGBA baseRgbaColor00 = deviceToRGBA8888(baseDeviceColor00, ipf);
+                const RGBA baseRgbaColor10 = deviceToRGBA8888(baseDeviceColor10, ipf);
+                const RGBA baseRgbaColor01 = deviceToRGBA8888(baseDeviceColor01, ipf);
+                const RGBA baseRgbaColor11 = deviceToRGBA8888(baseDeviceColor11, ipf);
+
+                std::function<uint8_t(const uint8_t, const uint8_t, const uint8_t, const uint8_t)> subPixelCombiner =
+                    [](const uint8_t c00, const uint8_t c01, const uint8_t c10, const uint8_t c11)
+                {
+                    const uint16_t c1600 = static_cast<uint16_t>(c00);
+                    const uint16_t c1601 = static_cast<uint16_t>(c01);
+                    const uint16_t c1610 = static_cast<uint16_t>(c10);
+                    const uint16_t c1611 = static_cast<uint16_t>(c11);
+                    const uint16_t cSum = c1600 + c1601 + c1610 + c1611;
+                    return static_cast<uint8_t>(cSum / 4);
+                };
+
+                const RGBA mipMapColor {
+                    subPixelCombiner(baseRgbaColor00.r, baseRgbaColor01.r, baseRgbaColor10.r, baseRgbaColor11.r),
+                    subPixelCombiner(baseRgbaColor00.g, baseRgbaColor01.g, baseRgbaColor10.g, baseRgbaColor11.g),
+                    subPixelCombiner(baseRgbaColor00.b, baseRgbaColor01.b, baseRgbaColor10.b, baseRgbaColor11.b),
+                    subPixelCombiner(baseRgbaColor00.a, baseRgbaColor01.a, baseRgbaColor10.a, baseRgbaColor11.a),
+                };
+
+                newMipMapLevel.get()[(newWidth * h) + w] = RGBA8888ToDevice(ipf, mipMapColor);
+            }
+        }
+        return true;
+    }
+
     void setUnpackAlignment(const std::size_t unpackAlignment) { m_unpackAlignment = unpackAlignment; }
     void setPackAlignment(const std::size_t packAlignment) { m_packAlignment = packAlignment; }
 
 private:
-    static uint16_t convertRGBA8888ToDevicePixelFormat(
-        const InternalPixelFormat ipf,
-        const uint8_t r,
-        const uint8_t g,
-        const uint8_t b,
-        const uint8_t a)
+    struct RGBA
+    {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
+    };
+
+    static RGBA deviceToRGBA8888(const uint16_t deviceColor, const InternalPixelFormat ipf)
+    {
+        RGBA color {};
+        switch (ipf)
+        {
+        case InternalPixelFormat::ALPHA: // RGBA4444
+        case InternalPixelFormat::INTENSITY: // RGBA4444
+        case InternalPixelFormat::LUMINANCE_ALPHA: // RGBA4444
+        case InternalPixelFormat::RGBA: // RGBA4444
+            color.r = convertColorComponentToUint8<12, 4, 0xf>(deviceColor);
+            color.g = convertColorComponentToUint8<8, 4, 0xf>(deviceColor);
+            color.b = convertColorComponentToUint8<4, 4, 0xf>(deviceColor);
+            color.a = convertColorComponentToUint8<0, 4, 0xf>(deviceColor);
+            break;
+        case InternalPixelFormat::LUMINANCE: // RGB565
+        case InternalPixelFormat::RGB: // RGB565
+            color.r = convertColorComponentToUint8<11, 5, 0x1f>(deviceColor);
+            color.g = convertColorComponentToUint8<5, 6, 0x3f>(deviceColor);
+            color.b = convertColorComponentToUint8<0, 5, 0x1f>(deviceColor);
+            color.a = 0;
+            break;
+        case InternalPixelFormat::RGBA1: // RGBA5551
+            color.r = convertColorComponentToUint8<11, 5, 0x1f>(deviceColor);
+            color.g = convertColorComponentToUint8<6, 5, 0x1f>(deviceColor);
+            color.b = convertColorComponentToUint8<1, 5, 0x1f>(deviceColor);
+            color.a = (deviceColor & 0x1) ? 0xff : 0;
+            break;
+        default:
+            break;
+        }
+        return color;
+    }
+
+    static uint16_t RGBA8888ToDevice(const InternalPixelFormat ipf, const RGBA& rgba)
     {
         uint16_t color {};
         switch (ipf)
         {
         case InternalPixelFormat::ALPHA: // RGBA4444
-            color = static_cast<uint16_t>(a >> 4);
+            color = static_cast<uint16_t>(rgba.a >> 4);
             break;
         case InternalPixelFormat::LUMINANCE: // RGB565
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(r >> 2) << 5;
-            color |= static_cast<uint16_t>(r >> 3) << 0;
+            color |= static_cast<uint16_t>(rgba.r >> 3) << 11;
+            color |= static_cast<uint16_t>(rgba.r >> 2) << 5;
+            color |= static_cast<uint16_t>(rgba.r >> 3) << 0;
             break;
         case InternalPixelFormat::INTENSITY: // RGBA4444
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(r >> 4) << 8;
-            color |= static_cast<uint16_t>(r >> 4) << 4;
-            color |= static_cast<uint16_t>(r >> 4) << 0;
+            color |= static_cast<uint16_t>(rgba.r >> 4) << 12;
+            color |= static_cast<uint16_t>(rgba.r >> 4) << 8;
+            color |= static_cast<uint16_t>(rgba.r >> 4) << 4;
+            color |= static_cast<uint16_t>(rgba.r >> 4) << 0;
             break;
         case InternalPixelFormat::LUMINANCE_ALPHA: // RGBA4444
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(r >> 4) << 8;
-            color |= static_cast<uint16_t>(r >> 4) << 4;
-            color |= static_cast<uint16_t>(a >> 4) << 0;
+            color |= static_cast<uint16_t>(rgba.r >> 4) << 12;
+            color |= static_cast<uint16_t>(rgba.r >> 4) << 8;
+            color |= static_cast<uint16_t>(rgba.r >> 4) << 4;
+            color |= static_cast<uint16_t>(rgba.a >> 4) << 0;
             break;
         case InternalPixelFormat::RGB: // RGB565
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(g >> 2) << 5;
-            color |= static_cast<uint16_t>(b >> 3) << 0;
+            color |= static_cast<uint16_t>(rgba.r >> 3) << 11;
+            color |= static_cast<uint16_t>(rgba.g >> 2) << 5;
+            color |= static_cast<uint16_t>(rgba.b >> 3) << 0;
             break;
         case InternalPixelFormat::RGBA: // RGBA4444
-            color |= static_cast<uint16_t>(r >> 4) << 12;
-            color |= static_cast<uint16_t>(g >> 4) << 8;
-            color |= static_cast<uint16_t>(b >> 4) << 4;
-            color |= static_cast<uint16_t>(a >> 4) << 0;
+            color |= static_cast<uint16_t>(rgba.r >> 4) << 12;
+            color |= static_cast<uint16_t>(rgba.g >> 4) << 8;
+            color |= static_cast<uint16_t>(rgba.b >> 4) << 4;
+            color |= static_cast<uint16_t>(rgba.a >> 4) << 0;
             break;
         case InternalPixelFormat::RGBA1: // RGBA5551
-            color |= static_cast<uint16_t>(r >> 3) << 11;
-            color |= static_cast<uint16_t>(g >> 3) << 6;
-            color |= static_cast<uint16_t>(b >> 3) << 1;
-            color |= static_cast<uint16_t>(a >> 7) << 0;
+            color |= static_cast<uint16_t>(rgba.r >> 3) << 11;
+            color |= static_cast<uint16_t>(rgba.g >> 3) << 6;
+            color |= static_cast<uint16_t>(rgba.b >> 3) << 1;
+            color |= static_cast<uint16_t>(rgba.a >> 7) << 0;
             break;
         default:
             break;
@@ -220,23 +308,16 @@ private:
         return currentRow;
     }
 
-    void convertRgbPixelRgba(uint8_t* clientPixels, const uint16_t devicePixels)
+    void clientColorToRGBA8888(uint8_t* clientPixels, const uint16_t devicePixels)
     {
-        // Extract RGB565 components
-        uint8_t r5 = (devicePixels >> 11) & 0x1F;
-        uint8_t g6 = (devicePixels >> 5) & 0x3F;
-        uint8_t b5 = devicePixels & 0x1F;
-
-        // Expand to 8 bits and repeat low bits
-        clientPixels[0] = (r5 << 3) | (r5 >> 2); // Red: 5 bits to 8 bits
-        clientPixels[1] = (g6 << 2) | (g6 >> 4); // Green: 6 bits to 8 bits
-        clientPixels[2] = (b5 << 3) | (b5 >> 2); // Blue: 5 bits to 8 bits
+        clientPixels[0] = convertColorComponentToUint8<11, 5, 0x1f>(devicePixels);
+        clientPixels[1] = convertColorComponentToUint8<5, 6, 0x3f>(devicePixels);
+        clientPixels[2] = convertColorComponentToUint8<0, 5, 0x1f>(devicePixels);
         clientPixels[3] = 0xff;
     }
 
-    std::size_t convertTexel(
-        uint16_t& deviceTexel,
-        const InternalPixelFormat ipf,
+    std::size_t clientToRGBA8888(
+        RGBA& rgba,
         const GLenum format,
         const GLenum type,
         const uint8_t* clientTexel)
@@ -244,22 +325,26 @@ private:
         switch (format)
         {
         case GL_RGB:
-            return convertRgbTexel(deviceTexel, ipf, type, clientTexel);
+            return clientRGBToRGBA8888(rgba, type, clientTexel);
         case GL_RGBA:
-            return convertRgbaTexel(deviceTexel, ipf, type, clientTexel);
+            return clientRGBAToRGBA8888(rgba, type, clientTexel);
+        case GL_BGR:
+            return clientBGRToRGBA8888(rgba, type, clientTexel);
+        case GL_BGRA:
+            return clientBGRAToRGBA8888(rgba, type, clientTexel);
+        case GL_LUMINANCE:
+            return clientLuminanceToRGBA8888(rgba, type, clientTexel);
+        case GL_LUMINANCE_ALPHA:
+            return clientLuminanceAlphaToRGBA8888(rgba, type, clientTexel);
         case GL_ALPHA:
+            return clientAlphaToRGBA8888(rgba, type, clientTexel);
         case GL_RED:
         case GL_GREEN:
         case GL_BLUE:
-        case GL_BGR:
-        case GL_BGRA:
-            return convertBgraTexel(deviceTexel, ipf, type, clientTexel);
-        case GL_LUMINANCE:
-        case GL_LUMINANCE_ALPHA:
             SPDLOG_WARN("Unsupported format");
-            return 1; // Avoiding to get stuck
+            return 1;
         default:
-            SPDLOG_WARN("Invalid format");
+            SPDLOG_ERROR("Invalid format");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
@@ -275,28 +360,24 @@ private:
         return (((color >> ColorPos) & Mask) << ComponentShift) | (((color >> ColorPos) & Mask) >> ComponentShiftFill);
     }
 
-    static std::size_t convertRgbTexel(uint16_t& texel, const InternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
+    static std::size_t clientRGBToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
     {
         switch (type)
         {
         case GL_UNSIGNED_SHORT_5_6_5:
         {
             const uint16_t color = *reinterpret_cast<const uint16_t*>(pixels);
-            texel = convertRGBA8888ToDevicePixelFormat(
-                ipf,
-                convertColorComponentToUint8<11, 5, 0x1f>(color),
-                convertColorComponentToUint8<5, 6, 0x3f>(color),
-                convertColorComponentToUint8<0, 5, 0x1f>(color),
-                0xff);
+            rgba.r = convertColorComponentToUint8<11, 5, 0x1f>(color);
+            rgba.g = convertColorComponentToUint8<5, 6, 0x3f>(color);
+            rgba.b = convertColorComponentToUint8<0, 5, 0x1f>(color);
+            rgba.a = 0xff;
             return 2;
         }
         case GL_UNSIGNED_BYTE:
-            texel = convertRGBA8888ToDevicePixelFormat(
-                ipf,
-                pixels[0],
-                pixels[1],
-                pixels[2],
-                0xff);
+            rgba.r = pixels[0];
+            rgba.g = pixels[1];
+            rgba.b = pixels[2];
+            rgba.a = 0xff;
             return 3;
         case GL_BYTE:
         case GL_BITMAP:
@@ -317,50 +398,46 @@ private:
         case GL_UNSIGNED_INT_8_8_8_8_REV:
         case GL_UNSIGNED_INT_10_10_10_2:
         case GL_UNSIGNED_INT_2_10_10_10_REV:
-            SPDLOG_WARN("Invalid operation");
+            SPDLOG_ERROR("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("Invalid type");
+            SPDLOG_ERROR("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
         return 1; // Avoiding to get stuck
     }
 
-    static std::size_t convertRgbaTexel(uint16_t& texel, const InternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
+    static std::size_t clientRGBAToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
     {
         switch (type)
         {
         case GL_UNSIGNED_SHORT_5_5_5_1:
         {
             const uint16_t color = *reinterpret_cast<const uint16_t*>(pixels);
-            texel = convertRGBA8888ToDevicePixelFormat(
-                ipf,
-                convertColorComponentToUint8<11, 5, 0x1f>(color),
-                convertColorComponentToUint8<6, 5, 0x1f>(color),
-                convertColorComponentToUint8<1, 5, 0x1f>(color),
-                (color & 0x1) ? 0xff : 0);
+
+            rgba.r = convertColorComponentToUint8<11, 5, 0x1f>(color);
+            rgba.g = convertColorComponentToUint8<6, 5, 0x1f>(color);
+            rgba.b = convertColorComponentToUint8<1, 5, 0x1f>(color);
+            rgba.a = (color & 0x1) ? 0xff : 0;
         }
             return 2;
         case GL_UNSIGNED_SHORT_4_4_4_4:
         {
             const uint16_t color = *reinterpret_cast<const uint16_t*>(pixels);
-            texel = convertRGBA8888ToDevicePixelFormat(
-                ipf,
-                convertColorComponentToUint8<12, 4, 0xf>(color),
-                convertColorComponentToUint8<8, 4, 0xf>(color),
-                convertColorComponentToUint8<4, 4, 0xf>(color),
-                convertColorComponentToUint8<0, 4, 0xf>(color));
+            rgba.r = convertColorComponentToUint8<12, 4, 0xf>(color);
+            rgba.g = convertColorComponentToUint8<8, 4, 0xf>(color);
+            rgba.b = convertColorComponentToUint8<4, 4, 0xf>(color);
+            rgba.a = convertColorComponentToUint8<0, 4, 0xf>(color);
         }
             return 2;
         case GL_UNSIGNED_BYTE:
-            texel = convertRGBA8888ToDevicePixelFormat(
-                ipf,
-                pixels[0],
-                pixels[1],
-                pixels[2],
-                pixels[3]);
+
+            rgba.r = pixels[0];
+            rgba.g = pixels[1];
+            rgba.b = pixels[2];
+            rgba.a = pixels[3];
             return 4;
         case GL_BYTE:
         case GL_BITMAP:
@@ -380,58 +457,54 @@ private:
         case GL_UNSIGNED_BYTE_2_3_3_REV:
         case GL_UNSIGNED_SHORT_5_6_5:
         case GL_UNSIGNED_SHORT_5_6_5_REV:
-            SPDLOG_WARN("Invalid operation");
+            SPDLOG_ERROR("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("Invalid type");
+            SPDLOG_ERROR("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
         return 1; // Avoiding to get stuck
     }
 
-    static std::size_t convertBgraTexel(uint16_t& texel, const InternalPixelFormat ipf, const GLenum type, const uint8_t* pixels)
+    static std::size_t clientBGRAToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
     {
         switch (type)
         {
         case GL_UNSIGNED_SHORT_1_5_5_5_REV:
         {
             const uint16_t color = *reinterpret_cast<const uint16_t*>(pixels);
-            texel = convertRGBA8888ToDevicePixelFormat(
-                ipf,
-                convertColorComponentToUint8<10, 5, 0x1f>(color),
-                convertColorComponentToUint8<5, 5, 0x1f>(color),
-                convertColorComponentToUint8<0, 5, 0x1f>(color),
-                ((color >> 15) & 0x1) ? 0xff : 0);
+
+            rgba.b = convertColorComponentToUint8<0, 5, 0x1f>(color);
+            rgba.g = convertColorComponentToUint8<5, 5, 0x1f>(color);
+            rgba.r = convertColorComponentToUint8<10, 5, 0x1f>(color);
+            rgba.a = ((color >> 15) & 0x1) ? 0xff : 0;
             return 2;
         }
         case GL_UNSIGNED_SHORT_4_4_4_4_REV:
         {
             const uint16_t color = *reinterpret_cast<const uint16_t*>(pixels);
-            texel = convertRGBA8888ToDevicePixelFormat(
-                ipf,
-                convertColorComponentToUint8<8, 4, 0xf>(color),
-                convertColorComponentToUint8<4, 4, 0xf>(color),
-                convertColorComponentToUint8<0, 4, 0xf>(color),
-                convertColorComponentToUint8<12, 4, 0xf>(color));
+
+            rgba.b = convertColorComponentToUint8<0, 4, 0xf>(color);
+            rgba.g = convertColorComponentToUint8<4, 4, 0xf>(color);
+            rgba.r = convertColorComponentToUint8<8, 4, 0xf>(color);
+            rgba.a = convertColorComponentToUint8<12, 4, 0xf>(color);
             return 2;
         }
         case GL_UNSIGNED_BYTE:
-            texel = convertRGBA8888ToDevicePixelFormat(
-                ipf,
-                pixels[2],
-                pixels[1],
-                pixels[0],
-                pixels[3]);
+
+            rgba.b = pixels[0];
+            rgba.g = pixels[1];
+            rgba.r = pixels[2];
+            rgba.a = pixels[3];
             return 4;
         case GL_UNSIGNED_INT_8_8_8_8_REV:
-            texel = convertRGBA8888ToDevicePixelFormat(
-                ipf,
-                pixels[2],
-                pixels[1],
-                pixels[0],
-                pixels[3]);
+
+            rgba.b = pixels[0];
+            rgba.g = pixels[1];
+            rgba.r = pixels[2];
+            rgba.a = pixels[3];
             return 4;
         case GL_BYTE:
         case GL_BITMAP:
@@ -450,11 +523,177 @@ private:
         case GL_UNSIGNED_BYTE_2_3_3_REV:
         case GL_UNSIGNED_SHORT_5_6_5:
         case GL_UNSIGNED_SHORT_5_6_5_REV:
-            SPDLOG_WARN("Invalid operation");
+            SPDLOG_ERROR("Invalid operation");
             RIXGL::getInstance().setError(GL_INVALID_OPERATION);
             return 1; // Avoiding to get stuck
         default:
-            SPDLOG_WARN("Invalid type");
+            SPDLOG_ERROR("Invalid type");
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            return 1; // Avoiding to get stuck
+        }
+        return 1; // Avoiding to get stuck
+    }
+
+    static std::size_t clientBGRToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
+    {
+        switch (type)
+        {
+        case GL_UNSIGNED_SHORT_5_6_5_REV:
+        {
+            const uint16_t color = *reinterpret_cast<const uint16_t*>(pixels);
+            rgba.b = convertColorComponentToUint8<11, 5, 0x1f>(color);
+            rgba.g = convertColorComponentToUint8<5, 6, 0x1f>(color);
+            rgba.r = convertColorComponentToUint8<0, 5, 0x1f>(color);
+            rgba.a = 0;
+            return 2;
+        }
+        case GL_UNSIGNED_BYTE:
+            rgba.b = pixels[0];
+            rgba.g = pixels[1];
+            rgba.r = pixels[2];
+            rgba.a = 0;
+            return 3;
+        case GL_BYTE:
+        case GL_BITMAP:
+        case GL_UNSIGNED_SHORT:
+        case GL_UNSIGNED_INT:
+        case GL_INT:
+        case GL_FLOAT:
+        case GL_UNSIGNED_SHORT_5_5_5_1:
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4:
+        case GL_UNSIGNED_INT_8_8_8_8_REV:
+        case GL_UNSIGNED_INT_8_8_8_8:
+        case GL_UNSIGNED_INT_10_10_10_2:
+        case GL_UNSIGNED_INT_2_10_10_10_REV:
+            SPDLOG_WARN("Unsupported type 0x{:X}", type);
+            return 1; // Avoiding to get stuck
+        case GL_UNSIGNED_BYTE_3_3_2:
+        case GL_UNSIGNED_BYTE_2_3_3_REV:
+        case GL_UNSIGNED_SHORT_5_6_5:
+            SPDLOG_ERROR("Invalid operation");
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+            return 1; // Avoiding to get stuck
+        default:
+            SPDLOG_ERROR("Invalid type");
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            return 1; // Avoiding to get stuck
+        }
+        return 1; // Avoiding to get stuck
+    }
+
+    static std::size_t clientAlphaToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
+    {
+        switch (type)
+        {
+        case GL_UNSIGNED_BYTE:
+            rgba.r = 0;
+            rgba.g = 0;
+            rgba.b = 0;
+            rgba.a = pixels[0];
+            return 1;
+        case GL_UNSIGNED_SHORT_5_6_5_REV:
+        case GL_BYTE:
+        case GL_BITMAP:
+        case GL_UNSIGNED_SHORT:
+        case GL_UNSIGNED_INT:
+        case GL_INT:
+        case GL_FLOAT:
+        case GL_UNSIGNED_SHORT_5_5_5_1:
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4:
+        case GL_UNSIGNED_INT_8_8_8_8_REV:
+        case GL_UNSIGNED_INT_8_8_8_8:
+        case GL_UNSIGNED_INT_10_10_10_2:
+        case GL_UNSIGNED_INT_2_10_10_10_REV:
+        case GL_UNSIGNED_BYTE_3_3_2:
+        case GL_UNSIGNED_BYTE_2_3_3_REV:
+        case GL_UNSIGNED_SHORT_5_6_5:
+            SPDLOG_ERROR("Invalid operation");
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+            return 1; // Avoiding to get stuck
+        default:
+            SPDLOG_ERROR("Invalid type");
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            return 1; // Avoiding to get stuck
+        }
+        return 1; // Avoiding to get stuck
+    }
+
+    static std::size_t clientLuminanceToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
+    {
+        switch (type)
+        {
+        case GL_UNSIGNED_BYTE:
+            rgba.r = pixels[0];
+            rgba.g = pixels[0];
+            rgba.b = pixels[0];
+            rgba.a = 0xff;
+            return 1;
+        case GL_UNSIGNED_SHORT_5_6_5_REV:
+        case GL_BYTE:
+        case GL_BITMAP:
+        case GL_UNSIGNED_SHORT:
+        case GL_UNSIGNED_INT:
+        case GL_INT:
+        case GL_FLOAT:
+        case GL_UNSIGNED_SHORT_5_5_5_1:
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4:
+        case GL_UNSIGNED_INT_8_8_8_8_REV:
+        case GL_UNSIGNED_INT_8_8_8_8:
+        case GL_UNSIGNED_INT_10_10_10_2:
+        case GL_UNSIGNED_INT_2_10_10_10_REV:
+        case GL_UNSIGNED_BYTE_3_3_2:
+        case GL_UNSIGNED_BYTE_2_3_3_REV:
+        case GL_UNSIGNED_SHORT_5_6_5:
+            SPDLOG_ERROR("Invalid operation");
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+            return 1; // Avoiding to get stuck
+        default:
+            SPDLOG_ERROR("Invalid type");
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            return 1; // Avoiding to get stuck
+        }
+        return 1; // Avoiding to get stuck
+    }
+
+    static std::size_t clientLuminanceAlphaToRGBA8888(RGBA& rgba, const GLenum type, const uint8_t* pixels)
+    {
+        switch (type)
+        {
+        case GL_UNSIGNED_BYTE:
+            rgba.r = pixels[0];
+            rgba.g = pixels[0];
+            rgba.b = pixels[0];
+            rgba.a = pixels[1];
+            return 2;
+        case GL_UNSIGNED_SHORT_5_6_5_REV:
+        case GL_BYTE:
+        case GL_BITMAP:
+        case GL_UNSIGNED_SHORT:
+        case GL_UNSIGNED_INT:
+        case GL_INT:
+        case GL_FLOAT:
+        case GL_UNSIGNED_SHORT_5_5_5_1:
+        case GL_UNSIGNED_SHORT_1_5_5_5_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4_REV:
+        case GL_UNSIGNED_SHORT_4_4_4_4:
+        case GL_UNSIGNED_INT_8_8_8_8_REV:
+        case GL_UNSIGNED_INT_8_8_8_8:
+        case GL_UNSIGNED_INT_10_10_10_2:
+        case GL_UNSIGNED_INT_2_10_10_10_REV:
+        case GL_UNSIGNED_BYTE_3_3_2:
+        case GL_UNSIGNED_BYTE_2_3_3_REV:
+        case GL_UNSIGNED_SHORT_5_6_5:
+            SPDLOG_ERROR("Invalid operation");
+            RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+            return 1; // Avoiding to get stuck
+        default:
+            SPDLOG_ERROR("Invalid type");
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
             return 1; // Avoiding to get stuck
         }
