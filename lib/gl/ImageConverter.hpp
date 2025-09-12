@@ -51,7 +51,7 @@ public:
             {
                 const std::size_t texPos { (row * rowLength) + column };
                 RGBA rgba {};
-                currentRow += clientXXXXToRGBA8888(rgba, format, type, texelsClientRow + currentRow);
+                currentRow += clientToRGBA8888(rgba, format, type, texelsClientRow + currentRow);
                 texelsDevice.get()[texPos] = RGBA8888ToDevice(ipf, rgba);
             }
             texelsClientRow = texelsClientRow + alignRow(currentRow, m_unpackAlignment);
@@ -316,7 +316,7 @@ private:
         clientPixels[3] = 0xff;
     }
 
-    std::size_t clientXXXXToRGBA8888(
+    std::size_t clientToRGBA8888(
         RGBA& rgba,
         const GLenum format,
         const GLenum type,
