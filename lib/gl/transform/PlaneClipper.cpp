@@ -30,6 +30,11 @@ tcb::span<VertexParameter> PlaneClipperCalc::clipLine(ClipList& __restrict list,
     return clipLineAgainstPlane(listBuffer, list);
 }
 
+tcb::span<VertexParameter> PlaneClipperCalc::clipPoint(ClipList& __restrict list, ClipList& __restrict listBuffer)
+{
+    return clipPointAgainstPlane(listBuffer, list);
+}
+
 tcb::span<VertexParameter> PlaneClipperCalc::clipTriangleAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
 {
     constexpr std::size_t listSize = 3;
@@ -113,6 +118,18 @@ tcb::span<VertexParameter> PlaneClipperCalc::clipLineAgainstPlane(ClipList& __re
         return { listOut.data(), 2 };
     }
 
+    return {};
+}
+
+tcb::span<VertexParameter> PlaneClipperCalc::clipPointAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
+{
+    // Only one point to check
+    listOut[0] = listIn[0];
+    const float a = planeEquation(listIn[0].vertex, m_data.equation);
+    if (isInPlane(a))
+    {
+        return { listOut.data(), 1 };
+    }
     return {};
 }
 

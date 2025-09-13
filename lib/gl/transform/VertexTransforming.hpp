@@ -182,8 +182,19 @@ private:
 
     bool clipAtPlaneAndDrawPoint(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        // TODO Implement clip and draw point
-        return true;
+        planeclipper::PlaneClipperCalc::ClipList list;
+        planeclipper::PlaneClipperCalc::ClipList listBuffer;
+
+        list[0] = primitive[0];
+
+        tcb::span<VertexParameter> clippedVertexParameter = m_planeClipper.clipPoint(list, listBuffer);
+
+        if (clippedVertexParameter.empty())
+        {
+            return true;
+        }
+
+        return drawPoint({ clippedVertexParameter.data(), 1 });
     }
 
     void transform(VertexParameter& parameter)
