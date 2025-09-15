@@ -35,6 +35,10 @@ void PrimitiveAssemblerCalc::init()
 
 PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::getPrimitive()
 {
+    if (m_triangle)
+    {
+        return constructTriangle();
+    }
     if (m_line)
     {
         return constructLine();
@@ -43,7 +47,7 @@ PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::getPrimitive()
     {
         return constructPoint();
     }
-    return constructTriangle();
+    return {};
 }
 
 PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructTriangle()
