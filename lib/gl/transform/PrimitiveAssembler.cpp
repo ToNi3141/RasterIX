@@ -20,6 +20,32 @@
 namespace rr::primitiveassembler
 {
 
+PrimitiveAssemblerCalc::PrimitiveAssemblerCalc(const viewport::ViewPortData& viewPortData, const PrimitiveAssemblerData& primitiveAssemblerData)
+    : m_viewPortData { viewPortData }
+    , m_primitiveAssemblerData { primitiveAssemblerData }
+{
+    init();
+}
+
+void PrimitiveAssemblerCalc::init()
+{
+    updateMode();
+    clear();
+}
+
+PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::getPrimitive()
+{
+    if (m_line)
+    {
+        return constructLine();
+    }
+    if (m_points)
+    {
+        return constructPoint();
+    }
+    return constructTriangle();
+}
+
 PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructTriangle()
 {
     if (m_queue.size() < 3)
@@ -155,14 +181,17 @@ void PrimitiveAssemblerCalc::updateMode()
     case DrawMode::LINE_STRIP:
         m_line = true;
         m_points = false;
+        m_triangle = false;
         break;
     case DrawMode::POINTS:
         m_line = false;
         m_points = true;
+        m_triangle = false;
         break;
     default:
         m_line = false;
         m_points = false;
+        m_triangle = true;
         break;
     }
 }
