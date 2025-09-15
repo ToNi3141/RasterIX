@@ -132,6 +132,20 @@ PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructLine()
     return { m_primitiveBuffer.data(), 2 };
 }
 
+PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructPoint()
+{
+    if (m_queue.size() < 1)
+    {
+        return {};
+    }
+
+    m_primitiveBuffer[0] = m_queue[0];
+    m_decrement = 1;
+
+    m_count++;
+    return { m_primitiveBuffer.data(), 1 };
+}
+
 void PrimitiveAssemblerCalc::updateMode()
 {
     switch (m_primitiveAssemblerData.mode)
@@ -140,9 +154,15 @@ void PrimitiveAssemblerCalc::updateMode()
     case DrawMode::LINE_LOOP:
     case DrawMode::LINE_STRIP:
         m_line = true;
+        m_points = false;
+        break;
+    case DrawMode::POINTS:
+        m_line = false;
+        m_points = true;
         break;
     default:
         m_line = false;
+        m_points = false;
         break;
     }
 }

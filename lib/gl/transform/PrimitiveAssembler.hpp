@@ -58,6 +58,10 @@ public:
         {
             return constructLine();
         }
+        if (m_points)
+        {
+            return constructPoint();
+        }
         return constructTriangle();
     }
     void removePrimitive() { m_queue.removeElements(m_decrement); }
@@ -72,6 +76,7 @@ private:
     void updateMode();
     PrimitiveAssemblerCalc::Primitive constructTriangle();
     PrimitiveAssemblerCalc::Primitive constructLine();
+    PrimitiveAssemblerCalc::Primitive constructPoint();
 
     FixedSizeQueue<VertexParameter, 3> m_queue {};
 
@@ -83,6 +88,7 @@ private:
     const viewport::ViewPortData& m_viewPortData;
     const PrimitiveAssemblerData& m_primitiveAssemblerData;
     bool m_line { false };
+    bool m_points { false };
     std::array<VertexParameter, 3> m_primitiveBuffer;
 };
 

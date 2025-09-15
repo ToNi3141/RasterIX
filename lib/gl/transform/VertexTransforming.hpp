@@ -26,6 +26,7 @@
 #include "LineAssembly.hpp"
 #include "MatrixStore.hpp"
 #include "PlaneClipper.hpp"
+#include "PointAssembly.hpp"
 #include "PolygonOffset.hpp"
 #include "PrimitiveAssembler.hpp"
 #include "RenderConfigs.hpp"
@@ -57,6 +58,7 @@ struct VertexTransformingData
         texGen = data.texGen;
         planeClipper = data.planeClipper;
         lineAssembly = data.lineAssembly;
+        pointAssembly = data.pointAssembly;
         polygonOffset = data.polygonOffset;
         normalizeLightNormal = data.normalizeLightNormal;
         shadeModel = data.shadeModel;
@@ -72,6 +74,7 @@ struct VertexTransformingData
     std::array<texgen::TexGenData, RenderConfig::TMU_COUNT> texGen {};
     planeclipper::PlaneClipperData planeClipper {};
     lineassembly::LineAssemblyData lineAssembly {};
+    pointassembly::PointAssemblyData pointAssembly {};
     polygonoffset::PolygonOffsetData polygonOffset {};
     shademodel::ShadeModelData shadeModel {};
     bool normalizeLightNormal {};
@@ -395,10 +398,18 @@ private:
         return drawPreClippedTriangle({ triangles[3], triangles[4], triangles[5] });
     }
 
-    bool drawPoint(const primitiveassembler::PrimitiveAssemblerCalc::Primitive&)
+    bool drawPoint(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        // TODO: draw a point
-        return true;
+        VertexParameter vp0 = primitive[0];
+
+        // Transform vertices to get the projected ones in NDC
+        vp0.vertex = m_data.transformMatrices.projection.transform(vp0.vertex);
+
+        lineassembly::LineAssemblyCalc::Triangles triangles = m_pointAssembly.createPoint(vp0);
+
+        drawPreClippedTriangle({ triangles[0], triangles[1], triangles[2] });
+        // Assume when the first one fails, the second one will also fail.
+        return drawPreClippedTriangle({ triangles[3], triangles[4], triangles[5] });
     }
 
     bool drawPrimitive(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
@@ -468,6 +479,11 @@ private:
     planeclipper::PlaneClipperCalc m_planeClipper { m_data.planeClipper };
     lineassembly::LineAssemblyCalc m_lineAssembly {
         m_data.lineAssembly,
+        m_data.viewPort.viewportWidth,
+        m_data.viewPort.viewportHeight
+    };
+    pointassembly::PointAssemblyCalc m_pointAssembly {
+        m_data.pointAssembly,
         m_data.viewPort.viewportWidth,
         m_data.viewPort.viewportHeight
     };

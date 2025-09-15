@@ -163,7 +163,8 @@ enum class DrawMode
     QUAD_STRIP,
     LINES,
     LINE_STRIP,
-    LINE_LOOP
+    LINE_LOOP,
+    POINTS
 };
 
 enum class Type

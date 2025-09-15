@@ -2009,7 +2009,13 @@ GLAPI void APIENTRY impl_glPixelZoom(GLfloat xfactor, GLfloat yfactor)
 
 GLAPI void APIENTRY impl_glPointSize(GLfloat size)
 {
-    SPDLOG_WARN("glPointSize not implemented");
+    SPDLOG_DEBUG("glPointSize {} called", size);
+    if (size <= 0.0f)
+    {
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
+    RIXGL::getInstance().pipeline().getPointAssembly().setPointSize(size);
 }
 
 GLAPI void APIENTRY impl_glPolygonMode(GLenum face, GLenum mode)
