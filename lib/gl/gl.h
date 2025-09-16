@@ -155,6 +155,12 @@ extern "C"
 #define GL_POINT_SIZE 0x0B11
 #define GL_POINT_SIZE_GRANULARITY 0x0B13
 #define GL_POINT_SIZE_RANGE 0x0B12
+#define GL_POINT_SIZE_MIN 0x8126
+#define GL_POINT_SIZE_MAX 0x8127
+#define GL_POINT_FADE_THRESHOLD_SIZE 0x8128
+#define GL_POINT_DISTANCE_ATTENUATION 0x8129
+#define GL_POINT_SPRITE_OES 0x8861
+#define GL_COORD_REPLACE_OES 0x8862
 
 // Lines
 #define GL_LINE_SMOOTH 0x0B20
@@ -1304,6 +1310,11 @@ extern "C"
     GLAPI_WRAPPER void APIENTRY glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha);
     // -------------------------------------------------------
 
+    // OpenGL ES 1.1 extensions
+    // -------------------------------------------------------
+    GLAPI_WRAPPER void APIENTRY glPointParameterf(GLenum pname, GLfloat param);
+    GLAPI_WRAPPER void APIENTRY glPointParameterfv(GLenum pname, const GLfloat* params);
+    // -------------------------------------------------------
 #ifdef __cplusplus
 }
 #endif

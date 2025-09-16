@@ -29,6 +29,12 @@ namespace rr::pointassembly
 struct PointAssemblyData
 {
     float pointSize { 1.0f };
+    float pointSizeMin { 1.0f };
+    float pointSizeMax { 64.0f };
+    float pointFadeThresholdSize { 1.0f };
+    Vec3 pointDistanceAttenuation { 1.0f, 0.0f, 0.0f };
+    bool texCoordReplace { false };
+    bool enablePointSprite { false };
 };
 
 class PointAssemblyCalc
@@ -61,6 +67,12 @@ public:
     }
 
     void setPointSize(const float pointSize) { m_data.pointSize = pointSize; }
+    void setPointSizeMin(const float pointSizeMin) { m_data.pointSizeMin = pointSizeMin; }
+    void setPointSizeMax(const float pointSizeMax) { m_data.pointSizeMax = pointSizeMax; }
+    void setPointFadeThresholdSize(const float pointFadeThresholdSize) { m_data.pointFadeThresholdSize = pointFadeThresholdSize; }
+    void setPointDistanceAttenuation(const Vec3& attenuation) { m_data.pointDistanceAttenuation = attenuation; }
+    void setTexCoordReplace(bool replace) { m_data.texCoordReplace = replace; }
+    void setEnablePointSprite(bool enable) { m_data.enablePointSprite = enable; }
 
 private:
     PointAssemblyData& m_data;

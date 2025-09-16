@@ -426,5 +426,11 @@ GLAPI_WRAPPER void APIENTRY glLockArrays(GLint first, GLsizei count) { impl_glLo
 GLAPI_WRAPPER void APIENTRY glUnlockArrays() { impl_glUnlockArrays(); }
 GLAPI_WRAPPER void APIENTRY glActiveStencilFaceEXT(GLenum face) { impl_glActiveStencilFaceEXT(face); }
 GLAPI_WRAPPER void APIENTRY glBlendEquation(GLenum mode) { impl_glBlendEquation(mode); };
-GLAPI_WRAPPER void APIENTRY glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha) { impl_glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha); };
+GLAPI_WRAPPER void APIENTRY glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha) { impl_glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha); }
+// -------------------------------------------------------
+
+// OpenGL ES 1.1 extensions
+// -------------------------------------------------------
+GLAPI_WRAPPER void APIENTRY glPointParameterf(GLenum pname, GLfloat param) { impl_glPointParameterf(pname, param); }
+GLAPI_WRAPPER void APIENTRY glPointParameterfv(GLenum pname, const GLfloat* params) { impl_glPointParameterfv(pname, params); }
 // -------------------------------------------------------

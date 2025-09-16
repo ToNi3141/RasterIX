@@ -452,6 +452,11 @@ extern "C"
     GLAPI void APIENTRY impl_glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha);
     // -------------------------------------------------------
 
+    // OpenGL ES 1.1 extensions
+    // -------------------------------------------------------
+    GLAPI void APIENTRY impl_glPointParameterf(GLenum pname, GLfloat param);
+    GLAPI void APIENTRY impl_glPointParameterfv(GLenum pname, const GLfloat* params);
+    // -------------------------------------------------------
 #ifdef __cplusplus
 }
 #endif

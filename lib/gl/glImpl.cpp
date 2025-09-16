@@ -791,6 +791,10 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         SPDLOG_DEBUG("glDisable GL_POLYGON_OFFSET_FILL called");
         RIXGL::getInstance().pipeline().getPolygonOffset().setEnableFill(false);
         break;
+    case GL_POINT_SPRITE_OES:
+        SPDLOG_DEBUG("glDisable GL_POINT_SPRITE_OES called");
+        RIXGL::getInstance().pipeline().getPointAssembly().setEnablePointSprite(false);
+        break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -904,6 +908,10 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     case GL_POLYGON_OFFSET_FILL:
         SPDLOG_DEBUG("glEnable GL_POLYGON_OFFSET_FILL called");
         RIXGL::getInstance().pipeline().getPolygonOffset().setEnableFill(true);
+        break;
+    case GL_POINT_SPRITE_OES:
+        SPDLOG_DEBUG("glEnable GL_POINT_SPRITE_OES called");
+        RIXGL::getInstance().pipeline().getPointAssembly().setEnablePointSprite(true);
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
@@ -2018,6 +2026,61 @@ GLAPI void APIENTRY impl_glPointSize(GLfloat size)
     RIXGL::getInstance().pipeline().getPointAssembly().setPointSize(size);
 }
 
+GLAPI void APIENTRY impl_glPointParameterf(GLenum pname, GLfloat param)
+{
+    SPDLOG_DEBUG("glPointParameterf redirected to glPointParameterfv");
+    impl_glPointParameterfv(pname, &param);
+}
+
+GLAPI void APIENTRY impl_glPointParameterfv(GLenum pname, const GLfloat* params)
+{
+    SPDLOG_DEBUG("glPointParameterfv pname 0x{:X} and params[0] {} called", pname, params[0]);
+
+    auto& setter = RIXGL::getInstance().pipeline().getPointAssembly();
+    switch (pname)
+    {
+    case GL_POINT_SIZE_MIN:
+        if (params[0] < 0.0f)
+        {
+            SPDLOG_ERROR("glPointParameterfv GL_POINT_SIZE_MIN < 0");
+            RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        }
+        else
+        {
+            setter.setPointSizeMin(params[0]);
+        }
+        break;
+    case GL_POINT_SIZE_MAX:
+        if (params[0] < 0.0f)
+        {
+            SPDLOG_ERROR("glPointParameterfv GL_POINT_SIZE_MAX < 0");
+            RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        }
+        else
+        {
+            setter.setPointSizeMax(params[0]);
+        }
+        break;
+    case GL_POINT_FADE_THRESHOLD_SIZE:
+        if (params[0] < 0.0f)
+        {
+            SPDLOG_ERROR("glPointParameterfv GL_POINT_FADE_THRESHOLD_SIZE < 0");
+            RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        }
+        else
+        {
+            setter.setPointFadeThresholdSize(params[0]);
+        }
+        break;
+    case GL_POINT_DISTANCE_ATTENUATION:
+        setter.setPointDistanceAttenuation(Vec3 { params[0], params[1], params[2] });
+        break;
+    default:
+        SPDLOG_WARN("glPointParameterfv: Unknown pname 0x{:X}", pname);
+        break;
+    }
+}
+
 GLAPI void APIENTRY impl_glPolygonMode(GLenum face, GLenum mode)
 {
     SPDLOG_WARN("glPolygonMode not implemented");
@@ -2929,6 +2992,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             else
             {
                 error = GL_INVALID_ENUM;
+                SPDLOG_ERROR("glTexEnvi: GL_RGB_SCALE param {} invalid", param);
             }
         }
         break;
@@ -2943,19 +3007,50 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
             else
             {
                 error = GL_INVALID_VALUE;
+                SPDLOG_ERROR("glTexEnvi: GL_ALPHA_SCALE param {} invalid", param);
             }
         }
         break;
         default:
             error = GL_INVALID_ENUM;
+            SPDLOG_ERROR("glTexEnvi: pname 0x{:X} not supported", pname);
             break;
         };
+    }
+    else if (target == GL_POINT_SPRITE_OES)
+    {
+        if (pname == GL_COORD_REPLACE_OES)
+        {
+            if (param == GL_TRUE)
+            {
+                RIXGL::getInstance().pipeline().getPointAssembly().setTexCoordReplace(true);
+            }
+            else if (param == GL_FALSE)
+            {
+                RIXGL::getInstance().pipeline().getPointAssembly().setTexCoordReplace(false);
+            }
+            else
+            {
+                error = GL_INVALID_VALUE;
+                SPDLOG_ERROR("glTexEnvi: GL_COORD_REPLACE_OES param {} invalid", param);
+            }
+        }
+        else
+        {
+            error = GL_INVALID_ENUM;
+            SPDLOG_ERROR("glTexEnvi: pname 0x{:X} not supported for GL_POINT_SPRITE_OES", pname);
+        }
     }
     else
     {
         error = GL_INVALID_ENUM;
+        SPDLOG_ERROR("glTexEnvi: target 0x{:X} not supported", target);
     }
-    RIXGL::getInstance().setError(error);
+    if (error != GL_NO_ERROR)
+    {
+        RIXGL::getInstance().setError(error);
+        SPDLOG_ERROR("glTexEnvi: error 0x{:X}", error);
+    }
 }
 
 GLAPI void APIENTRY impl_glTexEnviv(GLenum target, GLenum pname, const GLint* params)
