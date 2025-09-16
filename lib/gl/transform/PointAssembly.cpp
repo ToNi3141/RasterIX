@@ -25,13 +25,19 @@ PointAssemblyCalc::Triangles PointAssemblyCalc::createPoint(const VertexParamete
 {
     // Center of the point in NDC
     const Vec4& center = vp.vertex;
-    float size = m_data.pointSize;
+    const Vec3& pda = m_data.pointDistanceAttenuation;
+    const float size = std::clamp(m_data.pointSize / std::sqrt(pda[0] + pda[1] * vp.vertex[3] + pda[2] * vp.vertex[3] * vp.vertex[3]), m_data.pointSizeMin, m_data.pointSizeMax);
+
+    if (size < m_data.pointFadeThresholdSize)
+    {
+        return {};
+    };
 
     // Convert size from pixels to NDC
-    float rcpViewportScaleX = 2.0f / m_viewPortWidth;
-    float rcpViewportScaleY = 2.0f / m_viewPortHeight;
-    float halfSizeX = 0.5f * size * center[3] * rcpViewportScaleX;
-    float halfSizeY = 0.5f * size * center[3] * rcpViewportScaleY;
+    const float rcpViewportScaleX = 2.0f / m_viewPortWidth;
+    const float rcpViewportScaleY = 2.0f / m_viewPortHeight;
+    const float halfSizeX = 0.5f * size * center[3] * rcpViewportScaleX;
+    const float halfSizeY = 0.5f * size * center[3] * rcpViewportScaleY;
 
     // Triangle strip vertices for a quad (6 vertices: 0-1-2, 2-3-0)
     Triangles strip { vp };
@@ -55,6 +61,21 @@ PointAssemblyCalc::Triangles PointAssemblyCalc::createPoint(const VertexParamete
     strip[3] = { center, vp.color, vp.normal, vp.tex };
     strip[3].vertex[0] += -halfSizeX;
     strip[3].vertex[1] += halfSizeY;
+
+    if (m_data.texCoordReplace && m_data.enablePointSprite)
+    {
+        for (std::size_t i = 0; i < RenderConfig::TMU_COUNT; i++)
+        {
+            // Bottom-left
+            strip[0].tex[i] = Vec4 { 0.0f, 0.0f, 0.0f, 1.0f };
+            // Bottom-right
+            strip[1].tex[i] = Vec4 { 1.0f, 0.0f, 0.0f, 1.0f };
+            // Top-right
+            strip[2].tex[i] = Vec4 { 1.0f, 1.0f, 0.0f, 1.0f };
+            // Top-left
+            strip[3].tex[i] = Vec4 { 0.0f, 1.0f, 0.0f, 1.0f };
+        }
+    }
 
     // Repeat bottom-left for strip
     strip[4] = strip[0];
