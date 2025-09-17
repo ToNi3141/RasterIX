@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "PointAssembly.hpp"
+#include <algorithm>
 #include <cmath>
 
 namespace rr::pointassembly
