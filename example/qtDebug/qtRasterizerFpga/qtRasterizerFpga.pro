@@ -32,6 +32,7 @@ SOURCES += main.cpp\
     $${RIXGL_PATH}/transform/PolygonOffset.cpp \
     $${RIXGL_PATH}/transform/Stencil.cpp \
     $${RIXGL_PATH}/transform/LineAssembly.cpp \
+    $${RIXGL_PATH}/transform/PointAssembly.cpp \
     $${RIXGL_PATH}/vertexpipeline/VertexPipeline.cpp \
     $${RIXGL_PATH}/vertexpipeline/RenderObj.cpp \
     $${RIXGL_PATH}/pixelpipeline/PixelPipeline.cpp \
