@@ -2028,8 +2028,52 @@ GLAPI void APIENTRY impl_glPointSize(GLfloat size)
 
 GLAPI void APIENTRY impl_glPointParameterf(GLenum pname, GLfloat param)
 {
-    SPDLOG_DEBUG("glPointParameterf redirected to glPointParameterfv");
-    impl_glPointParameterfv(pname, &param);
+    SPDLOG_DEBUG("glPointParameterf pname 0x{:X} param {} called", pname, param);
+
+    auto& setter = RIXGL::getInstance().pipeline().getPointAssembly();
+    switch (pname)
+    {
+    case GL_POINT_SIZE_MIN:
+        if (param < 0.0f)
+        {
+            SPDLOG_ERROR("glPointParameterf GL_POINT_SIZE_MIN < 0");
+            RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        }
+        else
+        {
+            setter.setPointSizeMin(param);
+        }
+        break;
+    case GL_POINT_SIZE_MAX:
+        if (param < 0.0f)
+        {
+            SPDLOG_ERROR("glPointParameterf GL_POINT_SIZE_MAX < 0");
+            RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        }
+        else
+        {
+            setter.setPointSizeMax(param);
+        }
+        break;
+    case GL_POINT_FADE_THRESHOLD_SIZE:
+        if (param < 0.0f)
+        {
+            SPDLOG_ERROR("glPointParameterf GL_POINT_FADE_THRESHOLD_SIZE < 0");
+            RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        }
+        else
+        {
+            setter.setPointFadeThresholdSize(param);
+        }
+        break;
+    case GL_POINT_DISTANCE_ATTENUATION:
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glPointParameterf: GL_POINT_DISTANCE_ATTENUATION not allowed here.");
+        break;
+    default:
+        SPDLOG_WARN("glPointParameterf: Unknown pname 0x{:X}", pname);
+        break;
+    }
 }
 
 GLAPI void APIENTRY impl_glPointParameterfv(GLenum pname, const GLfloat* params)
@@ -2039,41 +2083,14 @@ GLAPI void APIENTRY impl_glPointParameterfv(GLenum pname, const GLfloat* params)
     auto& setter = RIXGL::getInstance().pipeline().getPointAssembly();
     switch (pname)
     {
-    case GL_POINT_SIZE_MIN:
-        if (params[0] < 0.0f)
-        {
-            SPDLOG_ERROR("glPointParameterfv GL_POINT_SIZE_MIN < 0");
-            RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        }
-        else
-        {
-            setter.setPointSizeMin(params[0]);
-        }
-        break;
-    case GL_POINT_SIZE_MAX:
-        if (params[0] < 0.0f)
-        {
-            SPDLOG_ERROR("glPointParameterfv GL_POINT_SIZE_MAX < 0");
-            RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        }
-        else
-        {
-            setter.setPointSizeMax(params[0]);
-        }
-        break;
-    case GL_POINT_FADE_THRESHOLD_SIZE:
-        if (params[0] < 0.0f)
-        {
-            SPDLOG_ERROR("glPointParameterfv GL_POINT_FADE_THRESHOLD_SIZE < 0");
-            RIXGL::getInstance().setError(GL_INVALID_VALUE);
-        }
-        else
-        {
-            setter.setPointFadeThresholdSize(params[0]);
-        }
-        break;
     case GL_POINT_DISTANCE_ATTENUATION:
         setter.setPointDistanceAttenuation(Vec3 { params[0], params[1], params[2] });
+        break;
+    case GL_POINT_SIZE_MIN:
+    case GL_POINT_SIZE_MAX:
+    case GL_POINT_FADE_THRESHOLD_SIZE:
+        SPDLOG_DEBUG("glPointParameterfv pname 0x{:X} redirected to glPointParameterf", pname);
+        impl_glPointParameterf(pname, params[0]);
         break;
     default:
         SPDLOG_WARN("glPointParameterfv: Unknown pname 0x{:X}", pname);
