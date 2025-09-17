@@ -35,19 +35,17 @@ void PrimitiveAssemblerCalc::init()
 
 PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::getPrimitive()
 {
-    if (m_triangle)
+    switch (m_primitiveType)
     {
+    case PrimitiveType::Triangle:
         return constructTriangle();
-    }
-    if (m_line)
-    {
+    case PrimitiveType::Line:
         return constructLine();
-    }
-    if (m_points)
-    {
+    case PrimitiveType::Point:
         return constructPoint();
+    default:
+        return {};
     }
-    return {};
 }
 
 PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructTriangle()
@@ -172,7 +170,6 @@ PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructPoint()
     m_primitiveBuffer[0] = m_queue[0];
     m_decrement = 1;
 
-    m_count++;
     return { m_primitiveBuffer.data(), 1 };
 }
 
@@ -183,19 +180,13 @@ void PrimitiveAssemblerCalc::updateMode()
     case DrawMode::LINES:
     case DrawMode::LINE_LOOP:
     case DrawMode::LINE_STRIP:
-        m_line = true;
-        m_points = false;
-        m_triangle = false;
+        m_primitiveType = PrimitiveType::Line;
         break;
     case DrawMode::POINTS:
-        m_line = false;
-        m_points = true;
-        m_triangle = false;
+        m_primitiveType = PrimitiveType::Point;
         break;
     default:
-        m_line = false;
-        m_points = false;
-        m_triangle = true;
+        m_primitiveType = PrimitiveType::Triangle;
         break;
     }
 }

@@ -405,7 +405,7 @@ private:
         // Transform vertices to get the projected ones in NDC
         vp0.vertex = m_data.transformMatrices.projection.transform(vp0.vertex);
 
-        lineassembly::LineAssemblyCalc::Triangles triangles = m_pointAssembly.createPoint(vp0);
+        pointassembly::PointAssemblyCalc::Triangles triangles = m_pointAssembly.createPoint(vp0);
 
         drawPreClippedTriangle({ triangles[0], triangles[1], triangles[2] });
         // Assume when the first one fails, the second one will also fail.

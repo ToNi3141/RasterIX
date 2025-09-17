@@ -51,6 +51,13 @@ public:
     bool hasTriangles() const { return m_queue.size() >= 3; }
 
 private:
+    enum class PrimitiveType
+    {
+        Triangle,
+        Line,
+        Point
+    };
+
     void clear();
     void updateMode();
     PrimitiveAssemblerCalc::Primitive constructTriangle();
@@ -66,9 +73,7 @@ private:
 
     const viewport::ViewPortData& m_viewPortData;
     const PrimitiveAssemblerData& m_primitiveAssemblerData;
-    bool m_line { false };
-    bool m_points { false };
-    bool m_triangle { true };
+    PrimitiveType m_primitiveType { PrimitiveType::Triangle };
     std::array<VertexParameter, 3> m_primitiveBuffer;
 };
 
