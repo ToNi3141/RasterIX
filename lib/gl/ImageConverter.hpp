@@ -23,6 +23,7 @@
 #include "gl.h"
 #include <algorithm>
 #include <cstring>
+#include <memory>
 #include <spdlog/spdlog.h>
 
 namespace rr
