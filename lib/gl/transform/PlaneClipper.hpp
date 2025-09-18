@@ -48,6 +48,7 @@ public:
     bool enabled() { return m_data.enable; }
     tcb::span<VertexParameter> clipTriangle(ClipList& __restrict list, ClipList& __restrict listBuffer);
     tcb::span<VertexParameter> clipLine(ClipList& __restrict list, ClipList& __restrict listBuffer);
+    tcb::span<VertexParameter> clipPoint(ClipList& __restrict list, ClipList& __restrict listBuffer);
 
 private:
     inline static float isInPlane(const float e) { return e > 0.0f; }
@@ -55,6 +56,7 @@ private:
     inline static float planeEquation(const Vec4& v, const Vec4& e) { return v.dot(e); }
     tcb::span<VertexParameter> clipTriangleAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
     tcb::span<VertexParameter> clipLineAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
+    tcb::span<VertexParameter> clipPointAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
 
     const PlaneClipperData& m_data;
 };

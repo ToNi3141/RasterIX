@@ -16,6 +16,7 @@ add_library(gl STATIC
     transform/PolygonOffset.cpp
     transform/Stencil.cpp
     transform/LineAssembly.cpp
+    transform/PointAssembly.cpp
     pixelpipeline/PixelPipeline.cpp
     pixelpipeline/Fogging.cpp
     pixelpipeline/Texture.cpp

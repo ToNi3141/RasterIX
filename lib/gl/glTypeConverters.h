@@ -294,6 +294,8 @@ DrawMode convertDrawMode(GLenum drawMode)
         return DrawMode::LINE_STRIP;
     case GL_LINE_LOOP:
         return DrawMode::LINE_LOOP;
+    case GL_POINTS:
+        return DrawMode::POINTS;
     default:
         SPDLOG_WARN("convertDrawMode 0x{:X} not suppored", drawMode);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);

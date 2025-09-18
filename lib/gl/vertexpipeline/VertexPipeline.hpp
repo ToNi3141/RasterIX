@@ -27,6 +27,7 @@
 #include "transform/Lighting.hpp"
 #include "transform/MatrixStore.hpp"
 #include "transform/PlaneClipper.hpp"
+#include "transform/PointAssembly.hpp"
 #include "transform/PolygonOffset.hpp"
 #include "transform/PrimitiveAssembler.hpp"
 #include "transform/Stencil.hpp"
@@ -94,6 +95,7 @@ public:
     primitiveassembler::PrimitiveAssemblerSetter& getPrimitiveAssembler() { return m_primitiveAssembler; }
     planeclipper::PlaneClipperSetter& getPlaneClipper() { return m_planeClipper; }
     lineassembly::LineAssemblySetter& getLineAssembly() { return m_lineAssembly; }
+    pointassembly::PointAssemblySetter& getPointAssembly() { return m_pointAssembly; }
     polygonoffset::PolygonOffsetSetter& getPolygonOffset() { return m_polygonOffset; }
     shademodel::ShadeModelSetter& getShadeModel() { return m_shadeModel; }
 
@@ -122,6 +124,7 @@ private:
     primitiveassembler::PrimitiveAssemblerSetter m_primitiveAssembler { m_elementLocalData.primitiveAssembler };
     planeclipper::PlaneClipperSetter m_planeClipper { m_elementGlobalData.planeClipper, m_matrixStore.getModelView() };
     lineassembly::LineAssemblySetter m_lineAssembly { m_elementGlobalData.lineAssembly };
+    pointassembly::PointAssemblySetter m_pointAssembly { m_elementGlobalData.pointAssembly };
     polygonoffset::PolygonOffsetSetter m_polygonOffset { m_elementGlobalData.polygonOffset };
     shademodel::ShadeModelSetter m_shadeModel { m_elementGlobalData.shadeModel };
 };

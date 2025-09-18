@@ -39,27 +39,10 @@ class PrimitiveAssemblerCalc
 public:
     using Primitive = tcb::span<const VertexParameter>;
 
-    PrimitiveAssemblerCalc(const viewport::ViewPortData& viewPortData, const PrimitiveAssemblerData& primitiveAssemblerData)
-        : m_viewPortData { viewPortData }
-        , m_primitiveAssemblerData { primitiveAssemblerData }
-    {
-        init();
-    }
+    PrimitiveAssemblerCalc(const viewport::ViewPortData& viewPortData, const PrimitiveAssemblerData& primitiveAssemblerData);
+    void init();
 
-    void init()
-    {
-        updateMode();
-        clear();
-    }
-
-    Primitive getPrimitive()
-    {
-        if (m_line)
-        {
-            return constructLine();
-        }
-        return constructTriangle();
-    }
+    Primitive getPrimitive();
     void removePrimitive() { m_queue.removeElements(m_decrement); }
 
     VertexParameter& createParameter() { return m_queue.create_back(); }
@@ -68,10 +51,18 @@ public:
     bool hasTriangles() const { return m_queue.size() >= 3; }
 
 private:
+    enum class PrimitiveType
+    {
+        Triangle,
+        Line,
+        Point
+    };
+
     void clear();
     void updateMode();
     PrimitiveAssemblerCalc::Primitive constructTriangle();
     PrimitiveAssemblerCalc::Primitive constructLine();
+    PrimitiveAssemblerCalc::Primitive constructPoint();
 
     FixedSizeQueue<VertexParameter, 3> m_queue {};
 
@@ -82,7 +73,7 @@ private:
 
     const viewport::ViewPortData& m_viewPortData;
     const PrimitiveAssemblerData& m_primitiveAssemblerData;
-    bool m_line { false };
+    PrimitiveType m_primitiveType { PrimitiveType::Triangle };
     std::array<VertexParameter, 3> m_primitiveBuffer;
 };
 

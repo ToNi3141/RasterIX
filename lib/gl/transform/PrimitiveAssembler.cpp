@@ -20,6 +20,34 @@
 namespace rr::primitiveassembler
 {
 
+PrimitiveAssemblerCalc::PrimitiveAssemblerCalc(const viewport::ViewPortData& viewPortData, const PrimitiveAssemblerData& primitiveAssemblerData)
+    : m_viewPortData { viewPortData }
+    , m_primitiveAssemblerData { primitiveAssemblerData }
+{
+    init();
+}
+
+void PrimitiveAssemblerCalc::init()
+{
+    updateMode();
+    clear();
+}
+
+PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::getPrimitive()
+{
+    switch (m_primitiveType)
+    {
+    case PrimitiveType::Triangle:
+        return constructTriangle();
+    case PrimitiveType::Line:
+        return constructLine();
+    case PrimitiveType::Point:
+        return constructPoint();
+    default:
+        return {};
+    }
+}
+
 PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructTriangle()
 {
     if (m_queue.size() < 3)
@@ -132,6 +160,19 @@ PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructLine()
     return { m_primitiveBuffer.data(), 2 };
 }
 
+PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::constructPoint()
+{
+    if (m_queue.size() < 1)
+    {
+        return {};
+    }
+
+    m_primitiveBuffer[0] = m_queue[0];
+    m_decrement = 1;
+
+    return { m_primitiveBuffer.data(), 1 };
+}
+
 void PrimitiveAssemblerCalc::updateMode()
 {
     switch (m_primitiveAssemblerData.mode)
@@ -139,10 +180,13 @@ void PrimitiveAssemblerCalc::updateMode()
     case DrawMode::LINES:
     case DrawMode::LINE_LOOP:
     case DrawMode::LINE_STRIP:
-        m_line = true;
+        m_primitiveType = PrimitiveType::Line;
+        break;
+    case DrawMode::POINTS:
+        m_primitiveType = PrimitiveType::Point;
         break;
     default:
-        m_line = false;
+        m_primitiveType = PrimitiveType::Triangle;
         break;
     }
 }
