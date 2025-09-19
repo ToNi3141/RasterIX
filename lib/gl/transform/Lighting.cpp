@@ -63,7 +63,12 @@ void LightingCalc::calculateLights(
         Vec4 colorTmp;
         calculateSceneLight(colorTmp, emissiveColor, ambientColor, m_data.material.ambientColorScene);
 
-        const Vec4 n { normal[0], normal[1], normal[2], 0 };
+        Vec3 n = normal;
+        if (m_data.normalizeLightNormal)
+        {
+            n.normalize();
+        }
+
         for (std::size_t i = 0; i < LightingData::MAX_LIGHTS; i++)
         {
             if (!m_data.lightEnable[i])
@@ -76,7 +81,7 @@ void LightingCalc::calculateLights(
                 diffuseColor,
                 specularColor,
                 vertex,
-                normal);
+                n);
         }
 
         color = colorTmp;
@@ -422,6 +427,12 @@ void LightingSetter::setSpotlightExponent(const std::size_t light, const float e
 void LightingSetter::setSpotlightCutoff(const std::size_t light, const float cutoff)
 {
     m_data.lights[light].spotlightCutoff = cutoff;
+    setDataChangedFlag();
+}
+
+void LightingSetter::setEnableNormalNormalization(const bool enable)
+{
+    m_data.normalizeLightNormal = enable;
     setDataChangedFlag();
 }
 

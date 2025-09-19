@@ -43,7 +43,6 @@ struct ElementGlobalData
     pointassembly::PointAssemblyData pointAssembly {};
     polygonoffset::PolygonOffsetData polygonOffset {};
     shademodel::ShadeModelData shadeModel {};
-    bool normalizeLightNormal {};
 };
 
 } // namespace rr::transform

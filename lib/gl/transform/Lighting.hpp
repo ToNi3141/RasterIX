@@ -65,6 +65,7 @@ struct LightingData
     bool enableColorMaterialDiffuse { false };
     bool enableColorMaterialSpecular { false };
     bool enableTwoSideModel { false };
+    bool normalizeLightNormal { false };
 };
 
 class LightingCalc
@@ -140,6 +141,7 @@ public:
     void setSpotlightDirection(const std::size_t light, const Vec3& dir);
     void setSpotlightExponent(const std::size_t light, const float exponent);
     void setSpotlightCutoff(const std::size_t light, const float cutoff);
+    void setEnableNormalNormalization(const bool enable);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);

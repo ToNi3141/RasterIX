@@ -60,7 +60,6 @@ struct VertexTransformingData
         lineAssembly = data.lineAssembly;
         pointAssembly = data.pointAssembly;
         polygonOffset = data.polygonOffset;
-        normalizeLightNormal = data.normalizeLightNormal;
         shadeModel = data.shadeModel;
     }
 
@@ -77,7 +76,6 @@ struct VertexTransformingData
     pointassembly::PointAssemblyData pointAssembly {};
     polygonoffset::PolygonOffsetData polygonOffset {};
     shademodel::ShadeModelData shadeModel {};
-    bool normalizeLightNormal {};
 };
 
 template <typename TDrawTriangleFunc, typename TUpdateStencilFunc>
@@ -221,11 +219,6 @@ private:
         if (m_data.lighting.lightingEnabled)
         {
             Vec3 normal = m_normalMatrix.transform(parameter.normal);
-
-            if (m_data.normalizeLightNormal)
-            {
-                normal.normalize();
-            }
             const Vec4 vl = m_data.transformMatrices.modelView.transform(parameter.vertex);
             const Vec4 c = parameter.color;
             lighting::LightingCalc { m_data.lighting }.calculateLights(parameter.color, c, vl, normal);

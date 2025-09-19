@@ -768,7 +768,7 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         break;
     case GL_NORMALIZE:
         SPDLOG_DEBUG("glDisable GL_NORMALIZE called");
-        RIXGL::getInstance().pipeline().setEnableNormalizing(false);
+        RIXGL::getInstance().pipeline().getLighting().setEnableNormalNormalization(false);
         break;
     case GL_STENCIL_TEST:
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST called");
@@ -886,7 +886,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         break;
     case GL_NORMALIZE:
         SPDLOG_DEBUG("glEnable GL_NORMALIZE called");
-        RIXGL::getInstance().pipeline().setEnableNormalizing(true);
+        RIXGL::getInstance().pipeline().getLighting().setEnableNormalNormalization(true);
         break;
     case GL_STENCIL_TEST:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST called");

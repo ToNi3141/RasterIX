@@ -67,7 +67,6 @@ public:
     {
         return m_renderer.setScissorBox(x, y, width, height);
     }
-    void setEnableNormalizing(const bool enable) { m_elementGlobalData.normalizeLightNormal = enable; }
     void enableVSync(const bool enable) { m_renderer.enableVSync(enable); }
     bool readBackColorBuffer(tcb::span<uint8_t> buffer) { return m_renderer.readBackColorBuffer(buffer); }
     bool readFrontColorBuffer(tcb::span<uint8_t> buffer) { return m_renderer.readFrontColorBuffer(buffer); }

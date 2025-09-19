@@ -37,7 +37,7 @@ VertexPipeline::VertexPipeline(PixelPipeline& renderer)
     {
         m_texGen[i].setTexGenData(m_elementGlobalData.texGen[i], m_matrixStore.getModelView());
     }
-    setEnableNormalizing(false);
+    getLighting().setEnableNormalNormalization(false);
 }
 
 VertexParameter VertexPipeline::fetch(const RenderObj& obj, std::size_t i)
