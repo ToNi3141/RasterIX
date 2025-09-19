@@ -30,4 +30,33 @@ void CullingSetter::enableCulling(const bool enable)
     m_data.enableCulling = enable;
 }
 
+void CullingSetter::setFrontFace(const Orientation orientation)
+{
+    m_data.frontFace = orientation;
+}
+
+CullingCalc::CullingCalc(const CullingData& cullingData)
+    : m_data { cullingData }
+{
+}
+
+bool CullingCalc::cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
+{
+    if (m_data.enableCulling)
+    {
+        return isFrontFace(v0, v1, v2) && (m_data.cullMode == Face::FRONT);
+    }
+    return false;
+}
+
+bool CullingCalc::isFrontFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
+{
+    const float edgeVal { Rasterizer::edgeFunctionFloat(v0, v1, v2) };
+    if (m_data.frontFace == Orientation::CCW)
+    {
+        return edgeVal < 0.0f;
+    }
+    return edgeVal > 0.0f;
+}
+
 } // namespace rr::culling

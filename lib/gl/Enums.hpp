@@ -184,6 +184,12 @@ enum class Face
     FRONT_AND_BACK
 };
 
+enum class Orientation
+{
+    CW,
+    CCW
+};
+
 enum class InternalPixelFormat
 {
     ALPHA,
