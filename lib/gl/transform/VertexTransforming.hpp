@@ -235,13 +235,6 @@ private:
             viewport::ViewPortCalc { m_data.viewPort }.transform(list[i].vertex);
         }
 
-        // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
-        // facing backwards, then all in the clipping list will do this and vice versa.
-        if (culling::CullingCalc { m_data.culling }.cull(list[0].vertex, list[1].vertex, list[2].vertex))
-        {
-            return true;
-        }
-
         if (m_data.stencil.enableTwoSideStencil)
         {
             const StencilReg reg = stencil::StencilCalc { m_data.stencil }.updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex);
@@ -289,13 +282,6 @@ private:
         viewport::ViewPortCalc { m_data.viewPort }.transform(v0);
         viewport::ViewPortCalc { m_data.viewPort }.transform(v1);
         viewport::ViewPortCalc { m_data.viewPort }.transform(v2);
-
-        // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
-        // facing backwards, then all in the clipping list will do this and vice versa.
-        if (culling::CullingCalc { m_data.culling }.cull(v0, v1, v2))
-        {
-            return true;
-        }
 
         if (m_data.stencil.enableTwoSideStencil)
         {
@@ -369,6 +355,14 @@ private:
         projectedTriangle[0].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[0].vertex);
         projectedTriangle[1].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[1].vertex);
         projectedTriangle[2].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[2].vertex);
+
+        if (culling::CullingCalc { m_data.culling }.cull(
+            projectedTriangle[0].vertex, 
+            projectedTriangle[1].vertex, 
+            projectedTriangle[2].vertex))
+        {
+            return true;
+        }
 
         return drawPreClippedTriangle(projectedTriangle);
     }
