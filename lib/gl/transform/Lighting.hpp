@@ -77,7 +77,7 @@ public:
     }
 
     void calculateLights(
-        Vec4& __restrict color,
+        Vec4& color,
         const Vec4& triangleColor,
         const Vec4& vertex,
         const Vec3& normal) const;
@@ -94,7 +94,6 @@ private:
     void calculateLight(
         Vec4& __restrict color,
         const LightingData::LightConfig& lightConfig,
-        const bool enableTwoSideModel,
         const float materialSpecularExponent,
         const Vec4& materialAmbientColor,
         const Vec4& materialDiffuseColor,

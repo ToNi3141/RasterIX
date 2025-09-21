@@ -131,7 +131,7 @@ private:
                 calculateNormalMatrix = calculateNormalMatrix || texgen::TexGenCalc { m_data.texGen[tu] }.isEnabled();
             }
         }
-        calculateNormalMatrix = calculateNormalMatrix || lighting::LightingCalc { m_data.lighting }.isEnabled();
+        calculateNormalMatrix = calculateNormalMatrix || m_data.lighting.lightingEnabled;
         if (calculateNormalMatrix)
         {
             m_normalMatrix = createNormalMatrix();
@@ -214,16 +214,22 @@ private:
             }
         }
 
+        parameter.vertex = m_data.transformMatrices.modelView.transform(parameter.vertex);
+
         // TODO: Check if this required? The standard requires but is it really used?
         // m_c[j].transform(color, color); // Calculate this in one batch to improve performance
-        if (m_data.lighting.lightingEnabled)
+
+        // When two side modes is disabled, the light can be already be calculated here.
+        // When two side mode is enabled, the light must be calculated after the triangle is assembled
+        // because the front face must be known to calculate the light correctly.
+        if (m_data.lighting.lightingEnabled && !m_data.lighting.enableTwoSideModel)
         {
-            Vec3 normal = m_normalMatrix.transform(parameter.normal);
-            const Vec4 vl = m_data.transformMatrices.modelView.transform(parameter.vertex);
-            const Vec4 c = parameter.color;
-            lighting::LightingCalc { m_data.lighting }.calculateLights(parameter.color, c, vl, normal);
+            lighting::LightingCalc { m_data.lighting }.calculateLights(
+                parameter.color,
+                parameter.color,
+                parameter.vertex,
+                m_normalMatrix.transform(parameter.normal));
         }
-        parameter.vertex = m_data.transformMatrices.modelView.transform(parameter.vertex);
     }
 
     bool drawClippedTriangleList(tcb::span<VertexParameter> list)
@@ -347,22 +353,47 @@ private:
     {
         Triangle projectedTriangle { primitive[0], primitive[1], primitive[2] };
 
-        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle(
-            projectedTriangle[0],
-            projectedTriangle[1],
-            projectedTriangle[2]);
-
         projectedTriangle[0].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[0].vertex);
         projectedTriangle[1].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[1].vertex);
         projectedTriangle[2].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[2].vertex);
 
-        if (culling::CullingCalc { m_data.culling }.cull(
-            projectedTriangle[0].vertex, 
-            projectedTriangle[1].vertex, 
-            projectedTriangle[2].vertex))
+        culling::CullingCalc cullingCalc { m_data.culling };
+        if (cullingCalc.cull(
+                projectedTriangle[0].vertex,
+                projectedTriangle[1].vertex,
+                projectedTriangle[2].vertex))
         {
             return true;
         }
+
+        // In case of two side lighting, and in case the triangle is a back face,
+        // the normal must be inverted to calculate the light correctly.
+        // In case of of no two side lighting or in case of a front face, the light
+        // has been already calculated in the transform() method.
+        if (m_data.lighting.lightingEnabled
+            && m_data.lighting.enableTwoSideModel)
+        {
+            float normalSign = 1.0f;
+            if (!cullingCalc.isFrontFace(primitive[0].vertex, primitive[1].vertex, primitive[2].vertex))
+            {
+                normalSign = -1.0f;
+            }
+
+            lighting::LightingCalc lightingCalc { m_data.lighting };
+            for (std::size_t i = 0; i < projectedTriangle.size(); i++)
+            {
+                lightingCalc.calculateLights(
+                    projectedTriangle[i].color,
+                    primitive[i].color,
+                    primitive[i].vertex,
+                    m_normalMatrix.transform(primitive[i].normal * normalSign));
+            }
+        }
+
+        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle(
+            projectedTriangle[0],
+            projectedTriangle[1],
+            projectedTriangle[2]);
 
         return drawPreClippedTriangle(projectedTriangle);
     }

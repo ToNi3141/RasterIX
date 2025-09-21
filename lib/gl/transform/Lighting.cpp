@@ -47,7 +47,7 @@ LightingSetter::LightingSetter(LightingData& lightingData, const Mat44& modelVie
 }
 
 void LightingCalc::calculateLights(
-    Vec4& __restrict color,
+    Vec4& color,
     const Vec4& triangleColor,
     const Vec4& vertex,
     const Vec3& normal) const
@@ -75,7 +75,6 @@ void LightingCalc::calculateLights(
                 continue;
             calculateLight(colorTmp,
                 m_data.lights[i],
-                m_data.enableTwoSideModel,
                 m_data.material.specularExponent,
                 ambientColor,
                 diffuseColor,
@@ -92,7 +91,6 @@ void LightingCalc::calculateLights(
 void LightingCalc::calculateLight(
     Vec4& __restrict color,
     const LightingData::LightConfig& lightConfig,
-    const bool enableTwoSideModel,
     const float materialSpecularExponent,
     const Vec4& materialAmbientColor,
     const Vec4& materialDiffuseColor,
@@ -103,12 +101,7 @@ void LightingCalc::calculateLight(
     // Calculate light from lights
     const Vec3 dir = calculateDirection(v0, lightConfig.position);
 
-    float nDotDir = n0.dot(dir);
-    if (enableTwoSideModel)
-    {
-        nDotDir = std::abs(nDotDir);
-    }
-    nDotDir = std::clamp(nDotDir, 0.0f, 1.0f);
+    const float nDotDir = std::clamp(n0.dot(dir), 0.0f, 1.0f);
 
     const float att = calculateAttenuation(lightConfig, v0);
     const float specular = calculateSpecular(lightConfig.position, nDotDir, n0, dir, materialSpecularExponent);
