@@ -19,7 +19,7 @@
 #define PLANE_CLIPPER_HPP
 
 #include "ClippingHelper.hpp"
-#include "Types.hpp"
+#include "VertexParameter.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 #include <array>

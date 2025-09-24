@@ -19,8 +19,8 @@
 #define CLIPPING_HELPER_HPP
 
 #include "RenderConfigs.hpp"
+#include "VertexParameter.hpp"
 #include "math/Vec.hpp"
-#include "transform/Types.hpp"
 #include <array>
 
 namespace rr::clippinghelper

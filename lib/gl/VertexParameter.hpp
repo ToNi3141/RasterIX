@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef TYPES_HPP
-#define TYPES_HPP
+#ifndef VERTEXPARAMETER_HPP
+#define VERTEXPARAMETER_HPP
 
 #include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
@@ -30,8 +30,8 @@ struct VertexParameter
     Vec4 vertex;
     Vec4 color;
     Vec3 normal;
-    std::array<Vec4, RenderConfig::TMU_COUNT> tex;
+    std::array<Vec4, RenderConfig::TMU_COUNT> tex; // Note: RenderConfig::TMU_COUNT must be a compile-time constant for std::array
 };
 
 } // namespace rr
-#endif // TYPES_HPP
+#endif // VERTEXPARAMETER_HPP

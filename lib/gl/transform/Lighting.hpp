@@ -19,7 +19,6 @@
 #define LIGHTING_HPP
 
 #include "Enums.hpp"
-#include "Types.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 #include <array>

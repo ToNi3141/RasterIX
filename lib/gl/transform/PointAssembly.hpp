@@ -18,7 +18,7 @@
 #ifndef POINT_ASSEMBLY_HPP
 #define POINT_ASSEMBLY_HPP
 
-#include "Types.hpp"
+#include "VertexParameter.hpp"
 #include "math/Vec.hpp"
 #include <array>
 #include <tcb/span.hpp>

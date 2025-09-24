@@ -22,7 +22,7 @@
 
 #include "Enums.hpp"
 #include "FixedSizeQueue.hpp"
-#include "Types.hpp"
+#include "VertexParameter.hpp"
 #include "ViewPort.hpp"
 
 namespace rr::primitiveassembler

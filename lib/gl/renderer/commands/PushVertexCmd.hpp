@@ -21,7 +21,7 @@
 #include "DataTransferCmdBase.hpp"
 #include "Op.hpp"
 #include "RenderConfigs.hpp"
-#include "transform/Types.hpp"
+#include "VertexParameter.hpp"
 
 namespace rr
 {

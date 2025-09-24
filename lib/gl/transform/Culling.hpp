@@ -19,7 +19,6 @@
 #define CULLING_HPP
 
 #include "Enums.hpp"
-#include "Types.hpp"
 #include "math/Vec.hpp"
 #include "renderer/Rasterizer.hpp"
 

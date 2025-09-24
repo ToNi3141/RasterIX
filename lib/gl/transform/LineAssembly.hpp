@@ -18,7 +18,7 @@
 #ifndef LINE_ASSEMBLY_HPP
 #define LINE_ASSEMBLY_HPP
 
-#include "Types.hpp"
+#include "VertexParameter.hpp"
 #include "math/Vec.hpp"
 #include <array>
 #include <tcb/span.hpp>

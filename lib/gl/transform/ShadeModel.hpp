@@ -19,7 +19,7 @@
 #define SHADE_MODEL_HPP
 
 #include "Enums.hpp"
-#include "Types.hpp"
+#include "VertexParameter.hpp"
 #include "math/Vec.hpp"
 
 namespace rr::shademodel

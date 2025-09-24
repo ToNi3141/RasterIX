@@ -18,7 +18,7 @@
 #ifndef CLIPPER_HPP
 #define CLIPPER_HPP
 
-#include "Types.hpp"
+#include "VertexParameter.hpp"
 #include "math/Vec.hpp"
 #include <array>
 #include <tcb/span.hpp>
