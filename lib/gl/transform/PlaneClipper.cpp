@@ -20,22 +20,22 @@
 namespace rr::planeclipper
 {
 
-tcb::span<VertexParameter> PlaneClipperCalc::clipTriangle(ClipList& __restrict list, ClipList& __restrict listBuffer)
+tcb::span<TransformingVertexParameter> PlaneClipperCalc::clipTriangle(ClipList& __restrict list, ClipList& __restrict listBuffer)
 {
     return clipTriangleAgainstPlane(listBuffer, list);
 }
 
-tcb::span<VertexParameter> PlaneClipperCalc::clipLine(ClipList& __restrict list, ClipList& __restrict listBuffer)
+tcb::span<TransformingVertexParameter> PlaneClipperCalc::clipLine(ClipList& __restrict list, ClipList& __restrict listBuffer)
 {
     return clipLineAgainstPlane(listBuffer, list);
 }
 
-tcb::span<VertexParameter> PlaneClipperCalc::clipPoint(ClipList& __restrict list, ClipList& __restrict listBuffer)
+tcb::span<TransformingVertexParameter> PlaneClipperCalc::clipPoint(ClipList& __restrict list, ClipList& __restrict listBuffer)
 {
     return clipPointAgainstPlane(listBuffer, list);
 }
 
-tcb::span<VertexParameter> PlaneClipperCalc::clipTriangleAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
+tcb::span<TransformingVertexParameter> PlaneClipperCalc::clipTriangleAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
 {
     constexpr std::size_t listSize = 3;
     // Start Clipping
@@ -89,7 +89,7 @@ tcb::span<VertexParameter> PlaneClipperCalc::clipTriangleAgainstPlane(ClipList& 
     return {};
 }
 
-tcb::span<VertexParameter> PlaneClipperCalc::clipLineAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
+tcb::span<TransformingVertexParameter> PlaneClipperCalc::clipLineAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
 {
     listOut[0] = listIn[0];
     listOut[1] = listIn[1];
@@ -121,7 +121,7 @@ tcb::span<VertexParameter> PlaneClipperCalc::clipLineAgainstPlane(ClipList& __re
     return {};
 }
 
-tcb::span<VertexParameter> PlaneClipperCalc::clipPointAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
+tcb::span<TransformingVertexParameter> PlaneClipperCalc::clipPointAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn)
 {
     // Only one point to check
     listOut[0] = listIn[0];

@@ -18,8 +18,8 @@
 #ifndef LINE_ASSEMBLY_HPP
 #define LINE_ASSEMBLY_HPP
 
-#include "VertexParameter.hpp"
 #include "math/Vec.hpp"
+#include "transform/TransformingVertexParameter.hpp"
 #include <array>
 #include <tcb/span.hpp>
 
@@ -34,7 +34,7 @@ struct LineAssemblyData
 class LineAssemblyCalc
 {
 public:
-    using Triangles = std::array<VertexParameter, 6>;
+    using Triangles = std::array<TransformingVertexParameter, 6>;
 
     LineAssemblyCalc(const LineAssemblyData& data, const float& viewPortWidth, const float& viewPortHeight)
         : m_data { data }
@@ -44,7 +44,7 @@ public:
     }
 
     // Creates lines from projected triangles in NDC
-    Triangles createLine(const VertexParameter& vp0, const VertexParameter& vp1) const;
+    Triangles createLine(const TransformingVertexParameter& vp0, const TransformingVertexParameter& vp1) const;
 
 private:
     const LineAssemblyData& m_data;

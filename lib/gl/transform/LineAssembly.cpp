@@ -20,7 +20,7 @@
 namespace rr::lineassembly
 {
 
-LineAssemblyCalc::Triangles LineAssemblyCalc::createLine(const VertexParameter& vp0, const VertexParameter& vp1) const
+LineAssemblyCalc::Triangles LineAssemblyCalc::createLine(const TransformingVertexParameter& vp0, const TransformingVertexParameter& vp1) const
 {
     // Copied from swGL and adapted.
 
@@ -59,17 +59,19 @@ LineAssemblyCalc::Triangles LineAssemblyCalc::createLine(const VertexParameter& 
     nv3[0] += (-nx * v1[3]) * rcpViewportScaleX;
     nv3[1] += (-ny * v1[3]) * rcpViewportScaleY;
 
-    const Vec4& c0 = vp0.color;
-    const Vec4& c1 = vp1.color;
+    const Vec4& cf0 = vp0.colorFront;
+    const Vec4& cf1 = vp1.colorFront;
+    const Vec4& cb0 = vp0.colorBack;
+    const Vec4& cb1 = vp1.colorBack;
     const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0 = vp0.tex;
     const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1 = vp1.tex;
     Triangles triangles;
-    triangles[0] = { nv0, c0, { 0.0f, 0.0f, 0.0f }, tc0 };
-    triangles[1] = { nv1, c0, { 0.0f, 0.0f, 0.0f }, tc0 };
-    triangles[2] = { nv2, c1, { 0.0f, 0.0f, 0.0f }, tc1 };
-    triangles[3] = { nv2, c1, { 0.0f, 0.0f, 0.0f }, tc1 };
-    triangles[4] = { nv1, c0, { 0.0f, 0.0f, 0.0f }, tc0 };
-    triangles[5] = { nv3, c1, { 0.0f, 0.0f, 0.0f }, tc1 };
+    triangles[0] = { nv0, cf0, cb0, tc0 };
+    triangles[1] = { nv1, cf0, cb0, tc0 };
+    triangles[2] = { nv2, cf1, cb1, tc1 };
+    triangles[3] = { nv2, cf1, cb1, tc1 };
+    triangles[4] = { nv1, cf0, cb0, tc0 };
+    triangles[5] = { nv3, cf1, cb1, tc1 };
     return triangles;
 }
 

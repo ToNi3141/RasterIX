@@ -22,7 +22,7 @@
 
 #include "Enums.hpp"
 #include "FixedSizeQueue.hpp"
-#include "VertexParameter.hpp"
+#include "TransformingVertexParameter.hpp"
 #include "ViewPort.hpp"
 
 namespace rr::primitiveassembler
@@ -37,7 +37,7 @@ struct PrimitiveAssemblerData
 class PrimitiveAssemblerCalc
 {
 public:
-    using Primitive = tcb::span<const VertexParameter>;
+    using Primitive = tcb::span<const TransformingVertexParameter>;
 
     PrimitiveAssemblerCalc(const viewport::ViewPortData& viewPortData, const PrimitiveAssemblerData& primitiveAssemblerData);
     void init();
@@ -45,8 +45,8 @@ public:
     Primitive getPrimitive();
     void removePrimitive() { m_queue.removeElements(m_decrement); }
 
-    VertexParameter& createParameter() { return m_queue.create_back(); }
-    void pushParameter(const VertexParameter& param) { m_queue.push_back(param); };
+    TransformingVertexParameter& createParameter() { return m_queue.create_back(); }
+    void pushParameter(const TransformingVertexParameter& param) { m_queue.push_back(param); };
 
     bool hasTriangles() const { return m_queue.size() >= 3; }
 
@@ -64,17 +64,17 @@ private:
     PrimitiveAssemblerCalc::Primitive constructLine();
     PrimitiveAssemblerCalc::Primitive constructPoint();
 
-    FixedSizeQueue<VertexParameter, 3> m_queue {};
+    FixedSizeQueue<TransformingVertexParameter, 3> m_queue {};
 
     std::size_t m_count { 0 };
-    VertexParameter m_pTmp {};
+    TransformingVertexParameter m_pTmp {};
 
     std::size_t m_decrement { 0 };
 
     const viewport::ViewPortData& m_viewPortData;
     const PrimitiveAssemblerData& m_primitiveAssemblerData;
     PrimitiveType m_primitiveType { PrimitiveType::Triangle };
-    std::array<VertexParameter, 3> m_primitiveBuffer;
+    std::array<TransformingVertexParameter, 3> m_primitiveBuffer;
 };
 
 class PrimitiveAssemblerSetter

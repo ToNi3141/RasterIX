@@ -19,8 +19,8 @@
 #define SHADE_MODEL_HPP
 
 #include "Enums.hpp"
-#include "VertexParameter.hpp"
 #include "math/Vec.hpp"
+#include "transform/TransformingVertexParameter.hpp"
 
 namespace rr::shademodel
 {
@@ -37,20 +37,25 @@ public:
     {
     }
 
-    void updateShadeModelTriangle(VertexParameter& vp0, VertexParameter& vp1, VertexParameter& vp2) const
+    void updateShadeModelTriangle(TransformingVertexParameter& vp0, TransformingVertexParameter& vp1, TransformingVertexParameter& vp2) const
     {
         if (m_data.shadeModelFlat)
         {
-            vp1.color = vp0.color;
-            vp2.color = vp0.color;
+            vp1.colorFront = vp0.colorFront;
+            vp2.colorFront = vp0.colorFront;
+
+            vp1.colorBack = vp0.colorBack;
+            vp2.colorBack = vp0.colorBack;
         }
     }
 
-    void updateShadeModelLine(VertexParameter& vp0, VertexParameter& vp1)
+    void updateShadeModelLine(TransformingVertexParameter& vp0, TransformingVertexParameter& vp1)
     {
         if (m_data.shadeModelFlat)
         {
-            vp1.color = vp0.color;
+            vp1.colorFront = vp0.colorFront;
+
+            vp1.colorBack = vp0.colorBack;
         }
     }
 

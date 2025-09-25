@@ -19,6 +19,7 @@
 #define CLIPPING_HELPER_HPP
 
 #include "RenderConfigs.hpp"
+#include "TransformingVertexParameter.hpp"
 #include "VertexParameter.hpp"
 #include "math/Vec.hpp"
 #include <array>
@@ -29,11 +30,12 @@ namespace rr::clippinghelper
 class ClippingHelper
 {
 public:
-    inline static VertexParameter lerp(const float lerpw, const VertexParameter& curr, const VertexParameter& next)
+    inline static TransformingVertexParameter lerp(const float lerpw, const TransformingVertexParameter& curr, const TransformingVertexParameter& next)
     {
-        VertexParameter out;
+        TransformingVertexParameter out;
         out.vertex = lerpVert(curr.vertex, next.vertex, lerpw);
-        out.color = lerpVert(curr.color, next.color, lerpw);
+        out.colorFront = lerpVert(curr.colorFront, next.colorFront, lerpw);
+        out.colorBack = lerpVert(curr.colorBack, next.colorBack, lerpw);
         out.tex = lerpTexCoord(curr.tex, next.tex, lerpw);
         return out;
     }
