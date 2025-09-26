@@ -30,7 +30,7 @@ struct VertexParameter
     Vec4 vertex;
     Vec4 color;
     Vec3 normal;
-    std::array<Vec4, RenderConfig::TMU_COUNT> tex; // Note: RenderConfig::TMU_COUNT must be a compile-time constant for std::array
+    std::array<Vec4, RenderConfig::TMU_COUNT> tex;
 };
 
 } // namespace rr

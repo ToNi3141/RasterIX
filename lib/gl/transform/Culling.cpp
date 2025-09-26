@@ -44,9 +44,10 @@ bool CullingCalc::cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
 {
     if (m_data.enableCulling)
     {
+        const bool frontFace = isFrontFace(v0, v1, v2);
         return (m_data.cullMode == Face::FRONT_AND_BACK)
-            || (isFrontFace(v0, v1, v2) && (m_data.cullMode == Face::FRONT))
-            || (!isFrontFace(v0, v1, v2) && (m_data.cullMode == Face::BACK));
+            || (frontFace && (m_data.cullMode == Face::FRONT))
+            || (!frontFace && (m_data.cullMode == Face::BACK));
     }
     return false;
 }

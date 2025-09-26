@@ -31,7 +31,7 @@ struct TransformingVertexParameter
     Vec4 vertex;
     Vec4 colorFront;
     Vec4 colorBack;
-    std::array<Vec4, RenderConfig::TMU_COUNT> tex; // Note: RenderConfig::TMU_COUNT must be a compile-time constant for std::array
+    std::array<Vec4, RenderConfig::TMU_COUNT> tex;
 };
 
 } // namespace rr
