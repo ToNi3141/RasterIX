@@ -126,6 +126,7 @@ extern "C"
     GLAPI void APIENTRY impl_glFogiv(GLenum pname, const GLint* params);
     GLAPI void APIENTRY impl_glFrontFace(GLenum mode);
     GLAPI void APIENTRY impl_glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
+    GLAPI void APIENTRY impl_glFrustumf(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar);
     GLAPI GLuint APIENTRY impl_glGenLists(GLsizei range);
     GLAPI void APIENTRY impl_glGetBooleanv(GLenum pname, GLboolean* params);
     GLAPI void APIENTRY impl_glGetClipPlane(GLenum plane, GLdouble* equation);

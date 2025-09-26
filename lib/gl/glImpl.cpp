@@ -1129,7 +1129,41 @@ GLAPI void APIENTRY impl_glFrontFace(GLenum mode)
 
 GLAPI void APIENTRY impl_glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar)
 {
-    SPDLOG_WARN("glFrustum not implemented");
+    SPDLOG_DEBUG("glFrustum redirected to glFrustumf");
+    impl_glFrustumf(
+        static_cast<GLfloat>(left),
+        static_cast<GLfloat>(right),
+        static_cast<GLfloat>(bottom),
+        static_cast<GLfloat>(top),
+        static_cast<GLfloat>(zNear),
+        static_cast<GLfloat>(zFar));
+}
+
+GLAPI void APIENTRY impl_glFrustumf(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar)
+{
+    SPDLOG_DEBUG("glFrustumf left {} right {} bottom {} top {} zNear {} zFar {} called", left, right, bottom, top, zNear, zFar);
+
+    if ((zNear <= 0.0f) || (zFar <= 0.0f) || (left == right) || (bottom == top) || (zNear == zFar))
+    {
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
+
+    const GLfloat A = (right + left) / (right - left);
+    const GLfloat B = (top + bottom) / (top - bottom);
+    const GLfloat C = -(zFar + zNear) / (zFar - zNear);
+    const GLfloat D = -(2.0f * zFar * zNear) / (zFar - zNear);
+
+    // clang-format off
+    Mat44 m { { {
+        { 2.0f * zNear / (right - left), 0.0f,                          A,     0.0f }, 
+        { 0.0f,                          2.0f * zNear / (top - bottom), B,     0.0f }, 
+        { 0.0f,                          0.0f,                          C,     D    },
+        { 0.0f,                          0.0f,                          -1.0f, 0.0f }  
+    } } };
+    // clang-format on
+
+    impl_glMultMatrixf(&m[0][0]);
 }
 
 GLAPI GLuint APIENTRY impl_glGenLists(GLsizei range)
@@ -3816,6 +3850,7 @@ GLAPI void APIENTRY impl_glDeleteTextures(GLsizei n, const GLuint* textures)
     if (n < 0)
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glDeleteTextures n < 0");
         return;
     }
 
