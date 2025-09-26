@@ -35,6 +35,7 @@
 #include "TexGen.hpp"
 #include "ViewPort.hpp"
 #include "math/Vec.hpp"
+#include "transform/TransformingVertexParameter.hpp"
 #include <bitset>
 #include <tcb/span.hpp>
 
@@ -60,7 +61,6 @@ struct VertexTransformingData
         lineAssembly = data.lineAssembly;
         pointAssembly = data.pointAssembly;
         polygonOffset = data.polygonOffset;
-        normalizeLightNormal = data.normalizeLightNormal;
         shadeModel = data.shadeModel;
     }
 
@@ -77,13 +77,12 @@ struct VertexTransformingData
     pointassembly::PointAssemblyData pointAssembly {};
     polygonoffset::PolygonOffsetData polygonOffset {};
     shademodel::ShadeModelData shadeModel {};
-    bool normalizeLightNormal {};
 };
 
 template <typename TDrawTriangleFunc, typename TUpdateStencilFunc>
 class VertexTransformingCalc
 {
-    using Triangle = std::array<VertexParameter, 3>;
+    using Triangle = std::array<TransformingVertexParameter, 3>;
 
 public:
     VertexTransformingCalc(
@@ -96,10 +95,10 @@ public:
     {
     }
 
-    bool pushVertex(VertexParameter param)
+    bool pushVertex(const VertexParameter& param)
     {
-        transform(param);
-        m_primitiveAssembler.pushParameter(param);
+        TransformingVertexParameter transformingVertexParameter = transform(param);
+        m_primitiveAssembler.pushParameter(transformingVertexParameter);
 
         const primitiveassembler::PrimitiveAssemblerCalc::Primitive primitive = m_primitiveAssembler.getPrimitive();
         if (primitive.empty())
@@ -133,7 +132,7 @@ private:
                 calculateNormalMatrix = calculateNormalMatrix || texgen::TexGenCalc { m_data.texGen[tu] }.isEnabled();
             }
         }
-        calculateNormalMatrix = calculateNormalMatrix || lighting::LightingCalc { m_data.lighting }.isEnabled();
+        calculateNormalMatrix = calculateNormalMatrix || m_data.lighting.lightingEnabled;
         if (calculateNormalMatrix)
         {
             m_normalMatrix = createNormalMatrix();
@@ -149,7 +148,7 @@ private:
         list[1] = primitive[1];
         list[2] = primitive[2];
 
-        tcb::span<VertexParameter> clippedVertexParameter = m_planeClipper.clipTriangle(list, listBuffer);
+        tcb::span<TransformingVertexParameter> clippedVertexParameter = m_planeClipper.clipTriangle(list, listBuffer);
 
         if (clippedVertexParameter.empty())
         {
@@ -173,7 +172,7 @@ private:
         list[0] = primitive[0];
         list[1] = primitive[1];
 
-        tcb::span<VertexParameter> clippedVertexParameter = m_planeClipper.clipLine(list, listBuffer);
+        tcb::span<TransformingVertexParameter> clippedVertexParameter = m_planeClipper.clipLine(list, listBuffer);
 
         if (clippedVertexParameter.empty())
         {
@@ -190,7 +189,7 @@ private:
 
         list[0] = primitive[0];
 
-        tcb::span<VertexParameter> clippedVertexParameter = m_planeClipper.clipPoint(list, listBuffer);
+        tcb::span<TransformingVertexParameter> clippedVertexParameter = m_planeClipper.clipPoint(list, listBuffer);
 
         if (clippedVertexParameter.empty())
         {
@@ -200,40 +199,54 @@ private:
         return drawPoint({ clippedVertexParameter.data(), 1 });
     }
 
-    void transform(VertexParameter& parameter)
+    TransformingVertexParameter transform(const VertexParameter& parameter)
     {
+        TransformingVertexParameter outParam;
         for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
         {
             if (m_data.tmuEnabled[tu])
             {
+                outParam.tex[tu] = parameter.tex[tu];
                 texgen::TexGenCalc { m_data.texGen[tu] }.calculateTexGenCoords(
-                    parameter.tex[tu],
+                    outParam.tex[tu],
                     m_data.transformMatrices.modelView,
                     m_normalMatrix,
                     parameter.vertex,
                     parameter.normal);
-                parameter.tex[tu] = m_data.transformMatrices.texture[tu].transform(parameter.tex[tu]);
+                outParam.tex[tu] = m_data.transformMatrices.texture[tu].transform(outParam.tex[tu]);
             }
         }
+
+        outParam.vertex = m_data.transformMatrices.modelView.transform(parameter.vertex);
 
         // TODO: Check if this required? The standard requires but is it really used?
         // m_c[j].transform(color, color); // Calculate this in one batch to improve performance
+
         if (m_data.lighting.lightingEnabled)
         {
-            Vec3 normal = m_normalMatrix.transform(parameter.normal);
-
-            if (m_data.normalizeLightNormal)
+            const Vec3 normal = m_normalMatrix.transform(parameter.normal);
+            lighting::LightingCalc { m_data.lighting }.calculateLights(
+                outParam.colorFront,
+                parameter.color,
+                parameter.vertex,
+                normal);
+            if (m_data.lighting.enableTwoSideModel)
             {
-                normal.normalize();
+                lighting::LightingCalc { m_data.lighting }.calculateLights(
+                    outParam.colorBack,
+                    parameter.color,
+                    parameter.vertex,
+                    normal * -1.0f);
             }
-            const Vec4 vl = m_data.transformMatrices.modelView.transform(parameter.vertex);
-            const Vec4 c = parameter.color;
-            lighting::LightingCalc { m_data.lighting }.calculateLights(parameter.color, c, vl, normal);
         }
-        parameter.vertex = m_data.transformMatrices.modelView.transform(parameter.vertex);
+        else
+        {
+            outParam.colorFront = parameter.color;
+        }
+        return outParam;
     }
 
-    bool drawClippedTriangleList(tcb::span<VertexParameter> list)
+    bool drawClippedTriangleList(tcb::span<TransformingVertexParameter> list)
     {
         const std::size_t clippedVertexListSize = list.size();
         for (std::size_t i = 0; i < clippedVertexListSize; i++)
@@ -247,6 +260,17 @@ private:
         if (culling::CullingCalc { m_data.culling }.cull(list[0].vertex, list[1].vertex, list[2].vertex))
         {
             return true;
+        }
+
+        if (m_data.lighting.lightingEnabled && m_data.lighting.enableTwoSideModel)
+        {
+            if (!culling::CullingCalc { m_data.culling }.isFrontFace(list[0].vertex, list[1].vertex, list[2].vertex))
+            {
+                for (std::size_t i = 0; i < clippedVertexListSize; i++)
+                {
+                    list[i].colorFront = list[i].colorBack;
+                }
+            }
         }
 
         if (m_data.stencil.enableTwoSideStencil)
@@ -267,9 +291,9 @@ private:
                 list[0].tex,
                 list[i - 2].tex,
                 list[i - 1].tex,
-                list[0].color,
-                list[i - 2].color,
-                list[i - 1].color,
+                list[0].colorFront,
+                list[i - 2].colorFront,
+                list[i - 1].colorFront,
             });
             if (!success)
             {
@@ -297,11 +321,22 @@ private:
         viewport::ViewPortCalc { m_data.viewPort }.transform(v1);
         viewport::ViewPortCalc { m_data.viewPort }.transform(v2);
 
-        // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
-        // facing backwards, then all in the clipping list will do this and vice versa.
         if (culling::CullingCalc { m_data.culling }.cull(v0, v1, v2))
         {
             return true;
+        }
+
+        Vec4 c0 = triangle[0].colorFront;
+        Vec4 c1 = triangle[1].colorFront;
+        Vec4 c2 = triangle[2].colorFront;
+        if (m_data.lighting.lightingEnabled && m_data.lighting.enableTwoSideModel)
+        {
+            if (!culling::CullingCalc { m_data.culling }.isFrontFace(v0, v1, v2))
+            {
+                c0 = triangle[0].colorBack;
+                c1 = triangle[1].colorBack;
+                c2 = triangle[2].colorBack;
+            }
         }
 
         if (m_data.stencil.enableTwoSideStencil)
@@ -325,9 +360,9 @@ private:
             triangle[0].tex,
             triangle[1].tex,
             triangle[2].tex,
-            triangle[0].color,
-            triangle[1].color,
-            triangle[2].color,
+            c0,
+            c1,
+            c2,
         });
     }
 
@@ -340,7 +375,7 @@ private:
         list[1] = triangle[1];
         list[2] = triangle[2];
 
-        tcb::span<VertexParameter> clippedVertexParameter = Clipper::clip(list, listBuffer);
+        tcb::span<TransformingVertexParameter> clippedVertexParameter = Clipper::clip(list, listBuffer);
 
         if (clippedVertexParameter.empty())
         {
@@ -368,22 +403,22 @@ private:
     {
         Triangle projectedTriangle { primitive[0], primitive[1], primitive[2] };
 
+        projectedTriangle[0].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[0].vertex);
+        projectedTriangle[1].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[1].vertex);
+        projectedTriangle[2].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[2].vertex);
+
         shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle(
             projectedTriangle[0],
             projectedTriangle[1],
             projectedTriangle[2]);
-
-        projectedTriangle[0].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[0].vertex);
-        projectedTriangle[1].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[1].vertex);
-        projectedTriangle[2].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[2].vertex);
 
         return drawPreClippedTriangle(projectedTriangle);
     }
 
     bool drawLine(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        VertexParameter vp0 = primitive[0];
-        VertexParameter vp1 = primitive[1];
+        TransformingVertexParameter vp0 = primitive[0];
+        TransformingVertexParameter vp1 = primitive[1];
 
         shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelLine(vp0, vp1);
 
@@ -400,7 +435,7 @@ private:
 
     bool drawPoint(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        VertexParameter vp0 = primitive[0];
+        TransformingVertexParameter vp0 = primitive[0];
 
         // Transform vertices to get the projected ones in NDC
         vp0.vertex = m_data.transformMatrices.projection.transform(vp0.vertex);

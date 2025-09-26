@@ -22,7 +22,7 @@
 namespace rr::pointassembly
 {
 
-PointAssemblyCalc::Triangles PointAssemblyCalc::createPoint(const VertexParameter& vp) const
+PointAssemblyCalc::Triangles PointAssemblyCalc::createPoint(const TransformingVertexParameter& vp) const
 {
     // Center of the point in NDC
     const Vec4& center = vp.vertex;
@@ -47,22 +47,22 @@ PointAssemblyCalc::Triangles PointAssemblyCalc::createPoint(const VertexParamete
     Triangles strip { vp };
 
     // Bottom-left
-    strip[0] = { center, vp.color, vp.normal, vp.tex };
+    strip[0] = { center, vp.colorFront, vp.colorBack, vp.tex };
     strip[0].vertex[0] += -halfSizeX;
     strip[0].vertex[1] += -halfSizeY;
 
     // Bottom-right
-    strip[1] = { center, vp.color, vp.normal, vp.tex };
+    strip[1] = { center, vp.colorFront, vp.colorBack, vp.tex };
     strip[1].vertex[0] += halfSizeX;
     strip[1].vertex[1] += -halfSizeY;
 
     // Top-right
-    strip[2] = { center, vp.color, vp.normal, vp.tex };
+    strip[2] = { center, vp.colorFront, vp.colorBack, vp.tex };
     strip[2].vertex[0] += halfSizeX;
     strip[2].vertex[1] += halfSizeY;
 
     // Top-left
-    strip[3] = { center, vp.color, vp.normal, vp.tex };
+    strip[3] = { center, vp.colorFront, vp.colorBack, vp.tex };
     strip[3].vertex[0] += -halfSizeX;
     strip[3].vertex[1] += halfSizeY;
 

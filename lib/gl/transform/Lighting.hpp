@@ -19,7 +19,6 @@
 #define LIGHTING_HPP
 
 #include "Enums.hpp"
-#include "Types.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
 #include <array>
@@ -65,6 +64,7 @@ struct LightingData
     bool enableColorMaterialDiffuse { false };
     bool enableColorMaterialSpecular { false };
     bool enableTwoSideModel { false };
+    bool normalizeLightNormal { false };
 };
 
 class LightingCalc
@@ -76,7 +76,7 @@ public:
     }
 
     void calculateLights(
-        Vec4& __restrict color,
+        Vec4& color,
         const Vec4& triangleColor,
         const Vec4& vertex,
         const Vec3& normal) const;
@@ -93,7 +93,6 @@ private:
     void calculateLight(
         Vec4& __restrict color,
         const LightingData::LightConfig& lightConfig,
-        const bool enableTwoSideModel,
         const float materialSpecularExponent,
         const Vec4& materialAmbientColor,
         const Vec4& materialDiffuseColor,
@@ -140,6 +139,7 @@ public:
     void setSpotlightDirection(const std::size_t light, const Vec3& dir);
     void setSpotlightExponent(const std::size_t light, const float exponent);
     void setSpotlightCutoff(const std::size_t light, const float cutoff);
+    void setEnableNormalNormalization(const bool enable);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);

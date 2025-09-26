@@ -657,6 +657,7 @@ GLAPI void APIENTRY impl_glCullFace(GLenum mode)
         break;
     default:
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        SPDLOG_ERROR("glCullFace mode 0x{:X} not supported", mode);
         break;
     }
 }
@@ -768,7 +769,7 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         break;
     case GL_NORMALIZE:
         SPDLOG_DEBUG("glDisable GL_NORMALIZE called");
-        RIXGL::getInstance().pipeline().setEnableNormalizing(false);
+        RIXGL::getInstance().pipeline().getLighting().setEnableNormalNormalization(false);
         break;
     case GL_STENCIL_TEST:
         SPDLOG_DEBUG("glDisable GL_STENCIL_TEST called");
@@ -886,7 +887,7 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
         break;
     case GL_NORMALIZE:
         SPDLOG_DEBUG("glEnable GL_NORMALIZE called");
-        RIXGL::getInstance().pipeline().setEnableNormalizing(true);
+        RIXGL::getInstance().pipeline().getLighting().setEnableNormalNormalization(true);
         break;
     case GL_STENCIL_TEST:
         SPDLOG_DEBUG("glEnable GL_STENCIL_TEST called");
@@ -1109,7 +1110,21 @@ GLAPI void APIENTRY impl_glFogiv(GLenum pname, const GLint* params)
 
 GLAPI void APIENTRY impl_glFrontFace(GLenum mode)
 {
-    SPDLOG_WARN("glFrontFace not implemented");
+    SPDLOG_DEBUG("glFrontFace mode 0x{:X} called", mode);
+
+    switch (mode)
+    {
+    case GL_CW:
+        RIXGL::getInstance().pipeline().getCulling().setFrontFace(Orientation::CW);
+        break;
+    case GL_CCW:
+        RIXGL::getInstance().pipeline().getCulling().setFrontFace(Orientation::CCW);
+        break;
+    default:
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        SPDLOG_ERROR("glFrontFace mode 0x{:X} not supported", mode);
+        break;
+    }
 }
 
 GLAPI void APIENTRY impl_glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar)

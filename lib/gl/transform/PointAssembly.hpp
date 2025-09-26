@@ -18,8 +18,8 @@
 #ifndef POINT_ASSEMBLY_HPP
 #define POINT_ASSEMBLY_HPP
 
-#include "Types.hpp"
 #include "math/Vec.hpp"
+#include "transform/TransformingVertexParameter.hpp"
 #include <array>
 #include <tcb/span.hpp>
 
@@ -40,7 +40,7 @@ struct PointAssemblyData
 class PointAssemblyCalc
 {
 public:
-    using Triangles = std::array<VertexParameter, 6>;
+    using Triangles = std::array<TransformingVertexParameter, 6>;
 
     PointAssemblyCalc(const PointAssemblyData& data, const float& viewPortWidth, const float& viewPortHeight)
         : m_data { data }
@@ -50,7 +50,7 @@ public:
     }
 
     // Creates a square for a point in NDC
-    Triangles createPoint(const VertexParameter& vp) const;
+    Triangles createPoint(const TransformingVertexParameter& vp) const;
 
 private:
     const PointAssemblyData& m_data;

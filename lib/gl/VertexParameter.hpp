@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef TYPES_HPP
-#define TYPES_HPP
+#ifndef VERTEXPARAMETER_HPP
+#define VERTEXPARAMETER_HPP
 
 #include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
@@ -34,4 +34,4 @@ struct VertexParameter
 };
 
 } // namespace rr
-#endif // TYPES_HPP
+#endif // VERTEXPARAMETER_HPP

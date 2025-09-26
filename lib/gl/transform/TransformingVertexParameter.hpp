@@ -15,19 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _PUSH_VERTEX_CMD_HPP_
-#define _PUSH_VERTEX_CMD_HPP_
+#ifndef TRANSFORMINGVERTEXPARAMETER_HPP_
+#define TRANSFORMINGVERTEXPARAMETER_HPP_
 
-#include "DataTransferCmdBase.hpp"
-#include "Op.hpp"
 #include "RenderConfigs.hpp"
 #include "VertexParameter.hpp"
+#include "math/Vec.hpp"
+#include <array>
 
 namespace rr
 {
 
-using PushVertexCmd = DataTransferCmdBase<VertexParameter, op::PUSH_VERTEX>;
+struct TransformingVertexParameter
+{
+    Vec4 vertex;
+    Vec4 colorFront;
+    Vec4 colorBack;
+    std::array<Vec4, RenderConfig::TMU_COUNT> tex;
+};
 
 } // namespace rr
-
-#endif // _PUSH_VERTEX_CMD_HPP_
+#endif // TRANSFORMINGVERTEXPARAMETER_HPP_

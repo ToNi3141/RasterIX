@@ -80,7 +80,7 @@ float Clipper::lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1)
     return zDot0 / (zDot0 - zDot1);
 }
 
-tcb::span<VertexParameter> Clipper::clip(ClipList& __restrict list, ClipList& __restrict listBuffer)
+tcb::span<TransformingVertexParameter> Clipper::clip(ClipList& __restrict list, ClipList& __restrict listBuffer)
 {
     ClipList* listIn = &list;
     ClipList* listOut = &listBuffer;

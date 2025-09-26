@@ -19,9 +19,9 @@
 #define PLANE_CLIPPER_HPP
 
 #include "ClippingHelper.hpp"
-#include "Types.hpp"
 #include "math/Mat44.hpp"
 #include "math/Vec.hpp"
+#include "transform/TransformingVertexParameter.hpp"
 #include <array>
 #include <tcb/span.hpp>
 
@@ -38,7 +38,7 @@ class PlaneClipperCalc
 {
 public:
     // Each clipping plane can potentially introduce one more vertex. A triangle contains 3 vertexes, plus 6 possible planes, results in 9 vertexes.
-    using ClipList = std::array<VertexParameter, 4>;
+    using ClipList = std::array<TransformingVertexParameter, 4>;
 
     PlaneClipperCalc(const PlaneClipperData& data)
         : m_data { data }
@@ -46,17 +46,17 @@ public:
     }
 
     bool enabled() { return m_data.enable; }
-    tcb::span<VertexParameter> clipTriangle(ClipList& __restrict list, ClipList& __restrict listBuffer);
-    tcb::span<VertexParameter> clipLine(ClipList& __restrict list, ClipList& __restrict listBuffer);
-    tcb::span<VertexParameter> clipPoint(ClipList& __restrict list, ClipList& __restrict listBuffer);
+    tcb::span<TransformingVertexParameter> clipTriangle(ClipList& __restrict list, ClipList& __restrict listBuffer);
+    tcb::span<TransformingVertexParameter> clipLine(ClipList& __restrict list, ClipList& __restrict listBuffer);
+    tcb::span<TransformingVertexParameter> clipPoint(ClipList& __restrict list, ClipList& __restrict listBuffer);
 
 private:
     inline static float isInPlane(const float e) { return e > 0.0f; }
     inline static float planeEquationLerpAmount(const float e0, const float e1) { return e0 / (e0 - e1); }
     inline static float planeEquation(const Vec4& v, const Vec4& e) { return v.dot(e); }
-    tcb::span<VertexParameter> clipTriangleAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
-    tcb::span<VertexParameter> clipLineAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
-    tcb::span<VertexParameter> clipPointAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
+    tcb::span<TransformingVertexParameter> clipTriangleAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
+    tcb::span<TransformingVertexParameter> clipLineAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
+    tcb::span<TransformingVertexParameter> clipPointAgainstPlane(ClipList& __restrict listOut, const ClipList& listIn);
 
     const PlaneClipperData& m_data;
 };
