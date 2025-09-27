@@ -61,6 +61,7 @@ public:
     void translate(const float x, const float y, const float z);
     void scale(const float x, const float y, const float z);
     void rotate(const float angle, const float x, const float y, const float z);
+    void frustum(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
     void loadIdentity();
 
     bool pushMatrix();

@@ -121,6 +121,25 @@ void MatrixStore::rotate(const float angle, const float x, const float y, const 
     multiply(m);
 }
 
+void MatrixStore::frustum(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar)
+{
+    const float A = (right + left) / (right - left);
+    const float B = (top + bottom) / (top - bottom);
+    const float C = -(zFar + zNear) / (zFar - zNear);
+    const float D = -(2.0f * zFar * zNear) / (zFar - zNear);
+
+    // clang-format off
+    Mat44 m { { {
+        { 2.0f * zNear / (right - left), 0.0f                         , A    , 0.0f }, 
+        { 0.0f                         , 2.0f * zNear / (top - bottom), B    , 0.0f }, 
+        { 0.0f                         , 0.0f                         , C    , D    },
+        { 0.0f                         , 0.0f                         , -1.0f, 0.0f }  
+    } } };
+    // clang-format on
+    m.transpose();
+    multiply(m);
+}
+
 void MatrixStore::loadIdentity()
 {
     switch (m_matrixMode)

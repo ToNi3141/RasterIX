@@ -1149,21 +1149,7 @@ GLAPI void APIENTRY impl_glFrustumf(GLfloat left, GLfloat right, GLfloat bottom,
         return;
     }
 
-    const GLfloat A = (right + left) / (right - left);
-    const GLfloat B = (top + bottom) / (top - bottom);
-    const GLfloat C = -(zFar + zNear) / (zFar - zNear);
-    const GLfloat D = -(2.0f * zFar * zNear) / (zFar - zNear);
-
-    // clang-format off
-    Mat44 m { { {
-        { 2.0f * zNear / (right - left), 0.0f,                          A,     0.0f }, 
-        { 0.0f,                          2.0f * zNear / (top - bottom), B,     0.0f }, 
-        { 0.0f,                          0.0f,                          C,     D    },
-        { 0.0f,                          0.0f,                          -1.0f, 0.0f }  
-    } } };
-    // clang-format on
-
-    impl_glMultMatrixf(m.data());
+    RIXGL::getInstance().pipeline().getMatrixStore().frustum(left, right, bottom, top, zNear, zFar);
 }
 
 GLAPI GLuint APIENTRY impl_glGenLists(GLsizei range)
