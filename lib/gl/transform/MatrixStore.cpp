@@ -75,87 +75,107 @@ void MatrixStore::multiply(const Mat44& mat)
 
 void MatrixStore::translate(const float x, const float y, const float z)
 {
-    Mat44 m;
-    m.identity();
-    m[3][0] = x;
-    m[3][1] = y;
-    m[3][2] = z;
-    multiply(m);
+    switch (m_matrixMode)
+    {
+    case MatrixMode::MODELVIEW:
+        m_data.modelView.translate(x, y, z);
+        break;
+    case MatrixMode::PROJECTION:
+        m_data.projection.translate(x, y, z);
+        break;
+    case MatrixMode::TEXTURE:
+        m_data.texture[m_tmu].translate(x, y, z);
+        break;
+    case MatrixMode::COLOR:
+        m_data.color.translate(x, y, z);
+        break;
+    default:
+        break;
+    }
 }
 
 void MatrixStore::scale(const float x, const float y, const float z)
 {
-    Mat44 m;
-    m.identity();
-    m[0][0] = x;
-    m[1][1] = y;
-    m[2][2] = z;
-    multiply(m);
+    switch (m_matrixMode)
+    {
+    case MatrixMode::MODELVIEW:
+        m_data.modelView.scale(x, y, z);
+        break;
+    case MatrixMode::PROJECTION:
+        m_data.projection.scale(x, y, z);
+        break;
+    case MatrixMode::TEXTURE:
+        m_data.texture[m_tmu].scale(x, y, z);
+        break;
+    case MatrixMode::COLOR:
+        m_data.color.scale(x, y, z);
+        break;
+    default:
+        break;
+    }
 }
 
 void MatrixStore::rotate(const float angle, const float x, const float y, const float z)
 {
-    static constexpr float PI { 3.14159265358979323846f };
-    float angle_rad = angle * (PI / 180.0f);
-
-    Vec3 xyz { { x, y, z } };
-    xyz.normalize();
-    const float nx = xyz[0];
-    const float ny = xyz[1];
-    const float nz = xyz[2];
-
-    const float c = cosf(angle_rad);
-    const float s = sinf(angle_rad);
-    const float t = 1.0f - c;
-
-    // clang-format off
-    const Mat44 m
-    { { {
-        { c + nx * nx * t     , ny * nx * t + nz * s, nz * nx * t - ny * s, 0.0f},
-        { nx * ny * t - nz * s, c + ny * ny * t     , nz * ny * t + nx * s, 0.0f},
-        { nx * nz * t + ny * s, ny * nz * t - nx * s, nz * nz * t + c     , 0.0f},
-        { 0.0f                , 0.0f                , 0.0f                , 1.0f}
-    } } };
-    // clang-format on
-
-    multiply(m);
+    switch (m_matrixMode)
+    {
+    case MatrixMode::MODELVIEW:
+        m_data.modelView.rotate(angle, x, y, z);
+        break;
+    case MatrixMode::PROJECTION:
+        m_data.projection.rotate(angle, x, y, z);
+        break;
+    case MatrixMode::TEXTURE:
+        m_data.texture[m_tmu].rotate(angle, x, y, z);
+        break;
+    case MatrixMode::COLOR:
+        m_data.color.rotate(angle, x, y, z);
+        break;
+    default:
+        break;
+    }
 }
 
 void MatrixStore::frustum(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar)
 {
-    const float A = (right + left) / (right - left);
-    const float B = (top + bottom) / (top - bottom);
-    const float C = -(zFar + zNear) / (zFar - zNear);
-    const float D = -(2.0f * zFar * zNear) / (zFar - zNear);
-
-    // clang-format off
-    Mat44 m { { {
-        { 2.0f * zNear / (right - left), 0.0f                         , A    , 0.0f }, 
-        { 0.0f                         , 2.0f * zNear / (top - bottom), B    , 0.0f }, 
-        { 0.0f                         , 0.0f                         , C    , D    },
-        { 0.0f                         , 0.0f                         , -1.0f, 0.0f }  
-    } } };
-    // clang-format on
-    m.transpose();
-    multiply(m);
+    switch (m_matrixMode)
+    {
+    case MatrixMode::MODELVIEW:
+        m_data.modelView.frustum(left, right, bottom, top, zNear, zFar);
+        break;
+    case MatrixMode::PROJECTION:
+        m_data.projection.frustum(left, right, bottom, top, zNear, zFar);
+        break;
+    case MatrixMode::TEXTURE:
+        m_data.texture[m_tmu].frustum(left, right, bottom, top, zNear, zFar);
+        break;
+    case MatrixMode::COLOR:
+        m_data.color.frustum(left, right, bottom, top, zNear, zFar);
+        break;
+    default:
+        break;
+    }
 }
 
 void MatrixStore::ortho(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar)
 {
-    const float tx = -(right + left) / (right - left);
-    const float ty = -(top + bottom) / (top - bottom);
-    const float tz = -(zFar + zNear) / (zFar - zNear);
-
-    // clang-format off
-    Mat44 m { { {
-        { 2.0f / (right - left), 0.0f                 , 0.0f                  , tx   },
-        { 0.0f                 , 2.0f / (top - bottom), 0.0f                  , ty   },
-        { 0.0f                 , 0.0f                 , -2.0f / (zFar - zNear), tz   },
-        { 0.0f                 , 0.0f                 , 0.0f                  , 1.0f }
-    } } };
-    // clang-format on
-    m.transpose();
-    multiply(m);
+    switch (m_matrixMode)
+    {
+    case MatrixMode::MODELVIEW:
+        m_data.modelView.ortho(left, right, bottom, top, zNear, zFar);
+        break;
+    case MatrixMode::PROJECTION:
+        m_data.projection.ortho(left, right, bottom, top, zNear, zFar);
+        break;
+    case MatrixMode::TEXTURE:
+        m_data.texture[m_tmu].ortho(left, right, bottom, top, zNear, zFar);
+        break;
+    case MatrixMode::COLOR:
+        m_data.color.ortho(left, right, bottom, top, zNear, zFar);
+        break;
+    default:
+        break;
+    }
 }
 
 void MatrixStore::loadIdentity()
