@@ -98,17 +98,23 @@ void MatrixStore::rotate(const float angle, const float x, const float y, const 
     static constexpr float PI { 3.14159265358979323846f };
     float angle_rad = angle * (PI / 180.0f);
 
-    float c = cosf(angle_rad);
-    float s = sinf(angle_rad);
-    float t = 1.0f - c;
+    Vec3 xyz { { x, y, z } };
+    xyz.normalize();
+    const float nx = xyz[0];
+    const float ny = xyz[1];
+    const float nz = xyz[2];
+
+    const float c = cosf(angle_rad);
+    const float s = sinf(angle_rad);
+    const float t = 1.0f - c;
 
     // clang-format off
-    Mat44 m
+    const Mat44 m
     { { {
-        { c + x * x * t    , y * x * t + z * s, z * x * t - y * s, 0.0f},
-        { x * y * t - z * s, c + y * y * t    , z * y * t + x * s, 0.0f},
-        { x * z * t + y * s, y * z * t - x * s, z * z * t + c    , 0.0f},
-        { 0.0f             , 0.0f             , 0.0f             , 1.0f}
+        { c + nx * nx * t     , ny * nx * t + nz * s, nz * nx * t - ny * s, 0.0f},
+        { nx * ny * t - nz * s, c + ny * ny * t     , nz * ny * t + nx * s, 0.0f},
+        { nx * nz * t + ny * s, ny * nz * t - nx * s, nz * nz * t + c     , 0.0f},
+        { 0.0f                , 0.0f                , 0.0f                , 1.0f}
     } } };
     // clang-format on
 

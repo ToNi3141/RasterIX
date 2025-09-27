@@ -1163,7 +1163,7 @@ GLAPI void APIENTRY impl_glFrustumf(GLfloat left, GLfloat right, GLfloat bottom,
     } } };
     // clang-format on
 
-    impl_glMultMatrixf(&m[0][0]);
+    impl_glMultMatrixf(m.data());
 }
 
 GLAPI GLuint APIENTRY impl_glGenLists(GLsizei range)
