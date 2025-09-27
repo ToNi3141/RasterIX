@@ -1146,6 +1146,7 @@ GLAPI void APIENTRY impl_glFrustumf(GLfloat left, GLfloat right, GLfloat bottom,
     if ((zNear <= 0.0f) || (zFar <= 0.0f) || (left == right) || (bottom == top) || (zNear == zFar))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glFrustumf called with invalid values");
         return;
     }
 
@@ -1953,18 +1954,11 @@ GLAPI void APIENTRY impl_glOrthof(GLfloat left, GLfloat right, GLfloat bottom, G
     if ((zNear == zFar) || (left == right) || (top == bottom))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glOrthof called with invalid values");
         return;
     }
 
-    // clang-format off
-    Mat44 o { { {
-        { 2.0f / (right - left)             , 0.0f                              , 0.0f                              , 0.0f }, // Col 0
-        { 0.0f                              , 2.0f / (top - bottom)             , 0.0f                              , 0.0f }, // Col 1
-        { 0.0f                              , 0.0f                              , -2.0f / (zFar - zNear)            , 0.0f }, // Col 2
-        { -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((zFar + zNear) / (zFar - zNear)), 1.0f }  // Col 3
-    } } };
-    // clang-format on
-    impl_glMultMatrixf(&o[0][0]);
+    RIXGL::getInstance().pipeline().getMatrixStore().ortho(left, right, bottom, top, zNear, zFar);
 }
 
 GLAPI void APIENTRY impl_glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar)

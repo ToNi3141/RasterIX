@@ -140,6 +140,24 @@ void MatrixStore::frustum(const float left, const float right, const float botto
     multiply(m);
 }
 
+void MatrixStore::ortho(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar)
+{
+    const float tx = -(right + left) / (right - left);
+    const float ty = -(top + bottom) / (top - bottom);
+    const float tz = -(zFar + zNear) / (zFar - zNear);
+
+    // clang-format off
+    Mat44 m { { {
+        { 2.0f / (right - left), 0.0f                 , 0.0f                  , tx   },
+        { 0.0f                 , 2.0f / (top - bottom), 0.0f                  , ty   },
+        { 0.0f                 , 0.0f                 , -2.0f / (zFar - zNear), tz   },
+        { 0.0f                 , 0.0f                 , 0.0f                  , 1.0f }
+    } } };
+    // clang-format on
+    m.transpose();
+    multiply(m);
+}
+
 void MatrixStore::loadIdentity()
 {
     switch (m_matrixMode)
