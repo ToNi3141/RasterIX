@@ -216,7 +216,7 @@ public:
         t[3][0] = x;
         t[3][1] = y;
         t[3][2] = z;
-        *this = t * *this;
+        multiplyLhs(t);
     }
 
     void scale(float x, float y, float z)
@@ -226,7 +226,7 @@ public:
         s[0][0] = x;
         s[1][1] = y;
         s[2][2] = z;
-        *this = s * *this;
+        multiplyLhs(s);
     }
 
     void rotate(float angle, float x, float y, float z)
@@ -252,7 +252,7 @@ public:
             { 0.0f                , 0.0f                , 0.0f                , 1.0f}
         } } };
         // clang-format on
-        *this = r * *this;
+        multiplyLhs(r);
     }
 
     void frustum(float left, float right, float bottom, float top, float zNear, float zFar)
@@ -271,7 +271,7 @@ public:
         } } };
         // clang-format on
         f.transpose();
-        *this = f * *this;
+        multiplyLhs(f);
     }
 
     void ortho(float left, float right, float bottom, float top, float zNear, float zFar)
@@ -289,7 +289,12 @@ public:
         } } };
         // clang-format on
         o.transpose();
-        *this = o * *this;
+        multiplyLhs(o);
+    }
+
+    void multiplyLhs(const Mat44& lhs)
+    {
+        *this = lhs * *this;
     }
 
 private:

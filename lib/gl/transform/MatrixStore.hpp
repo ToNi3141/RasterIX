@@ -51,26 +51,13 @@ public:
     const Mat44& getProjection() const { return m_data.projection; }
     const Mat44& getTexture(const std::size_t tmu) const { return m_data.texture[tmu]; }
     const Mat44& getColor() const { return m_data.color; }
-
-    void setModelMatrix(const Mat44& m);
-    void setProjectionMatrix(const Mat44& m);
-    void setTextureMatrix(const Mat44& m);
-    void setColorMatrix(const Mat44& m);
-
-    void multiply(const Mat44& mat);
-    void translate(const float x, const float y, const float z);
-    void scale(const float x, const float y, const float z);
-    void rotate(const float angle, const float x, const float y, const float z);
-    void frustum(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
-    void ortho(const float left, const float right, const float bottom, const float top, const float zNear, const float zFar);
-    void loadIdentity();
+    Mat44& getCurrentMatrix();
 
     bool pushMatrix();
     bool popMatrix();
 
     void setMatrixMode(const MatrixMode matrixMode);
     void setTmu(const std::size_t tmu);
-    bool loadMatrix(const Mat44& m);
 
     static std::size_t getModelMatrixStackDepth();
     static std::size_t getProjectionMatrixStackDepth();
