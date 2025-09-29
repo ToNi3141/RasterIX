@@ -33,6 +33,7 @@ class VertexPipeline;
 class PixelPipeline;
 class VertexArray;
 class VertexQueue;
+class VertexBuffer;
 class ImageConverter;
 class MipMapGenerator;
 class RIXGL
@@ -65,6 +66,7 @@ public:
     VertexPipeline& pipeline();
     VertexQueue& vertexQueue();
     VertexArray& vertexArray();
+    VertexBuffer& vertexBuffer();
     ImageConverter& imageConverter();
     MipMapGenerator& mipMapGenerator();
 

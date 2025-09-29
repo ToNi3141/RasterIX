@@ -24,6 +24,7 @@
 #include "renderer/dse/DmaStreamEngine.hpp"
 #include "renderer/threadedRasterizer/ThreadedRasterizer.hpp"
 #include "vertexpipeline/VertexArray.hpp"
+#include "vertexpipeline/VertexBuffer.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
 #include <assert.h>
@@ -101,6 +102,7 @@ public:
     VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};
     VertexArray vertexArray {};
+    VertexBuffer vertexBuffer {};
     ImageConverter imageConverter {};
     MipMapGenerator mipMapGenerator {};
 };
@@ -648,6 +650,11 @@ VertexQueue& RIXGL::vertexQueue()
 VertexArray& RIXGL::vertexArray()
 {
     return m_renderDevice->vertexArray;
+}
+
+VertexBuffer& RIXGL::vertexBuffer()
+{
+    return m_renderDevice->vertexBuffer;
 }
 
 ImageConverter& RIXGL::imageConverter()
