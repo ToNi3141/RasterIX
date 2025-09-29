@@ -66,17 +66,27 @@ public:
         }
     }
 
-    void bufferData(tcb::span<const std::uint8_t> data)
+    std::size_t getBoundBuffer() const { return m_boundBuffer; }
+
+    bool isBuffer(const std::size_t buffer) const { return (buffer < m_buffers.size() && m_buffers[buffer].has_value()); }
+
+    bool bufferData(tcb::span<const std::uint8_t> data)
     {
         if (m_boundBuffer < m_buffers.size() && m_buffers[m_boundBuffer].has_value())
         {
             auto& buf = m_buffers[m_boundBuffer];
             buf = BufferEntry { new std::uint8_t[data.size()], data.size() };
+            if (buf->data() == nullptr)
+            {
+                buf = BufferEntry {};
+                return false;
+            }
             std::copy(data.data(), data.data() + data.size(), buf->data());
         }
+        return true;
     }
 
-    void bufferSubData(const std::size_t offset, tcb::span<const std::uint8_t> data)
+    bool bufferSubData(const std::size_t offset, tcb::span<const std::uint8_t> data)
     {
         if (m_boundBuffer < m_buffers.size() && m_buffers[m_boundBuffer].has_value())
         {
@@ -85,7 +95,9 @@ public:
             {
                 std::copy(data.data(), data.data() + data.size(), buf->data() + offset);
             }
+            return true;
         }
+        return false;
     }
 
     tcb::span<const std::uint8_t> getBufferData() const
