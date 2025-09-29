@@ -66,6 +66,8 @@ public:
         }
     }
 
+    bool isBufferActive() const { return m_boundBuffer != InvalidBuffer; }
+
     std::size_t getBoundBuffer() const { return m_boundBuffer; }
 
     bool isBuffer(const std::size_t buffer) const { return (buffer < m_buffers.size() && m_buffers[buffer].has_value()); }

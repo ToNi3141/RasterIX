@@ -3758,7 +3758,15 @@ GLAPI void APIENTRY impl_glColorPointer(GLint size, GLenum type, GLsizei stride,
     RIXGL::getInstance().vertexArray().setColorSize(size);
     RIXGL::getInstance().vertexArray().setColorType(convertType(type));
     RIXGL::getInstance().vertexArray().setColorStride(stride);
-    RIXGL::getInstance().vertexArray().setColorPointer(pointer);
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        RIXGL::getInstance().vertexArray().setColorPointer(
+            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(pointer)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setColorPointer(pointer);
+    }
 }
 
 GLAPI void APIENTRY impl_glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
@@ -3893,8 +3901,17 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
 
     RIXGL::getInstance().vertexArray().setCount(count);
     RIXGL::getInstance().vertexArray().setDrawMode(convertDrawMode(mode));
-    RIXGL::getInstance().vertexArray().setIndicesPointer(indices);
     RIXGL::getInstance().vertexArray().enableIndices(true);
+
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        RIXGL::getInstance().vertexArray().setIndicesPointer(
+            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(indices)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setIndicesPointer(indices);r);
+    }
 
     if (!error)
     {
@@ -3977,7 +3994,15 @@ GLAPI void APIENTRY impl_glNormalPointer(GLenum type, GLsizei stride, const GLvo
 
     RIXGL::getInstance().vertexArray().setNormalType(convertType(type));
     RIXGL::getInstance().vertexArray().setNormalStride(stride);
-    RIXGL::getInstance().vertexArray().setNormalPointer(pointer);
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        RIXGL::getInstance().vertexArray().setNormalPointer(
+            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(pointer)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setNormalPointer(pointer);
+    }
 }
 
 GLAPI void APIENTRY impl_glPolygonOffset(GLfloat factor, GLfloat units)
@@ -4010,7 +4035,15 @@ GLAPI void APIENTRY impl_glTexCoordPointer(GLint size, GLenum type, GLsizei stri
     RIXGL::getInstance().vertexArray().setTexCoordSize(size);
     RIXGL::getInstance().vertexArray().setTexCoordType(convertType(type));
     RIXGL::getInstance().vertexArray().setTexCoordStride(stride);
-    RIXGL::getInstance().vertexArray().setTexCoordPointer(pointer);
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        RIXGL::getInstance().vertexArray().setTexCoordPointer(
+            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(pointer)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setTexCoordPointer(pointer);
+    }
 }
 
 GLAPI void APIENTRY impl_glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* pixels)
@@ -4101,7 +4134,15 @@ GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride
     RIXGL::getInstance().vertexArray().setVertexSize(size);
     RIXGL::getInstance().vertexArray().setVertexType(convertType(type));
     RIXGL::getInstance().vertexArray().setVertexStride(stride);
-    RIXGL::getInstance().vertexArray().setVertexPointer(pointer);
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        RIXGL::getInstance().vertexArray().setVertexPointer(
+            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(pointer)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setVertexPointer(pointer);
+    }
 }
 
 // -------------------------------------------------------
