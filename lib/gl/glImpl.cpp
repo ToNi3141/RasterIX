@@ -1129,7 +1129,28 @@ GLAPI void APIENTRY impl_glFrontFace(GLenum mode)
 
 GLAPI void APIENTRY impl_glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar)
 {
-    SPDLOG_WARN("glFrustum not implemented");
+    SPDLOG_DEBUG("glFrustum redirected to glFrustumf");
+    impl_glFrustumf(
+        static_cast<GLfloat>(left),
+        static_cast<GLfloat>(right),
+        static_cast<GLfloat>(bottom),
+        static_cast<GLfloat>(top),
+        static_cast<GLfloat>(zNear),
+        static_cast<GLfloat>(zFar));
+}
+
+GLAPI void APIENTRY impl_glFrustumf(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar)
+{
+    SPDLOG_DEBUG("glFrustumf left {} right {} bottom {} top {} zNear {} zFar {} called", left, right, bottom, top, zNear, zFar);
+
+    if ((zNear <= 0.0f) || (zFar <= 0.0f) || (left == right) || (bottom == top) || (zNear == zFar))
+    {
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glFrustumf called with invalid values");
+        return;
+    }
+
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().frustum(left, right, bottom, top, zNear, zFar);
 }
 
 GLAPI GLuint APIENTRY impl_glGenLists(GLsizei range)
@@ -1585,7 +1606,7 @@ GLAPI void APIENTRY impl_glListBase(GLuint base)
 GLAPI void APIENTRY impl_glLoadIdentity(void)
 {
     SPDLOG_DEBUG("glLoadIdentity called");
-    RIXGL::getInstance().pipeline().getMatrixStore().loadIdentity();
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().identity();
 }
 
 GLAPI void APIENTRY impl_glLoadMatrixd(const GLdouble* m)
@@ -1596,11 +1617,12 @@ GLAPI void APIENTRY impl_glLoadMatrixd(const GLdouble* m)
 GLAPI void APIENTRY impl_glLoadMatrixf(const GLfloat* m)
 {
     SPDLOG_DEBUG("glLoadMatrixf called");
-    bool ret = RIXGL::getInstance().pipeline().getMatrixStore().loadMatrix(*reinterpret_cast<const Mat44*>(m));
-    if (ret == false)
+    if (m == nullptr)
     {
-        SPDLOG_WARN("glLoadMatrixf matrix mode not supported");
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
     }
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix() = *reinterpret_cast<const Mat44*>(m);
 }
 
 GLAPI void APIENTRY impl_glLoadName(GLuint name)
@@ -1782,7 +1804,7 @@ GLAPI void APIENTRY impl_glMultMatrixf(const GLfloat* m)
 {
     SPDLOG_DEBUG("glMultMatrixf called");
     const Mat44* m44 = reinterpret_cast<const Mat44*>(m);
-    RIXGL::getInstance().pipeline().getMatrixStore().multiply(*m44);
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().multiplyLhs(*m44);
 }
 
 GLAPI void APIENTRY impl_glNewList(GLuint list, GLenum mode)
@@ -1933,18 +1955,11 @@ GLAPI void APIENTRY impl_glOrthof(GLfloat left, GLfloat right, GLfloat bottom, G
     if ((zNear == zFar) || (left == right) || (top == bottom))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glOrthof called with invalid values");
         return;
     }
 
-    // clang-format off
-    Mat44 o { { {
-        { 2.0f / (right - left)             , 0.0f                              , 0.0f                              , 0.0f }, // Col 0
-        { 0.0f                              , 2.0f / (top - bottom)             , 0.0f                              , 0.0f }, // Col 1
-        { 0.0f                              , 0.0f                              , -2.0f / (zFar - zNear)            , 0.0f }, // Col 2
-        { -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((zFar + zNear) / (zFar - zNear)), 1.0f }  // Col 3
-    } } };
-    // clang-format on
-    impl_glMultMatrixf(&o[0][0]);
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().ortho(left, right, bottom, top, zNear, zFar);
 }
 
 GLAPI void APIENTRY impl_glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar)
@@ -2375,7 +2390,7 @@ GLAPI void APIENTRY impl_glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdou
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
-    RIXGL::getInstance().pipeline().getMatrixStore().rotate(static_cast<float>(angle),
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().rotate(static_cast<float>(angle),
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
@@ -2384,7 +2399,7 @@ GLAPI void APIENTRY impl_glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdou
 GLAPI void APIENTRY impl_glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glRotatef ({}, {}, {}, {}) called", angle, x, y, z);
-    RIXGL::getInstance().pipeline().getMatrixStore().rotate(angle, x, y, z);
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().rotate(angle, x, y, z);
 }
 
 GLAPI void APIENTRY impl_glScaled(GLdouble x, GLdouble y, GLdouble z)
@@ -2393,7 +2408,7 @@ GLAPI void APIENTRY impl_glScaled(GLdouble x, GLdouble y, GLdouble z)
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
-    RIXGL::getInstance().pipeline().getMatrixStore().scale(static_cast<float>(x),
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().scale(static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
 }
@@ -2401,7 +2416,7 @@ GLAPI void APIENTRY impl_glScaled(GLdouble x, GLdouble y, GLdouble z)
 GLAPI void APIENTRY impl_glScalef(GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glScalef ({}, {}, {}) called", x, y, z);
-    RIXGL::getInstance().pipeline().getMatrixStore().scale(x, y, z);
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().scale(x, y, z);
 }
 
 GLAPI void APIENTRY impl_glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
@@ -3418,7 +3433,7 @@ GLAPI void APIENTRY impl_glTranslated(GLdouble x, GLdouble y, GLdouble z)
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
-    RIXGL::getInstance().pipeline().getMatrixStore().translate(
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().translate(
         static_cast<float>(x),
         static_cast<float>(y),
         static_cast<float>(z));
@@ -3427,7 +3442,7 @@ GLAPI void APIENTRY impl_glTranslated(GLdouble x, GLdouble y, GLdouble z)
 GLAPI void APIENTRY impl_glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 {
     SPDLOG_DEBUG("glTranslatef ({}, {}, {}) called", x, y, z);
-    RIXGL::getInstance().pipeline().getMatrixStore().translate(x, y, z);
+    RIXGL::getInstance().pipeline().getMatrixStore().getCurrentMatrix().translate(x, y, z);
 }
 
 GLAPI void APIENTRY impl_glVertex2d(GLdouble x, GLdouble y)
@@ -3816,6 +3831,7 @@ GLAPI void APIENTRY impl_glDeleteTextures(GLsizei n, const GLuint* textures)
     if (n < 0)
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        SPDLOG_ERROR("glDeleteTextures n < 0");
         return;
     }
 

@@ -32,110 +32,6 @@ MatrixStore::MatrixStore(TransformMatricesData& transformMatrices)
     m_data.color.identity();
 }
 
-void MatrixStore::setModelMatrix(const Mat44& m)
-{
-    m_data.modelView = m;
-}
-
-void MatrixStore::setProjectionMatrix(const Mat44& m)
-{
-    m_data.projection = m;
-}
-
-void MatrixStore::setColorMatrix(const Mat44& m)
-{
-    m_data.color = m;
-}
-
-void MatrixStore::setTextureMatrix(const Mat44& m)
-{
-    m_data.texture[m_tmu] = m;
-}
-
-void MatrixStore::multiply(const Mat44& mat)
-{
-    switch (m_matrixMode)
-    {
-    case MatrixMode::MODELVIEW:
-        setModelMatrix(mat * m_data.modelView);
-        break;
-    case MatrixMode::PROJECTION:
-        setProjectionMatrix(mat * m_data.projection);
-        break;
-    case MatrixMode::TEXTURE:
-        setTextureMatrix(mat * m_data.texture[m_tmu]);
-        break;
-    case MatrixMode::COLOR:
-        setColorMatrix(mat * m_data.color);
-        break;
-    default:
-        break;
-    }
-}
-
-void MatrixStore::translate(const float x, const float y, const float z)
-{
-    Mat44 m;
-    m.identity();
-    m[3][0] = x;
-    m[3][1] = y;
-    m[3][2] = z;
-    multiply(m);
-}
-
-void MatrixStore::scale(const float x, const float y, const float z)
-{
-    Mat44 m;
-    m.identity();
-    m[0][0] = x;
-    m[1][1] = y;
-    m[2][2] = z;
-    multiply(m);
-}
-
-void MatrixStore::rotate(const float angle, const float x, const float y, const float z)
-{
-    static constexpr float PI { 3.14159265358979323846f };
-    float angle_rad = angle * (PI / 180.0f);
-
-    float c = cosf(angle_rad);
-    float s = sinf(angle_rad);
-    float t = 1.0f - c;
-
-    // clang-format off
-    Mat44 m
-    { { {
-        { c + x * x * t    , y * x * t + z * s, z * x * t - y * s, 0.0f},
-        { x * y * t - z * s, c + y * y * t    , z * y * t + x * s, 0.0f},
-        { x * z * t + y * s, y * z * t - x * s, z * z * t + c    , 0.0f},
-        { 0.0f             , 0.0f             , 0.0f             , 1.0f}
-    } } };
-    // clang-format on
-
-    multiply(m);
-}
-
-void MatrixStore::loadIdentity()
-{
-    switch (m_matrixMode)
-    {
-    case MatrixMode::MODELVIEW:
-        m_data.modelView.identity();
-        break;
-    case MatrixMode::PROJECTION:
-        m_data.projection.identity();
-        break;
-    case MatrixMode::TEXTURE:
-        m_data.texture[m_tmu].identity();
-        break;
-    case MatrixMode::COLOR:
-        m_data.color.identity();
-        break;
-    default:
-        break;
-    }
-}
-
 bool MatrixStore::pushMatrix()
 {
     switch (m_matrixMode)
@@ -180,26 +76,21 @@ void MatrixStore::setTmu(const std::size_t tmu)
     m_tmu = tmu;
 }
 
-bool MatrixStore::loadMatrix(const Mat44& m)
+Mat44& MatrixStore::getCurrentMatrix()
 {
     switch (m_matrixMode)
     {
     case MatrixMode::MODELVIEW:
-        setModelMatrix(m);
-        return true;
+        return m_data.modelView;
     case MatrixMode::PROJECTION:
-        setProjectionMatrix(m);
-        return true;
+        return m_data.projection;
     case MatrixMode::TEXTURE:
-        setTextureMatrix(m);
-        return true;
+        return m_data.texture[m_tmu];
     case MatrixMode::COLOR:
-        setColorMatrix(m);
-        return true;
+        return m_data.color;
     default:
-        break;
+        return m_data.modelView;
     }
-    return false;
 }
 
 std::size_t MatrixStore::getModelMatrixStackDepth()

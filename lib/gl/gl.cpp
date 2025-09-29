@@ -105,6 +105,7 @@ GLAPI_WRAPPER void APIENTRY glFogi(GLenum pname, GLint param) { impl_glFogi(pnam
 GLAPI_WRAPPER void APIENTRY glFogiv(GLenum pname, const GLint* params) { impl_glFogiv(pname, params); }
 GLAPI_WRAPPER void APIENTRY glFrontFace(GLenum mode) { impl_glFrontFace(mode); }
 GLAPI_WRAPPER void APIENTRY glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar) { impl_glFrustum(left, right, bottom, top, zNear, zFar); }
+GLAPI_WRAPPER void APIENTRY glFrustumf(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar) { impl_glFrustumf(left, right, bottom, top, zNear, zFar); }
 GLAPI_WRAPPER GLuint APIENTRY glGenLists(GLsizei range) { return impl_glGenLists(range); }
 GLAPI_WRAPPER void APIENTRY glGetBooleanv(GLenum pname, GLboolean* params) { impl_glGetBooleanv(pname, params); }
 GLAPI_WRAPPER void APIENTRY glGetClipPlane(GLenum plane, GLdouble* equation) { impl_glGetClipPlane(plane, equation); }

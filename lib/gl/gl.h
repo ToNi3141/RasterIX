@@ -984,6 +984,7 @@ extern "C"
     GLAPI_WRAPPER void APIENTRY glFogiv(GLenum pname, const GLint* params);
     GLAPI_WRAPPER void APIENTRY glFrontFace(GLenum mode);
     GLAPI_WRAPPER void APIENTRY glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
+    GLAPI_WRAPPER void APIENTRY glFrustumf(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar);
     GLAPI_WRAPPER GLuint APIENTRY glGenLists(GLsizei range);
     GLAPI_WRAPPER void APIENTRY glGetBooleanv(GLenum pname, GLboolean* params);
     GLAPI_WRAPPER void APIENTRY glGetClipPlane(GLenum plane, GLdouble* equation);
