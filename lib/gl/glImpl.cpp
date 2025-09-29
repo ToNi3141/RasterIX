@@ -3910,7 +3910,7 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setIndicesPointer(indices);r);
+        RIXGL::getInstance().vertexArray().setIndicesPointer(indices);
     }
 
     if (!error)
