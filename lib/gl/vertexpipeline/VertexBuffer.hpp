@@ -31,7 +31,7 @@ class VertexBuffer
 public:
     std::size_t generateBuffer()
     {
-        for (std::size_t i = 0; i < m_buffers.size(); i++)
+        for (std::size_t i = 1; i < m_buffers.size(); i++)
         {
             if (!m_buffers[i].has_value())
             {
@@ -46,6 +46,7 @@ public:
     {
         if (buffer < m_buffers.size())
         {
+            delete m_buffers[buffer]->data();
             m_buffers[buffer].reset();
             if (m_boundBuffer == buffer)
             {
@@ -83,7 +84,7 @@ public:
                 buf = BufferEntry {};
                 return false;
             }
-            std::copy(data.data(), data.data() + data.size(), buf->data());
+            std::copy(data.begin(), data.begin() + data.size(), buf->begin());
         }
         return true;
     }
@@ -95,7 +96,7 @@ public:
             auto& buf = m_buffers[m_boundBuffer];
             if (offset + data.size() <= buf->size())
             {
-                std::copy(data.data(), data.data() + data.size(), buf->data() + offset);
+                std::copy(data.begin(), data.begin() + data.size(), buf->begin() + offset);
             }
             return true;
         }

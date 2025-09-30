@@ -3760,8 +3760,9 @@ GLAPI void APIENTRY impl_glColorPointer(GLint size, GLenum type, GLsizei stride,
     RIXGL::getInstance().vertexArray().setColorStride(stride);
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
         RIXGL::getInstance().vertexArray().setColorPointer(
-            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(pointer)).data());
+            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
     }
     else
     {
@@ -3905,8 +3906,9 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
 
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
         RIXGL::getInstance().vertexArray().setIndicesPointer(
-            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(indices)).data());
+            data.last(data.size() - reinterpret_cast<std::size_t>(indices)).data());
     }
     else
     {
@@ -3996,8 +3998,9 @@ GLAPI void APIENTRY impl_glNormalPointer(GLenum type, GLsizei stride, const GLvo
     RIXGL::getInstance().vertexArray().setNormalStride(stride);
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
         RIXGL::getInstance().vertexArray().setNormalPointer(
-            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(pointer)).data());
+            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
     }
     else
     {
@@ -4037,8 +4040,9 @@ GLAPI void APIENTRY impl_glTexCoordPointer(GLint size, GLenum type, GLsizei stri
     RIXGL::getInstance().vertexArray().setTexCoordStride(stride);
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
         RIXGL::getInstance().vertexArray().setTexCoordPointer(
-            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(pointer)).data());
+            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
     }
     else
     {
@@ -4136,8 +4140,9 @@ GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride
     RIXGL::getInstance().vertexArray().setVertexStride(stride);
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
         RIXGL::getInstance().vertexArray().setVertexPointer(
-            RIXGL::getInstance().vertexBuffer().getBufferData().last(reinterpret_cast<std::size_t>(pointer)).data());
+            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
     }
     else
     {
@@ -4699,13 +4704,6 @@ GLAPI void APIENTRY impl_glBindBuffer(GLenum target, GLuint buffer)
     {
         SPDLOG_ERROR("glBindBuffer: invalid target 0x{:X}", target);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        return;
-    }
-
-    if (buffer == 0)
-    {
-        SPDLOG_ERROR("glBindBuffer: buffer == 0 is invalid");
-        RIXGL::getInstance().setError(GL_INVALID_OPERATION);
         return;
     }
 
