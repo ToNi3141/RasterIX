@@ -338,6 +338,13 @@ EXPORTS
     glVertex4sv = impl_glVertex4sv
     glVertexPointer = impl_glVertexPointer 
     glViewport = impl_glViewport
+    glBindBuffer = impl_glBindBuffer
+    glBufferData = impl_glBufferData
+    glBufferSubData = impl_glBufferSubData
+    glDeleteBuffers = impl_glDeleteBuffers
+    glGenBuffers = impl_glGenBuffers
+    glGetBufferParameteriv = impl_glGetBufferParameteriv
+    glIsBuffer = impl_glIsBuffer
 
     wglChoosePixelFormat = impl_wglChoosePixelFormat
     wglCopyContext = impl_wglCopyContext
