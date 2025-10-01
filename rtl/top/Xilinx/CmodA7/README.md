@@ -98,6 +98,7 @@ build_flags =
     -DRIX_CORE_THREADED_RASTERIZATION=false
     -DRIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE=0
     -DRIX_CORE_ENABLE_VSYNC=false
+    -DRIX_CORE_MAX_VBO_COUNT=256
 ```
 
 An example for the Arduino framework is available under examples.
