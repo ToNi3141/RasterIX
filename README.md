@@ -122,6 +122,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RIX_CORE_THREADED_RASTERIZATION        | Will run the rasterization and (in case of a `rixef`config) also the transformation in a thread. A threaded runner is required. Can significantly improve the performance of the vertex pipeline. |
 | RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE | Sets the size of the display list. Bigger lists are required for the IF config. The EF config allows smaller lists because of intermediate uploads. |
 | RIX_CORE_ENABLE_VSYNC                  | Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals. |
+| MAX_VBO_COUNT                          | Max usable VBOs (Vertex Buffer Objects). Default is 256. VBOs are used mainly for compatibility with OpenGL, but do not provide performance advantages in this driver. |
 
 ## How to use the Core
 1. Add the files in the following directories to your project: `rtl/RasterIX/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.

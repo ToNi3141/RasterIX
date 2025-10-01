@@ -19,6 +19,7 @@
 #define VERTEXBUFFER_HPP_
 
 #include "Enums.hpp"
+#include "RenderConfigs.hpp"
 #include <array>
 #include <memory>
 #include <optional>
@@ -31,6 +32,7 @@ class VertexBuffer
 public:
     std::size_t generateBuffer()
     {
+        // Note: 0 has a special meaning
         for (std::size_t i = 1; i < m_buffers.size(); i++)
         {
             if (!m_buffers[i].has_value())
@@ -113,11 +115,10 @@ public:
     }
 
 private:
-    static constexpr std::size_t MaxBuffers { 256 };
     static constexpr std::size_t InvalidBuffer { static_cast<std::size_t>(0) };
     using BufferEntry = tcb::span<std::uint8_t>;
 
-    std::array<std::optional<BufferEntry>, MaxBuffers> m_buffers {};
+    std::array<std::optional<BufferEntry>, RenderConfig::MAX_VBO_COUNT> m_buffers {};
     std::size_t m_boundBuffer { InvalidBuffer };
 };
 

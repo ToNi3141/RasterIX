@@ -44,6 +44,7 @@ struct RenderConfig
     static constexpr bool THREADED_RASTERIZATION { RIX_CORE_THREADED_RASTERIZATION };
     static constexpr std::size_t THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE { RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE };
     static constexpr bool ENABLE_VSYNC { RIX_CORE_ENABLE_VSYNC };
+    static constexpr std::size_t MAX_VBO_COUNT { RIX_CORE_MAX_VBO_COUNT };
 
     static constexpr std::size_t getDisplayLines()
     {

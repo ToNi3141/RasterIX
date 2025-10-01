@@ -574,13 +574,16 @@ RIXGL::RIXGL(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRu
     addLibProcedure("glBlendEquation", ADDRESS_OF(impl_glBlendEquation));
     addLibProcedure("glBlendFuncSeparate", ADDRESS_OF(impl_glBlendFuncSeparate));
 
-    addLibProcedure("glBindBuffer", ADDRESS_OF(impl_glBindBuffer));
-    addLibProcedure("glBufferData", ADDRESS_OF(impl_glBufferData));
-    addLibProcedure("glBufferSubData", ADDRESS_OF(impl_glBufferSubData));
-    addLibProcedure("glDeleteBuffers", ADDRESS_OF(impl_glDeleteBuffers));
-    addLibProcedure("glGenBuffers", ADDRESS_OF(impl_glGenBuffers));
-    addLibProcedure("glGetBufferParameteriv", ADDRESS_OF(impl_glGetBufferParameteriv));
-    addLibProcedure("glIsBuffer", ADDRESS_OF(impl_glIsBuffer));
+    addLibExtension("ARB_vertex_buffer_object");
+    {
+        addLibProcedure("glBindBuffer", ADDRESS_OF(impl_glBindBuffer));
+        addLibProcedure("glBufferData", ADDRESS_OF(impl_glBufferData));
+        addLibProcedure("glBufferSubData", ADDRESS_OF(impl_glBufferSubData));
+        addLibProcedure("glDeleteBuffers", ADDRESS_OF(impl_glDeleteBuffers));
+        addLibProcedure("glGenBuffers", ADDRESS_OF(impl_glGenBuffers));
+        addLibProcedure("glGetBufferParameteriv", ADDRESS_OF(impl_glGetBufferParameteriv));
+        addLibProcedure("glIsBuffer", ADDRESS_OF(impl_glIsBuffer));
+    }
 
     // addLibExtension("GL_EXT_compiled_vertex_array");
     // {
