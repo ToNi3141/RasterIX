@@ -65,6 +65,7 @@ struct LightingData
     bool enableColorMaterialSpecular { false };
     bool enableTwoSideModel { false };
     bool normalizeLightNormal { false };
+    bool rescaleNormal { false };
 };
 
 class LightingCalc
@@ -80,6 +81,8 @@ public:
         const Vec4& triangleColor,
         const Vec4& vertex,
         const Vec3& normal) const;
+
+    void init(const Mat44& normalMatrix);
 
     bool isEnabled() const { return m_data.lightingEnabled; }
 
@@ -111,6 +114,7 @@ private:
     Vec3 calculateDirection(const Vec4& p1, const Vec4& p2) const;
 
     const LightingData& m_data;
+    float m_rescaleFactor { 1.0f };
 };
 
 class LightingSetter
@@ -140,6 +144,7 @@ public:
     void setSpotlightExponent(const std::size_t light, const float exponent);
     void setSpotlightCutoff(const std::size_t light, const float cutoff);
     void setEnableNormalNormalization(const bool enable);
+    void setEnableNormalRescale(const bool enable);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);

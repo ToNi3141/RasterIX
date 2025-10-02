@@ -136,6 +136,7 @@ private:
         if (calculateNormalMatrix)
         {
             m_normalMatrix = createNormalMatrix();
+            m_lighting.init(m_normalMatrix);
         }
     }
 
@@ -225,14 +226,14 @@ private:
         if (m_data.lighting.lightingEnabled)
         {
             const Vec3 normal = m_normalMatrix.transform(parameter.normal);
-            lighting::LightingCalc { m_data.lighting }.calculateLights(
+            m_lighting.calculateLights(
                 outParam.colorFront,
                 parameter.color,
                 outParam.vertex,
                 normal);
             if (m_data.lighting.enableTwoSideModel)
             {
-                lighting::LightingCalc { m_data.lighting }.calculateLights(
+                m_lighting.calculateLights(
                     outParam.colorBack,
                     parameter.color,
                     outParam.vertex,
@@ -522,6 +523,7 @@ private:
         m_data.viewPort.viewportWidth,
         m_data.viewPort.viewportHeight
     };
+    lighting::LightingCalc m_lighting { m_data.lighting };
 };
 
 } // namespace rr::vertextransforming

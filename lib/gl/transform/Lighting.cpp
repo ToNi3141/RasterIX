@@ -46,6 +46,23 @@ LightingSetter::LightingSetter(LightingData& lightingData, const Mat44& modelVie
     setSpecularColorLight(0, { { 1.0f, 1.0f, 1.0f, 1.0f } }); // Light Zero has a slightly different configuration here
 }
 
+void LightingCalc::init(const Mat44& normalMatrix)
+{
+    if (m_data.rescaleNormal)
+    {
+        // clang-format off
+        m_rescaleFactor = 1.0f / std::sqrt(
+            normalMatrix[3][1] * normalMatrix[3][1] + 
+            normalMatrix[3][2] * normalMatrix[3][2] +
+            normalMatrix[3][3] * normalMatrix[3][3]);
+        // clang-format on
+    }
+    else
+    {
+        m_rescaleFactor = 1.0f;
+    }
+}
+
 void LightingCalc::calculateLights(
     Vec4& color,
     const Vec4& triangleColor,
@@ -63,7 +80,7 @@ void LightingCalc::calculateLights(
         Vec4 colorTmp;
         calculateSceneLight(colorTmp, emissiveColor, ambientColor, m_data.material.ambientColorScene);
 
-        Vec3 n = normal;
+        Vec3 n = normal * m_rescaleFactor;
         if (m_data.normalizeLightNormal)
         {
             n.normalize();
@@ -426,6 +443,12 @@ void LightingSetter::setSpotlightCutoff(const std::size_t light, const float cut
 void LightingSetter::setEnableNormalNormalization(const bool enable)
 {
     m_data.normalizeLightNormal = enable;
+    setDataChangedFlag();
+}
+
+void LightingSetter::setEnableNormalRescale(const bool enable)
+{
+    m_data.rescaleNormal = enable;
     setDataChangedFlag();
 }
 

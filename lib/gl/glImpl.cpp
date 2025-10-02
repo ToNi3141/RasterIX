@@ -796,6 +796,34 @@ GLAPI void APIENTRY impl_glDisable(GLenum cap)
         SPDLOG_DEBUG("glDisable GL_POINT_SPRITE_OES called");
         RIXGL::getInstance().pipeline().getPointAssembly().setEnablePointSprite(false);
         break;
+    case GL_DITHER:
+        SPDLOG_DEBUG("glDisable GL_DITHER called");
+        SPDLOG_INFO("glDisable GL_DITHER has no effect in RIXGL");
+        break;
+    case GL_LINE_SMOOTH:
+        SPDLOG_DEBUG("glDisable GL_LINE_SMOOTH called");
+        SPDLOG_INFO("glDisable GL_LINE_SMOOTH has no effect in RIXGL");
+        break;
+    case GL_MULTISAMPLE:
+        SPDLOG_DEBUG("glDisable GL_MULTISAMPLE called");
+        SPDLOG_INFO("glDisable GL_MULTISAMPLE has no effect in RIXGL");
+        break;
+    case GL_POINT_SMOOTH:
+        SPDLOG_DEBUG("glDisable GL_POINT_SMOOTH called");
+        SPDLOG_INFO("glDisable GL_POINT_SMOOTH has no effect in RIXGL");
+        break;
+    case GL_RESCALE_NORMAL:
+        SPDLOG_DEBUG("glDisable GL_RESCALE_NORMAL called");
+        RIXGL::getInstance().pipeline().getLighting().setEnableNormalRescale(false);
+        break;
+    case GL_SAMPLE_ALPHA_TO_COVERAGE:
+        SPDLOG_DEBUG("glDisable GL_SAMPLE_ALPHA_TO_COVERAGE called");
+        SPDLOG_INFO("glDisable GL_SAMPLE_ALPHA_TO_COVERAGE has no effect in RIXGL");
+        break;
+    case GL_SAMPLE_COVERAGE:
+        SPDLOG_DEBUG("glDisable GL_SAMPLE_COVERAGE called");
+        SPDLOG_INFO("glDisable GL_SAMPLE_COVERAGE has no effect in RIXGL");
+        break;
     default:
         SPDLOG_WARN("glDisable cap 0x{:X} not supported", cap);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
@@ -913,6 +941,34 @@ GLAPI void APIENTRY impl_glEnable(GLenum cap)
     case GL_POINT_SPRITE_OES:
         SPDLOG_DEBUG("glEnable GL_POINT_SPRITE_OES called");
         RIXGL::getInstance().pipeline().getPointAssembly().setEnablePointSprite(true);
+        break;
+    case GL_DITHER:
+        SPDLOG_DEBUG("glEnable GL_DITHER called");
+        SPDLOG_INFO("glEnable GL_DITHER has no effect in RIXGL");
+        break;
+    case GL_LINE_SMOOTH:
+        SPDLOG_DEBUG("glEnable GL_LINE_SMOOTH called");
+        SPDLOG_INFO("glEnable GL_LINE_SMOOTH has no effect in RIXGL");
+        break;
+    case GL_MULTISAMPLE:
+        SPDLOG_DEBUG("glEnable GL_MULTISAMPLE called");
+        SPDLOG_INFO("glEnable GL_MULTISAMPLE has no effect in RIXGL");
+        break;
+    case GL_POINT_SMOOTH:
+        SPDLOG_DEBUG("glEnable GL_POINT_SMOOTH called");
+        SPDLOG_INFO("glEnable GL_POINT_SMOOTH has no effect in RIXGL");
+        break;
+    case GL_RESCALE_NORMAL:
+        SPDLOG_DEBUG("glEnable GL_RESCALE_NORMAL called");
+        RIXGL::getInstance().pipeline().getLighting().setEnableNormalRescale(true);
+        break;
+    case GL_SAMPLE_ALPHA_TO_COVERAGE:
+        SPDLOG_DEBUG("glEnable GL_SAMPLE_ALPHA_TO_COVERAGE called");
+        SPDLOG_INFO("glEnable GL_SAMPLE_ALPHA_TO_COVERAGE has no effect in RIXGL");
+        break;
+    case GL_SAMPLE_COVERAGE:
+        SPDLOG_DEBUG("glEnable GL_SAMPLE_COVERAGE called");
+        SPDLOG_INFO("glEnable GL_SAMPLE_COVERAGE has no effect in RIXGL");
         break;
     default:
         SPDLOG_WARN("glEnable cap 0x{:X} not supported", cap);
