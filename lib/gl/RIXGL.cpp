@@ -24,6 +24,7 @@
 #include "renderer/dse/DmaStreamEngine.hpp"
 #include "renderer/threadedRasterizer/ThreadedRasterizer.hpp"
 #include "vertexpipeline/VertexArray.hpp"
+#include "vertexpipeline/VertexBuffer.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
 #include <assert.h>
@@ -101,6 +102,7 @@ public:
     VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};
     VertexArray vertexArray {};
+    VertexBuffer vertexBuffer {};
     ImageConverter imageConverter {};
     MipMapGenerator mipMapGenerator {};
 };
@@ -571,6 +573,18 @@ RIXGL::RIXGL(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRu
     addLibProcedure("glActiveStencilFaceEXT", ADDRESS_OF(impl_glActiveStencilFaceEXT));
     addLibProcedure("glBlendEquation", ADDRESS_OF(impl_glBlendEquation));
     addLibProcedure("glBlendFuncSeparate", ADDRESS_OF(impl_glBlendFuncSeparate));
+
+    addLibExtension("ARB_vertex_buffer_object");
+    {
+        addLibProcedure("glBindBuffer", ADDRESS_OF(impl_glBindBuffer));
+        addLibProcedure("glBufferData", ADDRESS_OF(impl_glBufferData));
+        addLibProcedure("glBufferSubData", ADDRESS_OF(impl_glBufferSubData));
+        addLibProcedure("glDeleteBuffers", ADDRESS_OF(impl_glDeleteBuffers));
+        addLibProcedure("glGenBuffers", ADDRESS_OF(impl_glGenBuffers));
+        addLibProcedure("glGetBufferParameteriv", ADDRESS_OF(impl_glGetBufferParameteriv));
+        addLibProcedure("glIsBuffer", ADDRESS_OF(impl_glIsBuffer));
+    }
+
     // addLibExtension("GL_EXT_compiled_vertex_array");
     // {
 
@@ -648,6 +662,11 @@ VertexQueue& RIXGL::vertexQueue()
 VertexArray& RIXGL::vertexArray()
 {
     return m_renderDevice->vertexArray;
+}
+
+VertexBuffer& RIXGL::vertexBuffer()
+{
+    return m_renderDevice->vertexBuffer;
 }
 
 ImageConverter& RIXGL::imageConverter()

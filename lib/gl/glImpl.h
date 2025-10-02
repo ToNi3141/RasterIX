@@ -458,6 +458,17 @@ extern "C"
     GLAPI void APIENTRY impl_glPointParameterf(GLenum pname, GLfloat param);
     GLAPI void APIENTRY impl_glPointParameterfv(GLenum pname, const GLfloat* params);
     // -------------------------------------------------------
+
+    // OpenGL Buffer Objects
+    // -------------------------------------------------------
+    GLAPI void APIENTRY impl_glBindBuffer(GLenum target, GLuint buffer);
+    GLAPI void APIENTRY impl_glBufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage);
+    GLAPI void APIENTRY impl_glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data);
+    GLAPI void APIENTRY impl_glDeleteBuffers(GLsizei n, const GLuint* buffers);
+    GLAPI void APIENTRY impl_glGenBuffers(GLsizei n, GLuint* buffers);
+    GLAPI void APIENTRY impl_glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params);
+    GLAPI GLboolean APIENTRY impl_glIsBuffer(GLuint buffer);
+    // -------------------------------------------------------
 #ifdef __cplusplus
 }
 #endif

@@ -435,3 +435,14 @@ GLAPI_WRAPPER void APIENTRY glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfacto
 GLAPI_WRAPPER void APIENTRY glPointParameterf(GLenum pname, GLfloat param) { impl_glPointParameterf(pname, param); }
 GLAPI_WRAPPER void APIENTRY glPointParameterfv(GLenum pname, const GLfloat* params) { impl_glPointParameterfv(pname, params); }
 // -------------------------------------------------------
+
+// Open GL buffer objects
+// -------------------------------------------------------
+GLAPI_WRAPPER void APIENTRY glBindBuffer(GLenum target, GLuint buffer) { impl_glBindBuffer(target, buffer); }
+GLAPI_WRAPPER void APIENTRY glBufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage) { impl_glBufferData(target, size, data, usage); }
+GLAPI_WRAPPER void APIENTRY glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data) { impl_glBufferSubData(target, offset, size, data); }
+GLAPI_WRAPPER void APIENTRY glDeleteBuffers(GLsizei n, const GLuint* buffers) { impl_glDeleteBuffers(n, buffers); }
+GLAPI_WRAPPER void APIENTRY glGenBuffers(GLsizei n, GLuint* buffers) { impl_glGenBuffers(n, buffers); }
+GLAPI_WRAPPER void APIENTRY glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params) { impl_glGetBufferParameteriv(target, pname, params); }
+GLAPI_WRAPPER GLboolean APIENTRY glIsBuffer(GLuint buffer) { return impl_glIsBuffer(buffer); }
+// -------------------------------------------------------

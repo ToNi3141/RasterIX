@@ -72,6 +72,8 @@ extern "C"
     typedef float GLclampf;
     typedef double GLdouble;
     typedef double GLclampd;
+    typedef GLsizei GLsizeiptr;
+    typedef GLsizei GLintptr;
 
 // Boolean values
 #define GL_FALSE 0x0
@@ -898,6 +900,13 @@ extern "C"
 #define GL_DOT3_RGBA 0x86AF
     // -------------------------------------------------------
 
+#define GL_ARRAY_BUFFER 0x8892
+#define GL_ELEMENT_ARRAY_BUFFER 0x8893
+#define GL_STATIC_DRAW 0x88E4
+#define GL_DYNAMIC_DRAW 0x88E8
+#define GL_BUFFER_SIZE 0x8764
+#define GL_BUFFER_USAGE 0x8765
+
     // Wrapper Functions
     // Open GL 1.0
     // -------------------------------------------------------
@@ -1315,6 +1324,17 @@ extern "C"
     // -------------------------------------------------------
     GLAPI_WRAPPER void APIENTRY glPointParameterf(GLenum pname, GLfloat param);
     GLAPI_WRAPPER void APIENTRY glPointParameterfv(GLenum pname, const GLfloat* params);
+    // -------------------------------------------------------
+
+    // Open GL buffer objects
+    // -------------------------------------------------------
+    GLAPI_WRAPPER void APIENTRY glBindBuffer(GLenum target, GLuint buffer);
+    GLAPI_WRAPPER void APIENTRY glBufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage);
+    GLAPI_WRAPPER void APIENTRY glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data);
+    GLAPI_WRAPPER void APIENTRY glDeleteBuffers(GLsizei n, const GLuint* buffers);
+    GLAPI_WRAPPER void APIENTRY glGenBuffers(GLsizei n, GLuint* buffers);
+    GLAPI_WRAPPER void APIENTRY glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params);
+    GLAPI_WRAPPER GLboolean APIENTRY glIsBuffer(GLuint buffer);
     // -------------------------------------------------------
 #ifdef __cplusplus
 }

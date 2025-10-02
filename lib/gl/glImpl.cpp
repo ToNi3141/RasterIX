@@ -23,6 +23,7 @@
 #include "glTypeConverters.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "vertexpipeline/VertexArray.hpp"
+#include "vertexpipeline/VertexBuffer.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
 #include "vertexpipeline/VertexQueue.hpp"
 #include <cmath>
@@ -3757,7 +3758,16 @@ GLAPI void APIENTRY impl_glColorPointer(GLint size, GLenum type, GLsizei stride,
     RIXGL::getInstance().vertexArray().setColorSize(size);
     RIXGL::getInstance().vertexArray().setColorType(convertType(type));
     RIXGL::getInstance().vertexArray().setColorStride(stride);
-    RIXGL::getInstance().vertexArray().setColorPointer(pointer);
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
+        RIXGL::getInstance().vertexArray().setColorPointer(
+            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setColorPointer(pointer);
+    }
 }
 
 GLAPI void APIENTRY impl_glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
@@ -3892,8 +3902,18 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
 
     RIXGL::getInstance().vertexArray().setCount(count);
     RIXGL::getInstance().vertexArray().setDrawMode(convertDrawMode(mode));
-    RIXGL::getInstance().vertexArray().setIndicesPointer(indices);
     RIXGL::getInstance().vertexArray().enableIndices(true);
+
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
+        RIXGL::getInstance().vertexArray().setIndicesPointer(
+            data.last(data.size() - reinterpret_cast<std::size_t>(indices)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setIndicesPointer(indices);
+    }
 
     if (!error)
     {
@@ -3976,7 +3996,16 @@ GLAPI void APIENTRY impl_glNormalPointer(GLenum type, GLsizei stride, const GLvo
 
     RIXGL::getInstance().vertexArray().setNormalType(convertType(type));
     RIXGL::getInstance().vertexArray().setNormalStride(stride);
-    RIXGL::getInstance().vertexArray().setNormalPointer(pointer);
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
+        RIXGL::getInstance().vertexArray().setNormalPointer(
+            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setNormalPointer(pointer);
+    }
 }
 
 GLAPI void APIENTRY impl_glPolygonOffset(GLfloat factor, GLfloat units)
@@ -4009,7 +4038,16 @@ GLAPI void APIENTRY impl_glTexCoordPointer(GLint size, GLenum type, GLsizei stri
     RIXGL::getInstance().vertexArray().setTexCoordSize(size);
     RIXGL::getInstance().vertexArray().setTexCoordType(convertType(type));
     RIXGL::getInstance().vertexArray().setTexCoordStride(stride);
-    RIXGL::getInstance().vertexArray().setTexCoordPointer(pointer);
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
+        RIXGL::getInstance().vertexArray().setTexCoordPointer(
+            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setTexCoordPointer(pointer);
+    }
 }
 
 GLAPI void APIENTRY impl_glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* pixels)
@@ -4100,7 +4138,16 @@ GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride
     RIXGL::getInstance().vertexArray().setVertexSize(size);
     RIXGL::getInstance().vertexArray().setVertexType(convertType(type));
     RIXGL::getInstance().vertexArray().setVertexStride(stride);
-    RIXGL::getInstance().vertexArray().setVertexPointer(pointer);
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
+        RIXGL::getInstance().vertexArray().setVertexPointer(
+            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setVertexPointer(pointer);
+    }
 }
 
 // -------------------------------------------------------
@@ -4647,4 +4694,182 @@ GLAPI void APIENTRY impl_glBlendEquation(GLenum mode)
 GLAPI void APIENTRY impl_glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha)
 {
     SPDLOG_WARN("glBlendFuncSeparate not implemented");
+}
+
+GLAPI void APIENTRY impl_glBindBuffer(GLenum target, GLuint buffer)
+{
+    SPDLOG_DEBUG("glBindBuffer target 0x{:X} buffer {} called", target, buffer);
+
+    if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER)
+    {
+        SPDLOG_ERROR("glBindBuffer: invalid target 0x{:X}", target);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
+    RIXGL::getInstance().vertexBuffer().bindBuffer(buffer);
+}
+
+GLAPI void APIENTRY impl_glBufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage)
+{
+    SPDLOG_DEBUG("glBufferData target 0x{:X} size {} usage 0x{:X} called", target, size, usage);
+
+    if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER)
+    {
+        SPDLOG_ERROR("glBufferData: invalid target 0x{:X}", target);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
+    if (usage != GL_STATIC_DRAW && usage != GL_DYNAMIC_DRAW)
+    {
+        SPDLOG_ERROR("glBufferData: invalid usage 0x{:X}", usage);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
+    if (size < 0)
+    {
+        SPDLOG_ERROR("glBufferData: size < 0");
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
+
+    // Check if buffer 0 is bound (invalid operation)
+    if (RIXGL::getInstance().vertexBuffer().getBoundBuffer() == 0)
+    {
+        SPDLOG_ERROR("glBufferData: buffer 0 is bound (invalid operation)");
+        RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+        return;
+    }
+
+    // Usage is ignored for now
+
+    auto& vb = RIXGL::getInstance().vertexBuffer();
+    const bool ret = vb.bufferData(tcb::span<const std::uint8_t>(reinterpret_cast<const std::uint8_t*>(data), size));
+    if (!ret)
+    {
+        SPDLOG_ERROR("glBufferData: out of memory");
+        RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
+        return;
+    }
+}
+
+GLAPI void APIENTRY impl_glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data)
+{
+    SPDLOG_DEBUG("glBufferSubData target 0x{:X} offset {} size {} called", target, offset, size);
+
+    if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER)
+    {
+        SPDLOG_ERROR("glBufferSubData: invalid target 0x{:X}", target);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
+    if (offset < 0 || size < 0)
+    {
+        SPDLOG_ERROR("glBufferSubData: offset {} or size {} is negative", offset, size);
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
+
+    auto& vb = RIXGL::getInstance().vertexBuffer();
+    if (vb.getBoundBuffer() == 0)
+    {
+        SPDLOG_ERROR("glBufferSubData: buffer 0 is bound (invalid operation)");
+        RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+        return;
+    }
+
+    auto bufferData = vb.getBufferData();
+    if (static_cast<std::size_t>(offset) + static_cast<std::size_t>(size) > bufferData.size())
+    {
+        SPDLOG_ERROR("glBufferSubData: offset {} + size {} exceeds buffer size {}", offset, size, bufferData.size());
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
+
+    vb.bufferSubData(static_cast<std::size_t>(offset), tcb::span<const std::uint8_t>(reinterpret_cast<const std::uint8_t*>(data), size));
+}
+
+GLAPI void APIENTRY impl_glDeleteBuffers(GLsizei n, const GLuint* buffers)
+{
+    SPDLOG_DEBUG("glDeleteBuffers n {} called", n);
+
+    if (n < 0)
+    {
+        SPDLOG_ERROR("glDeleteBuffers: n < 0");
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
+
+    auto& vb = RIXGL::getInstance().vertexBuffer();
+    for (GLsizei i = 0; i < n; ++i)
+    {
+        vb.deleteBuffer(buffers[i]);
+    }
+}
+
+GLAPI void APIENTRY impl_glGenBuffers(GLsizei n, GLuint* buffers)
+{
+    SPDLOG_DEBUG("glGenBuffers n {} called", n);
+
+    if (n < 0)
+    {
+        SPDLOG_ERROR("glGenBuffers: n < 0");
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
+
+    auto& vb = RIXGL::getInstance().vertexBuffer();
+    for (GLsizei i = 0; i < n; ++i)
+    {
+        buffers[i] = vb.generateBuffer();
+        if (buffers[i] == 0)
+        {
+            SPDLOG_ERROR("glGenBuffers: out of memory");
+            RIXGL::getInstance().setError(GL_OUT_OF_MEMORY);
+            return;
+        }
+    }
+}
+
+GLAPI void APIENTRY impl_glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params)
+{
+    SPDLOG_DEBUG("glGetBufferParameteriv target 0x{:X} pname 0x{:X} called", target, pname);
+
+    auto& vb = RIXGL::getInstance().vertexBuffer();
+    if (target != GL_ARRAY_BUFFER && target != GL_ELEMENT_ARRAY_BUFFER)
+    {
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        SPDLOG_ERROR("glGetBufferParameteriv: invalid target 0x{:X}", target);
+        return;
+    }
+
+    if (vb.getBoundBuffer() == 0)
+    {
+        RIXGL::getInstance().setError(GL_INVALID_OPERATION);
+        SPDLOG_ERROR("glGetBufferParameteriv: buffer 0 is bound (invalid operation)");
+        return;
+    }
+
+    switch (pname)
+    {
+    case GL_BUFFER_SIZE:
+        *params = static_cast<GLint>(vb.getBufferData().size());
+        break;
+    case GL_BUFFER_USAGE:
+        SPDLOG_INFO("glGetBufferParameteriv: usage is not tracked, returning GL_STATIC_DRAW");
+        *params = GL_STATIC_DRAW;
+        break;
+    default:
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        break;
+    }
+}
+
+GLAPI GLboolean APIENTRY impl_glIsBuffer(GLuint buffer)
+{
+    SPDLOG_ERROR("glIsBuffer buffer {} called", buffer);
+    return RIXGL::getInstance().vertexBuffer().isBuffer(buffer);
 }
