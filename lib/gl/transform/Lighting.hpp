@@ -123,6 +123,31 @@ public:
     LightingSetter(LightingData& lightingData, const Mat44& modelViewMatrix);
 
     bool lightingEnabled() const { return m_data.lightingEnabled; }
+    bool lightEnabled(const std::size_t light) const { return m_data.lightEnable[light]; }
+
+    const Vec4& getEmissiveColorMaterial() const { return m_data.material.emissiveColor; }
+    const Vec4& getAmbientColorMaterial() const { return m_data.material.ambientColor; }
+    const Vec4& getAmbientColorScene() const { return m_data.material.ambientColorScene; }
+    const Vec4& getDiffuseColorMaterial() const { return m_data.material.diffuseColor; }
+    const Vec4& getSpecularColorMaterial() const { return m_data.material.specularColor; }
+    float getSpecularExponentMaterial() const { return m_data.material.specularExponent; }
+    const Vec4& getAmbientColorLight(const std::size_t light) const { return m_data.lights[light].ambientColor; }
+    const Vec4& getDiffuseColorLight(const std::size_t light) const { return m_data.lights[light].diffuseColor; }
+    const Vec4& getSpecularColorLight(const std::size_t light) const { return m_data.lights[light].specularColor; }
+    const Vec4& getPosLight(const std::size_t light) const { return m_data.lights[light].position; }
+    float getConstantAttenuationLight(const std::size_t light) const { return m_data.lights[light].constantAttenuation; }
+    float getLinearAttenuationLight(const std::size_t light) const { return m_data.lights[light].linearAttenuation; }
+    float getQuadraticAttenuationLight(const std::size_t light) const { return m_data.lights[light].quadraticAttenuation; }
+    bool getTwoSideModelEnabled() const { return m_data.enableTwoSideModel; }
+    const Vec3& getSpotlightDirection(const std::size_t light) const { return m_data.lights[light].spotlightDirection; }
+    float getSpotlightExponent(const std::size_t light) const { return m_data.lights[light].spotlightExponent; }
+    float getSpotlightCutoff(const std::size_t light) const { return m_data.lights[light].spotlightCutoff; }
+    bool getNormalNormalizationEnabled() const { return m_data.normalizeLightNormal; }
+    bool getNormalRescaleEnabled() const { return m_data.rescaleNormal; }
+
+    Face getColorMaterialFace() const { return m_colorMaterialFace; }
+    ColorMaterialTracking getColorMaterialTracking() const { return m_colorMaterialTracking; }
+    bool getColorMaterialEnabled() const { return m_enableColorMaterial; }
 
     void enableLighting(bool enable);
     void setEmissiveColorMaterial(const Vec4& color);

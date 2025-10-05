@@ -87,6 +87,21 @@ public:
         m_data.enable = enable;
     }
 
+    float getFactor() const
+    {
+        return m_data.factor;
+    }
+
+    float getUnits() const
+    {
+        return m_data.units;
+    }
+
+    bool getEnableFill() const
+    {
+        return m_data.enable;
+    }
+
 private:
     PolygonOffsetData& m_data;
 };
