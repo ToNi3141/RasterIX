@@ -244,6 +244,9 @@ private:
         {
             outParam.colorFront = parameter.color;
         }
+
+        outParam.pointSize = parameter.pointSize;
+
         return outParam;
     }
 

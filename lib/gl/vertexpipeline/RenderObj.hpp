@@ -47,6 +47,8 @@ public:
     inline bool indicesEnabled() const { return m_indicesEnabled; }
     Vec3 getNormal(const std::size_t index) const;
     bool isLine() const;
+    float getPointSize(const std::size_t index) const;
+    inline bool pointSizeArrayEnabled() const { return m_pointSizeArrayEnabled; }
 
     std::size_t getIndex(const std::size_t index) const;
     inline DrawMode getDrawMode() const { return m_drawMode; }
@@ -80,6 +82,13 @@ public:
     void setColorStride(std::size_t stride) { m_colorStride = stride; }
     void setColorPointer(const void* ptr) { m_colorPointer = ptr; }
     void setVertexColor(const Vec4& color) { m_vertexColor = color; }
+
+    void enablePointSizeArray(bool enable) { m_pointSizeArrayEnabled = enable; }
+    void setPointSizeSize(std::size_t size) { m_pointSizeSize = size; }
+    void setPointSizeType(Type type) { m_pointSizeType = type; }
+    void setPointSizeStride(std::size_t stride) { m_pointSizeStride = stride; }
+    void setPointSizePointer(const void* ptr) { m_pointSizePointer = ptr; }
+    void setPointSize(float pointSize) { m_pointSize = pointSize; }
 
     void setDrawMode(DrawMode mode) { m_drawMode = mode; }
 
@@ -182,6 +191,13 @@ private:
     std::size_t m_colorStride;
     const void* m_colorPointer;
     Vec4 m_vertexColor { { 1.0f, 1.0f, 1.0f, 1.0f } };
+
+    bool m_pointSizeArrayEnabled;
+    std::size_t m_pointSizeSize;
+    Type m_pointSizeType;
+    std::size_t m_pointSizeStride;
+    const void* m_pointSizePointer;
+    float m_pointSize { 1.0f };
 
     bool m_indicesEnabled;
     Type m_indicesType;

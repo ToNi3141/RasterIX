@@ -283,6 +283,7 @@ inline bool operator!=(const rr::Vec<T>& lhs, const rr::Vec<T>& rhs)
     return !(lhs == rhs);
 }
 
+using Vec1 = Vec<1>; // Is basically a scalar but simplifies some code which uses templates
 using Vec2 = Vec<2>;
 using Vec3 = Vec<3>;
 using Vec4 = Vec<4>;

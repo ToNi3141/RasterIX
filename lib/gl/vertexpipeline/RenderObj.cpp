@@ -71,6 +71,15 @@ Vec4 RenderObj::getColor(const std::size_t index) const
     return m_vertexColor;
 }
 
+float RenderObj::getPointSize(const std::size_t index) const
+{
+    if (pointSizeArrayEnabled())
+    {
+        return getFromArray<Vec1>(m_pointSizeType, m_pointSizePointer, m_pointSizeStride, m_pointSizeSize, index)[0];
+    }
+    return m_pointSize;
+}
+
 Vec3 RenderObj::getNormal(const std::size_t index) const
 {
     if (normalArrayEnabled())

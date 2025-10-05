@@ -34,6 +34,7 @@ public:
     void setNormal(const Vec3& normal) { m_objPtr.setNormal(normal); }
     void setTexCoord(const Vec4& texCoord) { m_objPtr.setTexCoord(m_tmu, texCoord); }
     void setMultiTexCoord(const uint8_t tmu, const Vec4& texCoord) { m_objPtr.setTexCoord(tmu, texCoord); }
+    void setPointSize(float pointSize) { m_objPtr.setPointSize(pointSize); }
 
     const RenderObj& renderObj() const { return m_objPtr; }
 
@@ -65,6 +66,13 @@ public:
     void setColorType(Type type) { m_objPtr.setColorType(type); }
     void setColorStride(uint32_t stride) { m_objPtr.setColorStride(stride); }
     void setColorPointer(const void* ptr) { m_objPtr.setColorPointer(ptr); }
+
+    void enablePointSizeArray(bool enable) { m_objPtr.enablePointSizeArray(enable); }
+    bool pointSizeArrayEnabled() const { return m_objPtr.pointSizeArrayEnabled(); }
+    void setPointSizeSize(uint8_t size) { m_objPtr.setPointSizeSize(size); }
+    void setPointSizeType(Type type) { m_objPtr.setPointSizeType(type); }
+    void setPointSizeStride(uint32_t stride) { m_objPtr.setPointSizeStride(stride); }
+    void setPointSizePointer(const void* ptr) { m_objPtr.setPointSizePointer(ptr); }
 
     void setDrawMode(DrawMode mode) { m_objPtr.setDrawMode(mode); }
 

@@ -32,6 +32,7 @@ struct TransformingVertexParameter
     Vec4 colorFront;
     Vec4 colorBack;
     std::array<Vec4, RenderConfig::TMU_COUNT> tex;
+    float pointSize;
 };
 
 } // namespace rr

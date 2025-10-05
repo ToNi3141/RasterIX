@@ -65,13 +65,15 @@ LineAssemblyCalc::Triangles LineAssemblyCalc::createLine(const TransformingVerte
     const Vec4& cb1 = vp1.colorBack;
     const std::array<Vec4, RenderConfig::TMU_COUNT>& tc0 = vp0.tex;
     const std::array<Vec4, RenderConfig::TMU_COUNT>& tc1 = vp1.tex;
+    const float ps0 = vp0.pointSize;
+    const float ps1 = vp1.pointSize;
     Triangles triangles;
-    triangles[0] = { nv0, cf0, cb0, tc0 };
-    triangles[1] = { nv1, cf0, cb0, tc0 };
-    triangles[2] = { nv2, cf1, cb1, tc1 };
-    triangles[3] = { nv2, cf1, cb1, tc1 };
-    triangles[4] = { nv1, cf0, cb0, tc0 };
-    triangles[5] = { nv3, cf1, cb1, tc1 };
+    triangles[0] = { nv0, cf0, cb0, tc0, ps0 };
+    triangles[1] = { nv1, cf0, cb0, tc0, ps0 };
+    triangles[2] = { nv2, cf1, cb1, tc1, ps1 };
+    triangles[3] = { nv2, cf1, cb1, tc1, ps1 };
+    triangles[4] = { nv1, cf0, cb0, tc0, ps0 };
+    triangles[5] = { nv3, cf1, cb1, tc1, ps1 };
     return triangles;
 }
 

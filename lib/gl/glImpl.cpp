@@ -2190,7 +2190,7 @@ GLAPI void APIENTRY impl_glPointSize(GLfloat size)
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
         return;
     }
-    RIXGL::getInstance().pipeline().getPointAssembly().setPointSize(size);
+    RIXGL::getInstance().vertexArray().setPointSize(size);
 }
 
 GLAPI void APIENTRY impl_glPointParameterf(GLenum pname, GLfloat param)
