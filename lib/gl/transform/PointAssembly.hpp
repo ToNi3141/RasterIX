@@ -28,7 +28,6 @@ namespace rr::pointassembly
 
 struct PointAssemblyData
 {
-    float pointSize { 1.0f };
     float pointSizeMin { 1.0f };
     float pointSizeMax { 64.0f };
     float pointFadeThresholdSize { 1.0f };
@@ -66,7 +65,6 @@ public:
     {
     }
 
-    void setPointSize(const float pointSize) { m_data.pointSize = pointSize; }
     void setPointSizeMin(const float pointSizeMin) { m_data.pointSizeMin = pointSizeMin; }
     void setPointSizeMax(const float pointSizeMax) { m_data.pointSizeMax = pointSizeMax; }
     void setPointFadeThresholdSize(const float pointFadeThresholdSize) { m_data.pointFadeThresholdSize = pointFadeThresholdSize; }
@@ -74,7 +72,6 @@ public:
     void setTexCoordReplace(bool replace) { m_data.texCoordReplace = replace; }
     void setEnablePointSprite(bool enable) { m_data.enablePointSprite = enable; }
 
-    float getPointSize() const { return m_data.pointSize; }
     float getPointSizeMin() const { return m_data.pointSizeMin; }
     float getPointSizeMax() const { return m_data.pointSizeMax; }
     float getPointFadeThresholdSize() const { return m_data.pointFadeThresholdSize; }

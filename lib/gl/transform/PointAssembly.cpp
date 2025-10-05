@@ -28,7 +28,7 @@ PointAssemblyCalc::Triangles PointAssemblyCalc::createPoint(const TransformingVe
     const Vec4& center = vp.vertex;
     const Vec3& pda = m_data.pointDistanceAttenuation;
     const float size = std::clamp(
-        m_data.pointSize / std::sqrt(pda[0] + (pda[1] * vp.vertex[3]) + (pda[2] * vp.vertex[3] * vp.vertex[3])),
+        vp.pointSize / std::sqrt(pda[0] + (pda[1] * vp.vertex[3]) + (pda[2] * vp.vertex[3] * vp.vertex[3])),
         m_data.pointSizeMin,
         m_data.pointSizeMax);
 
