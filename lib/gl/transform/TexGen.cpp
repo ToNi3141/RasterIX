@@ -218,4 +218,64 @@ Mat44 TexGenSetter::getInvertedModelViewMatrix() const
     return inverseModelViewMatrix;
 }
 
+bool TexGenSetter::getTexGenEnableS() const
+{
+    return m_data->texGenEnableS;
+}
+
+bool TexGenSetter::getTexGenEnableT() const
+{
+    return m_data->texGenEnableT;
+}
+
+bool TexGenSetter::getTexGenEnableR() const
+{
+    return m_data->texGenEnableR;
+}
+
+TexGenMode TexGenSetter::getTexGenModeS() const
+{
+    return m_data->texGenModeS;
+}
+
+TexGenMode TexGenSetter::getTexGenModeT() const
+{
+    return m_data->texGenModeT;
+}
+
+TexGenMode TexGenSetter::getTexGenModeR() const
+{
+    return m_data->texGenModeR;
+}
+
+Vec4 TexGenSetter::getTexGenVecObjS() const
+{
+    return m_data->texGenVecObjS;
+}
+
+Vec4 TexGenSetter::getTexGenVecObjT() const
+{
+    return m_data->texGenVecObjT;
+}
+
+Vec4 TexGenSetter::getTexGenVecObjR() const
+{
+    return m_data->texGenVecObjR;
+}
+
+Vec4 TexGenSetter::getTexGenVecEyeS() const
+{
+    return m_data->texGenVecEyeS;
+}
+
+Vec4 TexGenSetter::getTexGenVecEyeT() const
+{
+    return m_data->texGenVecEyeT;
+}
+
+Vec4 TexGenSetter::getTexGenVecEyeR() const
+{
+    return m_data->texGenVecEyeR;
+}
+
 } // namespace rr::texgen

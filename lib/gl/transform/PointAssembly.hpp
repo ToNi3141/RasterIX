@@ -74,6 +74,14 @@ public:
     void setTexCoordReplace(bool replace) { m_data.texCoordReplace = replace; }
     void setEnablePointSprite(bool enable) { m_data.enablePointSprite = enable; }
 
+    float getPointSize() const { return m_data.pointSize; }
+    float getPointSizeMin() const { return m_data.pointSizeMin; }
+    float getPointSizeMax() const { return m_data.pointSizeMax; }
+    float getPointFadeThresholdSize() const { return m_data.pointFadeThresholdSize; }
+    const Vec3& getPointDistanceAttenuation() const { return m_data.pointDistanceAttenuation; }
+    bool getTexCoordReplace() const { return m_data.texCoordReplace; }
+    bool getEnablePointSprite() const { return m_data.enablePointSprite; }
+
 private:
     PointAssemblyData& m_data;
 };

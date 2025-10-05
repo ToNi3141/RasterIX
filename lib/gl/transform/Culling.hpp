@@ -55,6 +55,10 @@ public:
     void setCullMode(const Face mode);
     void setFrontFace(const Orientation orientation);
 
+    bool isCullingEnabled() const;
+    Face getCullMode() const;
+    Orientation getFrontFace() const;
+
 private:
     CullingData& m_data;
 };

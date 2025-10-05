@@ -1492,8 +1492,89 @@ GLAPI void APIENTRY impl_glInitNames(void)
 
 GLAPI GLboolean APIENTRY impl_glIsEnabled(GLenum cap)
 {
-    SPDLOG_WARN("glIsEnabled not implemented");
-    return false;
+    switch (cap)
+    {
+    case GL_TEXTURE_2D:
+        return RIXGL::getInstance().pipeline().featureEnable().getEnableTmu() ? GL_TRUE : GL_FALSE;
+    case GL_ALPHA_TEST:
+        return RIXGL::getInstance().pipeline().featureEnable().getEnableAlphaTest() ? GL_TRUE : GL_FALSE;
+    case GL_DEPTH_TEST:
+        return RIXGL::getInstance().pipeline().featureEnable().getEnableDepthTest() ? GL_TRUE : GL_FALSE;
+    case GL_BLEND:
+        return RIXGL::getInstance().pipeline().featureEnable().getEnableBlending() ? GL_TRUE : GL_FALSE;
+    case GL_LIGHTING:
+        return RIXGL::getInstance().pipeline().getLighting().lightingEnabled() ? GL_TRUE : GL_FALSE;
+    case GL_LIGHT0:
+    case GL_LIGHT1:
+    case GL_LIGHT2:
+    case GL_LIGHT3:
+    case GL_LIGHT4:
+    case GL_LIGHT5:
+    case GL_LIGHT6:
+    case GL_LIGHT7:
+        return RIXGL::getInstance().pipeline().getLighting().lightEnabled(cap - GL_LIGHT0) ? GL_TRUE : GL_FALSE;
+    case GL_TEXTURE_GEN_S:
+        return RIXGL::getInstance().pipeline().getTexGen().getTexGenEnableS() ? GL_TRUE : GL_FALSE;
+    case GL_TEXTURE_GEN_T:
+        return RIXGL::getInstance().pipeline().getTexGen().getTexGenEnableT() ? GL_TRUE : GL_FALSE;
+    case GL_TEXTURE_GEN_R:
+        return RIXGL::getInstance().pipeline().getTexGen().getTexGenEnableR() ? GL_TRUE : GL_FALSE;
+    case GL_CULL_FACE:
+        return RIXGL::getInstance().pipeline().getCulling().isCullingEnabled() ? GL_TRUE : GL_FALSE;
+    case GL_COLOR_MATERIAL:
+        return RIXGL::getInstance().pipeline().getLighting().getColorMaterialEnabled() ? GL_TRUE : GL_FALSE;
+    case GL_FOG:
+        return RIXGL::getInstance().pipeline().featureEnable().getEnableFog() ? GL_TRUE : GL_FALSE;
+    case GL_SCISSOR_TEST:
+        return RIXGL::getInstance().pipeline().featureEnable().getEnableScissor() ? GL_TRUE : GL_FALSE;
+    case GL_NORMALIZE:
+        return RIXGL::getInstance().pipeline().getLighting().getNormalNormalizationEnabled() ? GL_TRUE : GL_FALSE;
+    case GL_STENCIL_TEST:
+        return RIXGL::getInstance().pipeline().featureEnable().getEnableStencil() ? GL_TRUE : GL_FALSE;
+    case GL_STENCIL_TEST_TWO_SIDE_EXT:
+        return RIXGL::getInstance().pipeline().getStencil().getTwoSideStencilEnabled() ? GL_TRUE : GL_FALSE;
+    case GL_COLOR_LOGIC_OP:
+        return RIXGL::getInstance().pipeline().featureEnable().getEnableLogicOp() ? GL_TRUE : GL_FALSE;
+    case GL_CLIP_PLANE0:
+        return RIXGL::getInstance().pipeline().getPlaneClipper().getEnable() ? GL_TRUE : GL_FALSE;
+    case GL_CLIP_PLANE1:
+    case GL_CLIP_PLANE2:
+    case GL_CLIP_PLANE3:
+    case GL_CLIP_PLANE4:
+    case GL_CLIP_PLANE5:
+        return GL_FALSE; // Not supported
+    case GL_POLYGON_OFFSET_FILL:
+        return RIXGL::getInstance().pipeline().getPolygonOffset().getEnableFill() ? GL_TRUE : GL_FALSE;
+    case GL_POINT_SPRITE_OES:
+        return RIXGL::getInstance().pipeline().getPointAssembly().getEnablePointSprite() ? GL_TRUE : GL_FALSE;
+    case GL_DITHER:
+        // Dither is always enabled in RIXGL, but has no effect
+        return GL_TRUE;
+    case GL_LINE_SMOOTH:
+    case GL_MULTISAMPLE:
+    case GL_POINT_SMOOTH:
+    case GL_SAMPLE_ALPHA_TO_COVERAGE:
+    case GL_SAMPLE_ALPHA_TO_ONE:
+    case GL_SAMPLE_COVERAGE:
+        // These are not implemented, always return GL_FALSE
+        return GL_FALSE;
+    case GL_RESCALE_NORMAL:
+        return RIXGL::getInstance().pipeline().getLighting().getNormalRescaleEnabled() ? GL_TRUE : GL_FALSE;
+    case GL_COLOR_ARRAY:
+        return RIXGL::getInstance().vertexArray().colorArrayEnabled() ? GL_TRUE : GL_FALSE;
+    case GL_NORMAL_ARRAY:
+        return RIXGL::getInstance().vertexArray().normalArrayEnabled() ? GL_TRUE : GL_FALSE;
+    case GL_TEXTURE_COORD_ARRAY:
+        return RIXGL::getInstance().vertexArray().texCoordArrayEnabled() ? GL_TRUE : GL_FALSE;
+    case GL_VERTEX_ARRAY:
+        return RIXGL::getInstance().vertexArray().vertexArrayEnabled() ? GL_TRUE : GL_FALSE;
+    // TODO:
+    // case GL_POINT_SIZE_ARRAY_OES:
+    //     return RIXGL::getInstance().vertexArray().pointSizeArrayEnabled() ? GL_TRUE : GL_FALSE;
+    default:
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return GL_FALSE;
+    }
 }
 
 GLAPI GLboolean APIENTRY impl_glIsList(GLuint list)

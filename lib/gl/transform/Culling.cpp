@@ -35,6 +35,21 @@ void CullingSetter::setFrontFace(const Orientation orientation)
     m_data.frontFace = orientation;
 }
 
+bool CullingSetter::isCullingEnabled() const
+{
+    return m_data.enableCulling;
+}
+
+Face CullingSetter::getCullMode() const
+{
+    return m_data.cullMode;
+}
+
+Orientation CullingSetter::getFrontFace() const
+{
+    return m_data.frontFace;
+}
+
 CullingCalc::CullingCalc(const CullingData& cullingData)
     : m_data { cullingData }
 {

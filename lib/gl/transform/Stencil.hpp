@@ -85,6 +85,9 @@ public:
     void enableTwoSideStencil(const bool enable) { m_data.enableTwoSideStencil = enable; }
     void setStencilFace(const StencilFace face) { m_stencilFace = face; }
 
+    bool getTwoSideStencilEnabled() const { return m_data.enableTwoSideStencil; }
+    StencilFace getStencilFace() const { return m_stencilFace; }
+
     bool update();
 
 private:
