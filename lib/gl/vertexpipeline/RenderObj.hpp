@@ -84,7 +84,6 @@ public:
     void setVertexColor(const Vec4& color) { m_vertexColor = color; }
 
     void enablePointSizeArray(bool enable) { m_pointSizeArrayEnabled = enable; }
-    void setPointSizeSize(std::size_t size) { m_pointSizeSize = size; }
     void setPointSizeType(Type type) { m_pointSizeType = type; }
     void setPointSizeStride(std::size_t stride) { m_pointSizeStride = stride; }
     void setPointSizePointer(const void* ptr) { m_pointSizePointer = ptr; }
@@ -193,7 +192,6 @@ private:
     Vec4 m_vertexColor { { 1.0f, 1.0f, 1.0f, 1.0f } };
 
     bool m_pointSizeArrayEnabled;
-    std::size_t m_pointSizeSize;
     Type m_pointSizeType;
     std::size_t m_pointSizeStride;
     const void* m_pointSizePointer;

@@ -242,10 +242,10 @@ void setClientState(const GLenum array, bool enable)
         SPDLOG_DEBUG("setClientState GL_VERTEX_ARRAY {}", enable);
         RIXGL::getInstance().vertexArray().enableVertexArray(enable);
         break;
-    // case GL_POINT_SIZE_ARRAY_OES:
-    //     SPDLOG_DEBUG("setClientState GL_POINT_SIZE_ARRAY_OES {}", enable);
-    //     RIXGL::getInstance().vertexArray().enablePointSizeArray(enable);
-    //     break;
+    case GL_POINT_SIZE_ARRAY_OES:
+        SPDLOG_DEBUG("setClientState GL_POINT_SIZE_ARRAY_OES {}", enable);
+        RIXGL::getInstance().vertexArray().enablePointSizeArray(enable);
+        break;
     default:
         SPDLOG_WARN("setClientState 0x{:X} 0x{:X} not suppored", array, enable);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);

@@ -5009,3 +5009,35 @@ GLAPI GLboolean APIENTRY impl_glIsBuffer(GLuint buffer)
     SPDLOG_ERROR("glIsBuffer buffer {} called", buffer);
     return RIXGL::getInstance().vertexBuffer().isBuffer(buffer);
 }
+
+GLAPI void APIENTRY impl_glPointSizePointerOES(GLenum type, GLsizei stride, const void* pointer)
+{
+    SPDLOG_DEBUG("glPointSizeOES type 0x{:X} stride {} pointer {} called", type, stride, reinterpret_cast<std::size_t>(pointer));
+
+    if (type != GL_FLOAT)
+    {
+        SPDLOG_ERROR("glPointSizeOES: invalid type 0x{:X}", type);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
+    if (stride < 0)
+    {
+        SPDLOG_ERROR("glPointSizeOES: stride < 0");
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
+
+    RIXGL::getInstance().vertexArray().setPointSizeType(convertType(type));
+    RIXGL::getInstance().vertexArray().setPointSizeStride(stride);
+    if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+    {
+        const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
+        RIXGL::getInstance().vertexArray().setPointSizePointer(
+            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+    }
+    else
+    {
+        RIXGL::getInstance().vertexArray().setPointSizePointer(pointer);
+    }
+}

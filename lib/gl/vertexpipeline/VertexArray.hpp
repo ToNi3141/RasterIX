@@ -69,7 +69,6 @@ public:
 
     void enablePointSizeArray(bool enable) { m_objPtr.enablePointSizeArray(enable); }
     bool pointSizeArrayEnabled() const { return m_objPtr.pointSizeArrayEnabled(); }
-    void setPointSizeSize(uint8_t size) { m_objPtr.setPointSizeSize(size); }
     void setPointSizeType(Type type) { m_objPtr.setPointSizeType(type); }
     void setPointSizeStride(uint32_t stride) { m_objPtr.setPointSizeStride(stride); }
     void setPointSizePointer(const void* ptr) { m_objPtr.setPointSizePointer(ptr); }

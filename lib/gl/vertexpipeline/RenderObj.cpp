@@ -75,7 +75,8 @@ float RenderObj::getPointSize(const std::size_t index) const
 {
     if (pointSizeArrayEnabled())
     {
-        return getFromArray<Vec1>(m_pointSizeType, m_pointSizePointer, m_pointSizeStride, m_pointSizeSize, index)[0];
+        // This could be optimized. Ony float is allowed for point size arrays. It might be possible to handle only the float case.
+        return getFromArray<Vec1>(m_pointSizeType, m_pointSizePointer, m_pointSizeStride, 1, index)[0];
     }
     return m_pointSize;
 }
@@ -140,6 +141,9 @@ const char* RenderObj::drawModeToString(const DrawMode drawMode) const
 
     case DrawMode::LINE_LOOP:
         return "LINE_LOOP";
+
+    case DrawMode::POINTS:
+        return "POINTS";
 
     default:
         return "UNKNWON";
@@ -208,6 +212,11 @@ void RenderObj::logCurrentConfig() const
     SPDLOG_DEBUG("      m_normalType {}", typeToString(m_normalType));
     SPDLOG_DEBUG("      m_normalStride {}", m_normalStride);
     SPDLOG_DEBUG("      m_normal ({}, {}, {})", m_normal[0], m_normal[1], m_normal[2]);
+
+    SPDLOG_DEBUG("  pointSizeArrayEnabled {}", pointSizeArrayEnabled());
+    SPDLOG_DEBUG("      m_pointSizeType {}", typeToString(m_pointSizeType));
+    SPDLOG_DEBUG("      m_pointSizeStride {}", m_pointSizeStride);
+    SPDLOG_DEBUG("      m_pointSize ({})", m_pointSize);
 }
 
 } // namespace rr
