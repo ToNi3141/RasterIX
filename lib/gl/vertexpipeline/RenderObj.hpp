@@ -44,6 +44,7 @@ public:
     Vec4 getColor(const std::size_t index) const;
     inline const Vec4& getVertexColor() const { return m_vertexColor; }
     inline bool normalArrayEnabled() const { return m_normalArrayEnabled; }
+    inline bool indicesEnabled() const { return m_indicesEnabled; }
     Vec3 getNormal(const std::size_t index) const;
     bool isLine() const;
 

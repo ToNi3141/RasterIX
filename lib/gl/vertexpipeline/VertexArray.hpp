@@ -40,23 +40,27 @@ public:
     void reset() { m_objPtr.reset(); }
 
     void enableVertexArray(bool enable) { m_objPtr.enableVertexArray(enable); }
+    bool vertexArrayEnabled() const { return m_objPtr.vertexArrayEnabled(); }
     void setVertexSize(uint8_t size) { m_objPtr.setVertexSize(size); }
     void setVertexType(Type type) { m_objPtr.setVertexType(type); }
     void setVertexStride(uint32_t stride) { m_objPtr.setVertexStride(stride); }
     void setVertexPointer(const void* ptr) { m_objPtr.setVertexPointer(ptr); }
 
     void enableTexCoordArray(bool enable) { m_objPtr.enableTexCoordArray(m_tmu, enable); }
+    bool texCoordArrayEnabled() const { return m_objPtr.texCoordArrayEnabled()[m_tmu]; }
     void setTexCoordSize(uint8_t size) { m_objPtr.setTexCoordSize(m_tmu, size); }
     void setTexCoordType(Type type) { m_objPtr.setTexCoordType(m_tmu, type); }
     void setTexCoordStride(uint32_t stride) { m_objPtr.setTexCoordStride(m_tmu, stride); }
     void setTexCoordPointer(const void* ptr) { m_objPtr.setTexCoordPointer(m_tmu, ptr); }
 
     void enableNormalArray(bool enable) { m_objPtr.enableNormalArray(enable); }
+    bool normalArrayEnabled() const { return m_objPtr.normalArrayEnabled(); }
     void setNormalType(Type type) { m_objPtr.setNormalType(type); }
     void setNormalStride(uint32_t stride) { m_objPtr.setNormalStride(stride); }
     void setNormalPointer(const void* ptr) { m_objPtr.setNormalPointer(ptr); }
 
     void enableColorArray(bool enable) { m_objPtr.enableColorArray(enable); }
+    bool colorArrayEnabled() const { return m_objPtr.colorArrayEnabled(); }
     void setColorSize(uint8_t size) { m_objPtr.setColorSize(size); }
     void setColorType(Type type) { m_objPtr.setColorType(type); }
     void setColorStride(uint32_t stride) { m_objPtr.setColorStride(stride); }
@@ -65,6 +69,7 @@ public:
     void setDrawMode(DrawMode mode) { m_objPtr.setDrawMode(mode); }
 
     void enableIndices(bool enable) { m_objPtr.enableIndices(enable); }
+    bool indicesEnabled() const { return m_objPtr.indicesEnabled(); }
     void setCount(std::size_t count) { m_objPtr.setCount(count); }
     void setIndicesType(Type type) { m_objPtr.setIndicesType(type); }
     void setIndicesPointer(const void* ptr) { m_objPtr.setIndicesPointer(ptr); }
