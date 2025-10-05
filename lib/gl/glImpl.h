@@ -469,6 +469,11 @@ extern "C"
     GLAPI void APIENTRY impl_glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params);
     GLAPI GLboolean APIENTRY impl_glIsBuffer(GLuint buffer);
     // -------------------------------------------------------
+
+    // Point Size Pointer
+    // -------------------------------------------------------
+    GLAPI void APIENTRY impl_glPointSizePointerOES(GLenum type, GLsizei stride, const GLvoid* pointer);
+    // -------------------------------------------------------
 #ifdef __cplusplus
 }
 #endif

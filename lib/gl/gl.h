@@ -1329,6 +1329,7 @@ extern "C"
     // -------------------------------------------------------
     GLAPI_WRAPPER void APIENTRY glPointParameterf(GLenum pname, GLfloat param);
     GLAPI_WRAPPER void APIENTRY glPointParameterfv(GLenum pname, const GLfloat* params);
+    GLAPI_WRAPPER void APIENTRY glPointSizePointerOES(GLenum type, GLsizei stride, const GLvoid* pointer);
     // -------------------------------------------------------
 
     // Open GL buffer objects

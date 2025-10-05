@@ -434,6 +434,7 @@ GLAPI_WRAPPER void APIENTRY glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfacto
 // -------------------------------------------------------
 GLAPI_WRAPPER void APIENTRY glPointParameterf(GLenum pname, GLfloat param) { impl_glPointParameterf(pname, param); }
 GLAPI_WRAPPER void APIENTRY glPointParameterfv(GLenum pname, const GLfloat* params) { impl_glPointParameterfv(pname, params); }
+GLAPI_WRAPPER void APIENTRY glPointSizePointerOES(GLenum type, GLsizei stride, const GLvoid* pointer) { impl_glPointSizePointerOES(type, stride, pointer); }
 // -------------------------------------------------------
 
 // Open GL buffer objects
