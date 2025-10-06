@@ -176,7 +176,6 @@ public:
     {
         if (!m_textureLut[texId])
         {
-            SPDLOG_ERROR("textureValid with invalid texID called");
             return false;
         }
         const TextureEntry& tex = m_textureEntryFlags[*m_textureLut[texId]];
