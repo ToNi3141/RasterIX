@@ -130,6 +130,7 @@ extern "C"
     GLAPI GLuint APIENTRY impl_glGenLists(GLsizei range);
     GLAPI void APIENTRY impl_glGetBooleanv(GLenum pname, GLboolean* params);
     GLAPI void APIENTRY impl_glGetClipPlane(GLenum plane, GLdouble* equation);
+    GLAPI void APIENTRY impl_glGetClipPlanef(GLenum plane, GLfloat* equation);
     GLAPI void APIENTRY impl_glGetDoublev(GLenum pname, GLdouble* params);
     GLAPI GLenum APIENTRY impl_glGetError(void);
     GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params);

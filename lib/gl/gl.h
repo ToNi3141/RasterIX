@@ -929,6 +929,7 @@ extern "C"
     GLAPI_WRAPPER void APIENTRY glClearIndex(GLfloat c);
     GLAPI_WRAPPER void APIENTRY glClearStencil(GLint s);
     GLAPI_WRAPPER void APIENTRY glClipPlane(GLenum plane, const GLdouble* equation);
+    GLAPI_WRAPPER void APIENTRY glClipPlanef(GLenum plane, const GLfloat* equation);
     GLAPI_WRAPPER void APIENTRY glColor3b(GLbyte red, GLbyte green, GLbyte blue);
     GLAPI_WRAPPER void APIENTRY glColor3bv(const GLbyte* v);
     GLAPI_WRAPPER void APIENTRY glColor3d(GLdouble red, GLdouble green, GLdouble blue);
