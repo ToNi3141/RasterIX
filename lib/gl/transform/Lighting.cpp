@@ -24,7 +24,7 @@ LightingSetter::LightingSetter(LightingData& lightingData, const Mat44& modelVie
     : m_data { lightingData }
     , m_modelViewMatrix { modelViewMatrix }
 {
-    setEmissiveColorMaterial({ { 0.0f, 0.0f, 0.0f, 1.0f } });
+    setEmissionColorMaterial({ { 0.0f, 0.0f, 0.0f, 1.0f } });
     setAmbientColorMaterial({ { 0.2f, 0.2f, 0.2f, 1.0 } });
     setAmbientColorScene({ { 0.2f, 0.2f, 0.2f, 1.0f } });
     setDiffuseColorMaterial({ { 0.8f, 0.8f, 0.8f, 1.0 } });
@@ -72,13 +72,13 @@ void LightingCalc::calculateLights(
     const float alphaOld = triangleColor[3];
     if (m_data.lightingEnabled)
     {
-        const Vec4& emissiveColor = (m_data.enableColorMaterialEmission) ? triangleColor : m_data.material.emissiveColor;
+        const Vec4& emissionColor = (m_data.enableColorMaterialEmission) ? triangleColor : m_data.material.emissionColor;
         const Vec4& ambientColor = (m_data.enableColorMaterialAmbient) ? triangleColor : m_data.material.ambientColor;
         const Vec4& diffuseColor = (m_data.enableColorMaterialDiffuse) ? triangleColor : m_data.material.diffuseColor;
         const Vec4& specularColor = (m_data.enableColorMaterialSpecular) ? triangleColor : m_data.material.specularColor;
 
         Vec4 colorTmp;
-        calculateSceneLight(colorTmp, emissiveColor, ambientColor, m_data.material.ambientColorScene);
+        calculateSceneLight(colorTmp, emissionColor, ambientColor, m_data.material.ambientColorScene);
 
         Vec3 n = normal * m_rescaleFactor;
         if (m_data.normalizeLightNormal)
@@ -252,7 +252,7 @@ float LightingCalc::calculateSpotlight(const LightingData::LightConfig& lightCon
 
 void LightingCalc::calculateSceneLight(
     Vec4& __restrict sceneLight,
-    const Vec4& emissiveColor,
+    const Vec4& emissionColor,
     const Vec4& ambientColor,
     const Vec4& ambientColorScene) const
 {
@@ -260,7 +260,7 @@ void LightingCalc::calculateSceneLight(
     sceneLight = ambientColor;
     sceneLight *= ambientColorScene;
     // Emission color of material
-    sceneLight += emissiveColor;
+    sceneLight += emissionColor;
 }
 
 void LightingSetter::enableLighting(bool enable)
@@ -338,9 +338,9 @@ void LightingSetter::enableColorMaterial(bool emission, bool ambient, bool diffu
     setDataChangedFlag();
 }
 
-void LightingSetter::setEmissiveColorMaterial(const Vec4& color)
+void LightingSetter::setEmissionColorMaterial(const Vec4& color)
 {
-    m_data.material.emissiveColor = color;
+    m_data.material.emissionColor = color;
     setDataChangedFlag();
 }
 

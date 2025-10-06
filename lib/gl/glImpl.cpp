@@ -1422,7 +1422,52 @@ GLAPI void APIENTRY impl_glGetMapiv(GLenum target, GLenum query, GLint* v)
 
 GLAPI void APIENTRY impl_glGetMaterialfv(GLenum face, GLenum pname, GLfloat* params)
 {
-    SPDLOG_WARN("glGetMaterialfv not implemented");
+    SPDLOG_WARN("glGetMaterialfv called for face 0x{:X} pname 0x{:X} not implemented", face, pname);
+
+    if (face != GL_FRONT_AND_BACK)
+    {
+        SPDLOG_WARN("glGetMaterialfv only GL_FRONT_AND_BACK supported");
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
+    const auto& lighting = RIXGL::getInstance().pipeline().getLighting();
+
+    switch (pname)
+    {
+    case GL_AMBIENT:
+    {
+        const Vec4& v = lighting.getAmbientColorMaterial();
+        std::memcpy(params, v.data(), 4 * sizeof(GLfloat));
+        break;
+    }
+    case GL_DIFFUSE:
+    {
+        const Vec4& v = lighting.getDiffuseColorMaterial();
+        std::memcpy(params, v.data(), 4 * sizeof(GLfloat));
+        break;
+    }
+    case GL_SPECULAR:
+    {
+        const Vec4& v = lighting.getSpecularColorMaterial();
+        std::memcpy(params, v.data(), 4 * sizeof(GLfloat));
+        break;
+    }
+    case GL_EMISSION:
+    {
+        const Vec4& v = lighting.getEmissionColorMaterial();
+        std::memcpy(params, v.data(), 4 * sizeof(GLfloat));
+        break;
+    }
+    case GL_SHININESS:
+        params[0] = lighting.getSpecularExponentMaterial();
+        break;
+
+    default:
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        SPDLOG_ERROR("glGetMaterialfv pname 0x{:X} not supported", pname);
+        break;
+    }
 }
 
 GLAPI void APIENTRY impl_glGetMaterialiv(GLenum face, GLenum pname, GLint* params)
@@ -1914,58 +1959,62 @@ GLAPI void APIENTRY impl_glMaterialf(GLenum face, GLenum pname, GLfloat param)
 {
     SPDLOG_DEBUG("glMaterialf face 0x{:X} pname 0x{:X} param {} called", face, pname, param);
 
-    if (face == GL_FRONT_AND_BACK)
-    {
-        if ((pname == GL_SHININESS) && (param >= 0.0f) && (param <= 128.0f))
-        {
-            RIXGL::getInstance().pipeline().getLighting().setSpecularExponentMaterial(param);
-        }
-        else
-        {
-            SPDLOG_WARN("glMaterialf not supported");
-            RIXGL::getInstance().setError(GL_INVALID_ENUM);
-        }
-    }
-    else
+    if (face != GL_FRONT_AND_BACK)
     {
         SPDLOG_WARN("impl_glMaterialf face 0x{:X} not supported", face);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
     }
+
+    if (pname != GL_SHININESS)
+    {
+        SPDLOG_WARN("glMaterialf not supported");
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
+    if ((param < 0.0f) && (param > 128.0f))
+    {
+        SPDLOG_WARN("glMaterialf param {} out of range", param);
+        RIXGL::getInstance().setError(GL_INVALID_VALUE);
+        return;
+    }
+
+    RIXGL::getInstance().pipeline().getLighting().setSpecularExponentMaterial(param);
 }
 
 GLAPI void APIENTRY impl_glMaterialfv(GLenum face, GLenum pname, const GLfloat* params)
 {
     SPDLOG_DEBUG("glMaterialfv face 0x{:X} pname 0x{:X} called", face, pname);
 
-    if (face == GL_FRONT_AND_BACK)
-    {
-        switch (pname)
-        {
-        case GL_AMBIENT:
-            RIXGL::getInstance().pipeline().getLighting().setAmbientColorMaterial({ params });
-            break;
-        case GL_DIFFUSE:
-            RIXGL::getInstance().pipeline().getLighting().setDiffuseColorMaterial({ params });
-            break;
-        case GL_AMBIENT_AND_DIFFUSE:
-            RIXGL::getInstance().pipeline().getLighting().setAmbientColorMaterial({ params });
-            RIXGL::getInstance().pipeline().getLighting().setDiffuseColorMaterial({ params });
-            break;
-        case GL_SPECULAR:
-            RIXGL::getInstance().pipeline().getLighting().setSpecularColorMaterial({ params });
-            break;
-        case GL_EMISSION:
-            RIXGL::getInstance().pipeline().getLighting().setEmissiveColorMaterial({ params });
-            break;
-        default:
-            impl_glMaterialf(face, pname, params[0]);
-            break;
-        }
-    }
-    else
+    if (face != GL_FRONT_AND_BACK)
     {
         SPDLOG_WARN("glMaterialfv face 0x{:X} not supported", face);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
+    switch (pname)
+    {
+    case GL_AMBIENT:
+        RIXGL::getInstance().pipeline().getLighting().setAmbientColorMaterial({ params });
+        break;
+    case GL_DIFFUSE:
+        RIXGL::getInstance().pipeline().getLighting().setDiffuseColorMaterial({ params });
+        break;
+    case GL_AMBIENT_AND_DIFFUSE:
+        RIXGL::getInstance().pipeline().getLighting().setAmbientColorMaterial({ params });
+        RIXGL::getInstance().pipeline().getLighting().setDiffuseColorMaterial({ params });
+        break;
+    case GL_SPECULAR:
+        RIXGL::getInstance().pipeline().getLighting().setSpecularColorMaterial({ params });
+        break;
+    case GL_EMISSION:
+        RIXGL::getInstance().pipeline().getLighting().setEmissionColorMaterial({ params });
+        break;
+    default:
+        impl_glMaterialf(face, pname, params[0]);
+        break;
     }
 }
 
