@@ -31,7 +31,7 @@ struct LightingData
     static constexpr std::size_t MAX_LIGHTS { 8 };
     struct MaterialConfig
     {
-        Vec4 emissiveColor { { 0.0f, 0.0f, 0.0f, 1.0f } };
+        Vec4 emissionColor { { 0.0f, 0.0f, 0.0f, 1.0f } };
         Vec4 ambientColor { { 0.2f, 0.2f, 0.2f, 1.0 } };
         Vec4 ambientColorScene { { 0.2f, 0.2f, 0.2f, 1.0f } };
         Vec4 diffuseColor { { 0.8f, 0.8f, 0.8f, 1.0 } };
@@ -89,7 +89,7 @@ public:
 private:
     void calculateSceneLight(
         Vec4& __restrict sceneLight,
-        const Vec4& emissiveColor,
+        const Vec4& emissionColor,
         const Vec4& ambientColor,
         const Vec4& ambientColorScene) const;
 
@@ -125,7 +125,7 @@ public:
     bool lightingEnabled() const { return m_data.lightingEnabled; }
     bool lightEnabled(const std::size_t light) const { return m_data.lightEnable[light]; }
 
-    const Vec4& getEmissiveColorMaterial() const { return m_data.material.emissiveColor; }
+    const Vec4& getEmissionColorMaterial() const { return m_data.material.emissionColor; }
     const Vec4& getAmbientColorMaterial() const { return m_data.material.ambientColor; }
     const Vec4& getAmbientColorScene() const { return m_data.material.ambientColorScene; }
     const Vec4& getDiffuseColorMaterial() const { return m_data.material.diffuseColor; }
@@ -150,7 +150,7 @@ public:
     bool getColorMaterialEnabled() const { return m_enableColorMaterial; }
 
     void enableLighting(bool enable);
-    void setEmissiveColorMaterial(const Vec4& color);
+    void setEmissionColorMaterial(const Vec4& color);
     void setAmbientColorMaterial(const Vec4& color);
     void setAmbientColorScene(const Vec4& color);
     void setDiffuseColorMaterial(const Vec4& color);
