@@ -1336,7 +1336,68 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint* params)
 
 GLAPI void APIENTRY impl_glGetLightfv(GLenum light, GLenum pname, GLfloat* params)
 {
-    SPDLOG_WARN("glGetLightfv not implemented");
+    SPDLOG_DEBUG("glGetLightfv light 0x{:X} pname 0x{:X} called", light, pname);
+
+    if (light < GL_LIGHT0 || light > GL_LIGHT7)
+    {
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
+    const auto& lighting = RIXGL::getInstance().pipeline().getLighting();
+    const int idx = light - GL_LIGHT0;
+
+    switch (pname)
+    {
+    case GL_AMBIENT:
+    {
+        const Vec4& v = lighting.getAmbientColorLight(idx);
+        std::memcpy(params, v.data(), 4 * sizeof(GLfloat));
+    }
+    break;
+    case GL_DIFFUSE:
+    {
+        const Vec4& v = lighting.getDiffuseColorLight(idx);
+        std::memcpy(params, v.data(), 4 * sizeof(GLfloat));
+    }
+    break;
+    case GL_SPECULAR:
+    {
+        const Vec4& v = lighting.getSpecularColorLight(idx);
+        std::memcpy(params, v.data(), 4 * sizeof(GLfloat));
+    }
+    break;
+    case GL_POSITION:
+    {
+        const Vec4& v = lighting.getPosLight(idx);
+        std::memcpy(params, v.data(), 4 * sizeof(GLfloat));
+    }
+    break;
+    case GL_SPOT_DIRECTION:
+    {
+        const Vec3& v = lighting.getSpotlightDirection(idx);
+        std::memcpy(params, v.data(), 3 * sizeof(GLfloat));
+    }
+    break;
+    case GL_SPOT_EXPONENT:
+        params[0] = lighting.getSpotlightExponent(idx);
+        break;
+    case GL_SPOT_CUTOFF:
+        params[0] = lighting.getSpotlightCutoff(idx);
+        break;
+    case GL_CONSTANT_ATTENUATION:
+        params[0] = lighting.getConstantAttenuationLight(idx);
+        break;
+    case GL_LINEAR_ATTENUATION:
+        params[0] = lighting.getLinearAttenuationLight(idx);
+        break;
+    case GL_QUADRATIC_ATTENUATION:
+        params[0] = lighting.getQuadraticAttenuationLight(idx);
+        break;
+    default:
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        break;
+    }
 }
 
 GLAPI void APIENTRY impl_glGetLightiv(GLenum light, GLenum pname, GLint* params)
