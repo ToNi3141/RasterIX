@@ -109,6 +109,7 @@ GLAPI_WRAPPER void APIENTRY glFrustumf(GLfloat left, GLfloat right, GLfloat bott
 GLAPI_WRAPPER GLuint APIENTRY glGenLists(GLsizei range) { return impl_glGenLists(range); }
 GLAPI_WRAPPER void APIENTRY glGetBooleanv(GLenum pname, GLboolean* params) { impl_glGetBooleanv(pname, params); }
 GLAPI_WRAPPER void APIENTRY glGetClipPlane(GLenum plane, GLdouble* equation) { impl_glGetClipPlane(plane, equation); }
+GLAPI_WRAPPER void APIENTRY glGetClipPlanef(GLenum plane, GLfloat* equation) { impl_glGetClipPlanef(plane, equation); }
 GLAPI_WRAPPER void APIENTRY glGetDoublev(GLenum pname, GLdouble* params) { impl_glGetDoublev(pname, params); }
 GLAPI_WRAPPER GLenum APIENTRY glGetError(void) { return impl_glGetError(); }
 GLAPI_WRAPPER void APIENTRY glGetFloatv(GLenum pname, GLfloat* params) { impl_glGetFloatv(pname, params); }

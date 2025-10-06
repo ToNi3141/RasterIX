@@ -1226,7 +1226,32 @@ GLAPI void APIENTRY impl_glGetBooleanv(GLenum pname, GLboolean* params)
 
 GLAPI void APIENTRY impl_glGetClipPlane(GLenum plane, GLdouble* equation)
 {
-    SPDLOG_WARN("glGetClipPlane not implemented");
+    SPDLOG_DEBUG("glGetClipPlane redirected to glGetClipPlanef");
+
+    GLfloat equationFloat[4];
+    impl_glGetClipPlanef(plane, equationFloat);
+    equation[0] = static_cast<GLdouble>(equationFloat[0]);
+    equation[1] = static_cast<GLdouble>(equationFloat[1]);
+    equation[2] = static_cast<GLdouble>(equationFloat[2]);
+    equation[3] = static_cast<GLdouble>(equationFloat[3]);
+}
+
+GLAPI void APIENTRY impl_glGetClipPlanef(GLenum plane, GLfloat* equation)
+{
+    SPDLOG_DEBUG("glGetClipPlanef plane {} called", plane);
+
+    if (plane != GL_CLIP_PLANE0)
+    {
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        SPDLOG_ERROR("glGetClipPlanef only GL_CLIP_PLANE0 supported");
+        return;
+    }
+
+    const Vec4 equationFloat = RIXGL::getInstance().pipeline().getPlaneClipper().getEquation();
+    equation[0] = equationFloat[0];
+    equation[1] = equationFloat[1];
+    equation[2] = equationFloat[2];
+    equation[3] = equationFloat[3];
 }
 
 GLAPI void APIENTRY impl_glGetDoublev(GLenum pname, GLdouble* params)
