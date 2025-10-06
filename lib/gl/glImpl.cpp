@@ -4103,8 +4103,8 @@ GLAPI void APIENTRY impl_glGetPointerv(GLenum pname, GLvoid** params)
 
 GLAPI GLboolean APIENTRY impl_glIsTexture(GLuint texture)
 {
-    SPDLOG_WARN("glIsTexture not implemented");
-    return false;
+    SPDLOG_DEBUG("glIsTexture called for texture 0x{:X}", texture);
+    return RIXGL::getInstance().pipeline().texture().isTextureValid(texture);
 }
 
 GLAPI void APIENTRY impl_glIndexPointer(GLenum type, GLsizei stride, const GLvoid* pointer)
