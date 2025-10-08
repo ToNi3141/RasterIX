@@ -21,6 +21,7 @@
 #include "Enums.hpp"
 #include "RenderObj.hpp"
 #include "math/Vec.hpp"
+#include <cstdint>
 #include <vector>
 
 namespace rr
@@ -45,33 +46,58 @@ public:
     void setVertexSize(uint8_t size) { m_objPtr.setVertexSize(size); }
     void setVertexType(Type type) { m_objPtr.setVertexType(type); }
     void setVertexStride(uint32_t stride) { m_objPtr.setVertexStride(stride); }
-    void setVertexPointer(const void* ptr) { m_objPtr.setVertexPointer(ptr); }
+    void setVertexPointer(const void* ptr, const std::size_t offset)
+    {
+        m_objPtr.setVertexPointer(reinterpret_cast<const uint8_t*>(ptr) + offset);
+        m_vertexPointer = ptr;
+        m_vertexPointerOffset = offset;
+    }
 
     void enableTexCoordArray(bool enable) { m_objPtr.enableTexCoordArray(m_tmu, enable); }
     bool texCoordArrayEnabled() const { return m_objPtr.texCoordArrayEnabled()[m_tmu]; }
     void setTexCoordSize(uint8_t size) { m_objPtr.setTexCoordSize(m_tmu, size); }
     void setTexCoordType(Type type) { m_objPtr.setTexCoordType(m_tmu, type); }
     void setTexCoordStride(uint32_t stride) { m_objPtr.setTexCoordStride(m_tmu, stride); }
-    void setTexCoordPointer(const void* ptr) { m_objPtr.setTexCoordPointer(m_tmu, ptr); }
+    void setTexCoordPointer(const void* ptr, const std::size_t offset)
+    {
+        m_objPtr.setTexCoordPointer(m_tmu, reinterpret_cast<const uint8_t*>(ptr) + offset);
+        m_texCoordPointer = ptr;
+        m_texCoordPointerOffset = offset;
+    }
 
     void enableNormalArray(bool enable) { m_objPtr.enableNormalArray(enable); }
     bool normalArrayEnabled() const { return m_objPtr.normalArrayEnabled(); }
     void setNormalType(Type type) { m_objPtr.setNormalType(type); }
     void setNormalStride(uint32_t stride) { m_objPtr.setNormalStride(stride); }
-    void setNormalPointer(const void* ptr) { m_objPtr.setNormalPointer(ptr); }
+    void setNormalPointer(const void* ptr, const std::size_t offset)
+    {
+        m_objPtr.setNormalPointer(reinterpret_cast<const uint8_t*>(ptr) + offset);
+        m_normalPointer = ptr;
+        m_normalPointerOffset = offset;
+    }
 
     void enableColorArray(bool enable) { m_objPtr.enableColorArray(enable); }
     bool colorArrayEnabled() const { return m_objPtr.colorArrayEnabled(); }
     void setColorSize(uint8_t size) { m_objPtr.setColorSize(size); }
     void setColorType(Type type) { m_objPtr.setColorType(type); }
     void setColorStride(uint32_t stride) { m_objPtr.setColorStride(stride); }
-    void setColorPointer(const void* ptr) { m_objPtr.setColorPointer(ptr); }
+    void setColorPointer(const void* ptr, const std::size_t offset)
+    {
+        m_objPtr.setColorPointer(reinterpret_cast<const uint8_t*>(ptr) + offset);
+        m_colorPointer = ptr;
+        m_colorPointerOffset = offset;
+    }
 
     void enablePointSizeArray(bool enable) { m_objPtr.enablePointSizeArray(enable); }
     bool pointSizeArrayEnabled() const { return m_objPtr.pointSizeArrayEnabled(); }
     void setPointSizeType(Type type) { m_objPtr.setPointSizeType(type); }
     void setPointSizeStride(uint32_t stride) { m_objPtr.setPointSizeStride(stride); }
-    void setPointSizePointer(const void* ptr) { m_objPtr.setPointSizePointer(ptr); }
+    void setPointSizePointer(const void* ptr, const std::size_t offset)
+    {
+        m_objPtr.setPointSizePointer(reinterpret_cast<const uint8_t*>(ptr) + offset);
+        m_pointSizePointer = ptr;
+        m_pointSizePointerOffset = offset;
+    }
 
     void setDrawMode(DrawMode mode) { m_objPtr.setDrawMode(mode); }
 
@@ -82,10 +108,34 @@ public:
     void setIndicesPointer(const void* ptr) { m_objPtr.setIndicesPointer(ptr); }
     void setArrayOffset(uint32_t offset) { m_objPtr.setArrayOffset(offset); }
 
+    // This methods are only used for the glGetPointerv function
+    const void* getVertexPointer() const { return m_vertexPointer; }
+    const void* getTexCoordPointer() const { return m_texCoordPointer; }
+    const void* getNormalPointer() const { return m_normalPointer; }
+    const void* getColorPointer() const { return m_colorPointer; }
+    const void* getPointSizePointer() const { return m_pointSizePointer; }
+    std::size_t getVertexPointerOffset() const { return m_vertexPointerOffset; }
+    std::size_t getTexCoordPointerOffset() const { return m_texCoordPointerOffset; }
+    std::size_t getNormalPointerOffset() const { return m_normalPointerOffset; }
+    std::size_t getColorPointerOffset() const { return m_colorPointerOffset; }
+    std::size_t getPointSizePointerOffset() const { return m_pointSizePointerOffset; }
+
 private:
     // Render Object
     RenderObj m_objPtr {};
     std::size_t m_tmu { 0 };
+
+    // This variables are only used for the glGetPointerv function
+    const void* m_vertexPointer { nullptr };
+    const void* m_texCoordPointer { nullptr };
+    const void* m_normalPointer { nullptr };
+    const void* m_colorPointer { nullptr };
+    const void* m_pointSizePointer { nullptr };
+    std::size_t m_vertexPointerOffset { 0 };
+    std::size_t m_texCoordPointerOffset { 0 };
+    std::size_t m_normalPointerOffset { 0 };
+    std::size_t m_colorPointerOffset { 0 };
+    std::size_t m_pointSizePointerOffset { 0 };
 };
 
 } // namespace rr
