@@ -4033,12 +4033,11 @@ GLAPI void APIENTRY impl_glColorPointer(GLint size, GLenum type, GLsizei stride,
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setColorPointer(
-            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+        RIXGL::getInstance().vertexArray().setColorPointer(data.data(), reinterpret_cast<std::size_t>(pointer));
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setColorPointer(pointer);
+        RIXGL::getInstance().vertexArray().setColorPointer(pointer, 0);
     }
 }
 
@@ -4234,6 +4233,63 @@ GLAPI void APIENTRY impl_glGenTextures(GLsizei n, GLuint* textures)
 GLAPI void APIENTRY impl_glGetPointerv(GLenum pname, GLvoid** params)
 {
     SPDLOG_WARN("glGetPointerv not implemented");
+    switch (pname)
+    {
+    case GL_VERTEX_ARRAY_POINTER:
+        if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+        {
+            *params = reinterpret_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getVertexPointerOffset());
+        }
+        else
+        {
+            *params = const_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getVertexPointer());
+        }
+        *params = const_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getVertexPointer());
+        break;
+    case GL_NORMAL_ARRAY_POINTER:
+        if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+        {
+            *params = reinterpret_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getNormalPointerOffset());
+        }
+        else
+        {
+            *params = const_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getNormalPointer());
+        }
+        break;
+    case GL_COLOR_ARRAY_POINTER:
+        if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+        {
+            *params = reinterpret_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getColorPointerOffset());
+        }
+        else
+        {
+            *params = const_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getColorPointer());
+        }
+        break;
+    case GL_TEXTURE_COORD_ARRAY_POINTER:
+        if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+        {
+            *params = reinterpret_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getTexCoordPointerOffset());
+        }
+        else
+        {
+            *params = const_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getTexCoordPointer());
+        }
+        break;
+    case GL_POINT_SIZE_ARRAY_POINTER_OES:
+        if (RIXGL::getInstance().vertexBuffer().isBufferActive())
+        {
+            *params = reinterpret_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getPointSizePointerOffset());
+        }
+        else
+        {
+            *params = const_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getPointSizePointer());
+        }
+    default:
+        SPDLOG_WARN("glGetPointerv pname 0x{:X} not supported", pname);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        break;
+    }
 }
 
 GLAPI GLboolean APIENTRY impl_glIsTexture(GLuint texture)
@@ -4271,12 +4327,11 @@ GLAPI void APIENTRY impl_glNormalPointer(GLenum type, GLsizei stride, const GLvo
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setNormalPointer(
-            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+        RIXGL::getInstance().vertexArray().setNormalPointer(data.data(), reinterpret_cast<std::size_t>(pointer));
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setNormalPointer(pointer);
+        RIXGL::getInstance().vertexArray().setNormalPointer(pointer, 0);
     }
 }
 
@@ -4313,12 +4368,11 @@ GLAPI void APIENTRY impl_glTexCoordPointer(GLint size, GLenum type, GLsizei stri
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setTexCoordPointer(
-            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+        RIXGL::getInstance().vertexArray().setTexCoordPointer(data.data(), reinterpret_cast<std::size_t>(pointer));
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setTexCoordPointer(pointer);
+        RIXGL::getInstance().vertexArray().setTexCoordPointer(pointer, 0);
     }
 }
 
@@ -4412,12 +4466,11 @@ GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setVertexPointer(
-            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+        RIXGL::getInstance().vertexArray().setVertexPointer(data.data(), reinterpret_cast<std::size_t>(pointer));
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setVertexPointer(pointer);
+        RIXGL::getInstance().vertexArray().setVertexPointer(pointer, 0);
     }
 }
 
@@ -5168,11 +5221,10 @@ GLAPI void APIENTRY impl_glPointSizePointerOES(GLenum type, GLsizei stride, cons
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setPointSizePointer(
-            data.last(data.size() - reinterpret_cast<std::size_t>(pointer)).data());
+        RIXGL::getInstance().vertexArray().setPointSizePointer(data.data(), reinterpret_cast<std::size_t>(pointer));
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setPointSizePointer(pointer);
+        RIXGL::getInstance().vertexArray().setPointSizePointer(pointer, 0);
     }
 }
