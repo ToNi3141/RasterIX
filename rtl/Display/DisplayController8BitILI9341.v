@@ -49,7 +49,7 @@ module DisplayController8BitILI9341 #(
     input  wire             s_axis_tlast,
     input  wire [15 : 0]    s_axis_tdata
 );
-    localparam INIT_MEM_SIZE = 37;
+    localparam INIT_MEM_SIZE = 73;
 
     localparam COLOR_R_POS = 12;
     localparam COLOR_G_POS = 8;
@@ -123,7 +123,43 @@ module DisplayController8BitILI9341 #(
             initMem[ 34] = {1'b1, 8'h01}; 
             initMem[ 35] = {1'b1, 8'h3F}; 
         end
-        initMem[ 36] = {1'b0, 8'h2C};
+        initMem[ 36] = {1'b0, 8'hF2}; // Enable 3G
+        initMem[ 37] = {1'b1, 8'h00}; // Disable 3G
+        initMem[ 38] = {1'b0, 8'h26}; // Gamma set
+        initMem[ 39] = {1'b1, 8'h01}; // Gamma curve 1 (G2.2)
+        initMem[ 40] = {1'b0, 8'hE0}; // Positive gamma correction
+        initMem[ 41] = {1'b1, 8'h0F}; 
+        initMem[ 42] = {1'b1, 8'h31}; 
+        initMem[ 43] = {1'b1, 8'h2B}; 
+        initMem[ 44] = {1'b1, 8'h0C}; 
+        initMem[ 45] = {1'b1, 8'h0E}; 
+        initMem[ 46] = {1'b1, 8'h08}; 
+        initMem[ 47] = {1'b1, 8'h4E}; 
+        initMem[ 48] = {1'b1, 8'hF1}; 
+        initMem[ 49] = {1'b1, 8'h37}; 
+        initMem[ 50] = {1'b1, 8'h07}; 
+        initMem[ 51] = {1'b1, 8'h10}; 
+        initMem[ 52] = {1'b1, 8'h03}; 
+        initMem[ 53] = {1'b1, 8'h0E}; 
+        initMem[ 54] = {1'b1, 8'h09}; 
+        initMem[ 55] = {1'b1, 8'h00}; 
+        initMem[ 56] = {1'b0, 8'hE1}; // Negative gamma correction
+        initMem[ 57] = {1'b1, 8'h00}; 
+        initMem[ 58] = {1'b1, 8'h0E}; 
+        initMem[ 59] = {1'b1, 8'h14}; 
+        initMem[ 60] = {1'b1, 8'h03}; 
+        initMem[ 61] = {1'b1, 8'h11}; 
+        initMem[ 62] = {1'b1, 8'h07}; 
+        initMem[ 63] = {1'b1, 8'h31}; 
+        initMem[ 64] = {1'b1, 8'hC1}; 
+        initMem[ 65] = {1'b1, 8'h48}; 
+        initMem[ 66] = {1'b1, 8'h08}; 
+        initMem[ 67] = {1'b1, 8'h0F}; 
+        initMem[ 68] = {1'b1, 8'h0C}; 
+        initMem[ 69] = {1'b1, 8'h31}; 
+        initMem[ 70] = {1'b1, 8'h36}; 
+        initMem[ 71] = {1'b1, 8'h0F};
+        initMem[ 72] = {1'b0, 8'h2C};
     end
 
     reg [$clog2(INIT_MEM_SIZE) - 1 : 0] counterMemInit;
