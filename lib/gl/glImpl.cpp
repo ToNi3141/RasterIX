@@ -1518,12 +1518,123 @@ GLAPI const GLubyte* APIENTRY impl_glGetString(GLenum name)
 
 GLAPI void APIENTRY impl_glGetTexEnvfv(GLenum target, GLenum pname, GLfloat* params)
 {
-    SPDLOG_WARN("glGetTexEnvfv not implemented");
+    SPDLOG_DEBUG("glGetTexEnvfv target 0x{:X} pname 0x{:X} called", target, pname);
+    switch (target)
+    {
+    case GL_TEXTURE_ENV:
+        switch (pname)
+        {
+        case GL_TEXTURE_ENV_COLOR:
+        {
+            const Vec4& v = RIXGL::getInstance().pipeline().texture().getTexEnvColor();
+            std::memcpy(params, v.data(), 4 * sizeof(GLfloat));
+        }
+        break;
+        default:
+            SPDLOG_INFO("glGetTexEnvfv redirected to glGetTexEnviv");
+            impl_glGetTexEnviv(target, pname, reinterpret_cast<GLint*>(params));
+            break;
+        }
+        break;
+    default:
+        SPDLOG_INFO("glGetTexEnvfv redirected to glGetTexEnviv");
+        impl_glGetTexEnviv(target, pname, reinterpret_cast<GLint*>(params));
+        break;
+    }
 }
 
 GLAPI void APIENTRY impl_glGetTexEnviv(GLenum target, GLenum pname, GLint* params)
 {
-    SPDLOG_WARN("glGetTexEnviv not implemented");
+    SPDLOG_DEBUG("glGetTexEnviv target 0x{:X} pname 0x{:X} called", target, pname);
+    switch (target)
+    {
+    case GL_TEXTURE_ENV:
+        switch (pname)
+        {
+        case GL_TEXTURE_ENV_MODE:
+            *reinterpret_cast<TexEnvMode*>(params) = RIXGL::getInstance().pipeline().texture().getTexEnvMode();
+            break;
+        case GL_TEXTURE_ENV_COLOR:
+        {
+            Vec4 v = RIXGL::getInstance().pipeline().texture().getTexEnvColor();
+            v.mul(255);
+            params[0] = static_cast<GLint>(v[0]);
+            params[1] = static_cast<GLint>(v[1]);
+            params[2] = static_cast<GLint>(v[2]);
+            params[3] = static_cast<GLint>(v[3]);
+        }
+        break;
+        case GL_COMBINE_RGB:
+            *reinterpret_cast<Combine*>(params) = RIXGL::getInstance().pipeline().texture().getCombineRgb();
+            break;
+        case GL_COMBINE_ALPHA:
+            *reinterpret_cast<Combine*>(params) = RIXGL::getInstance().pipeline().texture().getCombineAlpha();
+            break;
+        case GL_SRC0_RGB:
+            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegRgb0();
+            break;
+        case GL_SRC1_RGB:
+            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegRgb1();
+            break;
+        case GL_SRC2_RGB:
+            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegRgb2();
+            break;
+        case GL_SRC0_ALPHA:
+            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegAlpha0();
+            break;
+        case GL_SRC1_ALPHA:
+            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegAlpha1();
+            break;
+        case GL_SRC2_ALPHA:
+            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegAlpha2();
+            break;
+        case GL_OPERAND0_RGB:
+            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandRgb0();
+            break;
+        case GL_OPERAND1_RGB:
+            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandRgb1();
+            break;
+        case GL_OPERAND2_RGB:
+            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandRgb2();
+            break;
+        case GL_OPERAND0_ALPHA:
+            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandAlpha0();
+            break;
+        case GL_OPERAND1_ALPHA:
+            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandAlpha1();
+            break;
+        case GL_OPERAND2_ALPHA:
+            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandAlpha2();
+            break;
+        case GL_RGB_SCALE:
+            *params = std::pow(2.0f, static_cast<GLfloat>(RIXGL::getInstance().pipeline().texture().getShiftRgb()));
+            break;
+        case GL_ALPHA_SCALE:
+            *params = std::pow(2.0f, static_cast<GLfloat>(RIXGL::getInstance().pipeline().texture().getShiftAlpha()));
+            break;
+        default:
+            SPDLOG_ERROR("glGetTexEnviv pname 0x{:X} not supported for target GL_TEXTURE_ENV", pname);
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            break;
+        }
+        break;
+    case GL_POINT_SPRITE_OES:
+        switch (pname)
+        {
+        case GL_COORD_REPLACE_OES:
+            *params = RIXGL::getInstance().pipeline().getPointAssembly().getEnablePointSprite() ? GL_TRUE : GL_FALSE;
+            break;
+        default:
+            SPDLOG_ERROR("glGetTexEnviv pname 0x{:X} not supported for target GL_POINT_SPRITE_OES", pname);
+            RIXGL::getInstance().setError(GL_INVALID_ENUM);
+            break;
+        }
+        break;
+    default:
+        SPDLOG_ERROR("glGetTexEnviv target 0x{:X} not supported", target);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        break;
+    }
 }
 
 GLAPI void APIENTRY impl_glGetTexGendv(GLenum coord, GLenum pname, GLdouble* params)
@@ -3204,7 +3315,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
                 RIXGL::getInstance().pipeline().texture().setCombineAlpha(c);
             break;
         }
-        case GL_SOURCE0_RGB:
+        case GL_SRC0_RGB:
         {
             SrcReg c {};
             error = convertSrcReg(c, param);
@@ -3212,7 +3323,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
                 RIXGL::getInstance().pipeline().texture().setSrcRegRgb0(c);
             break;
         }
-        case GL_SOURCE1_RGB:
+        case GL_SRC1_RGB:
         {
             SrcReg c {};
             error = convertSrcReg(c, param);
@@ -3220,7 +3331,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
                 RIXGL::getInstance().pipeline().texture().setSrcRegRgb1(c);
             break;
         }
-        case GL_SOURCE2_RGB:
+        case GL_SRC2_RGB:
         {
             SrcReg c {};
             error = convertSrcReg(c, param);
@@ -3228,7 +3339,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
                 RIXGL::getInstance().pipeline().texture().setSrcRegRgb2(c);
             break;
         }
-        case GL_SOURCE0_ALPHA:
+        case GL_SRC0_ALPHA:
         {
             SrcReg c {};
             error = convertSrcReg(c, param);
@@ -3236,7 +3347,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
                 RIXGL::getInstance().pipeline().texture().setSrcRegAlpha0(c);
             break;
         }
-        case GL_SOURCE1_ALPHA:
+        case GL_SRC1_ALPHA:
         {
             SrcReg c {};
             error = convertSrcReg(c, param);
@@ -3244,7 +3355,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
                 RIXGL::getInstance().pipeline().texture().setSrcRegAlpha1(c);
             break;
         }
-        case GL_SOURCE2_ALPHA:
+        case GL_SRC2_ALPHA:
         {
             SrcReg c {};
             error = convertSrcReg(c, param);

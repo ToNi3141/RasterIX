@@ -178,6 +178,17 @@ bool Texture::setTexEnvColor(const Vec4& color)
         });
 }
 
+Vec4 Texture::getTexEnvColor() const
+{
+    const Vec4i colorInt = m_renderer.getTexEnvColor(m_tmu);
+    return Vec4 {
+        static_cast<float>(colorInt[0]) / 255.0f,
+        static_cast<float>(colorInt[1]) / 255.0f,
+        static_cast<float>(colorInt[2]) / 255.0f,
+        static_cast<float>(colorInt[3]) / 255.0f,
+    };
+}
+
 void Texture::setBoundTexture(const uint16_t val)
 {
     updateTexture();

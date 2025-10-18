@@ -372,4 +372,10 @@ uint32_t Renderer::getCurrentColorBufferAddr(const bool back) const
     }
 }
 
+bool Renderer::setTexEnvColor(const TexEnvColorReg& color)
+{
+    m_texEnvColors[color.getTmu()] = color.getColor();
+    return writeReg(color);
+}
+
 } // namespace rr
