@@ -62,6 +62,8 @@ public:
     void setShiftAlpha(const uint8_t val) { texEnv().setShiftAlpha(val); }
     bool setTexEnvColor(const Vec4& color);
 
+    TexEnvMode getTexEnvMode() const { return m_tmuConf[m_tmu].texEnvMode; }
+    Vec4 getTexEnvColor() const;
     Combine getCombineRgb() const { return texEnv().getCombineRgb(); }
     Combine getCombineAlpha() const { return texEnv().getCombineAlpha(); }
     SrcReg getSrcRegRgb0() const { return texEnv().getSrcRegRgb0(); }

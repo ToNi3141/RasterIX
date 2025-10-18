@@ -41,6 +41,11 @@ public:
         setAlpha(val[3]);
     }
 
+    Vec4i getColor() const
+    {
+        return Vec4i { getRed(), getGreen(), getBlue(), getAlpha() };
+    }
+
     void setRed(const uint8_t val) { m_regVal.fields.red = val; }
     void setGreen(const uint8_t val) { m_regVal.fields.green = val; }
     void setBlue(const uint8_t val) { m_regVal.fields.blue = val; }
