@@ -43,6 +43,11 @@ public:
     void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmu, m_tmuConf[m_tmu].boundTexture, val); }
     void setEnableMinFilter(const bool val) { m_renderer.enableTextureMinFiltering(m_tmu, m_tmuConf[m_tmu].boundTexture, val); }
 
+    TextureWrapMode getTexWrapModeS() const { return m_renderer.getTextureWrapModeS(m_tmuConf[m_tmu].boundTexture); }
+    TextureWrapMode getTexWrapModeT() const { return m_renderer.getTextureWrapModeT(m_tmuConf[m_tmu].boundTexture); }
+    bool magFilterEnabled() const { return m_renderer.textureMagFilteringEnabled(m_tmuConf[m_tmu].boundTexture); }
+    bool minFilterEnabled() const { return m_renderer.textureMinFilteringEnabled(m_tmuConf[m_tmu].boundTexture); }
+
     bool setTexEnvMode(const TexEnvMode mode);
     void setCombineRgb(const Combine val) { texEnv().setCombineRgb(val); }
     void setCombineAlpha(const Combine val) { texEnv().setCombineAlpha(val); }
