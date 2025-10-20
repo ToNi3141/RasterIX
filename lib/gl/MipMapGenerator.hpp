@@ -42,6 +42,7 @@ public:
     }
 
     void setEnableMipMapGeneration(const bool enableGeneration) { m_enableMipMapGeneration = enableGeneration; }
+    bool mipMapGenerationEnabled() const { return m_enableMipMapGeneration; }
 
 private:
     static void mipMapCreator(TextureObject& textureObject, const std::size_t baseLevel)

@@ -156,12 +156,22 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setTextureWrapModeS(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode);
 
+    /// @brief Gets the wrapping mode of the texture in s direction
+    /// @param texId the texture from where to get the parameter
+    /// @return the wrapping mode
+    TextureWrapMode getTextureWrapModeS(const uint16_t texId) const { return m_textureManager.getTextureWrapModeS(texId); }
+
     /// @brief The wrapping mode of the texture in t direction
     /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param mode The new mode
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setTextureWrapModeT(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode);
+
+    /// @brief Gets the wrapping mode of the texture in t direction
+    /// @param texId the texture from where to get the parameter
+    /// @return the wrapping mode
+    TextureWrapMode getTextureWrapModeT(const uint16_t texId) const { return m_textureManager.getTextureWrapModeT(texId); }
 
     /// @brief Enables the texture filtering for magnification
     /// @param tmu The used TMU
@@ -170,12 +180,22 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool enableTextureMagFiltering(const std::size_t tmu, const uint16_t texId, bool filter);
 
+    /// @brief Gets if the magnification filter is enabled
+    /// @param texId the texture from where to get the parameter
+    /// @return true if enabled
+    bool textureMagFilteringEnabled(const uint16_t texId) const { return m_textureManager.textureMagFilteringEnabled(texId); }
+
     /// @brief Enables the texture filtering for minification (mipmapping)
     /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param filter True to enable the filter
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool enableTextureMinFiltering(const std::size_t tmu, const uint16_t texId, bool filter);
+
+    /// @brief Gets if the minification filter is enabled
+    /// @param texId the texture from where to get the parameter
+    /// @return true if enabled
+    bool textureMinFilteringEnabled(const uint16_t texId) const { return m_textureManager.textureMinFilteringEnabled(texId); }
 
     /// @brief Sets the resolution of the framebuffer
     /// @param x X is the width of the produced image

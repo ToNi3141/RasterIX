@@ -1513,7 +1513,7 @@ GLAPI const GLubyte* APIENTRY impl_glGetString(GLenum name)
         SPDLOG_WARN("glGetString 0x{:X} not supported", name);
         break;
     }
-    return reinterpret_cast<const GLubyte*>("");
+    return nullptr;
 }
 
 GLAPI void APIENTRY impl_glGetTexEnvfv(GLenum target, GLenum pname, GLfloat* params)
@@ -1669,12 +1669,57 @@ GLAPI void APIENTRY impl_glGetTexLevelParameteriv(GLenum target, GLint level, GL
 
 GLAPI void APIENTRY impl_glGetTexParameterfv(GLenum target, GLenum pname, GLfloat* params)
 {
-    SPDLOG_WARN("glGetTexParameterfv not implemented");
+    SPDLOG_DEBUG("glGetTexParameterfv redirected to glGetTexParameteriv");
+    impl_glGetTexParameteriv(target, pname, reinterpret_cast<GLint*>(params));
 }
 
 GLAPI void APIENTRY impl_glGetTexParameteriv(GLenum target, GLenum pname, GLint* params)
 {
-    SPDLOG_WARN("glGetTexParameteriv not implemented");
+    SPDLOG_DEBUG("glGetTexParameteriv called for target 0x{:X} pname 0x{:X}", target, pname);
+    if (target != GL_TEXTURE_2D)
+    {
+        SPDLOG_ERROR("glGetTexParameteriv only GL_TEXTURE_2D supported");
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+    switch (pname)
+    {
+    case GL_TEXTURE_MIN_FILTER:
+        *params = RIXGL::getInstance().pipeline().texture().minFilterEnabled() ? GL_TRUE : GL_FALSE;
+        break;
+    case GL_TEXTURE_MAG_FILTER:
+        *params = RIXGL::getInstance().pipeline().texture().magFilterEnabled() ? GL_TRUE : GL_FALSE;
+        break;
+    case GL_TEXTURE_WRAP_S:
+        switch (RIXGL::getInstance().pipeline().texture().getTexWrapModeS())
+        {
+        case TextureWrapMode::REPEAT:
+            *params = GL_REPEAT;
+            break;
+        case TextureWrapMode::CLAMP_TO_EDGE:
+            *params = GL_CLAMP_TO_EDGE;
+            break;
+        }
+        break;
+    case GL_TEXTURE_WRAP_T:
+        switch (RIXGL::getInstance().pipeline().texture().getTexWrapModeT())
+        {
+        case TextureWrapMode::REPEAT:
+            *params = GL_REPEAT;
+            break;
+        case TextureWrapMode::CLAMP_TO_EDGE:
+            *params = GL_CLAMP_TO_EDGE;
+            break;
+        }
+        break;
+    case GL_GENERATE_MIPMAP:
+        *params = RIXGL::getInstance().mipMapGenerator().mipMapGenerationEnabled() ? GL_TRUE : GL_FALSE;
+        break;
+    default:
+        SPDLOG_ERROR("glGetTexParameteriv pname 0x{:X} not supported", pname);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        break;
+    }
 }
 
 GLAPI void APIENTRY impl_glHint(GLenum target, GLenum mode)
