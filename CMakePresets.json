@@ -139,8 +139,9 @@
                 "RIX_CORE_DEPTH_BUFFER_LOC": "0x5A800",
                 "RIX_CORE_STENCIL_BUFFER_LOC": "0x22400",
                 "RIX_CORE_THREADED_RASTERIZATION": "false",
-                "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "1024 * 4",
-                "RIX_CORE_ENABLE_VSYNC": "false"
+                "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "0",
+                "RIX_CORE_ENABLE_VSYNC": "false",
+                "RIX_CORE_MAX_VBO_COUNT": "4"
             }
         },
         {

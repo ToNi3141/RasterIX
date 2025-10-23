@@ -31,7 +31,7 @@ public:
     Texture(Renderer& renderer);
 
     bool updateTexture();
-    TextureObjectMipmap& getTexture();
+    TextureObject& getTexture();
     bool useTexture();
     bool isTextureValid(const uint16_t texId) const { return m_renderer.isTextureValid(texId); };
     std::pair<bool, uint16_t> createTexture() { return m_renderer.createTexture(); }
@@ -102,7 +102,7 @@ private:
     // TMU
     std::array<TmuConfig, RenderConfig::TMU_COUNT> m_tmuConf {};
     std::size_t m_tmu { 0 };
-    std::optional<TextureObjectMipmap> m_textureObjectMipmap {};
+    std::optional<TextureObject> m_textureObject {};
 };
 
 } // namespace rr

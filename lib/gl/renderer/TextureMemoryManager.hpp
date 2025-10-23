@@ -67,7 +67,7 @@ public:
         return false;
     }
 
-    bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject)
+    bool updateTexture(const uint16_t texId, const TextureObject& textureObject)
     {
         if (!m_textureLut[texId])
         {
@@ -108,9 +108,9 @@ public:
         m_textures[textureSlot].tmuConfig.setEnableMagFilter(m_textures[textureSlotOld].tmuConfig.getEnableMagFilter());
         m_textures[textureSlot].tmuConfig.setEnableMinFilter(m_textures[textureSlotOld].tmuConfig.getEnableMinFilter());
 
-        m_textures[textureSlot].tmuConfig.setPixelFormat(textureObject[0].getDevicePixelFormat());
-        m_textures[textureSlot].tmuConfig.setTextureWidth(textureObject[0].width);
-        m_textures[textureSlot].tmuConfig.setTextureHeight(textureObject[0].height);
+        m_textures[textureSlot].tmuConfig.setPixelFormat(textureObject.getDevicePixelFormat(0));
+        m_textures[textureSlot].tmuConfig.setTextureWidth(textureObject.getWidth(0));
+        m_textures[textureSlot].tmuConfig.setTextureHeight(textureObject.getHeight(0));
 
         // Allocate memory pages
         const std::size_t textureSize = m_textures[textureSlot].getTextureSize();
@@ -204,7 +204,7 @@ public:
         return {};
     }
 
-    TextureObjectMipmap getTexture(const uint16_t texId)
+    TextureObject getTexture(const uint16_t texId)
     {
         if (!m_textureLut[texId])
         {
@@ -285,15 +285,16 @@ private:
     {
         std::array<std::size_t, MAX_PAGES_PER_TEXTURE> pageTable {};
         std::size_t pages { 0 };
-        TextureObjectMipmap textures {};
+        TextureObject textures {};
         TmuTextureReg tmuConfig {};
 
         std::size_t getTextureSize() const
         {
             std::size_t counter = 0;
-            for (auto& e : textures)
+            const std::size_t levels = textures.getLevels();
+            for (std::size_t i = 0; i < levels; i++)
             {
-                counter += e.sizeInBytes;
+                counter += textures.getSizeInBytes(i);
             }
             return counter;
         }
@@ -303,22 +304,23 @@ private:
             const uint32_t addr = page * buffer.size();
             uint32_t level = 0;
             uint32_t mipMapAddr = 0;
-            for (level = 0; level < textures.size(); level++)
+            const std::size_t levels = textures.getLevels();
+            for (level = 0; level < levels; level++)
             {
-                if (addr < (mipMapAddr + textures[level].sizeInBytes))
+                if (addr < (mipMapAddr + textures.getSizeInBytes(level)))
                 {
                     mipMapAddr = addr - mipMapAddr;
                     break;
                 }
-                mipMapAddr += textures[level].sizeInBytes;
+                mipMapAddr += textures.getSizeInBytes(level);
             }
 
             tcb::span<const uint8_t> ret {};
             std::size_t bufferSize = 0;
-            for (; level < textures.size(); level++)
+            for (; level < levels; level++)
             {
-                const std::size_t texSize = textures[level].sizeInBytes;
-                const uint8_t* pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textures[level].pixels).get() + mipMapAddr;
+                const std::size_t texSize = textures.getSizeInBytes(level);
+                const uint8_t* pixels = std::reinterpret_pointer_cast<const uint8_t, const uint16_t>(textures.getPixels(level)).get() + mipMapAddr;
                 const std::size_t dataSize = (std::min)(texSize - static_cast<std::size_t>(mipMapAddr), buffer.size() - bufferSize);
                 std::memcpy(buffer.data() + bufferSize, pixels, dataSize);
                 bufferSize += dataSize;
