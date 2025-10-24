@@ -125,10 +125,16 @@ void Renderer::initDisplayLists()
 
 void Renderer::intermediateUpload()
 {
-    uploadTextures();
-    uploadDisplayList();
-    switchDisplayLists();
-    clearDisplayListAssembler();
+    // Add a raw commit framebuffer command to write the current frame into the framebuffer
+    FramebufferCmd cmd { true, true, true, m_resolutionX * m_resolutionY };
+    cmd.commitFramebuffer();
+    m_displayListBuffer.getBack().addCommand(cmd);
+
+    // Upload and clear display list
+    initAndUploadDisplayList();
+
+    // Now load the framebuffer again with the new display list
+    loadFramebuffer();
 }
 
 void Renderer::swapDisplayList()

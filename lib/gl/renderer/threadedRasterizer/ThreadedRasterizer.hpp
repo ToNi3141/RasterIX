@@ -69,6 +69,13 @@ public:
             srcList.setCurrentSize(size);
             displaylist::DisplayListDisassembler disassembler { srcList };
 
+            if constexpr (!DisplayListDispatcherType::singleList())
+            {
+                // Write the initial state to the display list. Only necessary when mutlilists are used
+                // to reset the state to the end of the last frame.
+                writeRenderStateToDisplayList();
+            }
+
             while (disassembler.hasNextCommand())
             {
                 const bool ret = std::visit([this](const auto& cmd)
@@ -123,6 +130,12 @@ private:
     using DisplayListAssemblerArrayType = std::array<DisplayListAssemblerType, RenderConfig::getDisplayLines()>;
     using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, DisplayListAssemblerArrayType>;
     using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType>;
+
+    struct RenderState
+    {
+        std::array<RegisterVariant, std::variant_size_v<RegisterVariant>> registers {};
+        FogLutStreamCmd fogLut {};
+    };
 
     void initDisplayLists()
     {
@@ -348,6 +361,10 @@ private:
 
     bool handleCommand(const FogLutStreamCmd& cmd)
     {
+        if constexpr (!DisplayListDispatcherType::singleList())
+        {
+            m_renderState.fogLut = cmd;
+        }
         return addCommand(cmd);
     }
 
@@ -398,6 +415,10 @@ private:
 
     bool handleCommand(const WriteRegisterCmd& cmd)
     {
+        if constexpr (!DisplayListDispatcherType::singleList())
+        {
+            m_renderState.registers[cmd.getRegister().index()] = cmd.getRegister();
+        }
         return std::visit(
             [this](const auto& reg)
             {
@@ -409,7 +430,7 @@ private:
     bool handleRegister(const ColorBufferAddrReg& reg)
     {
         m_colorBufferAddr = reg.getValue();
-        return writeReg(reg);
+        return true; // The color buffer address will be set when a framebuffer command is handled
     }
 
     bool handleRegister(const ColorBufferClearColorReg& reg)
@@ -442,11 +463,6 @@ private:
     }
 
     bool handleRegister(const FragmentPipelineReg& reg)
-    {
-        return writeReg(reg);
-    }
-
-    bool handleRegister(const RegisterVariant& reg)
     {
         return writeReg(reg);
     }
@@ -513,6 +529,11 @@ private:
             });
     }
 
+    bool handleRegister(const std::monostate&)
+    {
+        return true;
+    }
+
     void swapAndUploadDisplayLists()
     {
         m_uploadThread.wait();
@@ -560,6 +581,20 @@ private:
         m_device.blockUntilDeviceIsIdle();
     }
 
+    void writeRenderStateToDisplayList()
+    {
+        for (const auto& r : m_renderState.registers)
+        {
+            std::visit(
+                [this](const auto& reg)
+                {
+                    handleRegister(reg);
+                },
+                r);
+        }
+        handleCommand(m_renderState.fogLut);
+    }
+
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
     static constexpr std::size_t NUMBER_OF_DISPLAY_LISTS { 2 };
 
@@ -587,6 +622,7 @@ private:
         m_setStencilBufferConfigLambda,
     };
 
+    RenderState m_renderState {};
     uint32_t m_colorBufferAddr {};
     bool m_scissorEnabled { false };
     int32_t m_scissorYStart { 0 };

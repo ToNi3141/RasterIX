@@ -27,6 +27,7 @@
 #include "displaylist/DisplayListDispatcher.hpp"
 #include "displaylist/DisplayListDoubleBuffer.hpp"
 #include "math/Vec.hpp"
+#include "maxVariantAlternativeSize.hpp"
 #include "renderer/IDevice.hpp"
 #include <algorithm>
 #include <array>
@@ -36,6 +37,7 @@
 #include <string.h>
 
 #include "RenderConfigs.hpp"
+#include "commands/CommandVariant.hpp"
 #include "commands/DrawNewElementCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
@@ -297,13 +299,13 @@ private:
     template <typename Command>
     bool addCommand(const Command& cmd)
     {
-        bool ret = m_displayListBuffer.getBack().addCommand(cmd);
-        if (!ret)
+        // Keep enough space for a framebuffer command to store the current frame into the framebuffer
+        constexpr std::size_t minFreeSpace = (sizeof(FramebufferCmd) + maxVariantAlternativeSize<CommandVariant>());
+        if (m_displayListBuffer.getBack().getFreeSpace() <= minFreeSpace)
         {
             intermediateUpload();
-            ret = m_displayListBuffer.getBack().addCommand(cmd);
         }
-        return ret;
+        return m_displayListBuffer.getBack().addCommand(cmd);
     }
 
     void clearDisplayListAssembler()

@@ -74,6 +74,13 @@ public:
     static std::size_t getNumberOfElementsInPayloadByCommand(const CommandType) { return LUT_SIZE; }
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::FOG_LUT_STREAM; }
 
+    FogLutStreamCmd& operator=(const FogLutStreamCmd& rhs)
+    {
+        std::copy(rhs.m_payload.begin(), rhs.m_payload.end(), m_lut.begin());
+        m_payload = { m_lut };
+        return *this;
+    }
+
 private:
     void setBounds(const float lower, const float upper)
     {
