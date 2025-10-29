@@ -116,7 +116,7 @@ bool RIXGL::createInstance(IBusConnector& busConnector, IThreadRunner& workerThr
 {
     if (instance)
     {
-        delete instance;
+        instance->~RIXGL();
     }
     instance = new (&buffer) RIXGL { busConnector, workerThread, uploadThread };
     return instance != nullptr;
@@ -127,7 +127,7 @@ void RIXGL::destroy()
     if (instance)
     {
         instance->m_renderDevice->deinit();
-        delete instance;
+        instance->~RIXGL();
         instance = nullptr;
     }
 }
@@ -611,7 +611,7 @@ RIXGL::RIXGL(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRu
 
 RIXGL::~RIXGL()
 {
-    delete m_renderDevice;
+    m_renderDevice->~RenderDevice();
 }
 
 void RIXGL::swapDisplayList()

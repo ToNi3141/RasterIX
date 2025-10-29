@@ -126,6 +126,42 @@ module RasterIXCoreIF #(
     output wire [ADDR_WIDTH - 1 : 0]            fb_addr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   fb_size,
 
+    // Depth
+    output wire                                 m_depthbuffer_axis_tvalid,
+    input  wire                                 m_depthbuffer_axis_tready,
+    output wire                                 m_depthbuffer_axis_tlast,
+    output wire [DATA_WIDTH - 1 : 0]            m_depthbuffer_axis_tdata,
+    output wire [STRB_WIDTH - 1 : 0]            m_depthbuffer_axis_tstrb,
+
+    input  wire                                 s_depthbuffer_axis_tvalid,
+    output wire                                 s_depthbuffer_axis_tready,
+    input  wire                                 s_depthbuffer_axis_tlast,
+    input  wire [DATA_WIDTH - 1 : 0]            s_depthbuffer_axis_tdata,
+
+    output wire                                 m_depthbuffer_avalid,
+    output wire [ADDR_WIDTH - 1 : 0]            m_depthbuffer_aaddr,
+    output wire [ADDR_WIDTH - 1 : 0]            m_depthbuffer_abeats,
+    input  wire                                 m_depthbuffer_aready,
+    output wire                                 m_depthbuffer_arnw,
+
+    // Stencil
+    output wire                                 m_stencilbuffer_axis_tvalid,
+    input  wire                                 m_stencilbuffer_axis_tready,
+    output wire                                 m_stencilbuffer_axis_tlast,
+    output wire [DATA_WIDTH - 1 : 0]            m_stencilbuffer_axis_tdata,
+    output wire [STRB_WIDTH - 1 : 0]            m_stencilbuffer_axis_tstrb,
+
+    input  wire                                 s_stencilbuffer_axis_tvalid,
+    output wire                                 s_stencilbuffer_axis_tready,
+    input  wire                                 s_stencilbuffer_axis_tlast,
+    input  wire [DATA_WIDTH - 1 : 0]            s_stencilbuffer_axis_tdata,
+
+    output wire                                 m_stencilbuffer_avalid,
+    output wire [ADDR_WIDTH - 1 : 0]            m_stencilbuffer_aaddr,
+    output wire [ADDR_WIDTH - 1 : 0]            m_stencilbuffer_abeats,
+    input  wire                                 m_stencilbuffer_aready,
+    output wire                                 m_stencilbuffer_arnw,
+
     // TMU 0 memory access
     output wire [ID_WIDTH - 1 : 0]              m_tmu0_axi_arid,
     output wire [ADDR_WIDTH - 1 : 0]            m_tmu0_axi_araddr,
@@ -169,7 +205,6 @@ module RasterIXCoreIF #(
     localparam SCREEN_POS_WIDTH = 11;
     localparam PIXEL_WIDTH_STREAM = 16;
     localparam PIXEL_PER_BEAT = DATA_WIDTH / PIXEL_WIDTH_STREAM;
-    localparam FRAMEBUFFER_SUBPIXEL_PER_BEAT = PIXEL_PER_BEAT * FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
     localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
     // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
     // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
@@ -268,6 +303,7 @@ module RasterIXCoreIF #(
     generate
         if (ENABLE_DEPTH_BUFFER)
         begin
+            wire [PIXEL_PER_BEAT - 1 : 0] m_depthbuffer_unconverted_axis_tstrb;
             InternalFramebuffer depthBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
@@ -297,30 +333,30 @@ module RasterIXCoreIF #(
                 .wscreenPosX(m_depth_wscreenPosX),
                 .wscreenPosY(m_depth_wscreenPosY),
 
-                .apply(depthBufferApply),
+                .apply(depthBufferApply && (depthBufferCmdCommit || depthBufferCmdMemset || depthBufferCmdRead)),
                 .applied(depthBufferApplied),
                 .cmdCommit(depthBufferCmdCommit),
-                .cmdMemset(depthBufferCmdMemset || depthBufferCmdRead),
-                .cmdRead(0),
+                .cmdMemset(depthBufferCmdMemset),
+                .cmdRead(depthBufferCmdRead),
                 .cmdSize(depthBufferSize),
                 .cmdAddr(depthBufferAddr),
 
-                .m_axis_tvalid(),
-                .m_axis_tready(1),
-                .m_axis_tlast(),
-                .m_axis_tdata(),
-                .m_axis_tstrb(),
+                .m_axis_tvalid(m_depthbuffer_axis_tvalid),
+                .m_axis_tready(m_depthbuffer_axis_tready),
+                .m_axis_tlast(m_depthbuffer_axis_tlast),
+                .m_axis_tdata(m_depthbuffer_axis_tdata),
+                .m_axis_tstrb(m_depthbuffer_unconverted_axis_tstrb),
 
-                .s_axis_tvalid(0),
-                .s_axis_tready(),
-                .s_axis_tlast(0),
-                .s_axis_tdata(0),
+                .s_axis_tvalid(s_depthbuffer_axis_tvalid),
+                .s_axis_tready(s_depthbuffer_axis_tready),
+                .s_axis_tlast(s_depthbuffer_axis_tlast),
+                .s_axis_tdata(s_depthbuffer_axis_tdata),
 
-                .m_avalid(),
-                .m_aaddr(),
-                .m_abeats(),
-                .m_aready(1),
-                .m_arnw()
+                .m_avalid(m_depthbuffer_avalid),
+                .m_aaddr(m_depthbuffer_aaddr),
+                .m_abeats(m_depthbuffer_abeats),
+                .m_aready(m_depthbuffer_aready),
+                .m_arnw(m_depthbuffer_arnw)
             );
             defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
@@ -329,6 +365,11 @@ module RasterIXCoreIF #(
             defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
             defparam depthBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
             defparam depthBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
+
+            // The strobe can not logically be reduced to STRB_WIDTH bits, because the AXIS interface requires a strobe for every sub pixel.
+            // Therefore, as long one strobe signal is active, store the whole pixel. This should be sufficient because the strobing is already
+            // done by the internal framebuffer.
+            assign m_depthbuffer_axis_tstrb = { STRB_WIDTH { |m_depthbuffer_unconverted_axis_tstrb } };
         end
         else
         begin
@@ -337,9 +378,14 @@ module RasterIXCoreIF #(
             assign m_depth_rdata = 16'hffff;
             assign m_depth_arlast = 0;
             assign depthBufferApplied = 1;
+
+            assign m_depth_axis_tvalid = 0;
+            assign s_depth_axis_tready = 1;
+            assign m_depth_avalid = 0;
         end
     endgenerate
 
+    localparam FRAMEBUFFER_SUBPIXEL_PER_BEAT = PIXEL_PER_BEAT * FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
     wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0]   m_colorbuffer_unconverted_axis_tdata;
     wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0]   s_colorbuffer_unconverted_axis_tdata;
     wire [FRAMEBUFFER_SUBPIXEL_PER_BEAT - 1 : 0]                m_colorbuffer_unconverted_axis_tstrb;
@@ -448,6 +494,9 @@ module RasterIXCoreIF #(
     generate 
         if (ENABLE_STENCIL_BUFFER)
         begin
+            wire [PIXEL_PER_BEAT - 1 : 0]                   m_stencilbuffer_unconverted_axis_tstrb;
+            wire [(PIXEL_PER_BEAT * STENCIL_WIDTH) - 1 : 0] m_stencilbuffer_unconverted_axis_tdata;
+
             InternalFramebuffer stencilBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
@@ -477,30 +526,30 @@ module RasterIXCoreIF #(
                 .wscreenPosX(m_stencil_wscreenPosX),
                 .wscreenPosY(m_stencil_wscreenPosY),
 
-                .apply(stencilBufferApply),
+                .apply(stencilBufferApply && (stencilBufferCmdCommit || stencilBufferCmdMemset || stencilBufferCmdRead)),
                 .applied(stencilBufferApplied),
                 .cmdCommit(stencilBufferCmdCommit),
-                .cmdMemset(stencilBufferCmdMemset || stencilBufferCmdRead),
-                .cmdRead(0),
+                .cmdMemset(stencilBufferCmdMemset),
+                .cmdRead(stencilBufferCmdRead),
                 .cmdSize(stencilBufferSize),
                 .cmdAddr(stencilBufferAddr),
 
-                .m_axis_tvalid(),
-                .m_axis_tready(1),
-                .m_axis_tlast(),
-                .m_axis_tdata(),
-                .m_axis_tstrb(),
+                .m_axis_tvalid(m_stencilbuffer_axis_tvalid),
+                .m_axis_tready(m_stencilbuffer_axis_tready),
+                .m_axis_tlast(m_stencilbuffer_axis_tlast),
+                .m_axis_tdata(m_stencilbuffer_unconverted_axis_tdata),
+                .m_axis_tstrb(m_stencilbuffer_unconverted_axis_tstrb),
 
-                .s_axis_tvalid(0),
-                .s_axis_tready(),
-                .s_axis_tlast(0),
-                .s_axis_tdata(0),
+                .s_axis_tvalid(s_stencilbuffer_axis_tvalid),
+                .s_axis_tready(s_stencilbuffer_axis_tready),
+                .s_axis_tlast(s_stencilbuffer_axis_tlast),
+                .s_axis_tdata(s_stencilbuffer_axis_tdata[0 +: PIXEL_PER_BEAT * STENCIL_WIDTH]),
 
-                .m_avalid(),
-                .m_aaddr(),
-                .m_abeats(),
-                .m_aready(1),
-                .m_arnw()
+                .m_avalid(m_stencilbuffer_avalid),
+                .m_aaddr(m_stencilbuffer_aaddr),
+                .m_abeats(m_stencilbuffer_abeats),
+                .m_aready(m_stencilbuffer_aready),
+                .m_arnw(m_stencilbuffer_arnw)
             );
             defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam stencilBuffer.NUMBER_OF_SUB_PIXELS = STENCIL_WIDTH;
@@ -509,6 +558,12 @@ module RasterIXCoreIF #(
             defparam stencilBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
             defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
             defparam stencilBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
+
+            // The strobe can not logically be reduced to STRB_WIDTH bits, because the AXIS interface requires a strobe for every sub pixel.
+            // Therefore, as long one strobe signal is active, store the whole pixel. This should be sufficient because the strobing is already
+            // done by the internal framebuffer.
+            assign m_stencilbuffer_axis_tstrb = { STRB_WIDTH { |m_stencilbuffer_unconverted_axis_tstrb } };
+            assign m_stencilbuffer_axis_tdata = { { DATA_WIDTH - (PIXEL_PER_BEAT * STENCIL_WIDTH) { 1'b0 } }, m_stencilbuffer_unconverted_axis_tdata };
         end
         else
         begin
@@ -517,6 +572,10 @@ module RasterIXCoreIF #(
             assign m_stencil_rdata = 0;
             assign m_stencil_wready = 1;
             assign stencilBufferApplied = 1;
+
+            assign m_stencil_axis_tvalid = 0;
+            assign s_stencil_axis_tready = 1;
+            assign m_stencil_avalid = 0;
         end
     endgenerate
 

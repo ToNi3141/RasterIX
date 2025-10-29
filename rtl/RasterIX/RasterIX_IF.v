@@ -513,7 +513,7 @@ module RasterIX_IF #(
     wire commit_fb;
     wire fb_committed;
 
-    localparam FRAMEBUFFER_STREAMS = 1;
+    localparam FRAMEBUFFER_STREAMS = 3;
 
     wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_axis_wvalid;
     wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_axis_wready;
@@ -650,6 +650,40 @@ module RasterIX_IF #(
         .fb_swapped(fb_swapped),
         .fb_addr(fb_addr),
         .fb_size(fb_size),
+
+        .m_depthbuffer_axis_tvalid(framebuffer_axis_wvalid[1]),
+        .m_depthbuffer_axis_tready(framebuffer_axis_wready[1]),
+        .m_depthbuffer_axis_tlast(framebuffer_axis_wlast[1]),
+        .m_depthbuffer_axis_tdata(framebuffer_axis_wdata[1 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_depthbuffer_axis_tstrb(framebuffer_axis_wstrb[1 * STRB_WIDTH +: STRB_WIDTH]),
+
+        .s_depthbuffer_axis_tvalid(framebuffer_axis_rvalid[1]),
+        .s_depthbuffer_axis_tready(framebuffer_axis_rready[1]),
+        .s_depthbuffer_axis_tlast(framebuffer_axis_rlast[1]),
+        .s_depthbuffer_axis_tdata(framebuffer_axis_rdata[1 * DATA_WIDTH +: DATA_WIDTH]),
+
+        .m_depthbuffer_avalid(framebuffer_avalid[1]),
+        .m_depthbuffer_aaddr(framebuffer_aaddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_depthbuffer_abeats(framebuffer_abeats[1 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_depthbuffer_aready(framebuffer_aready[1]),
+        .m_depthbuffer_arnw(framebuffer_arnw[1]),
+
+        .m_stencilbuffer_axis_tvalid(framebuffer_axis_wvalid[2]),
+        .m_stencilbuffer_axis_tready(framebuffer_axis_wready[2]),
+        .m_stencilbuffer_axis_tlast(framebuffer_axis_wlast[2]),
+        .m_stencilbuffer_axis_tdata(framebuffer_axis_wdata[2 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_stencilbuffer_axis_tstrb(framebuffer_axis_wstrb[2 * STRB_WIDTH +: STRB_WIDTH]),
+
+        .s_stencilbuffer_axis_tvalid(framebuffer_axis_rvalid[2]),
+        .s_stencilbuffer_axis_tready(framebuffer_axis_rready[2]),
+        .s_stencilbuffer_axis_tlast(framebuffer_axis_rlast[2]),
+        .s_stencilbuffer_axis_tdata(framebuffer_axis_rdata[2 * DATA_WIDTH +: DATA_WIDTH]),
+
+        .m_stencilbuffer_avalid(framebuffer_avalid[2]),
+        .m_stencilbuffer_aaddr(framebuffer_aaddr[2 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_stencilbuffer_abeats(framebuffer_abeats[2 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_stencilbuffer_aready(framebuffer_aready[2]),
+        .m_stencilbuffer_arnw(framebuffer_arnw[2]),
 
         .m_tmu0_axi_arid(xbar_axi_arid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_tmu0_axi_araddr(xbar_axi_araddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),

@@ -71,7 +71,7 @@ public:
 
             if constexpr (!DisplayListDispatcherType::singleList())
             {
-                // Write the initial state to the display list. Only necessary when mutlilists are used
+                // Write the initial state to the display list. Only necessary when multilists are used
                 // to reset the state to the end of the last frame.
                 writeRenderStateToDisplayList();
             }
@@ -135,6 +135,7 @@ private:
     {
         std::array<RegisterVariant, std::variant_size_v<RegisterVariant>> registers {};
         FogLutStreamCmd fogLut {};
+        std::array<TextureStreamCmd, RenderConfig::TMU_COUNT> textureStream {};
     };
 
     void initDisplayLists()
@@ -287,7 +288,29 @@ private:
             });
     }
 
-    bool handleCommand(FramebufferCmd cmd)
+    void addLineDepthBufferAddresses()
+    {
+        addCommandWithFactory(
+            [this](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
+            {
+                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+                const uint32_t addr = m_depthBufferAddr + (screenSize * (lines - i - 1));
+                return WriteRegisterCmd { DepthBufferAddrReg { addr } };
+            });
+    }
+
+    void addLineStencilBufferAddresses()
+    {
+        addCommandWithFactory(
+            [this](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
+            {
+                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+                const uint32_t addr = m_stencilBufferAddr + (screenSize * (lines - i - 1));
+                return WriteRegisterCmd { StencilBufferAddrReg { addr } };
+            });
+    }
+
+    bool handleCommand(const FramebufferCmd& cmd)
     {
         if (cmd.getSwapFramebuffer())
         {
@@ -296,21 +319,25 @@ private:
                 [&cmd](const std::size_t, const std::size_t displayLines, const std::size_t resX, const std::size_t resY)
                 {
                     const std::size_t screenSize = resX * resY * displayLines;
-                    cmd.setFramebufferSizeInPixel(screenSize);
-                    return cmd;
+                    FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
+                    c.swapFramebuffer();
+                    return c;
                 });
         }
 
         addLineColorBufferAddresses();
+        addLineDepthBufferAddresses();
+        addLineStencilBufferAddresses();
         // Clear
         if (cmd.getEnableMemset())
         {
             return addCommandWithFactory_if(
-                [&cmd](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
+                [&cmd](const std::size_t i, const std::size_t, const std::size_t resX, const std::size_t resY)
                 {
-                    const uint32_t screenSize = resX * resY;
-                    cmd.setFramebufferSizeInPixel(screenSize);
-                    return cmd;
+                    const std::size_t screenSize = resX * resY;
+                    FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
+                    c.enableMemset();
+                    return c;
                 },
                 [this](const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
                 {
@@ -340,9 +367,10 @@ private:
                     // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
                     // to flush the pipeline. This is the easiest way to solve WAR conflicts.
                     // This command is required for the IF config.
-                    const uint32_t screenSize = resX * resY;
-                    cmd.setFramebufferSizeInPixel(screenSize);
-                    return cmd;
+                    const std::size_t screenSize = resX * resY;
+                    FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
+                    c.commitFramebuffer();
+                    return c;
                 });
         }
         // Load
@@ -351,8 +379,10 @@ private:
             return addCommandWithFactory(
                 [&cmd](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
                 {
-                    cmd.setFramebufferSizeInPixel(resX * resY);
-                    return cmd;
+                    const std::size_t screenSize = resX * resY;
+                    FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
+                    c.loadFramebuffer();
+                    return c;
                 });
         }
         SPDLOG_CRITICAL("FramebufferCmd was not correctly handled and is ignored. This might cause the renderer to crash ...");
@@ -410,6 +440,10 @@ private:
 
     bool handleCommand(const TextureStreamCmd& cmd)
     {
+        if constexpr (!DisplayListDispatcherType::singleList())
+        {
+            m_renderState.textureStream[cmd.getTmu()] = cmd;
+        }
         return addCommand(cmd);
     }
 
@@ -440,6 +474,7 @@ private:
 
     bool handleRegister(const DepthBufferAddrReg& reg)
     {
+        m_depthBufferAddr = reg.getValue();
         return writeReg(reg);
     }
 
@@ -496,6 +531,7 @@ private:
 
     bool handleRegister(const StencilBufferAddrReg& reg)
     {
+        m_stencilBufferAddr = reg.getValue();
         return writeReg(reg);
     }
 
@@ -593,6 +629,10 @@ private:
                 r);
         }
         handleCommand(m_renderState.fogLut);
+        for (const auto& ts : m_renderState.textureStream)
+        {
+            handleCommand(ts);
+        }
     }
 
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
@@ -624,6 +664,8 @@ private:
 
     RenderState m_renderState {};
     uint32_t m_colorBufferAddr {};
+    uint32_t m_depthBufferAddr {};
+    uint32_t m_stencilBufferAddr {};
     bool m_scissorEnabled { false };
     int32_t m_scissorYStart { 0 };
     int32_t m_scissorYEnd { 0 };

@@ -134,7 +134,7 @@ public:
     {
         return (m_op & ~op::MASK) & OP_FRAMEBUFFER_COLOR_BUFFER_SELECT;
     }
-    bool setSelectDepthBuffer() const
+    bool getSelectDepthBuffer() const
     {
         return (m_op & ~op::MASK) & OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT;
     }

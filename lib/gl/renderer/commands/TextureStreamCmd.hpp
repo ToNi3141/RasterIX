@@ -68,6 +68,14 @@ public:
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t cmd) { return cmd & TEXTURE_STREAM_SIZE_MASK; }
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::TEXTURE_STREAM; }
 
+    TextureStreamCmd& operator=(const TextureStreamCmd& rhs)
+    {
+        std::copy(rhs.m_payload.begin(), rhs.m_payload.end(), m_pages.begin());
+        m_payload = { m_pages };
+        m_op = rhs.m_op;
+        return *this;
+    }
+
 private:
     std::array<uint32_t, MAX_PAGES> m_pages;
     PayloadType m_payload {};
