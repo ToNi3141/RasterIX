@@ -32,7 +32,8 @@
                 "RIX_CORE_STENCIL_BUFFER_LOC": "0x01900000",
                 "RIX_CORE_THREADED_RASTERIZATION": "true",
                 "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "1024 * 1024 * 16",
-                "RIX_CORE_ENABLE_VSYNC": "false"
+                "RIX_CORE_ENABLE_VSYNC": "false",
+                "RIX_CORE_PERFORMANCE_MODE": "true"
             }
         },
         {
@@ -86,7 +87,8 @@
                 "RIX_CORE_STENCIL_BUFFER_LOC": "0x01700000",
                 "RIX_CORE_THREADED_RASTERIZATION": "true",
                 "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "1024 * 1024 * 4",
-                "RIX_CORE_ENABLE_VSYNC": "false"
+                "RIX_CORE_ENABLE_VSYNC": "false",
+                "RIX_CORE_PERFORMANCE_MODE": "true"
             }
         },
         {
