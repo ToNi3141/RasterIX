@@ -464,7 +464,7 @@ private:
     bool handleRegister(const ColorBufferAddrReg& reg)
     {
         m_colorBufferAddr = reg.getValue();
-        return true; // The color buffer address will be set when a framebuffer command is handled
+        return writeReg(reg);
     }
 
     bool handleRegister(const ColorBufferClearColorReg& reg)
