@@ -8,7 +8,6 @@
   - [How to port the Driver](#how-to-port-the-driver)
   - [How to use the Core](#how-to-use-the-core)
 - [Variant](#variant)
-- [Missing Features](#missing-features)
 
 # About this Project
 The RasterIX* project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3-compatible fixed-function pixel pipeline with up to two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
@@ -119,10 +118,11 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RIX_CORE_COLOR_BUFFER_LOC_2            | Location of the second framebuffer. |
 | RIX_CORE_DEPTH_BUFFER_LOC              | Location of the depth buffer (unused in `rixif`). |
 | RIX_CORE_STENCIL_BUFFER_LOC            | Location of the stencil buffer (unused in `rixif`). |
-| RIX_CORE_THREADED_RASTERIZATION        | Will run the rasterization and (in case of a `rixef`config) also the transformation in a thread. A threaded runner is required. Can significantly improve the performance of the vertex pipeline. |
-| RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE | Sets the size of the display list. Bigger lists are required for the IF config. The EF config allows smaller lists because of intermediate uploads. |
+| RIX_CORE_THREADED_RASTERIZATION        | Will run the rasterization and transformation in a thread. A threaded runner is for the `rixif` required. Can significantly improve the performance of the vertex pipeline. |
+| RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE | Sets the size of the display list. A good value is a size similar of `IDevice::requestDisplayListBuffer().size()`. Most of the times smaller lists are also working perfectly fine. |
 | RIX_CORE_ENABLE_VSYNC                  | Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals. |
 | MAX_VBO_COUNT                          | Max usable VBOs (Vertex Buffer Objects). Default is 256. VBOs are used mainly for compatibility with OpenGL, but do not provide performance advantages in this driver. |
+| RIX_CORE_PERFORMANCE_MODE              | Enables the performance mode which exchanges compatibility with performance optimizations. For instance, the intermediate display upload (where a frame is split in several display lists, when a display list overflows) will break on the `rixif` config, because the depth and stencil buffer are not reloaded. |
 
 ## How to use the Core
 1. Add the files in the following directories to your project: `rtl/RasterIX/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.
@@ -166,21 +166,13 @@ Note: Bold options are required to be equal to the software counterparts.
 # Variant
 The core comes in two variants: `RasterIX_IF` and `RasterIX_EF`. `IF` stands for internal framebuffer, while `EF` stands for external framebuffer. Both variants have their advantages and drawbacks, but except for framebuffer handling and resulting limitations, they are functionally identical.
 
-`RasterIX_IF`: This variant is usually faster because it only loosely depends on the memory subsystem of your FPGA. Rendering is executed entirely in the FPGA's static RAM resources. The drawback is the occupation of significant RAM resources on both the FPGA and the host. For reasonable performance, you need at least 128kB + 128kB + 32kB = 288kB of memory just for the framebuffers. Less is possible but only useful for smaller displays; more memory is generally recommended.
-
-The memory used is decoupled from the actual framebuffer size. If a framebuffer with a specific resolution does not fit into the internal framebuffer, it is rendered in several cycles, with the internal framebuffer containing only a part of the whole framebuffer.
+`RasterIX_IF`: This variant is usually faster because it loosely depends on the memory subsystem of your FPGA. Rendering is executed entirely in the FPGA's static RAM resources. The drawback is the occupation of significant RAM resources on both the FPGA and the host. For a reasonable performance, at least 1/8 of a framebuffer needs to fit into the FPGA. The driver will automatically split the displaylists depending of the amount of memory is used in the FPGA.
 
 Because the framebuffer is split into several smaller ones, the host requires a display list for each partial framebuffer and must keep the display list in memory until rendering is complete. For a picture with reasonable complexity, you can assume that the host requires several MB of memory just for the display lists. 
-Rendering issues can happen with `glClear()` or intermediate uploads. No partial depth or stencil buffer is loaded into the FPGA SRAM; instead, only the clear color is loaded. As a result, you end up with a cleared framebuffer instead of the content from the main memory. The color buffer behaves differently: it loads the content of the partial color buffer from main memory into the FPGA SRAM to continue drawing on a frame in the framebuffer. Depth and stencil buffers are excluded from this mechanism because drawing with out clear is rarely used, and excluding them improves the performance of the IF variant.
-Because the stencil/depth buffer are cleared, an intermediate upload will also produce a wrong result in the IF config.
+In non RIX_CORE_PERFORMANCE_MODE intermediate uploads are supported, but decreasing the performance.
 
 `RasterIX_EF`: The performance of this variant heavily depends on the performance of your memory subsystem, because all framebuffers are stored in system memory (typically DRAM). While latency is not critical for performance, the number of memory requests the system can handle is much more important. This is a significant bottleneck for this design, especially with the Xilinx MIG (making it about three times slower than `RasterIX_IF`). Another limitation of the memory subsystem/AXI bus (the strobe of the AXI bus works only byte-wise, not bit-wise) is that stencil and color masks do not work correctly, and the color buffer does not support an alpha channel.
 
-The advantages are that it does not use FPGA memory resources for the framebuffers, freeing them for other designs, though it requires additional logic to handle memory requests. Another advantage is the use of smaller display lists with intermediate display list uploads, reducing the memory footprint for display lists on the host system to a few kB. It is no longer necessary to keep the whole frame in the display list; the display list now acts only as a buffer. This configuration works more like a traditional renderer.
+The advantages are that it does not use FPGA memory resources for the framebuffers, freeing them for other designs, though it requires additional logic to handle memory requests. Another advantage is the use of much smaller display lists (a few kB) without impacting the performance of the render.
 
 Both variants can operate in either fixed-point or floating-point arithmetic. The fixed-point arithmetic provides almost the same image quality and compatibility as floating-point arithmetic. All tested games work perfectly fine with both, while the fixed-point configuration requires only half the logic of the floating-point configuration.
-
-# Missing Features
-The following features are currently missing compared to a real OpenGL implementation
-- Logic Ops
-- ...

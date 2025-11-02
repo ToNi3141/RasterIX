@@ -34,6 +34,7 @@
 #include "renderer/registers/RegisterVariant.hpp"
 
 #include "renderer/threadedRasterizer/DeviceUploadList.hpp"
+#include "renderer/threadedRasterizer/RenderState.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -73,13 +74,22 @@ public:
             {
                 // Write the initial state to the display list. Only necessary when multilists are used
                 // to reset the state to the end of the last frame.
-                writeRenderStateToDisplayList();
+                m_renderState.restoreRenderState(
+                    [this](const auto& reg)
+                    { handleRegister(reg); },
+                    [this](const auto& cmd)
+                    { handleCommand(cmd); });
             }
 
             while (disassembler.hasNextCommand())
             {
                 const bool ret = std::visit([this](const auto& cmd)
-                    { return handleCommand(cmd); },
+                    { 
+                        if constexpr (!DisplayListDispatcherType::singleList())
+                        {
+                            m_renderState.storeCommand(cmd);
+                        }
+                        return handleCommand(cmd); },
                     disassembler.getNextCommand());
                 if (!ret)
                 {
@@ -130,13 +140,6 @@ private:
     using DisplayListAssemblerArrayType = std::array<DisplayListAssemblerType, RenderConfig::getDisplayLines()>;
     using DisplayListDispatcherType = displaylist::DisplayListDispatcher<RenderConfig, DisplayListAssemblerArrayType>;
     using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListDispatcherType>;
-
-    struct RenderState
-    {
-        std::array<RegisterVariant, std::variant_size_v<RegisterVariant>> registers {};
-        FogLutStreamCmd fogLut {};
-        std::array<TextureStreamCmd, RenderConfig::TMU_COUNT> textureStream {};
-    };
 
     void initDisplayLists()
     {
@@ -391,10 +394,6 @@ private:
 
     bool handleCommand(const FogLutStreamCmd& cmd)
     {
-        if constexpr (!DisplayListDispatcherType::singleList())
-        {
-            m_renderState.fogLut = cmd;
-        }
         return addCommand(cmd);
     }
 
@@ -440,19 +439,11 @@ private:
 
     bool handleCommand(const TextureStreamCmd& cmd)
     {
-        if constexpr (!DisplayListDispatcherType::singleList())
-        {
-            m_renderState.textureStream[cmd.getTmu()] = cmd;
-        }
         return addCommand(cmd);
     }
 
     bool handleCommand(const WriteRegisterCmd& cmd)
     {
-        if constexpr (!DisplayListDispatcherType::singleList())
-        {
-            m_renderState.registers[cmd.getRegister().index()] = cmd.getRegister();
-        }
         return std::visit(
             [this](const auto& reg)
             {
@@ -615,24 +606,6 @@ private:
         }
         m_textureUploadList.clear();
         m_device.blockUntilDeviceIsIdle();
-    }
-
-    void writeRenderStateToDisplayList()
-    {
-        for (const auto& r : m_renderState.registers)
-        {
-            std::visit(
-                [this](const auto& reg)
-                {
-                    handleRegister(reg);
-                },
-                r);
-        }
-        handleCommand(m_renderState.fogLut);
-        for (const auto& ts : m_renderState.textureStream)
-        {
-            handleCommand(ts);
-        }
     }
 
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
