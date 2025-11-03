@@ -34,7 +34,7 @@ public:
     }
 
     template <typename TRegHandlers, typename TCmdHandlers>
-    void restoreRenderState(const TRegHandlers& regHandlers, const TCmdHandlers cmdHandlers)
+    void restoreRenderState(const TRegHandlers& regHandlers, const TCmdHandlers& cmdHandlers)
     {
         for (const auto& r : m_state.registers)
         {
