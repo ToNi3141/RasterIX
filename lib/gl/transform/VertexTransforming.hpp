@@ -228,14 +228,14 @@ private:
             lighting::LightingCalc { m_data.lighting }.calculateLights(
                 outParam.colorFront,
                 parameter.color,
-                parameter.vertex,
+                outParam.vertex,
                 normal);
             if (m_data.lighting.enableTwoSideModel)
             {
                 lighting::LightingCalc { m_data.lighting }.calculateLights(
                     outParam.colorBack,
                     parameter.color,
-                    parameter.vertex,
+                    outParam.vertex,
                     normal * -1.0f);
             }
         }

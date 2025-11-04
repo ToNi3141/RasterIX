@@ -36,6 +36,9 @@
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
 namespace rr
 {
+
+alignas(RIXGL) std::byte buffer[sizeof(RIXGL)];
+
 RIXGL* instance { nullptr };
 
 RIXGL& RIXGL::getInstance()
@@ -107,13 +110,15 @@ public:
     MipMapGenerator mipMapGenerator {};
 };
 
+alignas(RenderDevice) std::byte renderDeviceBuffer[sizeof(RenderDevice)];
+
 bool RIXGL::createInstance(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
 {
     if (instance)
     {
-        delete instance;
+        instance->~RIXGL();
     }
-    instance = new RIXGL { busConnector, workerThread, uploadThread };
+    instance = new (&buffer) RIXGL { busConnector, workerThread, uploadThread };
     return instance != nullptr;
 }
 
@@ -122,13 +127,13 @@ void RIXGL::destroy()
     if (instance)
     {
         instance->m_renderDevice->deinit();
-        delete instance;
+        instance->~RIXGL();
         instance = nullptr;
     }
 }
 
 RIXGL::RIXGL(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
-    : m_renderDevice { new RenderDevice { busConnector, workerThread, uploadThread } }
+    : m_renderDevice { new (&renderDeviceBuffer) RenderDevice { busConnector, workerThread, uploadThread } }
 {
     // Register Open GL 1.0 procedures
     addLibProcedure("glAccum", ADDRESS_OF(impl_glAccum));
@@ -606,7 +611,7 @@ RIXGL::RIXGL(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRu
 
 RIXGL::~RIXGL()
 {
-    delete m_renderDevice;
+    m_renderDevice->~RenderDevice();
 }
 
 void RIXGL::swapDisplayList()

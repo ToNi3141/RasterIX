@@ -33,7 +33,7 @@ namespace rr
 class MipMapGenerator
 {
 public:
-    void generateMipMap(TextureObjectMipmap& textureObject, const std::size_t baseLevel)
+    void generateMipMap(TextureObject& textureObject, const std::size_t baseLevel)
     {
         if (m_enableMipMapGeneration)
         {
@@ -44,25 +44,21 @@ public:
     void setEnableMipMapGeneration(const bool enableGeneration) { m_enableMipMapGeneration = enableGeneration; }
 
 private:
-    static void mipMapCreator(TextureObjectMipmap& textureObject, const std::size_t baseLevel)
+    static void mipMapCreator(TextureObject& textureObject, const std::size_t baseLevel)
     {
         using PixelType = TextureObject::PixelsType::element_type;
 
-        for (std::size_t i = baseLevel; i < textureObject.size() - 1; i++)
+        const std::size_t levels = textureObject.getLevels();
+        for (std::size_t i = baseLevel; i < levels - 1; i++)
         {
-            if ((textureObject[i].width == 1) && (textureObject[i].height == 1))
+            if ((textureObject.getWidth(i) == 1) && (textureObject.getHeight(i) == 1))
             {
                 // No more mip map reduction is available. The 1x1 texture is reached
                 return;
             }
 
-            textureObject[i + 1] = textureObject[i];
-            textureObject[i + 1].width = std::max(textureObject[i].width / 2, static_cast<std::size_t>(1));
-            textureObject[i + 1].height = std::max(textureObject[i].height / 2, static_cast<std::size_t>(1));
-            textureObject[i + 1].sizeInBytes = textureObject[i + 1].height * textureObject[i + 1].width * sizeof(PixelType);
-
             std::shared_ptr<PixelType> texMemShared(
-                new PixelType[textureObject[i + 1].sizeInBytes / sizeof(PixelType)],
+                new PixelType[textureObject.getSizeInBytes(i + 1) / sizeof(PixelType)],
                 [](const PixelType* p)
                 { delete[] p; });
 
@@ -72,14 +68,14 @@ private:
                 SPDLOG_ERROR("mipMapCreator Out Of Memory");
                 return;
             }
-            textureObject[i + 1].pixels = texMemShared;
+            textureObject.setPixels(i + 1, texMemShared);
 
             ImageConverter::computeMipMapLevel(
-                textureObject[i + 1].pixels,
-                textureObject[i].internalPixelFormat,
-                textureObject[i].width,
-                textureObject[i].height,
-                textureObject[i].pixels);
+                textureObject.getPixels(i + 1),
+                textureObject.getInternalPixelFormat(i),
+                textureObject.getWidth(i),
+                textureObject.getHeight(i),
+                textureObject.getPixels(i));
         }
     }
 

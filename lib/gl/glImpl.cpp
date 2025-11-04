@@ -3309,11 +3309,11 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
         return;
     }
 
-    TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
+    TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture() };
 
-    texObj.width = widthRounded;
-    texObj.height = heightRounded;
-    texObj.internalPixelFormat = internalPixelFormat;
+    texObj.setWidth(level, widthRounded);
+    texObj.setHeight(level, heightRounded);
+    texObj.setInternalPixelFormat(level, internalPixelFormat);
 
     SPDLOG_DEBUG("glTexImage2D redirect to glTexSubImage2D");
     impl_glTexSubImage2D(target, level, 0, 0, width, height, format, type, pixels);
@@ -4072,9 +4072,9 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         return;
     }
 
-    TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture()[level] };
-    if (((xoffset + width) > static_cast<GLint>(texObj.width))
-        || ((yoffset + height) > static_cast<GLint>(texObj.height)))
+    TextureObject& texObj { RIXGL::getInstance().pipeline().texture().getTexture() };
+    if (((xoffset + width) > static_cast<GLint>(texObj.getWidth(level)))
+        || ((yoffset + height) > static_cast<GLint>(texObj.getHeight(level))))
     {
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
         SPDLOG_ERROR("glTexSubImage2D offsets or texture sizes are too big");
@@ -4083,7 +4083,7 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
 
     using PixelType = TextureObject::PixelsType::element_type;
 
-    const std::size_t texMemSize = texObj.width * texObj.height * sizeof(PixelType);
+    const std::size_t texMemSize = texObj.getWidth(level) * texObj.getHeight(level) * sizeof(PixelType);
     if (texMemSize == 0)
     {
         SPDLOG_DEBUG("glTexSubImage2D texture with zero dimensions loaded.");
@@ -4101,24 +4101,23 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
         SPDLOG_ERROR("glTexSubImage2D Out Of Memory");
         return;
     }
-    if (texObj.pixels)
+    if (texObj.getPixels(level))
     {
-        std::memcpy(texMemShared.get(), texObj.pixels.get(), std::min(texObj.sizeInBytes, texMemSize));
+        std::memcpy(texMemShared.get(), texObj.getPixels(level).get(), std::min(texObj.getSizeInBytes(level), texMemSize));
     }
     else
     {
         std::memset(texMemShared.get(), 0, texMemSize);
     }
-    texObj.pixels = texMemShared;
-    texObj.sizeInBytes = texMemSize;
+    texObj.setPixels(level, texMemShared);
 
     // Check if pixels is null. If so, just set the empty memory area and don't copy anything.
     if (pixels != nullptr)
     {
         RIXGL::getInstance().imageConverter().convertUnpack(
-            texObj.pixels,
-            texObj.internalPixelFormat,
-            texObj.width,
+            texObj.getPixels(level),
+            texObj.getInternalPixelFormat(level),
+            texObj.getWidth(level),
             xoffset,
             yoffset,
             width,

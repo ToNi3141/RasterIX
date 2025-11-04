@@ -19,7 +19,9 @@
 #define TEXTURE_OBJECT_HPP
 
 #include "Enums.hpp"
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <memory>
 
 namespace rr
@@ -27,9 +29,9 @@ namespace rr
 struct TextureObject
 {
     using PixelsType = std::shared_ptr<uint16_t>;
-    static constexpr std::size_t MAX_LOD { 8 };
+    static constexpr std::size_t MAX_LOD { 9 };
 
-    DevicePixelFormat getDevicePixelFormat() const
+    DevicePixelFormat getDevicePixelFormat([[maybe_unused]] const std::size_t level) const
     {
         DevicePixelFormat format {};
         switch (internalPixelFormat)
@@ -61,16 +63,87 @@ struct TextureObject
         return format;
     }
 
+    std::size_t getWidth(const std::size_t level) const
+    {
+        return std::max(std::size_t { 1 }, width >> level);
+    }
+
+    std::size_t getHeight(const std::size_t level) const
+    {
+        return std::max(std::size_t { 1 }, height >> level);
+    }
+
+    std::size_t getSizeInBytes(const std::size_t level) const
+    {
+        if (pixels[level])
+        {
+            return getWidth(level) * getHeight(level) * sizeof(TextureObject::PixelsType::element_type);
+        }
+        return std::size_t { 0 };
+    }
+
+    void setWidth(const std::size_t level, const std::size_t w)
+    {
+        if (level != 0)
+        {
+            return;
+        }
+        width = w;
+    }
+
+    void setHeight(const std::size_t level, const std::size_t h)
+    {
+        if (level != 0)
+        {
+            return;
+        }
+        height = h;
+    }
+
+    InternalPixelFormat getInternalPixelFormat([[maybe_unused]] const std::size_t level) const
+    {
+        return internalPixelFormat;
+    }
+
+    void setInternalPixelFormat(const std::size_t level, const InternalPixelFormat ipf)
+    {
+        if (level != 0)
+        {
+            return;
+        }
+        internalPixelFormat = ipf;
+    }
+
+    PixelsType getPixels(const std::size_t level)
+    {
+        return pixels[level];
+    }
+
+    void setPixels(const std::size_t level, PixelsType p)
+    {
+        pixels[level] = p;
+    }
+
+    std::size_t getLevels() const
+    {
+        const std::size_t maxPixel = std::max(getWidth(0), getHeight(0));
+        const float level = std::log2(static_cast<float>(maxPixel));
+        return static_cast<std::size_t>(level);
+    }
+
+    std::size_t getMaxLevels() const
+    {
+        return TextureObject::MAX_LOD;
+    }
+
+private:
     /// @brief The texture in the format defined by DevicePixelFormat. Do not reuse this pointer.
     /// The memory allocated in this pointer might be already queued for texture upload.
-    /// It is save to read from this pointer, but not save to write to it.
-    PixelsType pixels {};
-    std::size_t sizeInBytes {}; // The size of the pixels pointer in bytes
+    /// It is safe to read from this pointer, but not safe to write to it.
+    std::array<PixelsType, TextureObject::MAX_LOD> pixels {};
     std::size_t width {}; ///< The width of the texture
     std::size_t height {}; ///< The height of the texture
     InternalPixelFormat internalPixelFormat {}; ///< The intended pixel format which is converted to a type of DevicePixelFormat
 };
-
-using TextureObjectMipmap = std::array<TextureObject, TextureObject::MAX_LOD + 1>;
 } // namespace rr
 #endif // TEXTURE_OBJECT_HPP

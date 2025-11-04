@@ -157,7 +157,7 @@ private:
     static constexpr uint32_t RESOLUTION_H = 240;
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
-    BusConnector<> m_busConnector {};
+    BusConnector<4096> m_busConnector {};
     rr::NoThreadRunner m_workerThread {};
     rr::NoThreadRunner m_uploadThread {};
     bool led = false;

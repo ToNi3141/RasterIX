@@ -34,6 +34,7 @@
 #include "renderer/registers/RegisterVariant.hpp"
 
 #include "renderer/threadedRasterizer/DeviceUploadList.hpp"
+#include "renderer/threadedRasterizer/RenderState.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -69,10 +70,26 @@ public:
             srcList.setCurrentSize(size);
             displaylist::DisplayListDisassembler disassembler { srcList };
 
+            if constexpr (!DisplayListDispatcherType::singleList())
+            {
+                // Write the initial state to the display list. Only necessary when multilists are used
+                // to reset the state to the end of the last frame.
+                m_renderState.restoreRenderState(
+                    [this](const auto& reg)
+                    { handleRegister(reg); },
+                    [this](const auto& cmd)
+                    { handleCommand(cmd); });
+            }
+
             while (disassembler.hasNextCommand())
             {
                 const bool ret = std::visit([this](const auto& cmd)
-                    { return handleCommand(cmd); },
+                    { 
+                        if constexpr (!DisplayListDispatcherType::singleList())
+                        {
+                            m_renderState.storeCommand(cmd);
+                        }
+                        return handleCommand(cmd); },
                     disassembler.getNextCommand());
                 if (!ret)
                 {
@@ -274,7 +291,29 @@ private:
             });
     }
 
-    bool handleCommand(FramebufferCmd cmd)
+    void addLineDepthBufferAddresses()
+    {
+        addCommandWithFactory(
+            [this](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
+            {
+                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+                const uint32_t addr = m_depthBufferAddr + (screenSize * (lines - i - 1));
+                return WriteRegisterCmd { DepthBufferAddrReg { addr } };
+            });
+    }
+
+    void addLineStencilBufferAddresses()
+    {
+        addCommandWithFactory(
+            [this](const std::size_t i, const std::size_t lines, const std::size_t resX, const std::size_t resY)
+            {
+                const uint32_t screenSize = static_cast<uint32_t>(resY) * resX * 2;
+                const uint32_t addr = m_stencilBufferAddr + (screenSize * (lines - i - 1));
+                return WriteRegisterCmd { StencilBufferAddrReg { addr } };
+            });
+    }
+
+    bool handleCommand(const FramebufferCmd& cmd)
     {
         if (cmd.getSwapFramebuffer())
         {
@@ -283,21 +322,25 @@ private:
                 [&cmd](const std::size_t, const std::size_t displayLines, const std::size_t resX, const std::size_t resY)
                 {
                     const std::size_t screenSize = resX * resY * displayLines;
-                    cmd.setFramebufferSizeInPixel(screenSize);
-                    return cmd;
+                    FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
+                    c.swapFramebuffer();
+                    return c;
                 });
         }
 
         addLineColorBufferAddresses();
+        addLineDepthBufferAddresses();
+        addLineStencilBufferAddresses();
         // Clear
         if (cmd.getEnableMemset())
         {
             return addCommandWithFactory_if(
-                [&cmd](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
+                [&cmd](const std::size_t i, const std::size_t, const std::size_t resX, const std::size_t resY)
                 {
-                    const uint32_t screenSize = resX * resY;
-                    cmd.setFramebufferSizeInPixel(screenSize);
-                    return cmd;
+                    const std::size_t screenSize = resX * resY;
+                    FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
+                    c.enableMemset();
+                    return c;
                 },
                 [this](const std::size_t i, const std::size_t, const std::size_t, const std::size_t resY)
                 {
@@ -327,9 +370,10 @@ private:
                     // The EF config requires a NopCmd or another command like a commit (which is in this config a Nop)
                     // to flush the pipeline. This is the easiest way to solve WAR conflicts.
                     // This command is required for the IF config.
-                    const uint32_t screenSize = resX * resY;
-                    cmd.setFramebufferSizeInPixel(screenSize);
-                    return cmd;
+                    const std::size_t screenSize = resX * resY;
+                    FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
+                    c.commitFramebuffer();
+                    return c;
                 });
         }
         // Load
@@ -338,8 +382,10 @@ private:
             return addCommandWithFactory(
                 [&cmd](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
                 {
-                    cmd.setFramebufferSizeInPixel(resX * resY);
-                    return cmd;
+                    const std::size_t screenSize = resX * resY;
+                    FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
+                    c.loadFramebuffer();
+                    return c;
                 });
         }
         SPDLOG_CRITICAL("FramebufferCmd was not correctly handled and is ignored. This might cause the renderer to crash ...");
@@ -419,6 +465,7 @@ private:
 
     bool handleRegister(const DepthBufferAddrReg& reg)
     {
+        m_depthBufferAddr = reg.getValue();
         return writeReg(reg);
     }
 
@@ -442,11 +489,6 @@ private:
     }
 
     bool handleRegister(const FragmentPipelineReg& reg)
-    {
-        return writeReg(reg);
-    }
-
-    bool handleRegister(const RegisterVariant& reg)
     {
         return writeReg(reg);
     }
@@ -480,6 +522,7 @@ private:
 
     bool handleRegister(const StencilBufferAddrReg& reg)
     {
+        m_stencilBufferAddr = reg.getValue();
         return writeReg(reg);
     }
 
@@ -511,6 +554,11 @@ private:
                 const uint16_t yOffset = i * resY;
                 return WriteRegisterCmd { YOffsetReg { 0, yOffset } };
             });
+    }
+
+    bool handleRegister(const std::monostate&)
+    {
+        return true;
     }
 
     void swapAndUploadDisplayLists()
@@ -587,7 +635,10 @@ private:
         m_setStencilBufferConfigLambda,
     };
 
+    RenderState m_renderState {};
     uint32_t m_colorBufferAddr {};
+    uint32_t m_depthBufferAddr {};
+    uint32_t m_stencilBufferAddr {};
     bool m_scissorEnabled { false };
     int32_t m_scissorYStart { 0 };
     int32_t m_scissorYEnd { 0 };

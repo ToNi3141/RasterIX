@@ -125,10 +125,17 @@ void Renderer::initDisplayLists()
 
 void Renderer::intermediateUpload()
 {
-    uploadTextures();
-    uploadDisplayList();
-    switchDisplayLists();
-    clearDisplayListAssembler();
+    // Add a raw commit framebuffer command to write the current frame into the framebuffer
+    FramebufferCmd cmd { true, !RenderConfig::PERFORMANCE_MODE, !RenderConfig::PERFORMANCE_MODE, m_resolutionX * m_resolutionY };
+    cmd.commitFramebuffer();
+    m_displayListBuffer.getBack().addCommand(cmd);
+
+    // Upload and clear display list
+    initAndUploadDisplayList();
+
+    // Now load the framebuffer again with the new display list
+    setYOffset();
+    loadFramebuffer();
 }
 
 void Renderer::swapDisplayList()
@@ -175,7 +182,7 @@ void Renderer::loadFramebuffer()
     // Loads the framebuffer into the internal framebuffer when using the IF config.
     // This is required to enable framebuffer effects, such as redrawing to an uncleared framebuffer.
     // This command is ignored in the EF config.
-    FramebufferCmd cmd { true, true, true, m_resolutionX * m_resolutionY };
+    FramebufferCmd cmd { true, !RenderConfig::PERFORMANCE_MODE, !RenderConfig::PERFORMANCE_MODE, m_resolutionX * m_resolutionY };
     cmd.loadFramebuffer();
     addCommand(cmd);
 }
@@ -186,7 +193,7 @@ void Renderer::addCommitFramebufferCommand()
     // to flush the pipeline. This is the easiest way to solve WAR conflicts.
     // This command is required for the IF config.
     const uint32_t screenSize = m_resolutionX * m_resolutionY;
-    FramebufferCmd cmd { true, true, true, screenSize };
+    FramebufferCmd cmd { true, !RenderConfig::PERFORMANCE_MODE, !RenderConfig::PERFORMANCE_MODE, screenSize };
     cmd.commitFramebuffer();
     addCommand(cmd);
 }

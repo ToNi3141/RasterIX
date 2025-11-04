@@ -32,6 +32,11 @@ public:
     {
     }
 
+    uint32_t getValue() const
+    {
+        return BaseSingleReg<0xffffffff>::getValue() - RenderConfig::GRAM_MEMORY_LOC;
+    };
+
     static constexpr uint32_t getAddr() { return 18; }
 };
 } // namespace rr

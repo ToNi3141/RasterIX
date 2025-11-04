@@ -45,10 +45,10 @@ bool Texture::updateTexture()
         }
     }
 
-    if (m_textureObjectMipmap)
+    if (m_textureObject)
     {
-        ret = m_renderer.updateTexture(m_tmuConf[m_tmu].boundTexture, *m_textureObjectMipmap);
-        m_textureObjectMipmap = std::nullopt;
+        ret = m_renderer.updateTexture(m_tmuConf[m_tmu].boundTexture, *m_textureObject);
+        m_textureObject = std::nullopt;
 
         // Rebind texture to update the rasterizer with the new texture meta information
         // TODO: Check if this is still required
@@ -57,13 +57,13 @@ bool Texture::updateTexture()
     return ret;
 }
 
-TextureObjectMipmap& Texture::getTexture()
+TextureObject& Texture::getTexture()
 {
-    if (!m_textureObjectMipmap)
+    if (!m_textureObject)
     {
-        m_textureObjectMipmap = std::make_optional<TextureObjectMipmap>(m_renderer.getTexture(m_tmuConf[m_tmu].boundTexture));
+        m_textureObject = std::make_optional<TextureObject>(m_renderer.getTexture(m_tmuConf[m_tmu].boundTexture));
     }
-    return *m_textureObjectMipmap;
+    return *m_textureObject;
 }
 
 bool Texture::useTexture()

@@ -37,10 +37,17 @@ public:
     WriteRegisterCmd(const RegisterVariant& reg)
     {
         const CommandType regAddr = std::visit(
-            [this](const auto& r)
+            [this](const auto& r) -> CommandType
             {
-                m_val[0] = r.serialize();
-                return r.getAddr();
+                if constexpr (!std::is_same_v<std::decay_t<decltype(r)>, std::monostate>)
+                {
+                    m_val[0] = r.serialize();
+                    return r.getAddr();
+                }
+                else
+                {
+                    return 0xffffffff;
+                }
             },
             reg);
         m_op = op::RENDER_CONFIG | regAddr;

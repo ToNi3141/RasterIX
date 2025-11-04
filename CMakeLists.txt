@@ -45,6 +45,7 @@ set(RIX_CORE_THREADED_RASTERIZATION "false" CACHE STRING "Enables the threaded r
 set(RIX_CORE_ENABLE_VSYNC "false" CACHE STRING "Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals.")
 set(RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE "1024 * 1024 * 4" CACHE STRING "Sets the size of the display list. Bigger lists are required for the IF config. The EF config allows smaller lists because of intermediate uploads.")
 set(RIX_CORE_MAX_VBO_COUNT "256" CACHE STRING "The maximum number of VBOs")
+set(RIX_CORE_PERFORMANCE_MODE "false" CACHE STRING "Can increase the rendering performance by sacrificing compatibility.")
 
 set(CMAKE_CXX_STANDARD 17)
 

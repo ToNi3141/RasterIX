@@ -22,6 +22,7 @@
 namespace rr
 {
 using RegisterVariant = std::variant<
+    std::monostate,
     ColorBufferAddrReg,
     ColorBufferClearColorReg,
     DepthBufferAddrReg,

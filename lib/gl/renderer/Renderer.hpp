@@ -27,6 +27,7 @@
 #include "displaylist/DisplayListDispatcher.hpp"
 #include "displaylist/DisplayListDoubleBuffer.hpp"
 #include "math/Vec.hpp"
+#include "maxVariantAlternativeSize.hpp"
 #include "renderer/IDevice.hpp"
 #include <algorithm>
 #include <array>
@@ -36,6 +37,7 @@
 #include <string.h>
 
 #include "RenderConfigs.hpp"
+#include "commands/CommandVariant.hpp"
 #include "commands/DrawNewElementCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
@@ -124,12 +126,12 @@ public:
     /// @param texId The texture id which texture has to be updated
     /// @param textureObject The object which contains the texture and all its meta data
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool updateTexture(const uint16_t texId, const TextureObjectMipmap& textureObject) { return m_textureManager.updateTexture(texId, textureObject); }
+    bool updateTexture(const uint16_t texId, const TextureObject& textureObject) { return m_textureManager.updateTexture(texId, textureObject); }
 
     /// @brief Returns a texture associated to the texId
     /// @param texId The texture id of the texture to get the data from
     /// @return The texture object
-    TextureObjectMipmap getTexture(const uint16_t texId) { return m_textureManager.getTexture(texId); }
+    TextureObject getTexture(const uint16_t texId) { return m_textureManager.getTexture(texId); }
 
     /// @brief Queries if the current texture id is a valid texture
     /// @param texId Texture id to query
@@ -297,13 +299,13 @@ private:
     template <typename Command>
     bool addCommand(const Command& cmd)
     {
-        bool ret = m_displayListBuffer.getBack().addCommand(cmd);
-        if (!ret)
+        // Keep enough space for a framebuffer command to store the current frame into the framebuffer
+        constexpr std::size_t minFreeSpace = (sizeof(FramebufferCmd) + maxVariantAlternativeSize<CommandVariant>());
+        if (m_displayListBuffer.getBack().getFreeSpace() <= minFreeSpace)
         {
             intermediateUpload();
-            ret = m_displayListBuffer.getBack().addCommand(cmd);
         }
-        return ret;
+        return m_displayListBuffer.getBack().addCommand(cmd);
     }
 
     void clearDisplayListAssembler()

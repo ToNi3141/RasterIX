@@ -121,22 +121,6 @@ public:
         return RenderConfig::getDisplayLines() == 1;
     }
 
-    void beginFrame()
-    {
-        for (std::size_t i = 0; i < m_displayLines; i++)
-        {
-            m_displayListAssembler[i].begin();
-        }
-    }
-
-    void endFrame()
-    {
-        for (std::size_t i = 0; i < m_displayLines; i++)
-        {
-            m_displayListAssembler[i].end();
-        }
-    }
-
     void clearDisplayListAssembler()
     {
         for (std::size_t i = 0; i < m_displayLines; i++)

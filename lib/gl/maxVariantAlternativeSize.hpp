@@ -1,6 +1,6 @@
 // RasterIX
 // https://github.com/ToNi3141/RasterIX
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2025 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,29 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _DEPTH_BUFFER_ADDR_REG_
-#define _DEPTH_BUFFER_ADDR_REG_
+#include <algorithm>
+#include <cstdint>
+#include <type_traits>
+#include <variant>
 
-#include "RenderConfigs.hpp"
-#include "renderer/registers/BaseSingleReg.hpp"
-
-namespace rr
+template <typename Variant, std::size_t... I>
+constexpr std::size_t maxVariantSizeImpl(std::index_sequence<I...>)
 {
-class DepthBufferAddrReg : public BaseSingleReg<0xffffffff>
+    return std::max({ sizeof(std::variant_alternative_t<I, Variant>)... });
+}
+
+template <typename Variant>
+constexpr std::size_t maxVariantAlternativeSize()
 {
-public:
-    DepthBufferAddrReg(const uint32_t addr = 0)
-        : BaseSingleReg<0xffffffff> { addr + RenderConfig::GRAM_MEMORY_LOC }
-    {
-    }
-
-    uint32_t getValue() const
-    {
-        return BaseSingleReg<0xffffffff>::getValue() - RenderConfig::GRAM_MEMORY_LOC;
-    };
-
-    static constexpr uint32_t getAddr() { return 17; }
-};
-} // namespace rr
-
-#endif // _DEPTH_BUFFER_ADDR_REG_
+    return maxVariantSizeImpl<Variant>(
+        std::make_index_sequence<std::variant_size_v<Variant>> {});
+}
