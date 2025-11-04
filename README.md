@@ -146,8 +146,8 @@ Note: Bold options are required to be equal to the software counterparts.
 | __FRAMEBUFFER_SIZE_IN_PIXEL_LG__          | if      | The size of the internal framebuffer (in power of two). <br> Depth buffer word size: 16 bit. <br> Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3). |
 | FRAMEBUFFER_SUB_PIXEL_WIDTH               | if      | Sub pixel width in the internal framebuffer. |
 | FRAMEBUFFER_ENABLE_ALPHA_CHANNEL          | if      | Enables the alpha channel in the framebuffer. |
-| ENABLE_STENCIL_BUFFER                     | if/ef   | Enables the stencil buffer unit. |
-| ENABLE_DEPTH_BUFFER                       | if/ef   | Enables the depth buffer unit. |
+| ENABLE_STENCIL_BUFFER                     | if/ef   | Enables the stencil buffer unit. Note: The stencil buffer has in the `rixif` 16 bit wide, in the `rixef` config only 8 bit. Consider the side difference in the stencil buffer address. |
+| ENABLE_DEPTH_BUFFER                       | if/ef   | Enables the depth buffer unit. The depth buffer is 16 bit wide. |
 | __TMU_COUNT__                             | if/ef   | Number of TMU the hardware shall contain. Valid values are 1 and 2. |
 | __TEXTURE_PAGE_SIZE__                     | if/ef   | The page size of the texture memory. |
 | __ENABLE_MIPMAPPING__                     | if/ef   | Enables the mip map unit. |
