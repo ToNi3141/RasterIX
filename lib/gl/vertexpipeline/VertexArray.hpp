@@ -36,6 +36,7 @@ public:
     void setTexCoord(const Vec4& texCoord) { m_objPtr.setTexCoord(m_tmu, texCoord); }
     void setMultiTexCoord(const uint8_t tmu, const Vec4& texCoord) { m_objPtr.setTexCoord(tmu, texCoord); }
     void setPointSize(float pointSize) { m_objPtr.setPointSize(pointSize); }
+    float getPointSize() const { return m_objPtr.getPointSize(); }
 
     const RenderObj& renderObj() const { return m_objPtr; }
 
@@ -52,6 +53,9 @@ public:
         m_vertexPointer = ptr;
         m_vertexPointerOffset = offset;
     }
+    uint8_t getVertexSize() const { return m_objPtr.getVertexSize(); }
+    Type getVertexType() const { return m_objPtr.getVertexType(); }
+    uint32_t getVertexStride() const { return m_objPtr.getVertexStride(); }
 
     void enableTexCoordArray(bool enable) { m_objPtr.enableTexCoordArray(m_tmu, enable); }
     bool texCoordArrayEnabled() const { return m_objPtr.texCoordArrayEnabled()[m_tmu]; }
@@ -64,6 +68,9 @@ public:
         m_texCoordPointer = ptr;
         m_texCoordPointerOffset = offset;
     }
+    uint8_t getTexCoordSize() const { return m_objPtr.getTexCoordSize(m_tmu); }
+    Type getTexCoordType() const { return m_objPtr.getTexCoordType(m_tmu); }
+    uint32_t getTexCoordStride() const { return m_objPtr.getTexCoordStride(m_tmu); }
 
     void enableNormalArray(bool enable) { m_objPtr.enableNormalArray(enable); }
     bool normalArrayEnabled() const { return m_objPtr.normalArrayEnabled(); }
@@ -75,6 +82,8 @@ public:
         m_normalPointer = ptr;
         m_normalPointerOffset = offset;
     }
+    Type getNormalType() const { return m_objPtr.getNormalType(); }
+    uint32_t getNormalStride() const { return m_objPtr.getNormalStride(); }
 
     void enableColorArray(bool enable) { m_objPtr.enableColorArray(enable); }
     bool colorArrayEnabled() const { return m_objPtr.colorArrayEnabled(); }
@@ -87,6 +96,9 @@ public:
         m_colorPointer = ptr;
         m_colorPointerOffset = offset;
     }
+    uint8_t getColorSize() const { return m_objPtr.getColorSize(); }
+    Type getColorType() const { return m_objPtr.getColorType(); }
+    uint32_t getColorStride() const { return m_objPtr.getColorStride(); }
 
     void enablePointSizeArray(bool enable) { m_objPtr.enablePointSizeArray(enable); }
     bool pointSizeArrayEnabled() const { return m_objPtr.pointSizeArrayEnabled(); }
@@ -98,6 +110,8 @@ public:
         m_pointSizePointer = ptr;
         m_pointSizePointerOffset = offset;
     }
+    Type getPointSizeType() const { return m_objPtr.getPointSizeType(); }
+    uint32_t getPointSizeStride() const { return m_objPtr.getPointSizeStride(); }
 
     void setDrawMode(DrawMode mode) { m_objPtr.setDrawMode(mode); }
 
@@ -120,6 +134,21 @@ public:
     std::size_t getColorPointerOffset() const { return m_colorPointerOffset; }
     std::size_t getPointSizePointerOffset() const { return m_pointSizePointerOffset; }
 
+    // This methods are used for glGet* and bindings
+    // TODO: Rename bindings instead of getBound* to get*BindingID
+    std::size_t getBoundVertexBuffer() const { return m_boundVertexBuffer; }
+    void setBoundVertexBuffer(const std::size_t buffer) { m_boundVertexBuffer = buffer; }
+    std::size_t getBoundTexCoordBuffer() const { return m_boundTexCoordBuffer; }
+    void setBoundTexCoordBuffer(const std::size_t buffer) { m_boundTexCoordBuffer = buffer; }
+    std::size_t getBoundNormalBuffer() const { return m_boundNormalBuffer; }
+    void setBoundNormalBuffer(const std::size_t buffer) { m_boundNormalBuffer = buffer; }
+    std::size_t getBoundColorBuffer() const { return m_boundColorBuffer; }
+    void setBoundColorBuffer(const std::size_t buffer) { m_boundColorBuffer = buffer; }
+    std::size_t getBoundElementBuffer() const { return m_boundElementBuffer; }
+    void setBoundElementBuffer(const std::size_t buffer) { m_boundElementBuffer = buffer; }
+    std::size_t getBoundPointSizeArrayBuffer() const { return m_boundPointSizeArrayBuffer; }
+    void setBoundPointSizeArrayBuffer(const std::size_t buffer) { m_boundPointSizeArrayBuffer = buffer; }
+
 private:
     // Render Object
     RenderObj m_objPtr {};
@@ -136,6 +165,14 @@ private:
     std::size_t m_normalPointerOffset { 0 };
     std::size_t m_colorPointerOffset { 0 };
     std::size_t m_pointSizePointerOffset { 0 };
+
+    // This variables are used for glGet* and bindings
+    std::size_t m_boundVertexBuffer { 0 };
+    std::size_t m_boundTexCoordBuffer { 0 };
+    std::size_t m_boundNormalBuffer { 0 };
+    std::size_t m_boundColorBuffer { 0 };
+    std::size_t m_boundElementBuffer { 0 };
+    std::size_t m_boundPointSizeArrayBuffer { 0 };
 };
 
 } // namespace rr

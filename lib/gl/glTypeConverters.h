@@ -222,6 +222,38 @@ BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
     return BlendFunc::ZERO;
 }
 
+GLenum convertRenderBlendFuncToGlBlendFunc(const BlendFunc blendFunc)
+{
+    switch (blendFunc)
+    {
+    case BlendFunc::ZERO:
+        return GL_ZERO;
+    case BlendFunc::ONE:
+        return GL_ONE;
+    case BlendFunc::DST_COLOR:
+        return GL_DST_COLOR;
+    case BlendFunc::SRC_COLOR:
+        return GL_SRC_COLOR;
+    case BlendFunc::ONE_MINUS_DST_COLOR:
+        return GL_ONE_MINUS_DST_COLOR;
+    case BlendFunc::ONE_MINUS_SRC_COLOR:
+        return GL_ONE_MINUS_SRC_COLOR;
+    case BlendFunc::SRC_ALPHA:
+        return GL_SRC_ALPHA;
+    case BlendFunc::ONE_MINUS_SRC_ALPHA:
+        return GL_ONE_MINUS_SRC_ALPHA;
+    case BlendFunc::DST_ALPHA:
+        return GL_DST_ALPHA;
+    case BlendFunc::ONE_MINUS_DST_ALPHA:
+        return GL_ONE_MINUS_DST_ALPHA;
+    case BlendFunc::SRC_ALPHA_SATURATE:
+        return GL_SRC_ALPHA_SATURATE;
+    default:
+        SPDLOG_WARN("convertRenderBlendFuncToGlBlendFunc invalid BlendFunc {}", static_cast<int>(blendFunc));
+        return GL_ZERO;
+    }
+}
+
 void setClientState(const GLenum array, bool enable)
 {
     switch (array)
@@ -273,6 +305,28 @@ Type convertType(GLenum type)
         SPDLOG_WARN("convertType 0x{:X} not suppored", type);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
         return Type::BYTE;
+    }
+}
+
+GLenum convertTypeToOpenGL(Type type)
+{
+    switch (type)
+    {
+    case Type::BYTE:
+        return GL_BYTE;
+    case Type::UNSIGNED_BYTE:
+        return GL_UNSIGNED_BYTE;
+    case Type::SHORT:
+        return GL_SHORT;
+    case Type::UNSIGNED_SHORT:
+        return GL_UNSIGNED_SHORT;
+    case Type::FLOAT:
+        return GL_FLOAT;
+    case Type::UNSIGNED_INT:
+        return GL_UNSIGNED_INT;
+    default:
+        SPDLOG_WARN("convertTypeToOpenGL invalid Type {}", static_cast<int>(type));
+        return GL_BYTE;
     }
 }
 
@@ -364,6 +418,32 @@ GLenum convertTestFunc(TestFunc& conf, const GLenum mode)
     return GL_NO_ERROR;
 }
 
+GLenum convertTestFuncToOpenGL(const TestFunc conf)
+{
+    switch (conf)
+    {
+    case TestFunc::ALWAYS:
+        return GL_ALWAYS;
+    case TestFunc::NEVER:
+        return GL_NEVER;
+    case TestFunc::LESS:
+        return GL_LESS;
+    case TestFunc::EQUAL:
+        return GL_EQUAL;
+    case TestFunc::LEQUAL:
+        return GL_LEQUAL;
+    case TestFunc::GREATER:
+        return GL_GREATER;
+    case TestFunc::NOTEQUAL:
+        return GL_NOTEQUAL;
+    case TestFunc::GEQUAL:
+        return GL_GEQUAL;
+    default:
+        SPDLOG_WARN("convertTestFuncToOpenGL invalid TestFunc {}", static_cast<int>(conf));
+        return GL_ALWAYS;
+    }
+}
+
 GLenum convertStencilOp(StencilOp& conf, const GLenum mode)
 {
     switch (mode)
@@ -399,6 +479,32 @@ GLenum convertStencilOp(StencilOp& conf, const GLenum mode)
         return GL_INVALID_ENUM;
     }
     return GL_NO_ERROR;
+}
+
+GLenum convertStencilOpToOpenGL(const StencilOp conf)
+{
+    switch (conf)
+    {
+    case StencilOp::KEEP:
+        return GL_KEEP;
+    case StencilOp::ZERO:
+        return GL_ZERO;
+    case StencilOp::REPLACE:
+        return GL_REPLACE;
+    case StencilOp::INCR:
+        return GL_INCR;
+    case StencilOp::INCR_WRAP:
+        return GL_INCR_WRAP_EXT;
+    case StencilOp::DECR:
+        return GL_DECR;
+    case StencilOp::DECR_WRAP:
+        return GL_DECR_WRAP_EXT;
+    case StencilOp::INVERT:
+        return GL_INVERT;
+    default:
+        SPDLOG_WARN("convertStencilOpToOpenGL invalid StencilOp {}", static_cast<int>(conf));
+        return GL_KEEP;
+    }
 }
 
 GLenum convertLogicOp(LogicOp& conf, const GLenum opcode)
@@ -459,6 +565,196 @@ GLenum convertLogicOp(LogicOp& conf, const GLenum opcode)
         return GL_INVALID_ENUM;
     }
     return GL_NO_ERROR;
+}
+
+GLenum convertLogicOpToOpenGL(const LogicOp conf)
+{
+    switch (conf)
+    {
+    case LogicOp::CLEAR:
+        return GL_CLEAR;
+    case LogicOp::SET:
+        return GL_SET;
+    case LogicOp::COPY:
+        return GL_COPY;
+    case LogicOp::COPY_INVERTED:
+        return GL_COPY_INVERTED;
+    case LogicOp::NOOP:
+        return GL_NOOP;
+    case LogicOp::INVERT:
+        return GL_INVERT;
+    case LogicOp::AND:
+        return GL_AND;
+    case LogicOp::NAND:
+        return GL_NAND;
+    case LogicOp::OR:
+        return GL_OR;
+    case LogicOp::NOR:
+        return GL_NOR;
+    case LogicOp::XOR:
+        return GL_XOR;
+    case LogicOp::EQUIV:
+        return GL_EQUIV;
+    case LogicOp::AND_REVERSE:
+        return GL_AND_REVERSE;
+    case LogicOp::AND_INVERTED:
+        return GL_AND_INVERTED;
+    case LogicOp::OR_REVERSE:
+        return GL_OR_REVERSE;
+    case LogicOp::OR_INVERTED:
+        return GL_OR_INVERTED;
+    default:
+        SPDLOG_WARN("convertLogicOpToOpenGL invalid LogicOp {}", static_cast<int>(conf));
+        return GL_COPY;
+    }
+}
+
+GLenum convertFace(Face& conf, const GLenum mode)
+{
+    switch (mode)
+    {
+    case GL_FRONT:
+        conf = Face::FRONT;
+        break;
+    case GL_BACK:
+        conf = Face::BACK;
+        break;
+    case GL_FRONT_AND_BACK:
+        conf = Face::FRONT_AND_BACK;
+        break;
+    default:
+        SPDLOG_WARN("convertFace 0x{:X} not suppored", mode);
+        conf = Face::FRONT;
+        return GL_INVALID_ENUM;
+    }
+    return GL_NO_ERROR;
+}
+
+GLenum convertFaceToOpenGL(const Face conf)
+{
+    switch (conf)
+    {
+    case Face::FRONT:
+        return GL_FRONT;
+    case Face::BACK:
+        return GL_BACK;
+    case Face::FRONT_AND_BACK:
+        return GL_FRONT_AND_BACK;
+    default:
+        SPDLOG_WARN("convertFaceToOpenGL invalid Face {}", static_cast<int>(conf));
+        return GL_FRONT;
+    }
+}
+
+GLenum convertFogMode(FogMode& conf, const GLenum mode)
+{
+    switch (mode)
+    {
+    case GL_LINEAR:
+        conf = FogMode::LINEAR;
+        break;
+    case GL_EXP:
+        conf = FogMode::EXP;
+        break;
+    case GL_EXP2:
+        conf = FogMode::EXP2;
+        break;
+    default:
+        SPDLOG_WARN("convertFogMode 0x{:X} not suppored", mode);
+        conf = FogMode::LINEAR;
+        return GL_INVALID_ENUM;
+    }
+    return GL_NO_ERROR;
+}
+
+GLenum convertFogModeToOpenGL(const FogMode conf)
+{
+    switch (conf)
+    {
+    case FogMode::LINEAR:
+        return GL_LINEAR;
+    case FogMode::EXP:
+        return GL_EXP;
+    case FogMode::EXP2:
+        return GL_EXP2;
+    default:
+        SPDLOG_WARN("convertFogModeToOpenGL invalid FogMode {}", static_cast<int>(conf));
+        return GL_LINEAR;
+    }
+}
+
+GLenum convertFrontFace(Orientation& conf, const GLenum mode)
+{
+    switch (mode)
+    {
+    case GL_CW:
+        conf = Orientation::CW;
+        break;
+    case GL_CCW:
+        conf = Orientation::CCW;
+        break;
+    default:
+        SPDLOG_WARN("convertFrontFace 0x{:X} not supported", mode);
+        conf = Orientation::CCW;
+        return GL_INVALID_ENUM;
+    }
+    return GL_NO_ERROR;
+}
+
+GLenum convertFrontFaceToOpenGL(const Orientation conf)
+{
+    switch (conf)
+    {
+    case Orientation::CW:
+        return GL_CW;
+    case Orientation::CCW:
+        return GL_CCW;
+    default:
+        SPDLOG_WARN("convertFrontFaceToOpenGL invalid Orientation {}", static_cast<int>(conf));
+        return GL_CCW;
+    }
+}
+
+GLenum convertMatrixMode(MatrixMode& conf, const GLenum mode)
+{
+    switch (mode)
+    {
+    case GL_MODELVIEW:
+        conf = MatrixMode::MODELVIEW;
+        break;
+    case GL_PROJECTION:
+        conf = MatrixMode::PROJECTION;
+        break;
+    case GL_TEXTURE:
+        conf = MatrixMode::TEXTURE;
+        break;
+    case GL_COLOR:
+        conf = MatrixMode::COLOR;
+        break;
+    default:
+        SPDLOG_WARN("convertMatrixMode 0x{:X} not suppored", mode);
+        conf = MatrixMode::MODELVIEW;
+        return GL_INVALID_ENUM;
+    }
+    return GL_NO_ERROR;
+}
+
+GLenum convertMatrixModeToOpenGL(const MatrixMode conf)
+{
+    switch (conf)
+    {
+    case MatrixMode::MODELVIEW:
+        return GL_MODELVIEW;
+    case MatrixMode::PROJECTION:
+        return GL_PROJECTION;
+    case MatrixMode::TEXTURE:
+        return GL_TEXTURE;
+    case MatrixMode::COLOR:
+        return GL_COLOR;
+    default:
+        SPDLOG_WARN("convertMatrixModeToOpenGL invalid MatrixMode {}", static_cast<int>(conf));
+        return GL_MODELVIEW;
+    }
 }
 
 } // namespace rr

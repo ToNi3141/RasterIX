@@ -48,6 +48,8 @@ public:
         return false;
     }
 
+    std::size_t getCurrentDepth() const { return m_stackPointer; }
+
 private:
     std::size_t m_stackPointer { 0 };
     std::array<T, DEPTH> m_stack {};

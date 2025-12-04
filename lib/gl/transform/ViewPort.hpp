@@ -65,8 +65,20 @@ public:
     void setViewport(const float x, const float y, const float width, const float height);
     void setDepthRange(const float zNear, const float zFar);
 
+    float getViewportX() const { return m_data.viewportX; }
+    float getViewportY() const { return m_data.viewportY; }
+    float getViewportWidth() const { return m_data.viewportWidth; }
+    float getViewportHeight() const { return m_data.viewportHeight; }
+
+    float getDepthRangeNear() const { return m_zNear; }
+    float getDepthRangeFar() const { return m_zFar; }
+
+    static constexpr float getMaxViewportDimsWidth() { return 2048.0f; } // Arbitrary limit to avoid too large viewports. Hardware may support larger sizes.
+    static constexpr float getMaxViewportDimsHeight() { return 2048.0f; } // Arbitrary limit to avoid too large viewports. Hardware may support larger sizes.
 private:
     ViewPortData& m_data;
+    float m_zNear { 0.0f };
+    float m_zFar { 1.0f };
 };
 
 } // namespace rr::viewport

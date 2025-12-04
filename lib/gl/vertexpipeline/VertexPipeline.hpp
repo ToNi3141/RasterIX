@@ -67,6 +67,10 @@ public:
     {
         return m_renderer.setScissorBox(x, y, width, height);
     }
+    std::tuple<int32_t, int32_t, uint32_t, uint32_t> getScissorBox() const
+    {
+        return m_renderer.getScissorBox();
+    }
     void enableVSync(const bool enable) { m_renderer.enableVSync(enable); }
     bool readBackColorBuffer(tcb::span<uint8_t> buffer) { return m_renderer.readBackColorBuffer(buffer); }
     bool readFrontColorBuffer(tcb::span<uint8_t> buffer) { return m_renderer.readFrontColorBuffer(buffer); }
@@ -77,6 +81,8 @@ public:
     bool clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer);
     bool setClearColor(const Vec4& color) { return m_renderer.setClearColor(color); };
     bool setClearDepth(const float depth) { return m_renderer.setClearDepth(depth); };
+    Vec4 getClearColor() const { return m_renderer.getClearColor(); };
+    float getClearDepth() const { return m_renderer.getClearDepth(); };
 
     // Pixel pipeline configs
     Fogging& fog() { return m_renderer.fog(); }

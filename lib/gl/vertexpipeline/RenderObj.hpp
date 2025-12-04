@@ -62,6 +62,9 @@ public:
     void setVertexType(Type type) { m_vertexType = type; }
     void setVertexStride(std::size_t stride) { m_vertexStride = stride; }
     void setVertexPointer(const void* ptr) { m_vertexPointer = ptr; }
+    std::size_t getVertexSize() const { return m_vertexSize; }
+    Type getVertexType() const { return m_vertexType; }
+    std::size_t getVertexStride() const { return m_vertexStride; }
 
     void enableTexCoordArray(const std::size_t tmu, bool enable) { m_texCoordArrayEnabled[tmu] = enable; }
     void setTexCoordSize(const std::size_t tmu, std::size_t size) { m_texCoordSize[tmu] = size; }
@@ -69,12 +72,17 @@ public:
     void setTexCoordStride(const std::size_t tmu, std::size_t stride) { m_texCoordStride[tmu] = stride; }
     void setTexCoordPointer(const std::size_t tmu, const void* ptr) { m_texCoordPointer[tmu] = ptr; }
     void setTexCoord(const std::size_t tmu, const Vec4& texCoord) { m_texCoord[tmu] = texCoord; }
+    std::size_t getTexCoordSize(const std::size_t tmu) const { return m_texCoordSize[tmu]; }
+    Type getTexCoordType(const std::size_t tmu) const { return m_texCoordType[tmu]; }
+    std::size_t getTexCoordStride(const std::size_t tmu) const { return m_texCoordStride[tmu]; }
 
     void enableNormalArray(bool enable) { m_normalArrayEnabled = enable; }
     void setNormalType(Type type) { m_normalType = type; }
     void setNormalStride(std::size_t stride) { m_normalStride = stride; }
     void setNormalPointer(const void* ptr) { m_normalPointer = ptr; }
     void setNormal(const Vec3& normal) { m_normal = normal; }
+    Type getNormalType() const { return m_normalType; }
+    std::size_t getNormalStride() const { return m_normalStride; }
 
     void enableColorArray(bool enable) { m_colorArrayEnabled = enable; }
     void setColorSize(std::size_t size) { m_colorSize = size; }
@@ -82,12 +90,18 @@ public:
     void setColorStride(std::size_t stride) { m_colorStride = stride; }
     void setColorPointer(const void* ptr) { m_colorPointer = ptr; }
     void setVertexColor(const Vec4& color) { m_vertexColor = color; }
+    std::size_t getColorSize() const { return m_colorSize; }
+    Type getColorType() const { return m_colorType; }
+    std::size_t getColorStride() const { return m_colorStride; }
 
     void enablePointSizeArray(bool enable) { m_pointSizeArrayEnabled = enable; }
     void setPointSizeType(Type type) { m_pointSizeType = type; }
     void setPointSizeStride(std::size_t stride) { m_pointSizeStride = stride; }
     void setPointSizePointer(const void* ptr) { m_pointSizePointer = ptr; }
     void setPointSize(float pointSize) { m_pointSize = pointSize; }
+    Type getPointSizeType() const { return m_pointSizeType; }
+    std::size_t getPointSizeStride() const { return m_pointSizeStride; }
+    float getPointSize() const { return m_pointSize; }
 
     void setDrawMode(DrawMode mode) { m_drawMode = mode; }
 

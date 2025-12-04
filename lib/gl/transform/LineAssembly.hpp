@@ -61,6 +61,9 @@ public:
     }
 
     void setLineWidth(const float lineWidth) { m_data.lineWidth = lineWidth; }
+    float getLineWidth() const { return m_data.lineWidth; }
+
+    static constexpr float getMaxLineWidth() { return 2048.0f; } // Arbitrary limit to avoid too large line widths. Hardware may support larger sizes.
 
 private:
     LineAssemblyData& m_data;

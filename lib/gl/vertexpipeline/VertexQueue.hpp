@@ -29,6 +29,7 @@ class VertexQueue
 {
 public:
     void setActiveTexture(const std::size_t tmu) { m_tmu = tmu; }
+    std::size_t getActiveTexture() const { return m_tmu; }
 
     void begin(const DrawMode drawMode)
     {
@@ -49,6 +50,11 @@ public:
     void setNormal(const Vec3& normal) { m_normal = normal; }
     void setTexCoord(const Vec4& texCoord) { m_textureCoord[0] = texCoord; }
     void setMultiTexCoord(const std::size_t tmu, const Vec4& texCoord) { m_textureCoord[tmu] = texCoord; }
+    Vec4 getColor() const { return m_vertexColor; }
+    Vec3 getNormal() const { return m_normal; }
+    Vec4 getTexCoord() const { return m_textureCoord[0]; }
+    Vec4 getMultiTexCoord(const std::size_t tmu) const { return m_textureCoord[tmu]; }
+
     const RenderObj& end()
     {
         m_objBeginEnd.reset();

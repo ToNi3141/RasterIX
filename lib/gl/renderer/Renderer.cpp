@@ -272,6 +272,11 @@ bool Renderer::setScissorBox(const int32_t x, const int32_t y, const uint32_t wi
     return ret;
 }
 
+std::tuple<int32_t, int32_t, uint32_t, uint32_t> Renderer::getScissorBox() const
+{
+    return { m_scissorXStart, m_scissorYStart, m_scissorXEnd - m_scissorXStart + 1, m_scissorYEnd - m_scissorYStart + 1 };
+}
+
 bool Renderer::setTextureWrapModeS(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode)
 {
     m_textureManager.setTextureWrapModeS(texId, mode);
