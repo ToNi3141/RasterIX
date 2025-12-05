@@ -60,17 +60,15 @@ public:
 
     // General configs
     bool setRenderResolution(const std::size_t x, const std::size_t y) { return m_renderer.setRenderResolution(x, y); }
-    bool setScissorBox(const int32_t x,
+    bool setScissorBox(
+        const int32_t x,
         const int32_t y,
         const uint32_t width,
         const uint32_t height)
     {
         return m_renderer.setScissorBox(x, y, width, height);
     }
-    std::tuple<int32_t, int32_t, uint32_t, uint32_t> getScissorBox() const
-    {
-        return m_renderer.getScissorBox();
-    }
+    std::tuple<int32_t, int32_t, uint32_t, uint32_t> getScissorBox() const { return m_renderer.getScissorBox(); }
     void enableVSync(const bool enable) { m_renderer.enableVSync(enable); }
     bool readBackColorBuffer(tcb::span<uint8_t> buffer) { return m_renderer.readBackColorBuffer(buffer); }
     bool readFrontColorBuffer(tcb::span<uint8_t> buffer) { return m_renderer.readFrontColorBuffer(buffer); }

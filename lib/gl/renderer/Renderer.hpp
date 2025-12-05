@@ -244,11 +244,7 @@ public:
     /// @brief Sets the clear color (see clear()) of the color buffer
     /// @param color the clear clear color
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setClearColor(const ColorBufferClearColorReg& color)
-    {
-        m_clearColorReg = color;
-        return writeReg(color);
-    }
+    bool setClearColor(const ColorBufferClearColorReg& color);
 
     /// @brief Gets the clear color value
     /// @return The clear color value
@@ -257,11 +253,7 @@ public:
     /// @brief Sets the clear depth value (see clear()) of the depth buffer
     /// @param depth the depth value
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setClearDepth(const DepthBufferClearDepthReg& depth)
-    {
-        m_clearDepthReg = depth;
-        return writeReg(depth);
-    }
+    bool setClearDepth(const DepthBufferClearDepthReg& depth);
 
     /// @brief Gets the clear depth value
     /// @return The clear depth value
@@ -292,11 +284,7 @@ public:
     /// @brief Sets the fog color
     /// @param color the fog color
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setFogColor(const FogColorReg& color)
-    {
-        m_fogColor = color;
-        return writeReg(color);
-    }
+    bool setFogColor(const FogColorReg& color);
 
     /// @brief Gets the fog color
     /// @return The fog color

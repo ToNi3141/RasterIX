@@ -383,4 +383,22 @@ bool Renderer::setTexEnvColor(const TexEnvColorReg& color)
     return writeReg(color);
 }
 
+bool Renderer::setClearColor(const ColorBufferClearColorReg& color)
+{
+    m_clearColorReg = color;
+    return writeReg(color);
+}
+
+bool Renderer::setClearDepth(const DepthBufferClearDepthReg& depth)
+{
+    m_clearDepthReg = depth;
+    return writeReg(depth);
+}
+
+bool Renderer::setFogColor(const FogColorReg& color)
+{
+    m_fogColor = color;
+    return writeReg(color);
+}
+
 } // namespace rr

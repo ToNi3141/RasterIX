@@ -84,8 +84,8 @@ GLAPI void APIENTRY impl_glBlendFunc(GLenum srcFactor, GLenum dstFactor)
     }
     else
     {
-        RIXGL::getInstance().pipeline().fragmentPipeline().setBlendFuncSFactor(convertGlBlendFuncToRenderBlendFunc(srcFactor));
-        RIXGL::getInstance().pipeline().fragmentPipeline().setBlendFuncDFactor(convertGlBlendFuncToRenderBlendFunc(dstFactor));
+        RIXGL::getInstance().pipeline().fragmentPipeline().setBlendFuncSFactor(convertBlendFunc(srcFactor));
+        RIXGL::getInstance().pipeline().fragmentPipeline().setBlendFuncDFactor(convertBlendFunc(dstFactor));
     }
 }
 
@@ -1320,16 +1320,16 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().fragmentPipeline().getRefAlphaValue()) / 255.0f;
         break;
     case GL_ARRAY_BUFFER_BINDING:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getBoundVertexBuffer());
+        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getVertexBufferId());
         break;
     case GL_BLEND:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableBlending() ? GL_TRUE : GL_FALSE);
         break;
     case GL_BLEND_DST:
-        params[0] = static_cast<GLfloat>(convertRenderBlendFuncToGlBlendFunc(RIXGL::getInstance().pipeline().fragmentPipeline().getBlendFuncDFactor()));
+        params[0] = static_cast<GLfloat>(convertBlendFuncToOpenGL(RIXGL::getInstance().pipeline().fragmentPipeline().getBlendFuncDFactor()));
         break;
     case GL_BLEND_SRC:
-        params[0] = static_cast<GLfloat>(convertRenderBlendFuncToGlBlendFunc(RIXGL::getInstance().pipeline().fragmentPipeline().getBlendFuncSFactor()));
+        params[0] = static_cast<GLfloat>(convertBlendFuncToOpenGL(RIXGL::getInstance().pipeline().fragmentPipeline().getBlendFuncSFactor()));
         break;
     case GL_BLUE_BITS:
         params[0] = 4.0f;
@@ -1344,7 +1344,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().colorArrayEnabled() ? GL_TRUE : GL_FALSE);
         break;
     case GL_COLOR_ARRAY_BUFFER_BINDING:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getBoundColorBuffer());
+        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getColorBufferId());
         break;
     case GL_COLOR_ARRAY_SIZE:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getColorSize());
@@ -1431,7 +1431,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().fragmentPipeline().getDepthMask() ? GL_TRUE : GL_FALSE);
         break;
     case GL_ELEMENT_ARRAY_BUFFER_BINDING:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getBoundElementBuffer());
+        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getElementBufferId());
         break;
     case GL_FOG:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableFog() ? GL_TRUE : GL_FALSE);
@@ -1553,7 +1553,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().normalArrayEnabled() ? GL_TRUE : GL_FALSE);
         break;
     case GL_NORMAL_ARRAY_BUFFER_BINDING:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getBoundNormalBuffer());
+        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getNormalBufferId());
         break;
     case GL_NORMAL_ARRAY_STRIDE:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getNormalStride());
@@ -1588,7 +1588,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = RIXGL::getInstance().vertexArray().getPointSize();
         break;
     case GL_POINT_SIZE_ARRAY_BUFFER_BINDING_OES:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getBoundPointSizeArrayBuffer());
+        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getPointSizeArrayBufferId());
         break;
     case GL_POINT_SIZE_ARRAY_OES:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().pointSizeArrayEnabled() ? GL_TRUE : GL_FALSE);
@@ -1717,7 +1717,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().texCoordArrayEnabled() ? GL_TRUE : GL_FALSE);
         break;
     case GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getBoundTexCoordBuffer());
+        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getTexCoordBufferId());
         break;
     case GL_TEXTURE_COORD_ARRAY_SIZE:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getTexCoordSize());
@@ -1753,7 +1753,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().vertexArrayEnabled() ? GL_TRUE : GL_FALSE);
         break;
     case GL_VERTEX_ARRAY_BUFFER_BINDING:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getBoundVertexBuffer());
+        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getVertexBufferId());
         break;
     case GL_VERTEX_ARRAY_SIZE:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getVertexSize());
@@ -4676,13 +4676,11 @@ GLAPI void APIENTRY impl_glColorPointer(GLint size, GLenum type, GLsizei stride,
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setColorPointer(data.data(), reinterpret_cast<std::size_t>(pointer));
-        RIXGL::getInstance().vertexArray().setBoundColorBuffer(RIXGL::getInstance().vertexBuffer().getBoundBuffer());
+        RIXGL::getInstance().vertexArray().setColorPointer(data.first.data(), reinterpret_cast<std::size_t>(pointer), data.second);
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setColorPointer(pointer, 0);
-        RIXGL::getInstance().vertexArray().setBoundColorBuffer(0);
+        RIXGL::getInstance().vertexArray().setColorPointer(pointer, 0, 0);
     }
 }
 
@@ -4824,7 +4822,7 @@ GLAPI void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type,
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
         RIXGL::getInstance().vertexArray().setIndicesPointer(
-            data.last(data.size() - reinterpret_cast<std::size_t>(indices)).data());
+            data.first.last(data.first.size() - reinterpret_cast<std::size_t>(indices)).data());
     }
     else
     {
@@ -4972,13 +4970,11 @@ GLAPI void APIENTRY impl_glNormalPointer(GLenum type, GLsizei stride, const GLvo
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setNormalPointer(data.data(), reinterpret_cast<std::size_t>(pointer));
-        RIXGL::getInstance().vertexArray().setBoundNormalBuffer(RIXGL::getInstance().vertexBuffer().getBoundBuffer());
+        RIXGL::getInstance().vertexArray().setNormalPointer(data.first.data(), reinterpret_cast<std::size_t>(pointer), data.second);
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setNormalPointer(pointer, 0);
-        RIXGL::getInstance().vertexArray().setBoundNormalBuffer(0);
+        RIXGL::getInstance().vertexArray().setNormalPointer(pointer, 0, 0);
     }
 }
 
@@ -5015,13 +5011,11 @@ GLAPI void APIENTRY impl_glTexCoordPointer(GLint size, GLenum type, GLsizei stri
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setTexCoordPointer(data.data(), reinterpret_cast<std::size_t>(pointer));
-        RIXGL::getInstance().vertexArray().setBoundTexCoordBuffer(RIXGL::getInstance().vertexBuffer().getBoundBuffer());
+        RIXGL::getInstance().vertexArray().setTexCoordPointer(data.first.data(), reinterpret_cast<std::size_t>(pointer), data.second);
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setTexCoordPointer(pointer, 0);
-        RIXGL::getInstance().vertexArray().setBoundTexCoordBuffer(0);
+        RIXGL::getInstance().vertexArray().setTexCoordPointer(pointer, 0, 0);
     }
 }
 
@@ -5115,13 +5109,11 @@ GLAPI void APIENTRY impl_glVertexPointer(GLint size, GLenum type, GLsizei stride
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setVertexPointer(data.data(), reinterpret_cast<std::size_t>(pointer));
-        RIXGL::getInstance().vertexArray().setBoundVertexBuffer(RIXGL::getInstance().vertexBuffer().getBoundBuffer());
+        RIXGL::getInstance().vertexArray().setVertexPointer(data.first.data(), reinterpret_cast<std::size_t>(pointer), data.second);
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setVertexPointer(pointer, 0);
-        RIXGL::getInstance().vertexArray().setBoundVertexBuffer(0);
+        RIXGL::getInstance().vertexArray().setVertexPointer(pointer, 0, 0);
     }
 }
 
@@ -5685,7 +5677,7 @@ GLAPI void APIENTRY impl_glBindBuffer(GLenum target, GLuint buffer)
     RIXGL::getInstance().vertexBuffer().bindBuffer(buffer);
     if (target == GL_ELEMENT_ARRAY_BUFFER)
     {
-        RIXGL::getInstance().vertexArray().setBoundElementBuffer(buffer);
+        RIXGL::getInstance().vertexArray().bindElementBuffer(buffer);
     }
 }
 
@@ -5761,9 +5753,9 @@ GLAPI void APIENTRY impl_glBufferSubData(GLenum target, GLintptr offset, GLsizei
     }
 
     auto bufferData = vb.getBufferData();
-    if (static_cast<std::size_t>(offset) + static_cast<std::size_t>(size) > bufferData.size())
+    if (static_cast<std::size_t>(offset) + static_cast<std::size_t>(size) > bufferData.first.size())
     {
-        SPDLOG_ERROR("glBufferSubData: offset {} + size {} exceeds buffer size {}", offset, size, bufferData.size());
+        SPDLOG_ERROR("glBufferSubData: offset {} + size {} exceeds buffer size {}", offset, size, bufferData.first.size());
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
         return;
     }
@@ -5835,7 +5827,7 @@ GLAPI void APIENTRY impl_glGetBufferParameteriv(GLenum target, GLenum pname, GLi
     switch (pname)
     {
     case GL_BUFFER_SIZE:
-        *params = static_cast<GLint>(vb.getBufferData().size());
+        *params = static_cast<GLint>(vb.getBufferData().first.size());
         break;
     case GL_BUFFER_USAGE:
         SPDLOG_INFO("glGetBufferParameteriv: usage is not tracked, returning GL_STATIC_DRAW");
@@ -5876,12 +5868,10 @@ GLAPI void APIENTRY impl_glPointSizePointerOES(GLenum type, GLsizei stride, cons
     if (RIXGL::getInstance().vertexBuffer().isBufferActive())
     {
         const auto data = RIXGL::getInstance().vertexBuffer().getBufferData();
-        RIXGL::getInstance().vertexArray().setPointSizePointer(data.data(), reinterpret_cast<std::size_t>(pointer));
-        RIXGL::getInstance().vertexArray().setBoundPointSizeArrayBuffer(RIXGL::getInstance().vertexBuffer().getBoundBuffer());
+        RIXGL::getInstance().vertexArray().setPointSizePointer(data.first.data(), reinterpret_cast<std::size_t>(pointer), data.second);
     }
     else
     {
-        RIXGL::getInstance().vertexArray().setPointSizePointer(pointer, 0);
-        RIXGL::getInstance().vertexArray().setBoundPointSizeArrayBuffer(0);
+        RIXGL::getInstance().vertexArray().setPointSizePointer(pointer, 0, 0);
     }
 }

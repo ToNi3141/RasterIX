@@ -105,13 +105,13 @@ public:
         return false;
     }
 
-    tcb::span<const std::uint8_t> getBufferData() const
+    std::pair<tcb::span<const std::uint8_t>, std::size_t> getBufferData() const
     {
         if (m_boundBuffer < m_buffers.size() && m_buffers[m_boundBuffer].has_value())
         {
-            return *(m_buffers[m_boundBuffer]);
+            return { *(m_buffers[m_boundBuffer]), m_boundBuffer };
         }
-        return tcb::span<const std::uint8_t> {};
+        return { tcb::span<const std::uint8_t> {}, 0 };
     }
 
 private:

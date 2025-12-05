@@ -187,7 +187,7 @@ GLint convertSrcReg(SrcReg& conf, GLint val)
     return ret;
 }
 
-BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
+BlendFunc convertBlendFunc(const GLenum blendFunc)
 {
     switch (blendFunc)
     {
@@ -214,7 +214,7 @@ BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
     case GL_SRC_ALPHA_SATURATE:
         return BlendFunc::SRC_ALPHA_SATURATE;
     default:
-        SPDLOG_WARN("convertGlBlendFuncToRenderBlendFunc 0x{:X} not suppored", blendFunc);
+        SPDLOG_WARN("convertBlendFunc 0x{:X} not suppored", blendFunc);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
         return BlendFunc::ZERO;
     }
@@ -222,7 +222,7 @@ BlendFunc convertGlBlendFuncToRenderBlendFunc(const GLenum blendFunc)
     return BlendFunc::ZERO;
 }
 
-GLenum convertRenderBlendFuncToGlBlendFunc(const BlendFunc blendFunc)
+GLenum convertBlendFuncToOpenGL(const BlendFunc blendFunc)
 {
     switch (blendFunc)
     {
@@ -249,7 +249,7 @@ GLenum convertRenderBlendFuncToGlBlendFunc(const BlendFunc blendFunc)
     case BlendFunc::SRC_ALPHA_SATURATE:
         return GL_SRC_ALPHA_SATURATE;
     default:
-        SPDLOG_WARN("convertRenderBlendFuncToGlBlendFunc invalid BlendFunc {}", static_cast<int>(blendFunc));
+        SPDLOG_WARN("convertBlendFuncToOpenGL invalid BlendFunc {}", static_cast<int>(blendFunc));
         return GL_ZERO;
     }
 }
