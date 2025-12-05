@@ -124,6 +124,32 @@ GLint convertCombine(Combine& conv, GLint val, bool alpha)
     return ret;
 }
 
+GLenum convertCombineToOpenGL(const Combine conf)
+{
+    switch (conf)
+    {
+    case Combine::REPLACE:
+        return GL_REPLACE;
+    case Combine::MODULATE:
+        return GL_MODULATE;
+    case Combine::ADD:
+        return GL_ADD;
+    case Combine::ADD_SIGNED:
+        return GL_ADD_SIGNED;
+    case Combine::INTERPOLATE:
+        return GL_INTERPOLATE;
+    case Combine::SUBTRACT:
+        return GL_SUBTRACT;
+    case Combine::DOT3_RGB:
+        return GL_DOT3_RGB;
+    case Combine::DOT3_RGBA:
+        return GL_DOT3_RGBA;
+    default:
+        SPDLOG_WARN("convertCombineToOpenGL invalid Combine {}", static_cast<int>(conf));
+        return GL_REPLACE;
+    }
+}
+
 GLint convertOperand(Operand& conf, GLint val, bool alpha)
 {
     GLint ret = GL_NO_ERROR;
@@ -162,6 +188,24 @@ GLint convertOperand(Operand& conf, GLint val, bool alpha)
     return ret;
 }
 
+GLenum convertOperandToOpenGL(const Operand conf)
+{
+    switch (conf)
+    {
+    case Operand::SRC_ALPHA:
+        return GL_SRC_ALPHA;
+    case Operand::ONE_MINUS_SRC_ALPHA:
+        return GL_ONE_MINUS_SRC_ALPHA;
+    case Operand::SRC_COLOR:
+        return GL_SRC_COLOR;
+    case Operand::ONE_MINUS_SRC_COLOR:
+        return GL_ONE_MINUS_SRC_COLOR;
+    default:
+        SPDLOG_WARN("convertOperandToOpenGL invalid Operand {}", static_cast<int>(conf));
+        return GL_SRC_ALPHA;
+    }
+}
+
 GLint convertSrcReg(SrcReg& conf, GLint val)
 {
     GLint ret = GL_NO_ERROR;
@@ -185,6 +229,24 @@ GLint convertSrcReg(SrcReg& conf, GLint val)
         break;
     }
     return ret;
+}
+
+GLenum convertSrcRegToOpenGL(const SrcReg conf)
+{
+    switch (conf)
+    {
+    case SrcReg::TEXTURE:
+        return GL_TEXTURE;
+    case SrcReg::CONSTANT:
+        return GL_CONSTANT;
+    case SrcReg::PRIMARY_COLOR:
+        return GL_PRIMARY_COLOR;
+    case SrcReg::PREVIOUS:
+        return GL_PREVIOUS;
+    default:
+        SPDLOG_WARN("convertSrcRegToOpenGL invalid SrcReg {}", static_cast<int>(conf));
+        return GL_TEXTURE;
+    }
 }
 
 BlendFunc convertBlendFunc(const GLenum blendFunc)
@@ -361,7 +423,7 @@ DrawMode convertDrawMode(GLenum drawMode)
     }
 }
 
-GLenum convertGlTextureWrapMode(TextureWrapMode& conf, const GLenum mode)
+GLenum convertTextureWrapMode(TextureWrapMode& conf, const GLenum mode)
 {
     switch (mode)
     {
@@ -374,11 +436,25 @@ GLenum convertGlTextureWrapMode(TextureWrapMode& conf, const GLenum mode)
         conf = TextureWrapMode::REPEAT;
         break;
     default:
-        SPDLOG_WARN("convertGlTextureWarpMode 0x{:X} not suppored", mode);
+        SPDLOG_WARN("convertTextureWrapMode 0x{:X} not suppored", mode);
         conf = TextureWrapMode::REPEAT;
         return GL_INVALID_ENUM;
     }
     return GL_NO_ERROR;
+}
+
+GLenum convertTextureWrapModeToOpenGL(const TextureWrapMode conf)
+{
+    switch (conf)
+    {
+    case TextureWrapMode::CLAMP_TO_EDGE:
+        return GL_CLAMP_TO_EDGE;
+    case TextureWrapMode::REPEAT:
+        return GL_REPEAT;
+    default:
+        SPDLOG_WARN("convertTextureWrapModeToOpenGL invalid TextureWrapMode {}", static_cast<int>(conf));
+        return GL_REPEAT;
+    }
 }
 
 GLenum convertTestFunc(TestFunc& conf, const GLenum mode)
@@ -755,6 +831,11 @@ GLenum convertMatrixModeToOpenGL(const MatrixMode conf)
         SPDLOG_WARN("convertMatrixModeToOpenGL invalid MatrixMode {}", static_cast<int>(conf));
         return GL_MODELVIEW;
     }
+}
+
+GLenum convertBoolToGLboolean(const bool val)
+{
+    return val ? GL_TRUE : GL_FALSE;
 }
 
 } // namespace rr

@@ -1244,7 +1244,7 @@ GLAPI void APIENTRY impl_glGetBooleanv(GLenum pname, GLboolean* params)
         break;
     }
     for (std::size_t i = 0; i < count; i++)
-        params[i] = (floatVals[i] > 0.0f) ? GL_TRUE : GL_FALSE;
+        params[i] = convertBoolToGLboolean(floatVals[i] > 0.0f);
 }
 
 GLAPI void APIENTRY impl_glGetClipPlane(GLenum plane, GLdouble* equation)
@@ -1311,7 +1311,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = 4.0f;
         break;
     case GL_ALPHA_TEST:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableAlphaTest() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableAlphaTest()));
         break;
     case GL_ALPHA_TEST_FUNC:
         params[0] = static_cast<GLfloat>(convertTestFuncToOpenGL(RIXGL::getInstance().pipeline().fragmentPipeline().getAlphaFunc()));
@@ -1323,7 +1323,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getVertexBufferId());
         break;
     case GL_BLEND:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableBlending() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableBlending()));
         break;
     case GL_BLEND_DST:
         params[0] = static_cast<GLfloat>(convertBlendFuncToOpenGL(RIXGL::getInstance().pipeline().fragmentPipeline().getBlendFuncDFactor()));
@@ -1338,10 +1338,10 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(GL_TEXTURE0 + RIXGL::getInstance().vertexQueue().getActiveTexture());
         break;
     case GL_CLIP_PLANE0:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getPlaneClipper().getEnable() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getPlaneClipper().getEnable()));
         break;
     case GL_COLOR_ARRAY:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().colorArrayEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().vertexArray().colorArrayEnabled()));
         break;
     case GL_COLOR_ARRAY_BUFFER_BINDING:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getColorBufferId());
@@ -1365,22 +1365,22 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         break;
     }
     case GL_COLOR_LOGIC_OP:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableLogicOp() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableLogicOp()));
         break;
     case GL_COLOR_MATERIAL:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getLighting().getColorMaterialEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().getColorMaterialEnabled()));
         break;
     case GL_COLOR_WRITEMASK:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().fragmentPipeline().getColorMaskR() ? GL_TRUE : GL_FALSE);
-        params[1] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().fragmentPipeline().getColorMaskG() ? GL_TRUE : GL_FALSE);
-        params[2] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().fragmentPipeline().getColorMaskB() ? GL_TRUE : GL_FALSE);
-        params[3] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().fragmentPipeline().getColorMaskA() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().fragmentPipeline().getColorMaskR()));
+        params[1] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().fragmentPipeline().getColorMaskG()));
+        params[2] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().fragmentPipeline().getColorMaskB()));
+        params[3] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().fragmentPipeline().getColorMaskA()));
         break;
     case GL_COMPRESSED_TEXTURE_FORMATS:
         params[0] = 0.0f;
         break;
     case GL_CULL_FACE:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getCulling().isCullingEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getCulling().isCullingEnabled()));
         break;
     case GL_CULL_FACE_MODE:
         params[0] = static_cast<GLfloat>(convertFaceToOpenGL(RIXGL::getInstance().pipeline().getCulling().getCullMode()));
@@ -1425,16 +1425,16 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[1] = RIXGL::getInstance().pipeline().getViewPort().getDepthRangeFar();
         break;
     case GL_DEPTH_TEST:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableDepthTest() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableDepthTest()));
         break;
     case GL_DEPTH_WRITEMASK:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().fragmentPipeline().getDepthMask() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().fragmentPipeline().getDepthMask()));
         break;
     case GL_ELEMENT_ARRAY_BUFFER_BINDING:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getElementBufferId());
         break;
     case GL_FOG:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableFog() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableFog()));
         break;
     case GL_FOG_COLOR:
     {
@@ -1482,7 +1482,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         break;
     }
     case GL_LIGHT_MODEL_TWO_SIDE:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getLighting().getTwoSideModelEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().getTwoSideModelEnabled()));
         break;
     case GL_LIGHT0:
     case GL_LIGHT1:
@@ -1492,10 +1492,10 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
     case GL_LIGHT5:
     case GL_LIGHT6:
     case GL_LIGHT7:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getLighting().lightEnabled(pname - GL_LIGHT0) ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().lightEnabled(pname - GL_LIGHT0)));
         break;
     case GL_LIGHTING:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getLighting().lightingEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().lightingEnabled()));
         break;
     case GL_LINE_SMOOTH:
         params[0] = static_cast<GLfloat>(GL_FALSE);
@@ -1550,7 +1550,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(GL_FALSE);
         break;
     case GL_NORMAL_ARRAY:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().normalArrayEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().vertexArray().normalArrayEnabled()));
         break;
     case GL_NORMAL_ARRAY_BUFFER_BINDING:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getNormalBufferId());
@@ -1562,7 +1562,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(convertTypeToOpenGL(RIXGL::getInstance().vertexArray().getNormalType()));
         break;
     case GL_NORMALIZE:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getLighting().getNormalNormalizationEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().getNormalNormalizationEnabled()));
         break;
     case GL_NUM_COMPRESSED_TEXTURE_FORMATS:
         params[0] = 0.0f;
@@ -1591,7 +1591,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getPointSizeArrayBufferId());
         break;
     case GL_POINT_SIZE_ARRAY_OES:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().pointSizeArrayEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().vertexArray().pointSizeArrayEnabled()));
         break;
     case GL_POINT_SIZE_ARRAY_STRIDE_OES:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getPointSizeStride());
@@ -1612,13 +1612,13 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(GL_DONT_CARE);
         break;
     case GL_POINT_SPRITE_OES:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getPointAssembly().getEnablePointSprite() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getPointAssembly().getEnablePointSprite()));
         break;
     case GL_POLYGON_OFFSET_FACTOR:
         params[0] = RIXGL::getInstance().pipeline().getPolygonOffset().getFactor();
         break;
     case GL_POLYGON_OFFSET_FILL:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getPolygonOffset().getEnableFill() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getPolygonOffset().getEnableFill()));
         break;
     case GL_POLYGON_OFFSET_UNITS:
         params[0] = RIXGL::getInstance().pipeline().getPolygonOffset().getUnits();
@@ -1636,7 +1636,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = 4.0f;
         break;
     case GL_RESCALE_NORMAL:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getLighting().getNormalRescaleEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().getNormalRescaleEnabled()));
         break;
     case GL_SAMPLE_ALPHA_TO_COVERAGE:
     case GL_SAMPLE_ALPHA_TO_ONE:
@@ -1661,7 +1661,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         break;
     }
     case GL_SCISSOR_TEST:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableScissor() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableScissor()));
         break;
     case GL_SHADE_MODEL:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getShadeModel().getShadeModelFlat() ? GL_FLAT : GL_SMOOTH);
@@ -1696,7 +1696,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getStencil().getRef());
         break;
     case GL_STENCIL_TEST:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableStencil() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableStencil()));
         break;
     case GL_STENCIL_VALUE_MASK:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().getStencil().getMask());
@@ -1708,13 +1708,13 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = 4.0f;
         break;
     case GL_TEXTURE_2D:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().featureEnable().getEnableTmu() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableTmu()));
         break;
     case GL_TEXTURE_BINDING_2D:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().pipeline().texture().getBoundTexture());
         break;
     case GL_TEXTURE_COORD_ARRAY:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().texCoordArrayEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().vertexArray().texCoordArrayEnabled()));
         break;
     case GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getTexCoordBufferId());
@@ -1750,7 +1750,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         break;
     }
     case GL_VERTEX_ARRAY:
-        params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().vertexArrayEnabled() ? GL_TRUE : GL_FALSE);
+        params[0] = static_cast<GLfloat>(convertBoolToGLboolean(RIXGL::getInstance().vertexArray().vertexArrayEnabled()));
         break;
     case GL_VERTEX_ARRAY_BUFFER_BINDING:
         params[0] = static_cast<GLfloat>(RIXGL::getInstance().vertexArray().getVertexBufferId());
@@ -1825,7 +1825,7 @@ GLAPI void APIENTRY impl_glGetIntegerv(GLenum pname, GLint* params)
     case GL_SCISSOR_TEST:
     case GL_STENCIL_TEST:
     case GL_TEXTURE_2D:
-        params[0] = (floatVals[0] > 0.0f) ? GL_TRUE : GL_FALSE;
+        params[0] = convertBoolToGLboolean(floatVals[0] > 0.0f);
         break;
 
     default:
@@ -2058,7 +2058,7 @@ GLAPI void APIENTRY impl_glGetTexEnviv(GLenum target, GLenum pname, GLint* param
         case GL_TEXTURE_ENV_COLOR:
         {
             Vec4 v = RIXGL::getInstance().pipeline().texture().getTexEnvColor();
-            v.mul(255);
+            v.mul(std::numeric_limits<GLint>::max());
             params[0] = static_cast<GLint>(v[0]);
             params[1] = static_cast<GLint>(v[1]);
             params[2] = static_cast<GLint>(v[2]);
@@ -2066,46 +2066,46 @@ GLAPI void APIENTRY impl_glGetTexEnviv(GLenum target, GLenum pname, GLint* param
         }
         break;
         case GL_COMBINE_RGB:
-            *reinterpret_cast<Combine*>(params) = RIXGL::getInstance().pipeline().texture().getCombineRgb();
+            *params = convertCombineToOpenGL(RIXGL::getInstance().pipeline().texture().getCombineRgb());
             break;
         case GL_COMBINE_ALPHA:
-            *reinterpret_cast<Combine*>(params) = RIXGL::getInstance().pipeline().texture().getCombineAlpha();
+            *params = convertCombineToOpenGL(RIXGL::getInstance().pipeline().texture().getCombineAlpha());
             break;
         case GL_SRC0_RGB:
-            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegRgb0();
+            *params = convertSrcRegToOpenGL(RIXGL::getInstance().pipeline().texture().getSrcRegRgb0());
             break;
         case GL_SRC1_RGB:
-            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegRgb1();
+            *params = convertSrcRegToOpenGL(RIXGL::getInstance().pipeline().texture().getSrcRegRgb1());
             break;
         case GL_SRC2_RGB:
-            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegRgb2();
+            *params = convertSrcRegToOpenGL(RIXGL::getInstance().pipeline().texture().getSrcRegRgb2());
             break;
         case GL_SRC0_ALPHA:
-            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegAlpha0();
+            *params = convertSrcRegToOpenGL(RIXGL::getInstance().pipeline().texture().getSrcRegAlpha0());
             break;
         case GL_SRC1_ALPHA:
-            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegAlpha1();
+            *params = convertSrcRegToOpenGL(RIXGL::getInstance().pipeline().texture().getSrcRegAlpha1());
             break;
         case GL_SRC2_ALPHA:
-            *reinterpret_cast<SrcReg*>(params) = RIXGL::getInstance().pipeline().texture().getSrcRegAlpha2();
+            *params = convertSrcRegToOpenGL(RIXGL::getInstance().pipeline().texture().getSrcRegAlpha2());
             break;
         case GL_OPERAND0_RGB:
-            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandRgb0();
+            *params = convertOperandToOpenGL(RIXGL::getInstance().pipeline().texture().getOperandRgb0());
             break;
         case GL_OPERAND1_RGB:
-            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandRgb1();
+            *params = convertOperandToOpenGL(RIXGL::getInstance().pipeline().texture().getOperandRgb1());
             break;
         case GL_OPERAND2_RGB:
-            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandRgb2();
+            *params = convertOperandToOpenGL(RIXGL::getInstance().pipeline().texture().getOperandRgb2());
             break;
         case GL_OPERAND0_ALPHA:
-            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandAlpha0();
+            *params = convertOperandToOpenGL(RIXGL::getInstance().pipeline().texture().getOperandAlpha0());
             break;
         case GL_OPERAND1_ALPHA:
-            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandAlpha1();
+            *params = convertOperandToOpenGL(RIXGL::getInstance().pipeline().texture().getOperandAlpha1());
             break;
         case GL_OPERAND2_ALPHA:
-            *reinterpret_cast<Operand*>(params) = RIXGL::getInstance().pipeline().texture().getOperandAlpha2();
+            *params = convertOperandToOpenGL(RIXGL::getInstance().pipeline().texture().getOperandAlpha2());
             break;
         case GL_RGB_SCALE:
             *params = std::pow(2.0f, static_cast<GLfloat>(RIXGL::getInstance().pipeline().texture().getShiftRgb()));
@@ -2123,7 +2123,7 @@ GLAPI void APIENTRY impl_glGetTexEnviv(GLenum target, GLenum pname, GLint* param
         switch (pname)
         {
         case GL_COORD_REPLACE_OES:
-            *params = RIXGL::getInstance().pipeline().getPointAssembly().getEnablePointSprite() ? GL_TRUE : GL_FALSE;
+            *params = convertBoolToGLboolean(RIXGL::getInstance().pipeline().getPointAssembly().getEnablePointSprite());
             break;
         default:
             SPDLOG_ERROR("glGetTexEnviv pname 0x{:X} not supported for target GL_POINT_SPRITE_OES", pname);
@@ -2186,35 +2186,19 @@ GLAPI void APIENTRY impl_glGetTexParameteriv(GLenum target, GLenum pname, GLint*
     switch (pname)
     {
     case GL_TEXTURE_MIN_FILTER:
-        *params = RIXGL::getInstance().pipeline().texture().minFilterEnabled() ? GL_TRUE : GL_FALSE;
+        *params = convertBoolToGLboolean(RIXGL::getInstance().pipeline().texture().minFilterEnabled());
         break;
     case GL_TEXTURE_MAG_FILTER:
-        *params = RIXGL::getInstance().pipeline().texture().magFilterEnabled() ? GL_TRUE : GL_FALSE;
+        *params = convertBoolToGLboolean(RIXGL::getInstance().pipeline().texture().magFilterEnabled());
         break;
     case GL_TEXTURE_WRAP_S:
-        switch (RIXGL::getInstance().pipeline().texture().getTexWrapModeS())
-        {
-        case TextureWrapMode::REPEAT:
-            *params = GL_REPEAT;
-            break;
-        case TextureWrapMode::CLAMP_TO_EDGE:
-            *params = GL_CLAMP_TO_EDGE;
-            break;
-        }
+        *params = convertTextureWrapModeToOpenGL(RIXGL::getInstance().pipeline().texture().getTexWrapModeS());
         break;
     case GL_TEXTURE_WRAP_T:
-        switch (RIXGL::getInstance().pipeline().texture().getTexWrapModeT())
-        {
-        case TextureWrapMode::REPEAT:
-            *params = GL_REPEAT;
-            break;
-        case TextureWrapMode::CLAMP_TO_EDGE:
-            *params = GL_CLAMP_TO_EDGE;
-            break;
-        }
+        *params = convertTextureWrapModeToOpenGL(RIXGL::getInstance().pipeline().texture().getTexWrapModeT());
         break;
     case GL_GENERATE_MIPMAP:
-        *params = RIXGL::getInstance().mipMapGenerator().mipMapGenerationEnabled() ? GL_TRUE : GL_FALSE;
+        *params = convertBoolToGLboolean(RIXGL::getInstance().mipMapGenerator().getEnableMipMapGeneration());
         break;
     default:
         SPDLOG_ERROR("glGetTexParameteriv pname 0x{:X} not supported", pname);
@@ -2283,15 +2267,15 @@ GLAPI GLboolean APIENTRY impl_glIsEnabled(GLenum cap)
     switch (cap)
     {
     case GL_TEXTURE_2D:
-        return RIXGL::getInstance().pipeline().featureEnable().getEnableTmu() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableTmu());
     case GL_ALPHA_TEST:
-        return RIXGL::getInstance().pipeline().featureEnable().getEnableAlphaTest() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableAlphaTest());
     case GL_DEPTH_TEST:
-        return RIXGL::getInstance().pipeline().featureEnable().getEnableDepthTest() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableDepthTest());
     case GL_BLEND:
-        return RIXGL::getInstance().pipeline().featureEnable().getEnableBlending() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableBlending());
     case GL_LIGHTING:
-        return RIXGL::getInstance().pipeline().getLighting().lightingEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().lightingEnabled());
     case GL_LIGHT0:
     case GL_LIGHT1:
     case GL_LIGHT2:
@@ -2300,31 +2284,31 @@ GLAPI GLboolean APIENTRY impl_glIsEnabled(GLenum cap)
     case GL_LIGHT5:
     case GL_LIGHT6:
     case GL_LIGHT7:
-        return RIXGL::getInstance().pipeline().getLighting().lightEnabled(cap - GL_LIGHT0) ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().lightEnabled(cap - GL_LIGHT0));
     case GL_TEXTURE_GEN_S:
-        return RIXGL::getInstance().pipeline().getTexGen().getTexGenEnableS() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getTexGen().getTexGenEnableS());
     case GL_TEXTURE_GEN_T:
-        return RIXGL::getInstance().pipeline().getTexGen().getTexGenEnableT() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getTexGen().getTexGenEnableT());
     case GL_TEXTURE_GEN_R:
-        return RIXGL::getInstance().pipeline().getTexGen().getTexGenEnableR() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getTexGen().getTexGenEnableR());
     case GL_CULL_FACE:
-        return RIXGL::getInstance().pipeline().getCulling().isCullingEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getCulling().isCullingEnabled());
     case GL_COLOR_MATERIAL:
-        return RIXGL::getInstance().pipeline().getLighting().getColorMaterialEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().getColorMaterialEnabled());
     case GL_FOG:
-        return RIXGL::getInstance().pipeline().featureEnable().getEnableFog() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableFog());
     case GL_SCISSOR_TEST:
-        return RIXGL::getInstance().pipeline().featureEnable().getEnableScissor() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableScissor());
     case GL_NORMALIZE:
-        return RIXGL::getInstance().pipeline().getLighting().getNormalNormalizationEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().getNormalNormalizationEnabled());
     case GL_STENCIL_TEST:
-        return RIXGL::getInstance().pipeline().featureEnable().getEnableStencil() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableStencil());
     case GL_STENCIL_TEST_TWO_SIDE_EXT:
-        return RIXGL::getInstance().pipeline().getStencil().getTwoSideStencilEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getStencil().getTwoSideStencilEnabled());
     case GL_COLOR_LOGIC_OP:
-        return RIXGL::getInstance().pipeline().featureEnable().getEnableLogicOp() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().featureEnable().getEnableLogicOp());
     case GL_CLIP_PLANE0:
-        return RIXGL::getInstance().pipeline().getPlaneClipper().getEnable() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getPlaneClipper().getEnable());
     case GL_CLIP_PLANE1:
     case GL_CLIP_PLANE2:
     case GL_CLIP_PLANE3:
@@ -2332,9 +2316,9 @@ GLAPI GLboolean APIENTRY impl_glIsEnabled(GLenum cap)
     case GL_CLIP_PLANE5:
         return GL_FALSE; // Not supported
     case GL_POLYGON_OFFSET_FILL:
-        return RIXGL::getInstance().pipeline().getPolygonOffset().getEnableFill() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getPolygonOffset().getEnableFill());
     case GL_POINT_SPRITE_OES:
-        return RIXGL::getInstance().pipeline().getPointAssembly().getEnablePointSprite() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getPointAssembly().getEnablePointSprite());
     case GL_DITHER:
         // Dither is always enabled in RIXGL, but has no effect
         return GL_TRUE;
@@ -2347,18 +2331,17 @@ GLAPI GLboolean APIENTRY impl_glIsEnabled(GLenum cap)
         // These are not implemented, always return GL_FALSE
         return GL_FALSE;
     case GL_RESCALE_NORMAL:
-        return RIXGL::getInstance().pipeline().getLighting().getNormalRescaleEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().pipeline().getLighting().getNormalRescaleEnabled());
     case GL_COLOR_ARRAY:
-        return RIXGL::getInstance().vertexArray().colorArrayEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().vertexArray().colorArrayEnabled());
     case GL_NORMAL_ARRAY:
-        return RIXGL::getInstance().vertexArray().normalArrayEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().vertexArray().normalArrayEnabled());
     case GL_TEXTURE_COORD_ARRAY:
-        return RIXGL::getInstance().vertexArray().texCoordArrayEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().vertexArray().texCoordArrayEnabled());
     case GL_VERTEX_ARRAY:
-        return RIXGL::getInstance().vertexArray().vertexArrayEnabled() ? GL_TRUE : GL_FALSE;
-    // TODO:
-    // case GL_POINT_SIZE_ARRAY_OES:
-    //     return RIXGL::getInstance().vertexArray().pointSizeArrayEnabled() ? GL_TRUE : GL_FALSE;
+        return convertBoolToGLboolean(RIXGL::getInstance().vertexArray().vertexArrayEnabled());
+    case GL_POINT_SIZE_ARRAY_OES:
+        return convertBoolToGLboolean(RIXGL::getInstance().vertexArray().pointSizeArrayEnabled());
     default:
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
         return GL_FALSE;
@@ -4255,7 +4238,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
         case GL_TEXTURE_WRAP_S:
         {
             TextureWrapMode mode;
-            const GLenum error = convertGlTextureWrapMode(mode, static_cast<GLenum>(param));
+            const GLenum error = convertTextureWrapMode(mode, static_cast<GLenum>(param));
             if (error == GL_NO_ERROR)
             {
                 RIXGL::getInstance().pipeline().texture().setTexWrapModeS(mode);
@@ -4270,7 +4253,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
         case GL_TEXTURE_WRAP_T:
         {
             TextureWrapMode mode;
-            const GLenum error = convertGlTextureWrapMode(mode, static_cast<GLenum>(param));
+            const GLenum error = convertTextureWrapMode(mode, static_cast<GLenum>(param));
             if (error == GL_NO_ERROR)
             {
                 RIXGL::getInstance().pipeline().texture().setTexWrapModeT(mode);
