@@ -177,6 +177,8 @@ public:
     bool dataHasChanged() const { return m_dataChanged; }
     void clearDataChangedFlag() { m_dataChanged = false; }
 
+    static constexpr std::size_t getMaxLights() { return LightingData::MAX_LIGHTS; }
+
 private:
     void setDataChangedFlag() { m_dataChanged = true; }
     void enableColorMaterial(bool emission, bool ambient, bool diffuse, bool specular);

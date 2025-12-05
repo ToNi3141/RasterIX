@@ -272,6 +272,11 @@ bool Renderer::setScissorBox(const int32_t x, const int32_t y, const uint32_t wi
     return ret;
 }
 
+std::tuple<int32_t, int32_t, uint32_t, uint32_t> Renderer::getScissorBox() const
+{
+    return { m_scissorXStart, m_scissorYStart, m_scissorXEnd - m_scissorXStart + 1, m_scissorYEnd - m_scissorYStart + 1 };
+}
+
 bool Renderer::setTextureWrapModeS(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode)
 {
     m_textureManager.setTextureWrapModeS(texId, mode);
@@ -375,6 +380,24 @@ uint32_t Renderer::getCurrentColorBufferAddr(const bool back) const
 bool Renderer::setTexEnvColor(const TexEnvColorReg& color)
 {
     m_texEnvColors[color.getTmu()] = color.getColor();
+    return writeReg(color);
+}
+
+bool Renderer::setClearColor(const ColorBufferClearColorReg& color)
+{
+    m_clearColorReg = color;
+    return writeReg(color);
+}
+
+bool Renderer::setClearDepth(const DepthBufferClearDepthReg& depth)
+{
+    m_clearDepthReg = depth;
+    return writeReg(depth);
+}
+
+bool Renderer::setFogColor(const FogColorReg& color)
+{
+    m_fogColor = color;
     return writeReg(color);
 }
 

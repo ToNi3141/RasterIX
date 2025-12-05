@@ -60,6 +60,23 @@ bool PixelPipeline::setClearDepth(const float depth)
     return m_renderer.setClearDepth({ depthx });
 }
 
+Vec4 PixelPipeline::getClearColor() const
+{
+    ColorBufferClearColorReg clearColorReg = m_renderer.getClearColor();
+    return Vec4 {
+        static_cast<float>(clearColorReg.getColor()[0]) / 255.0f,
+        static_cast<float>(clearColorReg.getColor()[1]) / 255.0f,
+        static_cast<float>(clearColorReg.getColor()[2]) / 255.0f,
+        static_cast<float>(clearColorReg.getColor()[3]) / 255.0f,
+    };
+}
+
+float PixelPipeline::getClearDepth() const
+{
+    DepthBufferClearDepthReg clearDepthReg = m_renderer.getClearDepth();
+    return static_cast<float>(clearDepthReg.getValue()) / 65535.0f;
+}
+
 bool PixelPipeline::clearFramebuffer(const bool frameBuffer, const bool zBuffer, const bool stencilBuffer)
 {
     return m_renderer.clear(frameBuffer, zBuffer, stencilBuffer);

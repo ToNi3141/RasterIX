@@ -79,6 +79,8 @@ public:
     bool getTexCoordReplace() const { return m_data.texCoordReplace; }
     bool getEnablePointSprite() const { return m_data.enablePointSprite; }
 
+    static constexpr float getMaxPointSize() { return 2048.0f; } // Arbitrary limit to avoid too large point sizes. Hardware may support larger sizes.
+
 private:
     PointAssemblyData& m_data;
 };

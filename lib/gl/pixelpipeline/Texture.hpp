@@ -38,6 +38,7 @@ public:
     bool createTextureWithName(const uint16_t texId) { return m_renderer.createTextureWithName(texId); };
     bool deleteTexture(const uint16_t texture) { return m_renderer.deleteTexture(texture); }
     void setBoundTexture(const uint16_t val);
+    uint16_t getBoundTexture() const { return m_tmuConf[m_tmu].boundTexture; }
     void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmu, m_tmuConf[m_tmu].boundTexture, mode); }
     void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmu, m_tmuConf[m_tmu].boundTexture, mode); }
     void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmu, m_tmuConf[m_tmu].boundTexture, val); }

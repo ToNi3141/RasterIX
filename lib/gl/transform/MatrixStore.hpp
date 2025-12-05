@@ -18,6 +18,7 @@
 #ifndef MATRIXSTORE_HPP
 #define MATRIXSTORE_HPP
 
+#include "Enums.hpp"
 #include "RenderConfigs.hpp"
 #include "Stack.hpp"
 #include "math/Mat44.hpp"
@@ -37,21 +38,15 @@ struct TransformMatricesData
 class MatrixStore
 {
 public:
-    enum MatrixMode
-    {
-        MODELVIEW,
-        PROJECTION,
-        TEXTURE,
-        COLOR
-    };
-
     MatrixStore(TransformMatricesData& transformMatrices);
 
     const Mat44& getModelView() const { return m_data.modelView; }
     const Mat44& getProjection() const { return m_data.projection; }
     const Mat44& getTexture(const std::size_t tmu) const { return m_data.texture[tmu]; }
+    const Mat44& getTexture() const { return m_data.texture[m_tmu]; }
     const Mat44& getColor() const { return m_data.color; }
     Mat44& getCurrentMatrix();
+    MatrixMode getMatrixMode() const { return m_matrixMode; }
 
     bool pushMatrix();
     bool popMatrix();
@@ -59,14 +54,21 @@ public:
     void setMatrixMode(const MatrixMode matrixMode);
     void setTmu(const std::size_t tmu);
 
-    static std::size_t getModelMatrixStackDepth();
-    static std::size_t getProjectionMatrixStackDepth();
+    static std::size_t getMaxModelMatrixStackDepth();
+    static std::size_t getMaxProjectionMatrixStackDepth();
+    static std::size_t getMaxTextureMatrixStackDepth();
+    static std::size_t getMaxColorMatrixStackDepth();
+
+    std::size_t getModelMatrixStackDepth() const;
+    std::size_t getProjectionMatrixStackDepth() const;
+    std::size_t getTextureMatrixStackDepth() const;
+    std::size_t getColorMatrixStackDepth() const;
 
 private:
     static constexpr std::size_t MODEL_MATRIX_STACK_DEPTH { 16 };
-    static constexpr std::size_t TEXTURE_MATRIX_STACK_DEPTH { 16 };
+    static constexpr std::size_t TEXTURE_MATRIX_STACK_DEPTH { 4 };
     static constexpr std::size_t PROJECTION_MATRIX_STACK_DEPTH { 4 };
-    static constexpr std::size_t COLOR_MATRIX_STACK_DEPTH { 16 };
+    static constexpr std::size_t COLOR_MATRIX_STACK_DEPTH { 4 };
 
     MatrixMode m_matrixMode { MatrixMode::PROJECTION };
     Stack<Mat44, MODEL_MATRIX_STACK_DEPTH> m_mStack {};

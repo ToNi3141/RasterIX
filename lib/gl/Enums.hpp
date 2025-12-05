@@ -201,6 +201,22 @@ enum class InternalPixelFormat
     RGBA1,
 };
 
+enum class FogMode
+{
+    ONE,
+    LINEAR,
+    EXP,
+    EXP2
+};
+
+enum MatrixMode
+{
+    MODELVIEW,
+    PROJECTION,
+    TEXTURE,
+    COLOR
+};
+
 } // namespace rr
 
 #endif // _ENUMS_HPP_
