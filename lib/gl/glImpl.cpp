@@ -4870,7 +4870,6 @@ GLAPI void APIENTRY impl_glGetPointerv(GLenum pname, GLvoid** params)
         {
             *params = const_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getVertexPointer());
         }
-        *params = const_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getVertexPointer());
         break;
     case GL_NORMAL_ARRAY_POINTER:
         if (RIXGL::getInstance().vertexBuffer().isBufferActive())
