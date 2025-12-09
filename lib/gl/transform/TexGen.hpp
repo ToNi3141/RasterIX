@@ -87,6 +87,19 @@ public:
 
     void setTexGenData(TexGenData& texGenCalc, const Mat44& modelViewMatrix);
 
+    bool getTexGenEnableS() const;
+    bool getTexGenEnableT() const;
+    bool getTexGenEnableR() const;
+    TexGenMode getTexGenModeS() const;
+    TexGenMode getTexGenModeT() const;
+    TexGenMode getTexGenModeR() const;
+    Vec4 getTexGenVecObjS() const;
+    Vec4 getTexGenVecObjT() const;
+    Vec4 getTexGenVecObjR() const;
+    Vec4 getTexGenVecEyeS() const;
+    Vec4 getTexGenVecEyeT() const;
+    Vec4 getTexGenVecEyeR() const;
+
 private:
     Mat44 getInvertedModelViewMatrix() const;
 

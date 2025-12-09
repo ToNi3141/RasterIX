@@ -31,7 +31,7 @@ struct LightingData
     static constexpr std::size_t MAX_LIGHTS { 8 };
     struct MaterialConfig
     {
-        Vec4 emissiveColor { { 0.0f, 0.0f, 0.0f, 1.0f } };
+        Vec4 emissionColor { { 0.0f, 0.0f, 0.0f, 1.0f } };
         Vec4 ambientColor { { 0.2f, 0.2f, 0.2f, 1.0 } };
         Vec4 ambientColorScene { { 0.2f, 0.2f, 0.2f, 1.0f } };
         Vec4 diffuseColor { { 0.8f, 0.8f, 0.8f, 1.0 } };
@@ -65,6 +65,7 @@ struct LightingData
     bool enableColorMaterialSpecular { false };
     bool enableTwoSideModel { false };
     bool normalizeLightNormal { false };
+    bool rescaleNormal { false };
 };
 
 class LightingCalc
@@ -81,12 +82,14 @@ public:
         const Vec4& vertex,
         const Vec3& normal) const;
 
+    void init(const Mat44& normalMatrix);
+
     bool isEnabled() const { return m_data.lightingEnabled; }
 
 private:
     void calculateSceneLight(
         Vec4& __restrict sceneLight,
-        const Vec4& emissiveColor,
+        const Vec4& emissionColor,
         const Vec4& ambientColor,
         const Vec4& ambientColorScene) const;
 
@@ -111,6 +114,7 @@ private:
     Vec3 calculateDirection(const Vec4& p1, const Vec4& p2) const;
 
     const LightingData& m_data;
+    float m_rescaleFactor { 1.0f };
 };
 
 class LightingSetter
@@ -119,9 +123,34 @@ public:
     LightingSetter(LightingData& lightingData, const Mat44& modelViewMatrix);
 
     bool lightingEnabled() const { return m_data.lightingEnabled; }
+    bool lightEnabled(const std::size_t light) const { return m_data.lightEnable[light]; }
+
+    const Vec4& getEmissionColorMaterial() const { return m_data.material.emissionColor; }
+    const Vec4& getAmbientColorMaterial() const { return m_data.material.ambientColor; }
+    const Vec4& getAmbientColorScene() const { return m_data.material.ambientColorScene; }
+    const Vec4& getDiffuseColorMaterial() const { return m_data.material.diffuseColor; }
+    const Vec4& getSpecularColorMaterial() const { return m_data.material.specularColor; }
+    float getSpecularExponentMaterial() const { return m_data.material.specularExponent; }
+    const Vec4& getAmbientColorLight(const std::size_t light) const { return m_data.lights[light].ambientColor; }
+    const Vec4& getDiffuseColorLight(const std::size_t light) const { return m_data.lights[light].diffuseColor; }
+    const Vec4& getSpecularColorLight(const std::size_t light) const { return m_data.lights[light].specularColor; }
+    const Vec4& getPosLight(const std::size_t light) const { return m_data.lights[light].position; }
+    float getConstantAttenuationLight(const std::size_t light) const { return m_data.lights[light].constantAttenuation; }
+    float getLinearAttenuationLight(const std::size_t light) const { return m_data.lights[light].linearAttenuation; }
+    float getQuadraticAttenuationLight(const std::size_t light) const { return m_data.lights[light].quadraticAttenuation; }
+    bool getTwoSideModelEnabled() const { return m_data.enableTwoSideModel; }
+    const Vec3& getSpotlightDirection(const std::size_t light) const { return m_data.lights[light].spotlightDirection; }
+    float getSpotlightExponent(const std::size_t light) const { return m_data.lights[light].spotlightExponent; }
+    float getSpotlightCutoff(const std::size_t light) const { return m_data.lights[light].spotlightCutoff; }
+    bool getNormalNormalizationEnabled() const { return m_data.normalizeLightNormal; }
+    bool getNormalRescaleEnabled() const { return m_data.rescaleNormal; }
+
+    Face getColorMaterialFace() const { return m_colorMaterialFace; }
+    ColorMaterialTracking getColorMaterialTracking() const { return m_colorMaterialTracking; }
+    bool getColorMaterialEnabled() const { return m_enableColorMaterial; }
 
     void enableLighting(bool enable);
-    void setEmissiveColorMaterial(const Vec4& color);
+    void setEmissionColorMaterial(const Vec4& color);
     void setAmbientColorMaterial(const Vec4& color);
     void setAmbientColorScene(const Vec4& color);
     void setDiffuseColorMaterial(const Vec4& color);
@@ -140,12 +169,15 @@ public:
     void setSpotlightExponent(const std::size_t light, const float exponent);
     void setSpotlightCutoff(const std::size_t light, const float cutoff);
     void setEnableNormalNormalization(const bool enable);
+    void setEnableNormalRescale(const bool enable);
 
     void setColorMaterialTracking(const Face face, const ColorMaterialTracking material);
     void enableColorMaterial(const bool enable);
 
     bool dataHasChanged() const { return m_dataChanged; }
     void clearDataChangedFlag() { m_dataChanged = false; }
+
+    static constexpr std::size_t getMaxLights() { return LightingData::MAX_LIGHTS; }
 
 private:
     void setDataChangedFlag() { m_dataChanged = true; }

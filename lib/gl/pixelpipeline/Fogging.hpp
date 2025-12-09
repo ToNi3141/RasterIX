@@ -18,6 +18,7 @@
 #ifndef FOGGING_HPP_
 #define FOGGING_HPP_
 
+#include "Enums.hpp"
 #include "math/Vec.hpp"
 #include "renderer/Renderer.hpp"
 #include <optional>
@@ -27,14 +28,6 @@ namespace rr
 class Fogging
 {
 public:
-    enum class FogMode
-    {
-        ONE,
-        LINEAR,
-        EXP,
-        EXP2
-    };
-
     Fogging(Renderer& renderer);
 
     void setFogMode(const FogMode val);
@@ -42,6 +35,12 @@ public:
     void setFogEnd(const float val);
     void setFogDensity(const float val);
     bool setFogColor(const Vec4& val);
+
+    FogMode getFogMode() const { return m_fogMode; }
+    float getFogStart() const { return m_fogStart; }
+    float getFogEnd() const { return m_fogEnd; }
+    float getFogDensity() const { return m_fogDensity; }
+    Vec4 getFogColor() const;
 
     bool updateFogLut();
 

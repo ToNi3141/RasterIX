@@ -33,6 +33,7 @@ public:
     }
 
     void setTmu(const std::size_t tmu) { m_tmu = tmu; }
+    std::size_t getTmu() const { return m_tmu; }
     uint32_t getAddr() const { return getAddr(m_tmu); }
     static constexpr uint32_t getAddr(const std::size_t tmu) { return 0xB + (tmu * TMU_OFFSET); }
 

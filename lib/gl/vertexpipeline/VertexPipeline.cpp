@@ -47,6 +47,7 @@ VertexParameter VertexPipeline::fetch(const RenderObj& obj, std::size_t i)
     parameter.vertex = obj.getVertex(pos);
     parameter.normal = obj.getNormal(pos);
     parameter.color = obj.getColor(pos);
+    parameter.pointSize = obj.getPointSize(pos);
     for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
     {
         parameter.tex[tu] = obj.getTexCoord(tu, pos);

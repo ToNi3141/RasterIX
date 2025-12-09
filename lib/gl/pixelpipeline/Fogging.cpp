@@ -68,6 +68,17 @@ bool Fogging::setFogColor(const Vec4& val)
     return m_renderer.setFogColor({ color });
 }
 
+Vec4 Fogging::getFogColor() const
+{
+    FogColorReg fogColorReg = m_renderer.getFogColor();
+    return Vec4 {
+        static_cast<float>(fogColorReg.getColor()[0]) / 255.0f,
+        static_cast<float>(fogColorReg.getColor()[1]) / 255.0f,
+        static_cast<float>(fogColorReg.getColor()[2]) / 255.0f,
+        static_cast<float>(fogColorReg.getColor()[3]) / 255.0f,
+    };
+}
+
 bool Fogging::updateFogLut()
 {
     if (!m_fogDirty)

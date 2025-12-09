@@ -79,6 +79,11 @@ public:
 
     void setEnable(const bool enable) { m_data.enable = enable; }
 
+    const Vec4& getEquation() const { return m_data.equation; }
+    bool getEnable() const { return m_data.enable; }
+
+    static constexpr std::size_t getMaxClipPlanes() { return 1; }
+
 private:
     const Mat44& m_modelViewMat;
     PlaneClipperData& m_data;

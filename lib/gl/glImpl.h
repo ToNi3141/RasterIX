@@ -130,6 +130,7 @@ extern "C"
     GLAPI GLuint APIENTRY impl_glGenLists(GLsizei range);
     GLAPI void APIENTRY impl_glGetBooleanv(GLenum pname, GLboolean* params);
     GLAPI void APIENTRY impl_glGetClipPlane(GLenum plane, GLdouble* equation);
+    GLAPI void APIENTRY impl_glGetClipPlanef(GLenum plane, GLfloat* equation);
     GLAPI void APIENTRY impl_glGetDoublev(GLenum pname, GLdouble* params);
     GLAPI GLenum APIENTRY impl_glGetError(void);
     GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params);
@@ -468,6 +469,11 @@ extern "C"
     GLAPI void APIENTRY impl_glGenBuffers(GLsizei n, GLuint* buffers);
     GLAPI void APIENTRY impl_glGetBufferParameteriv(GLenum target, GLenum pname, GLint* params);
     GLAPI GLboolean APIENTRY impl_glIsBuffer(GLuint buffer);
+    // -------------------------------------------------------
+
+    // Point Size Pointer
+    // -------------------------------------------------------
+    GLAPI void APIENTRY impl_glPointSizePointerOES(GLenum type, GLsizei stride, const GLvoid* pointer);
     // -------------------------------------------------------
 #ifdef __cplusplus
 }

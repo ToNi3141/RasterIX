@@ -208,6 +208,8 @@ public:
 
     void setUnpackAlignment(const std::size_t unpackAlignment) { m_unpackAlignment = unpackAlignment; }
     void setPackAlignment(const std::size_t packAlignment) { m_packAlignment = packAlignment; }
+    std::size_t getUnpackAlignment() const { return m_unpackAlignment; }
+    std::size_t getPackAlignment() const { return m_packAlignment; }
 
 private:
     struct RGBA

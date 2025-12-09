@@ -139,6 +139,17 @@ public:
         tex.tmuConfig.setWarpModeS(mode);
     }
 
+    TextureWrapMode getTextureWrapModeS(const uint16_t texId) const
+    {
+        if (!m_textureLut[texId])
+        {
+            SPDLOG_ERROR("getTextureWrapModeS with invalid texID called");
+            return TextureWrapMode::REPEAT;
+        }
+        const Texture& tex = m_textures[*m_textureLut[texId]];
+        return tex.tmuConfig.getWrapModeS();
+    }
+
     void setTextureWrapModeT(const uint16_t texId, TextureWrapMode mode)
     {
         if (!m_textureLut[texId])
@@ -148,6 +159,17 @@ public:
         }
         Texture& tex = m_textures[*m_textureLut[texId]];
         tex.tmuConfig.setWarpModeT(mode);
+    }
+
+    TextureWrapMode getTextureWrapModeT(const uint16_t texId) const
+    {
+        if (!m_textureLut[texId])
+        {
+            SPDLOG_ERROR("getTextureWrapModeT with invalid texID called");
+            return TextureWrapMode::REPEAT;
+        }
+        const Texture& tex = m_textures[*m_textureLut[texId]];
+        return tex.tmuConfig.getWrapModeT();
     }
 
     void enableTextureMagFiltering(const uint16_t texId, bool filter)
@@ -161,6 +183,17 @@ public:
         tex.tmuConfig.setEnableMagFilter(filter);
     }
 
+    bool textureMagFilteringEnabled(const uint16_t texId) const
+    {
+        if (!m_textureLut[texId])
+        {
+            SPDLOG_ERROR("getTextureMagFilteringEnabled with invalid texID called");
+            return false;
+        }
+        const Texture& tex = m_textures[*m_textureLut[texId]];
+        return tex.tmuConfig.getEnableMagFilter();
+    }
+
     void enableTextureMinFiltering(const uint16_t texId, bool filter)
     {
         if (!m_textureLut[texId])
@@ -172,11 +205,21 @@ public:
         tex.tmuConfig.setEnableMinFilter(filter);
     }
 
+    bool textureMinFilteringEnabled(const uint16_t texId) const
+    {
+        if (!m_textureLut[texId])
+        {
+            SPDLOG_ERROR("getTextureMinFilteringEnabled with invalid texID called");
+            return false;
+        }
+        const Texture& tex = m_textures[*m_textureLut[texId]];
+        return tex.tmuConfig.getEnableMinFilter();
+    }
+
     bool textureValid(const uint16_t texId) const
     {
         if (!m_textureLut[texId])
         {
-            SPDLOG_ERROR("textureValid with invalid texID called");
             return false;
         }
         const TextureEntry& tex = m_textureEntryFlags[*m_textureLut[texId]];

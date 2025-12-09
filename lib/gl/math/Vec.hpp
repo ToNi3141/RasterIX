@@ -44,6 +44,11 @@ public:
 
     void initHomogeneous()
     {
+        if constexpr (VecSize < 1)
+        {
+            vec[0] = 1.0f;
+            return;
+        }
         for (std::size_t i = 0; i < VecSize - 1; i++)
             vec[i] = 0.0f;
         vec[VecSize - 1] = 1.0f;
@@ -51,6 +56,13 @@ public:
 
     static Vec<VecSize> createHomogeneous()
     {
+        if constexpr (VecSize < 1)
+        {
+            Vec<VecSize> vec;
+            vec[0] = 1.0f;
+            return vec;
+        }
+
         Vec<VecSize> vec;
         for (std::size_t i = 0; i < VecSize - 1; i++)
             vec.vec[i] = 0.0f;
@@ -91,6 +103,11 @@ public:
     void perspectiveDivide()
     {
         const float inv = 1.0f / vec[VecSize - 1];
+        if constexpr (VecSize < 1)
+        {
+            vec[0] = inv;
+            return;
+        }
         vec[VecSize - 1] = inv;
         for (std::size_t i = 0; i < VecSize - 1; i++)
             vec[i] = vec[i] * inv;
@@ -283,6 +300,7 @@ inline bool operator!=(const rr::Vec<T>& lhs, const rr::Vec<T>& rhs)
     return !(lhs == rhs);
 }
 
+using Vec1 = Vec<1>; // Is basically a scalar but simplifies some code which uses templates
 using Vec2 = Vec<2>;
 using Vec3 = Vec<3>;
 using Vec4 = Vec<4>;

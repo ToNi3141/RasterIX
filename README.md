@@ -10,7 +10,7 @@
 - [Variant](#variant)
 
 # About this Project
-The RasterIX* project is a rasterizer implementation for FPGAs written in Verilog. It implements a mostly OpenGL 1.3-compatible fixed-function pixel pipeline with up to two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
+The RasterIX* project is a rasterizer implementation for FPGAs written in Verilog. It implements a OpenGL ES 1.1 (except fixed point functions) plus some OpenGL 1.3 additions, fixed-function pixel pipeline with up to two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
 
 The renderer is able to produce __100 MPixels__ and __200 MTexels__ per second at a clock speed of 100 MHz.
 

@@ -156,12 +156,22 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setTextureWrapModeS(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode);
 
+    /// @brief Gets the wrapping mode of the texture in s direction
+    /// @param texId the texture from where to get the parameter
+    /// @return the wrapping mode
+    TextureWrapMode getTextureWrapModeS(const uint16_t texId) const { return m_textureManager.getTextureWrapModeS(texId); }
+
     /// @brief The wrapping mode of the texture in t direction
     /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param mode The new mode
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool setTextureWrapModeT(const std::size_t tmu, const uint16_t texId, TextureWrapMode mode);
+
+    /// @brief Gets the wrapping mode of the texture in t direction
+    /// @param texId the texture from where to get the parameter
+    /// @return the wrapping mode
+    TextureWrapMode getTextureWrapModeT(const uint16_t texId) const { return m_textureManager.getTextureWrapModeT(texId); }
 
     /// @brief Enables the texture filtering for magnification
     /// @param tmu The used TMU
@@ -170,12 +180,22 @@ public:
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool enableTextureMagFiltering(const std::size_t tmu, const uint16_t texId, bool filter);
 
+    /// @brief Gets if the magnification filter is enabled
+    /// @param texId the texture from where to get the parameter
+    /// @return true if enabled
+    bool textureMagFilteringEnabled(const uint16_t texId) const { return m_textureManager.textureMagFilteringEnabled(texId); }
+
     /// @brief Enables the texture filtering for minification (mipmapping)
     /// @param tmu The used TMU
     /// @param texId The texture from where to change the parameter
     /// @param filter True to enable the filter
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
     bool enableTextureMinFiltering(const std::size_t tmu, const uint16_t texId, bool filter);
+
+    /// @brief Gets if the minification filter is enabled
+    /// @param texId the texture from where to get the parameter
+    /// @return true if enabled
+    bool textureMinFilteringEnabled(const uint16_t texId) const { return m_textureManager.textureMinFilteringEnabled(texId); }
 
     /// @brief Sets the resolution of the framebuffer
     /// @param x X is the width of the produced image
@@ -190,6 +210,10 @@ public:
     /// @param height Height of the box
     /// @return true if success
     bool setScissorBox(const int32_t x, const int32_t y, const uint32_t width, const uint32_t height);
+
+    /// @brief Gets the scissor box parameter
+    /// @return tuple with (x, y, width, height)
+    std::tuple<int32_t, int32_t, uint32_t, uint32_t> getScissorBox() const;
 
     /// @brief Sets the fog LUT. Note that the fog uses the w value as index (the distance from eye to the polygon znear..zfar)
     /// and not z (clamped value of 0.0..1.0)
@@ -220,12 +244,20 @@ public:
     /// @brief Sets the clear color (see clear()) of the color buffer
     /// @param color the clear clear color
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setClearColor(const ColorBufferClearColorReg& color) { return writeReg(color); }
+    bool setClearColor(const ColorBufferClearColorReg& color);
+
+    /// @brief Gets the clear color value
+    /// @return The clear color value
+    ColorBufferClearColorReg getClearColor() const { return m_clearColorReg; }
 
     /// @brief Sets the clear depth value (see clear()) of the depth buffer
     /// @param depth the depth value
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setClearDepth(const DepthBufferClearDepthReg& depth) { return writeReg(depth); }
+    bool setClearDepth(const DepthBufferClearDepthReg& depth);
+
+    /// @brief Gets the clear depth value
+    /// @return The clear depth value
+    DepthBufferClearDepthReg getClearDepth() const { return m_clearDepthReg; }
 
     /// @brief Sets the fragment pipe line config like the blend equation, color and depth masks and so on
     /// @param pipelineConf the pipeline config
@@ -242,12 +274,21 @@ public:
     ///     Note: The number of the TMU is configured in this config
     /// @param color the texture environment color
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setTexEnvColor(const TexEnvColorReg& color) { return writeReg(color); }
+    bool setTexEnvColor(const TexEnvColorReg& color);
+
+    /// @brief Gets the texture environment color for a given TMU
+    /// @param tmu The TMU to get the color from
+    /// @return The texture environment color
+    Vec4i getTexEnvColor(const std::size_t tmu) const { return m_texEnvColors[tmu]; }
 
     /// @brief Sets the fog color
     /// @param color the fog color
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setFogColor(const FogColorReg& color) { return writeReg(color); }
+    bool setFogColor(const FogColorReg& color);
+
+    /// @brief Gets the fog color
+    /// @return The fog color
+    FogColorReg getFogColor() const { return m_fogColor; }
 
     /// @brief Enables features of the renderer like fogging, blending, depth tests and so on
     /// @param featureEnable contains a config of which features are enabled
@@ -381,6 +422,16 @@ private:
     // Instantiation of the displaylist assemblers
     std::array<DisplayListAssemblerType, 2> m_displayListAssembler {};
     DisplayListDoubleBufferType m_displayListBuffer { m_displayListAssembler[0], m_displayListAssembler[1] };
+
+    std::array<Vec4i, RenderConfig::TMU_COUNT> m_texEnvColors {};
+
+    ColorBufferClearColorReg m_clearColorReg {};
+    DepthBufferClearDepthReg m_clearDepthReg {};
+    FogColorReg m_fogColor {};
+    int32_t m_scissorXStart { 0 };
+    int32_t m_scissorYStart { 0 };
+    uint32_t m_scissorXEnd { RenderConfig::MAX_DISPLAY_WIDTH - 1 };
+    uint32_t m_scissorYEnd { m_scissorXEnd };
 };
 
 } // namespace rr

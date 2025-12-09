@@ -35,5 +35,7 @@ void ViewPortSetter::setDepthRange(const float zNear, const float zFar)
 {
     m_data.depthRangeScale = ((zFar - zNear) / 2.0f);
     m_data.depthRangeOffset = ((zNear + zFar) / 2.0f);
+    m_zNear = zNear;
+    m_zFar = zFar;
 }
 } // namespace rr

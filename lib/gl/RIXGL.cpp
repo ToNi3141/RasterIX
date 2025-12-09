@@ -689,7 +689,7 @@ std::size_t RIXGL::getMaxTextureSize() const
     return RenderConfig::MAX_TEXTURE_SIZE;
 }
 
-std::size_t RIXGL::getTmuCount() const
+std::size_t RIXGL::getMaxTmuCount() const
 {
     return RenderConfig::TMU_COUNT;
 }

@@ -88,7 +88,7 @@ public:
 
     /// @brief Queries the maximum number of TMUs available for the hardware
     /// @brief The number of TMUs available
-    std::size_t getTmuCount() const;
+    std::size_t getMaxTmuCount() const;
 
     /// @brief Queries of mip mapping is available on hardware
     /// @return true when mipmapping is available

@@ -71,6 +71,7 @@ public:
     {
     }
     void setShadeModelFlat(const bool val) { m_data.shadeModelFlat = val; }
+    bool getShadeModelFlat() const { return m_data.shadeModelFlat; }
 
 private:
     ShadeModelData& m_data;

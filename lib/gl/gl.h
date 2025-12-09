@@ -163,6 +163,11 @@ extern "C"
 #define GL_POINT_DISTANCE_ATTENUATION 0x8129
 #define GL_POINT_SPRITE_OES 0x8861
 #define GL_COORD_REPLACE_OES 0x8862
+#define GL_POINT_SIZE_ARRAY_OES 0x8B9C
+#define GL_POINT_SIZE_ARRAY_TYPE_OES 0x898A
+#define GL_POINT_SIZE_ARRAY_STRIDE_OES 0x898B
+#define GL_POINT_SIZE_ARRAY_POINTER_OES 0x898C
+#define GL_POINT_SIZE_ARRAY_BUFFER_BINDING_OES 0x8B9F
 
 // Lines
 #define GL_LINE_SMOOTH 0x0B20
@@ -883,6 +888,12 @@ extern "C"
 #define GL_SOURCE0_ALPHA 0x8588
 #define GL_SOURCE1_ALPHA 0x8589
 #define GL_SOURCE2_ALPHA 0x858A
+#define GL_SRC0_RGB 0x8580
+#define GL_SRC1_RGB 0x8581
+#define GL_SRC2_RGB 0x8582
+#define GL_SRC0_ALPHA 0x8588
+#define GL_SRC1_ALPHA 0x8589
+#define GL_SRC2_ALPHA 0x858A
 #define GL_OPERAND0_RGB 0x8590
 #define GL_OPERAND1_RGB 0x8591
 #define GL_OPERAND2_RGB 0x8592
@@ -902,10 +913,20 @@ extern "C"
 
 #define GL_ARRAY_BUFFER 0x8892
 #define GL_ELEMENT_ARRAY_BUFFER 0x8893
+#define GL_ARRAY_BUFFER_BINDING 0x8894
+#define GL_ELEMENT_ARRAY_BUFFER_BINDING 0x8895
+#define GL_VERTEX_ARRAY_BUFFER_BINDING 0x8896
+#define GL_NORMAL_ARRAY_BUFFER_BINDING 0x8897
+#define GL_COLOR_ARRAY_BUFFER_BINDING 0x8898
+#define GL_TEXTURE_COORD_ARRAY_BUFFER_BINDING 0x889A
+#define GL_POINT_SIZE_ARRAY_BUFFER_BINDING_OES 0x8B9F
 #define GL_STATIC_DRAW 0x88E4
 #define GL_DYNAMIC_DRAW 0x88E8
 #define GL_BUFFER_SIZE 0x8764
 #define GL_BUFFER_USAGE 0x8765
+
+#define GL_IMPLEMENTATION_COLOR_READ_TYPE_OES 0x8B9A
+#define GL_IMPLEMENTATION_COLOR_READ_FORMAT_OES 0x8B9B
 
     // Wrapper Functions
     // Open GL 1.0
@@ -924,6 +945,7 @@ extern "C"
     GLAPI_WRAPPER void APIENTRY glClearIndex(GLfloat c);
     GLAPI_WRAPPER void APIENTRY glClearStencil(GLint s);
     GLAPI_WRAPPER void APIENTRY glClipPlane(GLenum plane, const GLdouble* equation);
+    GLAPI_WRAPPER void APIENTRY glClipPlanef(GLenum plane, const GLfloat* equation);
     GLAPI_WRAPPER void APIENTRY glColor3b(GLbyte red, GLbyte green, GLbyte blue);
     GLAPI_WRAPPER void APIENTRY glColor3bv(const GLbyte* v);
     GLAPI_WRAPPER void APIENTRY glColor3d(GLdouble red, GLdouble green, GLdouble blue);
@@ -1324,6 +1346,7 @@ extern "C"
     // -------------------------------------------------------
     GLAPI_WRAPPER void APIENTRY glPointParameterf(GLenum pname, GLfloat param);
     GLAPI_WRAPPER void APIENTRY glPointParameterfv(GLenum pname, const GLfloat* params);
+    GLAPI_WRAPPER void APIENTRY glPointSizePointerOES(GLenum type, GLsizei stride, const GLvoid* pointer);
     // -------------------------------------------------------
 
     // Open GL buffer objects

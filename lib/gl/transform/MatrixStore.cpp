@@ -93,14 +93,44 @@ Mat44& MatrixStore::getCurrentMatrix()
     }
 }
 
-std::size_t MatrixStore::getModelMatrixStackDepth()
+std::size_t MatrixStore::getMaxModelMatrixStackDepth()
 {
     return MODEL_MATRIX_STACK_DEPTH;
 }
 
-std::size_t MatrixStore::getProjectionMatrixStackDepth()
+std::size_t MatrixStore::getMaxProjectionMatrixStackDepth()
 {
     return PROJECTION_MATRIX_STACK_DEPTH;
+}
+
+std::size_t MatrixStore::getMaxTextureMatrixStackDepth()
+{
+    return TEXTURE_MATRIX_STACK_DEPTH;
+}
+
+std::size_t MatrixStore::getMaxColorMatrixStackDepth()
+{
+    return COLOR_MATRIX_STACK_DEPTH;
+}
+
+std::size_t MatrixStore::getModelMatrixStackDepth() const
+{
+    return m_mStack.getCurrentDepth() + 1; // The current matrix counts too
+}
+
+std::size_t MatrixStore::getProjectionMatrixStackDepth() const
+{
+    return m_pStack.getCurrentDepth() + 1; // The current matrix counts too
+}
+
+std::size_t MatrixStore::getTextureMatrixStackDepth() const
+{
+    return m_tmStack[m_tmu].getCurrentDepth() + 1; // The current matrix counts too
+}
+
+std::size_t MatrixStore::getColorMatrixStackDepth() const
+{
+    return m_cStack.getCurrentDepth() + 1; // The current matrix counts too
 }
 
 } // namespace rr::matrixstore

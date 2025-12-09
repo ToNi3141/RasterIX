@@ -38,10 +38,16 @@ public:
     bool createTextureWithName(const uint16_t texId) { return m_renderer.createTextureWithName(texId); };
     bool deleteTexture(const uint16_t texture) { return m_renderer.deleteTexture(texture); }
     void setBoundTexture(const uint16_t val);
+    uint16_t getBoundTexture() const { return m_tmuConf[m_tmu].boundTexture; }
     void setTexWrapModeS(const TextureWrapMode mode) { m_renderer.setTextureWrapModeS(m_tmu, m_tmuConf[m_tmu].boundTexture, mode); }
     void setTexWrapModeT(const TextureWrapMode mode) { m_renderer.setTextureWrapModeT(m_tmu, m_tmuConf[m_tmu].boundTexture, mode); }
     void setEnableMagFilter(const bool val) { m_renderer.enableTextureMagFiltering(m_tmu, m_tmuConf[m_tmu].boundTexture, val); }
     void setEnableMinFilter(const bool val) { m_renderer.enableTextureMinFiltering(m_tmu, m_tmuConf[m_tmu].boundTexture, val); }
+
+    TextureWrapMode getTexWrapModeS() const { return m_renderer.getTextureWrapModeS(m_tmuConf[m_tmu].boundTexture); }
+    TextureWrapMode getTexWrapModeT() const { return m_renderer.getTextureWrapModeT(m_tmuConf[m_tmu].boundTexture); }
+    bool magFilterEnabled() const { return m_renderer.textureMagFilteringEnabled(m_tmuConf[m_tmu].boundTexture); }
+    bool minFilterEnabled() const { return m_renderer.textureMinFilteringEnabled(m_tmuConf[m_tmu].boundTexture); }
 
     bool setTexEnvMode(const TexEnvMode mode);
     void setCombineRgb(const Combine val) { texEnv().setCombineRgb(val); }
@@ -62,6 +68,8 @@ public:
     void setShiftAlpha(const uint8_t val) { texEnv().setShiftAlpha(val); }
     bool setTexEnvColor(const Vec4& color);
 
+    TexEnvMode getTexEnvMode() const { return m_tmuConf[m_tmu].texEnvMode; }
+    Vec4 getTexEnvColor() const;
     Combine getCombineRgb() const { return texEnv().getCombineRgb(); }
     Combine getCombineAlpha() const { return texEnv().getCombineAlpha(); }
     SrcReg getSrcRegRgb0() const { return texEnv().getSrcRegRgb0(); }
