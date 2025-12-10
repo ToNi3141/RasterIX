@@ -429,6 +429,7 @@ namespace rr
     {
     case GL_CLAMP:
         SPDLOG_WARN("GL_CLAMP is not fully supported and emulated with GL_CLAMP_TO_EDGE");
+        [[fallthrough]];
     case GL_CLAMP_TO_EDGE:
         conf = TextureWrapMode::CLAMP_TO_EDGE;
         break;

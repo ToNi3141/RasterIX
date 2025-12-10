@@ -16,8 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "glImpl.h"
-#include "ImageConverter.hpp"
-#include "MipMapGenerator.hpp"
+
 #include "RIXGL.hpp"
 #include "glHelpers.hpp"
 #include "glTypeConverters.h"

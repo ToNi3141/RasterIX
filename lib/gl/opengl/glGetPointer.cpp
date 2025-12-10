@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "ImageConverter.hpp"
-#include "MipMapGenerator.hpp"
 #include "RIXGL.hpp"
 #include "glHelpers.hpp"
 #include "glImpl.h"
@@ -88,6 +86,7 @@ GLAPI void APIENTRY impl_glGetPointerv(GLenum pname, GLvoid** params)
         {
             *params = const_cast<GLvoid*>(RIXGL::getInstance().vertexArray().getPointSizePointer());
         }
+        break;
     default:
         SPDLOG_WARN("glGetPointerv pname 0x{:X} not supported", pname);
         RIXGL::getInstance().setError(GL_INVALID_ENUM);
