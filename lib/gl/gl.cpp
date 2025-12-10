@@ -17,7 +17,7 @@
 
 #define NOMINMAX // Windows workaround
 #include "gl.h"
-#include "glImpl.h"
+#include "opengl/glImpl.h"
 
 // Wrapper
 // Open GL 1.0
