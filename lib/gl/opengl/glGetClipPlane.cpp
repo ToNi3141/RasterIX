@@ -36,7 +36,7 @@ GLAPI void APIENTRY impl_glGetClipPlane(GLenum plane, GLdouble* equation)
 {
     SPDLOG_DEBUG("glGetClipPlane redirected to glGetClipPlanef");
 
-    GLfloat equationFloat[4];
+    GLfloat equationFloat[4] {};
     impl_glGetClipPlanef(plane, equationFloat);
     equation[0] = static_cast<GLdouble>(equationFloat[0]);
     equation[1] = static_cast<GLdouble>(equationFloat[1]);
