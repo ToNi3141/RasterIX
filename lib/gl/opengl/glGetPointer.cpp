@@ -34,7 +34,7 @@ using namespace rr;
 
 GLAPI void APIENTRY impl_glGetPointerv(GLenum pname, GLvoid** params)
 {
-    SPDLOG_WARN("glGetPointerv not implemented");
+    SPDLOG_DEBUG("glGetPointerv called for pname 0x{:X}", pname);
     switch (pname)
     {
     case GL_VERTEX_ARRAY_POINTER:
