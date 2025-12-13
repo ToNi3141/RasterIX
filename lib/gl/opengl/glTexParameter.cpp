@@ -115,6 +115,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
                 SPDLOG_ERROR("glTexParameteri GL_GENERATE_MIPMAP param 0x{:X} not supported", param);
                 RIXGL::getInstance().setError(GL_INVALID_ENUM);
             }
+            break;
         default:
             SPDLOG_WARN("glTexParameteri pname 0x{:X} not supported", pname);
             RIXGL::getInstance().setError(GL_INVALID_ENUM);
