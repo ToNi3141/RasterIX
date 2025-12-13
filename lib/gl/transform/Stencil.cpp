@@ -42,6 +42,19 @@ StencilReg& StencilSetter::stencilConfig()
     return m_stencilConf;
 }
 
+const StencilReg& StencilSetter::stencilConfig() const
+{
+    if (m_data.enableTwoSideStencil)
+    {
+        if (m_stencilFace == StencilFace::FRONT)
+        {
+            return m_data.stencilConfFront;
+        }
+        return m_data.stencilConfBack;
+    }
+    return m_stencilConf;
+}
+
 bool StencilSetter::update()
 {
     bool ret { true };
