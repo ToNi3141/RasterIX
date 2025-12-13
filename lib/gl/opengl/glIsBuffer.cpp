@@ -25,6 +25,6 @@ using namespace rr;
 
 GLAPI GLboolean APIENTRY impl_glIsBuffer(GLuint buffer)
 {
-    SPDLOG_ERROR("glIsBuffer buffer {} called", buffer);
+    SPDLOG_DEBUG("glIsBuffer buffer {} called", buffer);
     return RIXGL::getInstance().vertexBuffer().isBuffer(buffer);
 }
