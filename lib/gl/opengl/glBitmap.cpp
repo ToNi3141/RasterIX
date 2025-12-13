@@ -16,21 +16,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "GLImpl.h"
-#include "Helpers.hpp"
-#include "RIXGL.hpp"
-#include "TypeConverters.hpp"
-#include "pixelpipeline/PixelPipeline.hpp"
-#include "vertexpipeline/VertexArray.hpp"
-#include "vertexpipeline/VertexBuffer.hpp"
-#include "vertexpipeline/VertexPipeline.hpp"
-#include "vertexpipeline/VertexQueue.hpp"
-#include <cmath>
-#include <cstring>
 #include <spdlog/spdlog.h>
 
-using namespace rr;
-
-GLAPI void APIENTRY impl_glBitmap([[maybe_unused]] GLsizei width, [[maybe_unused]] GLsizei height, [[maybe_unused]] GLfloat xOrig, [[maybe_unused]] GLfloat yOrig, [[maybe_unused]] GLfloat xMove, [[maybe_unused]] GLfloat yMove, [[maybe_unused]] const GLubyte* bitmap)
+GLAPI void APIENTRY impl_glBitmap(
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height,
+    [[maybe_unused]] GLfloat xOrig,
+    [[maybe_unused]] GLfloat yOrig,
+    [[maybe_unused]] GLfloat xMove,
+    [[maybe_unused]] GLfloat yMove,
+    [[maybe_unused]] const GLubyte* bitmap)
 {
     SPDLOG_WARN("glBitmap not implemented");
 }

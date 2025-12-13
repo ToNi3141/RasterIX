@@ -16,19 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "GLImpl.h"
-#include "Helpers.hpp"
-#include "RIXGL.hpp"
-#include "TypeConverters.hpp"
-#include "pixelpipeline/PixelPipeline.hpp"
-#include "vertexpipeline/VertexArray.hpp"
-#include "vertexpipeline/VertexBuffer.hpp"
-#include "vertexpipeline/VertexPipeline.hpp"
-#include "vertexpipeline/VertexQueue.hpp"
-#include <cmath>
-#include <cstring>
 #include <spdlog/spdlog.h>
-
-using namespace rr;
 
 GLAPI void APIENTRY impl_glMapGrid1d(
     [[maybe_unused]] GLint un,

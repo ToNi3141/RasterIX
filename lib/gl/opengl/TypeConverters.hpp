@@ -19,13 +19,8 @@
 #define GL_TYPE_CONVERTERS_H
 
 #include "Enums.hpp"
-#include "RIXGL.hpp"
 #include "gl.h"
-#include "pixelpipeline/PixelPipeline.hpp"
-#include "pixelpipeline/Texture.hpp"
-#include "transform/MatrixStore.hpp"
 #include "vertexpipeline/VertexArray.hpp"
-#include "vertexpipeline/VertexQueue.hpp"
 #include <algorithm>
 #include <cstring>
 #include <spdlog/spdlog.h>
