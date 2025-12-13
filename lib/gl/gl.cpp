@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "gl.h"
-#include "opengl/glImpl.h"
+#include "opengl/GLImpl.h"
 
 // Wrapper
 // Open GL 1.0

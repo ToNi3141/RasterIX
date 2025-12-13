@@ -17,10 +17,10 @@
 
 #include "ImageConverter.hpp"
 
+#include "GLImpl.h"
+#include "Helpers.hpp"
 #include "RIXGL.hpp"
-#include "glHelpers.hpp"
-#include "glImpl.h"
-#include "glTypeConverters.h"
+#include "TypeConverters.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexBuffer.hpp"

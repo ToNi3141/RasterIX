@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "GLImpl.h"
+#include "Helpers.hpp"
 #include "RIXGL.hpp"
-#include "glHelpers.hpp"
-#include "glImpl.h"
-#include "glTypeConverters.h"
+#include "TypeConverters.hpp"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexBuffer.hpp"
