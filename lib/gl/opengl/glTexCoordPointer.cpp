@@ -28,8 +28,6 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
 GLAPI void APIENTRY impl_glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const GLvoid* pointer)

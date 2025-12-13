@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glClearIndex(GLfloat c)
+GLAPI void APIENTRY impl_glClearIndex([[maybe_unused]] GLfloat c)
 {
     SPDLOG_WARN("glClearIndex not implemented");
 }

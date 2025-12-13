@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glDeleteLists(GLuint list, GLsizei range)
+GLAPI void APIENTRY impl_glDeleteLists([[maybe_unused]] GLuint list, [[maybe_unused]] GLsizei range)
 {
     SPDLOG_WARN("glDeleteLists not implemented");
 }

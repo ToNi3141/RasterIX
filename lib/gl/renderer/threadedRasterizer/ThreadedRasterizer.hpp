@@ -335,7 +335,7 @@ private:
         if (cmd.getEnableMemset())
         {
             return addCommandWithFactory_if(
-                [&cmd](const std::size_t i, const std::size_t, const std::size_t resX, const std::size_t resY)
+                [&cmd](const std::size_t, const std::size_t, const std::size_t resX, const std::size_t resY)
                 {
                     const std::size_t screenSize = resX * resY;
                     FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
@@ -397,7 +397,7 @@ private:
         return addCommand(cmd);
     }
 
-    bool handleCommand(const TriangleStreamCmd& cmd)
+    bool handleCommand(const TriangleStreamCmd&)
     {
         SPDLOG_CRITICAL("TriangleStreamCmd not allowed in ThreadedRasterizer. This might cause the renderer to crash ...");
         return true;
@@ -426,7 +426,7 @@ private:
         return true;
     }
 
-    bool handleCommand(const DrawNewElementCmd& cmd)
+    bool handleCommand(const DrawNewElementCmd&)
     {
         m_vertexTransform.init();
         return true;

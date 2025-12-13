@@ -28,11 +28,14 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* pixels)
+GLAPI void APIENTRY impl_glDrawPixels(
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height,
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLenum type,
+    [[maybe_unused]] const GLvoid* pixels)
 {
     SPDLOG_WARN("glDrawPixels not implemented");
 }

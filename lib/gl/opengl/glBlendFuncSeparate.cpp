@@ -28,11 +28,13 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glBlendFuncSeparate(GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha)
+GLAPI void APIENTRY impl_glBlendFuncSeparate(
+    [[maybe_unused]] GLenum sfactorRGB,
+    [[maybe_unused]] GLenum dfactorRGB,
+    [[maybe_unused]] GLenum sfactorAlpha,
+    [[maybe_unused]] GLenum dfactorAlpha)
 {
     SPDLOG_WARN("glBlendFuncSeparate not implemented");
 }

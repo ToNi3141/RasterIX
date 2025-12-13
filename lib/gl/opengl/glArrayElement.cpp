@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glArrayElement(GLint i)
+GLAPI void APIENTRY impl_glArrayElement([[maybe_unused]] GLint i)
 {
     SPDLOG_WARN("glArrayElement not implemented");
 }

@@ -28,11 +28,13 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glClearAccum(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+GLAPI void APIENTRY impl_glClearAccum(
+    [[maybe_unused]] GLfloat red,
+    [[maybe_unused]] GLfloat green,
+    [[maybe_unused]] GLfloat blue,
+    [[maybe_unused]] GLfloat alpha)
 {
     SPDLOG_WARN("glClearAccum not implemented");
 }

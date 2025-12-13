@@ -28,21 +28,19 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glGetPixelMapfv(GLenum map, GLfloat* values)
+GLAPI void APIENTRY impl_glGetPixelMapfv([[maybe_unused]] GLenum map, [[maybe_unused]] GLfloat* values)
 {
     SPDLOG_WARN("glGetPixelMapfv not implemented");
 }
 
-GLAPI void APIENTRY impl_glGetPixelMapuiv(GLenum map, GLuint* values)
+GLAPI void APIENTRY impl_glGetPixelMapuiv([[maybe_unused]] GLenum map, [[maybe_unused]] GLuint* values)
 {
     SPDLOG_WARN("glGetPixelMapuiv not implemented");
 }
 
-GLAPI void APIENTRY impl_glGetPixelMapusv(GLenum map, GLushort* values)
+GLAPI void APIENTRY impl_glGetPixelMapusv([[maybe_unused]] GLenum map, [[maybe_unused]] GLushort* values)
 {
     SPDLOG_WARN("glGetPixelMapusv not implemented");
 }

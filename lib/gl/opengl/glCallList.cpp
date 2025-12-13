@@ -28,16 +28,14 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glCallList(GLuint list)
+GLAPI void APIENTRY impl_glCallList([[maybe_unused]] GLuint list)
 {
     SPDLOG_WARN("glCallList not implemented");
 }
 
-GLAPI void APIENTRY impl_glCallLists(GLsizei n, GLenum type, const GLvoid* lists)
+GLAPI void APIENTRY impl_glCallLists([[maybe_unused]] GLsizei n, [[maybe_unused]] GLenum type, [[maybe_unused]] const GLvoid* lists)
 {
     SPDLOG_WARN("glCallLists not implemented");
 }

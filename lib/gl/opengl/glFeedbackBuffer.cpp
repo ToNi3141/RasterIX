@@ -28,11 +28,12 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glFeedbackBuffer(GLsizei size, GLenum type, GLfloat* buffer)
+GLAPI void APIENTRY impl_glFeedbackBuffer(
+    [[maybe_unused]] GLsizei size,
+    [[maybe_unused]] GLenum type,
+    [[maybe_unused]] GLfloat* buffer)
 {
     SPDLOG_WARN("glFeedbackBuffer not implemented");
 }

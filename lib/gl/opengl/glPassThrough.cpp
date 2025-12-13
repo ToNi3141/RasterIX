@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glPassThrough(GLfloat token)
+GLAPI void APIENTRY impl_glPassThrough([[maybe_unused]] GLfloat token)
 {
     SPDLOG_WARN("glPassThrough not implemented");
 }

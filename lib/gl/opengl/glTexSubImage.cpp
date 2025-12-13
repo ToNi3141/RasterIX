@@ -29,16 +29,30 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid* pixels)
+GLAPI void APIENTRY impl_glTexSubImage1D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLint xoffset,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLenum type,
+    [[maybe_unused]] const GLvoid* pixels)
 {
     SPDLOG_WARN("glTexSubImage1D not implemented");
 }
 
-GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid* pixels)
+GLAPI void APIENTRY impl_glTexSubImage2D(
+    [[maybe_unused]] GLenum target,
+    GLint level,
+    GLint xoffset,
+    GLint yoffset,
+    GLsizei width,
+    GLsizei height,
+    GLenum format,
+    GLenum type,
+    const GLvoid* pixels)
 {
     SPDLOG_DEBUG("glTexSubImage2D target 0x{:X} level 0x{:X} xoffset {} yoffset {} width {} height {} format 0x{:X} type 0x{:X} called", target, level, xoffset, yoffset, width, height, format, type);
 
@@ -113,7 +127,18 @@ GLAPI void APIENTRY impl_glTexSubImage2D(GLenum target, GLint level, GLint xoffs
     }
 }
 
-GLAPI void APIENTRY impl_glTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid* pixels)
+GLAPI void APIENTRY impl_glTexSubImage3D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLint xoffset,
+    [[maybe_unused]] GLint yoffset,
+    [[maybe_unused]] GLint zoffset,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height,
+    [[maybe_unused]] GLsizei depth,
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLenum type,
+    [[maybe_unused]] const GLvoid* pixels)
 {
     SPDLOG_WARN("glTexSubImage3D not implemented");
 }

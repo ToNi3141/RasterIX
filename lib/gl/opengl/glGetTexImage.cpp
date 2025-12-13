@@ -28,11 +28,14 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, GLvoid* pixels)
+GLAPI void APIENTRY impl_glGetTexImage(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLenum type,
+    [[maybe_unused]] GLvoid* pixels)
 {
     SPDLOG_WARN("glGetTexImage not implemented");
 }

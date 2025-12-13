@@ -28,12 +28,17 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
 GLAPI void APIENTRY impl_glClipPlane(GLenum plane, const GLdouble* equation)
 {
+    if (plane != GL_CLIP_PLANE0)
+    {
+        SPDLOG_WARN("glClipPlane only GL_CLIP_PLANE0 is supported, got {}", plane);
+        RIXGL::getInstance().setError(GL_INVALID_ENUM);
+        return;
+    }
+
     SPDLOG_DEBUG("glClipPlane ({}, {}, {}, {}) called",
         equation[0],
         equation[1],

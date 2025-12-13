@@ -28,21 +28,46 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glCompressedTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, const GLvoid* data)
+GLAPI void APIENTRY impl_glCompressedTexSubImage3D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLint xoffset,
+    [[maybe_unused]] GLint yoffset,
+    [[maybe_unused]] GLint zoffset,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height,
+    [[maybe_unused]] GLsizei depth,
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLsizei imageSize,
+    [[maybe_unused]] const GLvoid* data)
 {
     SPDLOG_WARN("glCompressedTexSubImage3D not implemented");
 }
 
-GLAPI void APIENTRY impl_glCompressedTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid* data)
+GLAPI void APIENTRY impl_glCompressedTexSubImage2D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLint xoffset,
+    [[maybe_unused]] GLint yoffset,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height,
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLsizei imageSize,
+    [[maybe_unused]] const GLvoid* data)
 {
     SPDLOG_WARN("glCompressedTexSubImage2D not implemented");
 }
 
-GLAPI void APIENTRY impl_glCompressedTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLsizei imageSize, const GLvoid* data)
+GLAPI void APIENTRY impl_glCompressedTexSubImage1D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLint xoffset,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLsizei imageSize,
+    [[maybe_unused]] const GLvoid* data)
 {
     SPDLOG_WARN("glCompressedTexSubImage1D not implemented");
 }

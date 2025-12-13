@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glNewList(GLuint list, GLenum mode)
+GLAPI void APIENTRY impl_glNewList([[maybe_unused]] GLuint list, [[maybe_unused]] GLenum mode)
 {
     SPDLOG_WARN("glNewList not implemented");
 }

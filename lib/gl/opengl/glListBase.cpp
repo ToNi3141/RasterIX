@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glListBase(GLuint base)
+GLAPI void APIENTRY impl_glListBase([[maybe_unused]] GLuint base)
 {
     SPDLOG_WARN("glListBase not implemented");
 }

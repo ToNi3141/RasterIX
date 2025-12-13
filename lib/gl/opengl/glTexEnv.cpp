@@ -28,8 +28,6 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
 GLAPI void APIENTRY impl_glTexEnvf(GLenum target, GLenum pname, GLfloat param)
@@ -257,7 +255,7 @@ GLAPI void APIENTRY impl_glTexEnvi(GLenum target, GLenum pname, GLint param)
     }
 }
 
-GLAPI void APIENTRY impl_glTexEnviv(GLenum target, GLenum pname, const GLint* params)
+GLAPI void APIENTRY impl_glTexEnviv([[maybe_unused]] GLenum target, [[maybe_unused]] GLenum pname, [[maybe_unused]] const GLint* params)
 {
     SPDLOG_WARN("glTexEnviv not implemented");
 }

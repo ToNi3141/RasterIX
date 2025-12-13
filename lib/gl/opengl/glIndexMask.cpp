@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glIndexMask(GLuint mask)
+GLAPI void APIENTRY impl_glIndexMask([[maybe_unused]] GLuint mask)
 {
     SPDLOG_WARN("glIndexMask not implemented");
 }

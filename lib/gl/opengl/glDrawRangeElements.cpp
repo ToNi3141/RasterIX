@@ -28,11 +28,15 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid* indices)
+GLAPI void APIENTRY impl_glDrawRangeElements(
+    [[maybe_unused]] GLenum mode,
+    [[maybe_unused]] GLuint start,
+    [[maybe_unused]] GLuint end,
+    [[maybe_unused]] GLsizei count,
+    [[maybe_unused]] GLenum type,
+    [[maybe_unused]] const GLvoid* indices)
 {
     SPDLOG_WARN("glDrawRangeElements not implemented");
 }

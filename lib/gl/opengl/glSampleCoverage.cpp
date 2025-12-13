@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glSampleCoverage(GLfloat value, GLboolean invert)
+GLAPI void APIENTRY impl_glSampleCoverage([[maybe_unused]] GLfloat value, [[maybe_unused]] GLboolean invert)
 {
     SPDLOG_WARN("glSampleCoverage not implemented");
 }

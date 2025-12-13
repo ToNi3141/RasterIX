@@ -28,11 +28,12 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI GLboolean APIENTRY impl_glAreTexturesResident(GLsizei n, const GLuint* textures, GLboolean* residences)
+GLAPI GLboolean APIENTRY impl_glAreTexturesResident(
+    [[maybe_unused]] GLsizei n,
+    [[maybe_unused]] const GLuint* textures,
+    [[maybe_unused]] GLboolean* residences)
 {
     SPDLOG_WARN("glAreTexturesResident not implemented");
     return false;

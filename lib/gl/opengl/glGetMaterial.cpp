@@ -28,8 +28,6 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
 GLAPI void APIENTRY impl_glGetMaterialfv(GLenum face, GLenum pname, GLfloat* params)
@@ -82,7 +80,10 @@ GLAPI void APIENTRY impl_glGetMaterialfv(GLenum face, GLenum pname, GLfloat* par
     }
 }
 
-GLAPI void APIENTRY impl_glGetMaterialiv(GLenum face, GLenum pname, GLint* params)
+GLAPI void APIENTRY impl_glGetMaterialiv(
+    [[maybe_unused]] GLenum face,
+    [[maybe_unused]] GLenum pname,
+    [[maybe_unused]] GLint* params)
 {
     SPDLOG_WARN("glGetMaterialiv not implemented");
 }

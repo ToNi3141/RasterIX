@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glLockArrays(GLint first, GLsizei count)
+GLAPI void APIENTRY impl_glLockArrays([[maybe_unused]] GLint first, [[maybe_unused]] GLsizei count)
 {
     SPDLOG_WARN("glLockArrays not implemented");
 }

@@ -29,8 +29,6 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
 GLAPI void APIENTRY impl_glTexParameterf(GLenum target, GLenum pname, GLfloat param)
@@ -39,7 +37,7 @@ GLAPI void APIENTRY impl_glTexParameterf(GLenum target, GLenum pname, GLfloat pa
     impl_glTexParameteri(target, pname, static_cast<GLint>(param));
 }
 
-GLAPI void APIENTRY impl_glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
+GLAPI void APIENTRY impl_glTexParameterfv([[maybe_unused]] GLenum target, [[maybe_unused]] GLenum pname, [[maybe_unused]] const GLfloat* params)
 {
     SPDLOG_WARN("glTexParameterfv not implemented");
 }
@@ -137,7 +135,7 @@ GLAPI void APIENTRY impl_glTexParameteri(GLenum target, GLenum pname, GLint para
     }
 }
 
-GLAPI void APIENTRY impl_glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
+GLAPI void APIENTRY impl_glTexParameteriv([[maybe_unused]] GLenum target, [[maybe_unused]] GLenum pname, [[maybe_unused]] const GLint* params)
 {
     SPDLOG_WARN("glTexParameteriv not implemented");
 }

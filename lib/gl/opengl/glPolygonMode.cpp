@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glPolygonMode(GLenum face, GLenum mode)
+GLAPI void APIENTRY impl_glPolygonMode([[maybe_unused]] GLenum face, [[maybe_unused]] GLenum mode)
 {
     SPDLOG_WARN("glPolygonMode not implemented");
 }

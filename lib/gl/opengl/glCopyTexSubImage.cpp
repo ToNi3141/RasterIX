@@ -28,11 +28,15 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width)
+GLAPI void APIENTRY impl_glCopyTexSubImage1D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLint xoffset,
+    [[maybe_unused]] GLint x,
+    [[maybe_unused]] GLint y,
+    [[maybe_unused]] GLsizei width)
 {
     SPDLOG_WARN("glCopyTexSubImage1D not implemented");
 }
@@ -50,7 +54,16 @@ GLAPI void APIENTRY impl_glCopyTexSubImage2D(GLenum target, GLint level, GLint x
     delete texBuffer;
 }
 
-GLAPI void APIENTRY impl_glCopyTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height)
+GLAPI void APIENTRY impl_glCopyTexSubImage3D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLint xoffset,
+    [[maybe_unused]] GLint yoffset,
+    [[maybe_unused]] GLint zoffset,
+    [[maybe_unused]] GLint x,
+    [[maybe_unused]] GLint y,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height)
 {
     SPDLOG_WARN("glCopyTexSubImage3D not implemented");
 }

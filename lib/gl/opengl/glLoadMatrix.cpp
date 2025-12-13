@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glLoadMatrixd(const GLdouble* m)
+GLAPI void APIENTRY impl_glLoadMatrixd([[maybe_unused]] const GLdouble* m)
 {
     SPDLOG_WARN("glLoadMatrixd not implemented");
 }

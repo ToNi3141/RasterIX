@@ -30,16 +30,29 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
+GLAPI void APIENTRY impl_glCopyTexImage1D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLenum internalformat,
+    [[maybe_unused]] GLint x,
+    [[maybe_unused]] GLint y,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLint border)
 {
     SPDLOG_WARN("glCopyTexImage1D not implemented");
 }
 
-GLAPI void APIENTRY impl_glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+GLAPI void APIENTRY impl_glCopyTexImage2D(
+    [[maybe_unused]] GLenum target,
+    GLint level,
+    GLenum internalformat,
+    GLint x,
+    GLint y,
+    GLsizei width,
+    GLsizei height,
+    GLint border)
 {
     SPDLOG_DEBUG("glCopyTexImage2D target 0x{:X} level 0x{:X} internalformat 0x{:X} x {} y {} width {} height {} border 0x{:X} called",
         target, level, internalformat, x, y, width, height, border);

@@ -28,46 +28,44 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glEvalCoord1d(GLdouble u)
+GLAPI void APIENTRY impl_glEvalCoord1d([[maybe_unused]] GLdouble u)
 {
     SPDLOG_WARN("glEvalCoord1d not implemented");
 }
 
-GLAPI void APIENTRY impl_glEvalCoord1dv(const GLdouble* u)
+GLAPI void APIENTRY impl_glEvalCoord1dv([[maybe_unused]] const GLdouble* u)
 {
     SPDLOG_WARN("glEvalCoord1dv not implemented");
 }
 
-GLAPI void APIENTRY impl_glEvalCoord1f(GLfloat u)
+GLAPI void APIENTRY impl_glEvalCoord1f([[maybe_unused]] GLfloat u)
 {
     SPDLOG_WARN("glEvalCoord1f not implemented");
 }
 
-GLAPI void APIENTRY impl_glEvalCoord1fv(const GLfloat* u)
+GLAPI void APIENTRY impl_glEvalCoord1fv([[maybe_unused]] const GLfloat* u)
 {
     SPDLOG_WARN("glEvalCoord1fv not implemented");
 }
 
-GLAPI void APIENTRY impl_glEvalCoord2d(GLdouble u, GLdouble v)
+GLAPI void APIENTRY impl_glEvalCoord2d([[maybe_unused]] GLdouble u, [[maybe_unused]] GLdouble v)
 {
     SPDLOG_WARN("glEvalCoord2d not implemented");
 }
 
-GLAPI void APIENTRY impl_glEvalCoord2dv(const GLdouble* u)
+GLAPI void APIENTRY impl_glEvalCoord2dv([[maybe_unused]] const GLdouble* u)
 {
     SPDLOG_WARN("glEvalCoord2dv not implemented");
 }
 
-GLAPI void APIENTRY impl_glEvalCoord2f(GLfloat u, GLfloat v)
+GLAPI void APIENTRY impl_glEvalCoord2f([[maybe_unused]] GLfloat u, [[maybe_unused]] GLfloat v)
 {
     SPDLOG_WARN("glEvalCoord2f not implemented");
 }
 
-GLAPI void APIENTRY impl_glEvalCoord2fv(const GLfloat* u)
+GLAPI void APIENTRY impl_glEvalCoord2fv([[maybe_unused]] const GLfloat* u)
 {
     SPDLOG_WARN("glEvalCoord2fv not implemented");
 }

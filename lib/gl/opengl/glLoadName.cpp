@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glLoadName(GLuint name)
+GLAPI void APIENTRY impl_glLoadName([[maybe_unused]] GLuint name)
 {
     SPDLOG_WARN("glLoadName not implemented");
 }

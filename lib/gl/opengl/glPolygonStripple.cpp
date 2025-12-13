@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glPolygonStipple(const GLubyte* mask)
+GLAPI void APIENTRY impl_glPolygonStipple([[maybe_unused]] const GLubyte* mask)
 {
     SPDLOG_WARN("glPolygonStipple not implemented");
 }

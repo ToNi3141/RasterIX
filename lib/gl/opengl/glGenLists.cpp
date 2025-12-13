@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI GLuint APIENTRY impl_glGenLists(GLsizei range)
+GLAPI GLuint APIENTRY impl_glGenLists([[maybe_unused]] GLsizei range)
 {
     SPDLOG_WARN("glGenLists not implemented");
     return 0;

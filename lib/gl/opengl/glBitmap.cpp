@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glBitmap(GLsizei width, GLsizei height, GLfloat xOrig, GLfloat yOrig, GLfloat xMove, GLfloat yMove, const GLubyte* bitmap)
+GLAPI void APIENTRY impl_glBitmap([[maybe_unused]] GLsizei width, [[maybe_unused]] GLsizei height, [[maybe_unused]] GLfloat xOrig, [[maybe_unused]] GLfloat yOrig, [[maybe_unused]] GLfloat xMove, [[maybe_unused]] GLfloat yMove, [[maybe_unused]] const GLubyte* bitmap)
 {
     SPDLOG_WARN("glBitmap not implemented");
 }

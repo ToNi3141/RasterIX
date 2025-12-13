@@ -28,11 +28,12 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glInterleavedArrays(GLenum format, GLsizei stride, const GLvoid* pointer)
+GLAPI void APIENTRY impl_glInterleavedArrays(
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLsizei stride,
+    [[maybe_unused]] const GLvoid* pointer)
 {
     SPDLOG_WARN("glInterleavedArrays not implemented");
 }

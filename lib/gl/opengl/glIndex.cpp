@@ -28,56 +28,54 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glIndexd(GLdouble c)
+GLAPI void APIENTRY impl_glIndexd([[maybe_unused]] GLdouble c)
 {
     SPDLOG_WARN("glIndexd not implemented");
 }
 
-GLAPI void APIENTRY impl_glIndexdv(const GLdouble* c)
+GLAPI void APIENTRY impl_glIndexdv([[maybe_unused]] const GLdouble* c)
 {
     SPDLOG_WARN("glIndexdv not implemented");
 }
 
-GLAPI void APIENTRY impl_glIndexf(GLfloat c)
+GLAPI void APIENTRY impl_glIndexf([[maybe_unused]] GLfloat c)
 {
     SPDLOG_WARN("glIndexf not implemented");
 }
 
-GLAPI void APIENTRY impl_glIndexfv(const GLfloat* c)
+GLAPI void APIENTRY impl_glIndexfv([[maybe_unused]] const GLfloat* c)
 {
     SPDLOG_WARN("glIndexfv not implemented");
 }
 
-GLAPI void APIENTRY impl_glIndexi(GLint c)
+GLAPI void APIENTRY impl_glIndexi([[maybe_unused]] GLint c)
 {
     SPDLOG_WARN("glIndexi not implemented");
 }
 
-GLAPI void APIENTRY impl_glIndexiv(const GLint* c)
+GLAPI void APIENTRY impl_glIndexiv([[maybe_unused]] const GLint* c)
 {
     SPDLOG_WARN("glIndexiv not implemented");
 }
 
-GLAPI void APIENTRY impl_glIndexs(GLshort c)
+GLAPI void APIENTRY impl_glIndexs([[maybe_unused]] GLshort c)
 {
     SPDLOG_WARN("glIndexs not implemented");
 }
 
-GLAPI void APIENTRY impl_glIndexsv(const GLshort* c)
+GLAPI void APIENTRY impl_glIndexsv([[maybe_unused]] const GLshort* c)
 {
     SPDLOG_WARN("glIndexsv not implemented");
 }
 
-GLAPI void APIENTRY impl_glIndexub(GLubyte c)
+GLAPI void APIENTRY impl_glIndexub([[maybe_unused]] GLubyte c)
 {
     SPDLOG_WARN("glIndexub not implemented");
 }
 
-GLAPI void APIENTRY impl_glIndexubv(const GLubyte* c)
+GLAPI void APIENTRY impl_glIndexubv([[maybe_unused]] const GLubyte* c)
 {
     SPDLOG_WARN("glIndexubv not implemented");
 }

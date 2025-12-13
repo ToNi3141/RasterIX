@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glLineStipple(GLint factor, GLushort pattern)
+GLAPI void APIENTRY impl_glLineStipple([[maybe_unused]] GLint factor, [[maybe_unused]] GLushort pattern)
 {
     SPDLOG_WARN("glLineStipple not implemented");
 }

@@ -28,8 +28,6 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
 GLAPI void APIENTRY impl_glRectd(GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2)
@@ -38,7 +36,7 @@ GLAPI void APIENTRY impl_glRectd(GLdouble x1, GLdouble y1, GLdouble x2, GLdouble
     impl_glRectf(static_cast<float>(x1), static_cast<float>(y1), static_cast<float>(x2), static_cast<float>(y2));
 }
 
-GLAPI void APIENTRY impl_glRectdv(const GLdouble* v1, const GLdouble* v2)
+GLAPI void APIENTRY impl_glRectdv([[maybe_unused]] const GLdouble* v1, [[maybe_unused]] const GLdouble* v2)
 {
     SPDLOG_WARN("glRectdv not implemented");
 }
@@ -55,27 +53,27 @@ GLAPI void APIENTRY impl_glRectf(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
     impl_glEnd();
 }
 
-GLAPI void APIENTRY impl_glRectfv(const GLfloat* v1, const GLfloat* v2)
+GLAPI void APIENTRY impl_glRectfv([[maybe_unused]] const GLfloat* v1, [[maybe_unused]] const GLfloat* v2)
 {
     SPDLOG_WARN("glRectfv not implemented");
 }
 
-GLAPI void APIENTRY impl_glRecti(GLint x1, GLint y1, GLint x2, GLint y2)
+GLAPI void APIENTRY impl_glRecti([[maybe_unused]] GLint x1, [[maybe_unused]] GLint y1, [[maybe_unused]] GLint x2, [[maybe_unused]] GLint y2)
 {
     SPDLOG_WARN("glRecti not implemented");
 }
 
-GLAPI void APIENTRY impl_glRectiv(const GLint* v1, const GLint* v2)
+GLAPI void APIENTRY impl_glRectiv([[maybe_unused]] const GLint* v1, [[maybe_unused]] const GLint* v2)
 {
     SPDLOG_WARN("glRectiv not implemented");
 }
 
-GLAPI void APIENTRY impl_glRects(GLshort x1, GLshort y1, GLshort x2, GLshort y2)
+GLAPI void APIENTRY impl_glRects([[maybe_unused]] GLshort x1, [[maybe_unused]] GLshort y1, [[maybe_unused]] GLshort x2, [[maybe_unused]] GLshort y2)
 {
     SPDLOG_WARN("glRects not implemented");
 }
 
-GLAPI void APIENTRY impl_glRectsv(const GLshort* v1, const GLshort* v2)
+GLAPI void APIENTRY impl_glRectsv([[maybe_unused]] const GLshort* v1, [[maybe_unused]] const GLshort* v2)
 {
     SPDLOG_WARN("glRectsv not implemented");
 }

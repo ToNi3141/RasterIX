@@ -28,16 +28,14 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glEdgeFlag(GLboolean flag)
+GLAPI void APIENTRY impl_glEdgeFlag([[maybe_unused]] GLboolean flag)
 {
     SPDLOG_WARN("glEdgeFlag not implemented");
 }
 
-GLAPI void APIENTRY impl_glEdgeFlagv(const GLboolean* flag)
+GLAPI void APIENTRY impl_glEdgeFlagv([[maybe_unused]] const GLboolean* flag)
 {
     SPDLOG_WARN("glEdgeFlagv not implemented");
 }

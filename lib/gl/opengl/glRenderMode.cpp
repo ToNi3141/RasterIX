@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI GLint APIENTRY impl_glRenderMode(GLenum mode)
+GLAPI GLint APIENTRY impl_glRenderMode([[maybe_unused]] GLenum mode)
 {
     SPDLOG_WARN("glRenderMode not implemented");
     return 0;

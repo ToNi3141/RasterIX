@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glAccum(GLenum op, GLfloat value)
+GLAPI void APIENTRY impl_glAccum([[maybe_unused]] GLenum op, [[maybe_unused]] GLfloat value)
 {
     SPDLOG_WARN("glAccum not implemented");
 }

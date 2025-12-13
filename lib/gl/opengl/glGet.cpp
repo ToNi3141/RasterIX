@@ -29,8 +29,6 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
 GLAPI void APIENTRY impl_glGetBooleanv(GLenum pname, GLboolean* params)
@@ -75,7 +73,7 @@ GLAPI void APIENTRY impl_glGetBooleanv(GLenum pname, GLboolean* params)
         params[i] = convertBoolToGLboolean(floatVals[i] > 0.0f);
 }
 
-GLAPI void APIENTRY impl_glGetDoublev(GLenum pname, GLdouble* params)
+GLAPI void APIENTRY impl_glGetDoublev([[maybe_unused]] GLenum pname, [[maybe_unused]] GLdouble* params)
 {
     SPDLOG_WARN("glGetDoublev not implemented");
 }

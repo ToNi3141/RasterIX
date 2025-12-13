@@ -28,11 +28,12 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glPrioritizeTextures(GLsizei n, const GLuint* textures, const GLclampf* priorities)
+GLAPI void APIENTRY impl_glPrioritizeTextures(
+    [[maybe_unused]] GLsizei n,
+    [[maybe_unused]] const GLuint* textures,
+    [[maybe_unused]] const GLclampf* priorities)
 {
     SPDLOG_WARN("glPrioritizeTextures not implemented");
 }

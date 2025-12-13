@@ -28,21 +28,28 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glGetTexGendv(GLenum coord, GLenum pname, GLdouble* params)
+GLAPI void APIENTRY impl_glGetTexGendv(
+    [[maybe_unused]] GLenum coord,
+    [[maybe_unused]] GLenum pname,
+    [[maybe_unused]] GLdouble* params)
 {
     SPDLOG_WARN("glGetTexGendv not implemented");
 }
 
-GLAPI void APIENTRY impl_glGetTexGenfv(GLenum coord, GLenum pname, GLfloat* params)
+GLAPI void APIENTRY impl_glGetTexGenfv(
+    [[maybe_unused]] GLenum coord,
+    [[maybe_unused]] GLenum pname,
+    [[maybe_unused]] GLfloat* params)
 {
     SPDLOG_WARN("glGetTexGenfv not implemented");
 }
 
-GLAPI void APIENTRY impl_glGetTexGeniv(GLenum coord, GLenum pname, GLint* params)
+GLAPI void APIENTRY impl_glGetTexGeniv(
+    [[maybe_unused]] GLenum coord,
+    [[maybe_unused]] GLenum pname,
+    [[maybe_unused]] GLint* params)
 {
     SPDLOG_WARN("glGetTexGeniv not implemented");
 }

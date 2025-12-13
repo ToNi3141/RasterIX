@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glPixelZoom(GLfloat xfactor, GLfloat yfactor)
+GLAPI void APIENTRY impl_glPixelZoom([[maybe_unused]] GLfloat xfactor, [[maybe_unused]] GLfloat yfactor)
 {
     SPDLOG_WARN("glPixelZoom not implemented");
 }

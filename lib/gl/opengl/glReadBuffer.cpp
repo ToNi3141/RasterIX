@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glReadBuffer(GLenum mode)
+GLAPI void APIENTRY impl_glReadBuffer([[maybe_unused]] GLenum mode)
 {
     SPDLOG_WARN("glReadBuffer not implemented");
 }

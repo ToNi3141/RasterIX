@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glSelectBuffer(GLsizei size, GLuint* buffer)
+GLAPI void APIENTRY impl_glSelectBuffer([[maybe_unused]] GLsizei size, [[maybe_unused]] GLuint* buffer)
 {
     SPDLOG_WARN("glSelectBuffer not implemented");
 }

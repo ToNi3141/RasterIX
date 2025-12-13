@@ -28,11 +28,14 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
+GLAPI void APIENTRY impl_glCopyPixels(
+    [[maybe_unused]] GLint x,
+    [[maybe_unused]] GLint y,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height,
+    [[maybe_unused]] GLenum type)
 {
     SPDLOG_WARN("glCopyPixels not implemented");
 }

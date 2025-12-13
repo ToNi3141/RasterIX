@@ -28,11 +28,12 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glGetCompressedTexImage(GLenum target, GLint level, GLvoid* pixels)
+GLAPI void APIENTRY impl_glGetCompressedTexImage(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLvoid* pixels)
 {
     SPDLOG_WARN("glGetCompressedTexImage not implemented");
 }

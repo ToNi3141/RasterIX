@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glEdgeFlagPointer(GLsizei stride, const GLvoid* pointer)
+GLAPI void APIENTRY impl_glEdgeFlagPointer([[maybe_unused]] GLsizei stride, [[maybe_unused]] const GLvoid* pointer)
 {
     SPDLOG_WARN("glEdgeFlagPointer not implemented");
 }

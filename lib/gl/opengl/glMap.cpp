@@ -28,26 +28,56 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glMap1d(GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble* points)
+GLAPI void APIENTRY impl_glMap1d(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLdouble u1,
+    [[maybe_unused]] GLdouble u2,
+    [[maybe_unused]] GLint stride,
+    [[maybe_unused]] GLint order,
+    [[maybe_unused]] const GLdouble* points)
 {
     SPDLOG_WARN("glMap1d not implemented");
 }
 
-GLAPI void APIENTRY impl_glMap1f(GLenum target, GLfloat u1, GLfloat u2, GLint stride, GLint order, const GLfloat* points)
+GLAPI void APIENTRY impl_glMap1f(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLfloat u1,
+    [[maybe_unused]] GLfloat u2,
+    [[maybe_unused]] GLint stride,
+    [[maybe_unused]] GLint order,
+    [[maybe_unused]] const GLfloat* points)
 {
     SPDLOG_WARN("glMap1f not implemented");
 }
 
-GLAPI void APIENTRY impl_glMap2d(GLenum target, GLdouble u1, GLdouble u2, GLint ustride, GLint uorder, GLdouble v1, GLdouble v2, GLint vstride, GLint vorder, const GLdouble* points)
+GLAPI void APIENTRY impl_glMap2d(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLdouble u1,
+    [[maybe_unused]] GLdouble u2,
+    [[maybe_unused]] GLint ustride,
+    [[maybe_unused]] GLint uorder,
+    [[maybe_unused]] GLdouble v1,
+    [[maybe_unused]] GLdouble v2,
+    [[maybe_unused]] GLint vstride,
+    [[maybe_unused]] GLint vorder,
+    [[maybe_unused]] const GLdouble* points)
 {
     SPDLOG_WARN("glMap2d not implemented");
 }
 
-GLAPI void APIENTRY impl_glMap2f(GLenum target, GLfloat u1, GLfloat u2, GLint ustride, GLint uorder, GLfloat v1, GLfloat v2, GLint vstride, GLint vorder, const GLfloat* points)
+GLAPI void APIENTRY impl_glMap2f(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLfloat u1,
+    [[maybe_unused]] GLfloat u2,
+    [[maybe_unused]] GLint ustride,
+    [[maybe_unused]] GLint uorder,
+    [[maybe_unused]] GLfloat v1,
+    [[maybe_unused]] GLfloat v2,
+    [[maybe_unused]] GLint vstride,
+    [[maybe_unused]] GLint vorder,
+    [[maybe_unused]] const GLfloat* points)
 {
     SPDLOG_WARN("glMap2f not implemented");
 }

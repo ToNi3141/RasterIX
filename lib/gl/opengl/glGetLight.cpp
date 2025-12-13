@@ -28,8 +28,6 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
 GLAPI void APIENTRY impl_glGetLightfv(GLenum light, GLenum pname, GLfloat* params)
@@ -98,7 +96,10 @@ GLAPI void APIENTRY impl_glGetLightfv(GLenum light, GLenum pname, GLfloat* param
     }
 }
 
-GLAPI void APIENTRY impl_glGetLightiv(GLenum light, GLenum pname, GLint* params)
+GLAPI void APIENTRY impl_glGetLightiv(
+    [[maybe_unused]] GLenum light,
+    [[maybe_unused]] GLenum pname,
+    [[maybe_unused]] GLint* params)
 {
     SPDLOG_WARN("glGetLightiv not implemented");
 }

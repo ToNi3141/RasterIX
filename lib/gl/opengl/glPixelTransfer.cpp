@@ -28,16 +28,14 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glPixelTransferf(GLenum pname, GLfloat param)
+GLAPI void APIENTRY impl_glPixelTransferf([[maybe_unused]] GLenum pname, [[maybe_unused]] GLfloat param)
 {
     SPDLOG_WARN("glPixelTransferf not implemented");
 }
 
-GLAPI void APIENTRY impl_glPixelTransferi(GLenum pname, GLint param)
+GLAPI void APIENTRY impl_glPixelTransferi([[maybe_unused]] GLenum pname, [[maybe_unused]] GLint param)
 {
     SPDLOG_WARN("glPixelTransferi not implemented");
 }

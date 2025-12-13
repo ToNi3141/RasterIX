@@ -28,21 +28,43 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glCompressedTexImage3D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid* data)
+GLAPI void APIENTRY impl_glCompressedTexImage3D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLenum internalformat,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height,
+    [[maybe_unused]] GLsizei depth,
+    [[maybe_unused]] GLint border,
+    [[maybe_unused]] GLsizei imageSize,
+    [[maybe_unused]] const GLvoid* data)
 {
     SPDLOG_WARN("glCompressedTexImage3D not implemented");
 }
 
-GLAPI void APIENTRY impl_glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data)
+GLAPI void APIENTRY impl_glCompressedTexImage2D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLenum internalformat,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height,
+    [[maybe_unused]] GLint border,
+    [[maybe_unused]] GLsizei imageSize,
+    [[maybe_unused]] const GLvoid* data)
 {
     SPDLOG_WARN("glCompressedTexImage2D not implemented");
 }
 
-GLAPI void APIENTRY impl_glCompressedTexImage1D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLint border, GLsizei imageSize, const GLvoid* data)
+GLAPI void APIENTRY impl_glCompressedTexImage1D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLenum internalformat,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLint border,
+    [[maybe_unused]] GLsizei imageSize,
+    [[maybe_unused]] const GLvoid* data)
 {
     SPDLOG_WARN("glCompressedTexImage1D not implemented");
 }

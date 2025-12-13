@@ -28,11 +28,9 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glPushClientAttrib(GLbitfield mask)
+GLAPI void APIENTRY impl_glPushClientAttrib([[maybe_unused]] GLbitfield mask)
 {
     SPDLOG_WARN("glPushClientAttrib not implemented");
 }

@@ -28,26 +28,42 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glMapGrid1d(GLint un, GLdouble u1, GLdouble u2)
+GLAPI void APIENTRY impl_glMapGrid1d(
+    [[maybe_unused]] GLint un,
+    [[maybe_unused]] GLdouble u1,
+    [[maybe_unused]] GLdouble u2)
 {
     SPDLOG_WARN("glMapGrid1d not implemented");
 }
 
-GLAPI void APIENTRY impl_glMapGrid1f(GLint un, GLfloat u1, GLfloat u2)
+GLAPI void APIENTRY impl_glMapGrid1f(
+    [[maybe_unused]] GLint un,
+    [[maybe_unused]] GLfloat u1,
+    [[maybe_unused]] GLfloat u2)
 {
     SPDLOG_WARN("glMapGrid1f not implemented");
 }
 
-GLAPI void APIENTRY impl_glMapGrid2d(GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2)
+GLAPI void APIENTRY impl_glMapGrid2d(
+    [[maybe_unused]] GLint un,
+    [[maybe_unused]] GLdouble u1,
+    [[maybe_unused]] GLdouble u2,
+    [[maybe_unused]] GLint vn,
+    [[maybe_unused]] GLdouble v1,
+    [[maybe_unused]] GLdouble v2)
 {
     SPDLOG_WARN("glMapGrid2d not implemented");
 }
 
-GLAPI void APIENTRY impl_glMapGrid2f(GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1, GLfloat v2)
+GLAPI void APIENTRY impl_glMapGrid2f(
+    [[maybe_unused]] GLint un,
+    [[maybe_unused]] GLfloat u1,
+    [[maybe_unused]] GLfloat u2,
+    [[maybe_unused]] GLint vn,
+    [[maybe_unused]] GLfloat v1,
+    [[maybe_unused]] GLfloat v2)
 {
     SPDLOG_WARN("glMapGrid2f not implemented");
 }

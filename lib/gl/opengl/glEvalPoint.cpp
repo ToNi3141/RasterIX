@@ -28,16 +28,14 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glEvalPoint1(GLint i)
+GLAPI void APIENTRY impl_glEvalPoint1([[maybe_unused]] GLint i)
 {
     SPDLOG_WARN("glEvalPoint1 not implemented");
 }
 
-GLAPI void APIENTRY impl_glEvalPoint2(GLint i, GLint j)
+GLAPI void APIENTRY impl_glEvalPoint2([[maybe_unused]] GLint i, [[maybe_unused]] GLint j)
 {
     SPDLOG_WARN("glEvalPoint2 not implemented");
 }

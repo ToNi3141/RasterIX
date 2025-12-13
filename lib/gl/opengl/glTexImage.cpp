@@ -30,11 +30,17 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid* pixels)
+GLAPI void APIENTRY impl_glTexImage1D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLint internalformat,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLint border,
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLenum type,
+    [[maybe_unused]] const GLvoid* pixels)
 {
     SPDLOG_WARN("glTexImage1D not implemented");
 }
@@ -104,7 +110,17 @@ GLAPI void APIENTRY impl_glTexImage2D(GLenum target, GLint level, GLint internal
     impl_glTexSubImage2D(target, level, 0, 0, width, height, format, type, pixels);
 }
 
-GLAPI void APIENTRY impl_glTexImage3D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid* data)
+GLAPI void APIENTRY impl_glTexImage3D(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLint level,
+    [[maybe_unused]] GLint internalformat,
+    [[maybe_unused]] GLsizei width,
+    [[maybe_unused]] GLsizei height,
+    [[maybe_unused]] GLsizei depth,
+    [[maybe_unused]] GLint border,
+    [[maybe_unused]] GLenum format,
+    [[maybe_unused]] GLenum type,
+    [[maybe_unused]] const GLvoid* data)
 {
     SPDLOG_WARN("glTexImage3D not implemented");
 }

@@ -28,16 +28,14 @@
 #include <cstring>
 #include <spdlog/spdlog.h>
 
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 using namespace rr;
 
-GLAPI void APIENTRY impl_glMultTransposeMatrixf(const GLfloat* m)
+GLAPI void APIENTRY impl_glMultTransposeMatrixf([[maybe_unused]] const GLfloat* m)
 {
     SPDLOG_WARN("glMultTransposeMatrixf not implemented");
 }
 
-GLAPI void APIENTRY impl_glMultTransposeMatrixd(const GLdouble* m)
+GLAPI void APIENTRY impl_glMultTransposeMatrixd([[maybe_unused]] const GLdouble* m)
 {
     SPDLOG_WARN("glMultTransposeMatrixd not implemented");
 }
