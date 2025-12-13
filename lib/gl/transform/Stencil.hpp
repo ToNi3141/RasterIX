@@ -92,7 +92,7 @@ public:
 
 private:
     StencilReg& stencilConfig();
-    const StencilReg& stencilConfig() const { return stencilConfig(); };
+    const StencilReg& stencilConfig() const { return this->stencilConfig(); };
 
     std::function<bool(const StencilReg&)> m_sender {};
     StencilData& m_data;
