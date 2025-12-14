@@ -26,6 +26,7 @@ using namespace rr;
 
 GLAPI GLboolean APIENTRY impl_glIsEnabled(GLenum cap)
 {
+    SPDLOG_DEBUG("glIsEnabled cap 0x{:X} called", cap);
     switch (cap)
     {
     case GL_TEXTURE_2D:

@@ -24,7 +24,7 @@ using namespace rr;
 
 GLAPI void APIENTRY impl_glGetMaterialfv(GLenum face, GLenum pname, GLfloat* params)
 {
-    SPDLOG_WARN("glGetMaterialfv called for face 0x{:X} pname 0x{:X} not implemented", face, pname);
+    SPDLOG_DEBUG("glGetMaterialfv face 0x{:X} pname 0x{:X} called", face, pname);
 
     if (face != GL_FRONT_AND_BACK)
     {
