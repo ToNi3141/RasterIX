@@ -19,13 +19,8 @@
 #define GL_TYPE_CONVERTERS_H
 
 #include "Enums.hpp"
-#include "RIXGL.hpp"
 #include "gl.h"
-#include "pixelpipeline/PixelPipeline.hpp"
-#include "pixelpipeline/Texture.hpp"
-#include "transform/MatrixStore.hpp"
 #include "vertexpipeline/VertexArray.hpp"
-#include "vertexpipeline/VertexQueue.hpp"
 #include <algorithm>
 #include <cstring>
 #include <spdlog/spdlog.h>
@@ -33,12 +28,12 @@
 namespace rr
 {
 
-float cv(const GLclampf val)
+[[maybe_unused]] static float cv(const GLclampf val)
 {
     return std::clamp(val, 0.0f, 1.0f);
 }
 
-GLint convertTexEnvMode(TexEnvMode& mode, const GLint param)
+[[maybe_unused]] static GLint convertTexEnvMode(TexEnvMode& mode, const GLint param)
 {
     GLint ret = GL_NO_ERROR;
     switch (param)
@@ -73,7 +68,7 @@ GLint convertTexEnvMode(TexEnvMode& mode, const GLint param)
     return ret;
 }
 
-GLint convertCombine(Combine& conv, GLint val, bool alpha)
+[[maybe_unused]] static GLint convertCombine(Combine& conv, GLint val, bool alpha)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
@@ -124,7 +119,7 @@ GLint convertCombine(Combine& conv, GLint val, bool alpha)
     return ret;
 }
 
-GLenum convertCombineToOpenGL(const Combine conf)
+[[maybe_unused]] static GLenum convertCombineToOpenGL(const Combine conf)
 {
     switch (conf)
     {
@@ -150,7 +145,7 @@ GLenum convertCombineToOpenGL(const Combine conf)
     }
 }
 
-GLint convertOperand(Operand& conf, GLint val, bool alpha)
+[[maybe_unused]] static GLint convertOperand(Operand& conf, GLint val, bool alpha)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
@@ -188,7 +183,7 @@ GLint convertOperand(Operand& conf, GLint val, bool alpha)
     return ret;
 }
 
-GLenum convertOperandToOpenGL(const Operand conf)
+[[maybe_unused]] static GLenum convertOperandToOpenGL(const Operand conf)
 {
     switch (conf)
     {
@@ -206,7 +201,7 @@ GLenum convertOperandToOpenGL(const Operand conf)
     }
 }
 
-GLint convertSrcReg(SrcReg& conf, GLint val)
+[[maybe_unused]] static GLint convertSrcReg(SrcReg& conf, GLint val)
 {
     GLint ret = GL_NO_ERROR;
     switch (val)
@@ -231,7 +226,7 @@ GLint convertSrcReg(SrcReg& conf, GLint val)
     return ret;
 }
 
-GLenum convertSrcRegToOpenGL(const SrcReg conf)
+[[maybe_unused]] static GLenum convertSrcRegToOpenGL(const SrcReg conf)
 {
     switch (conf)
     {
@@ -249,7 +244,7 @@ GLenum convertSrcRegToOpenGL(const SrcReg conf)
     }
 }
 
-BlendFunc convertBlendFunc(const GLenum blendFunc)
+[[maybe_unused]] static BlendFunc convertBlendFunc(const GLenum blendFunc)
 {
     switch (blendFunc)
     {
@@ -284,7 +279,7 @@ BlendFunc convertBlendFunc(const GLenum blendFunc)
     return BlendFunc::ZERO;
 }
 
-GLenum convertBlendFuncToOpenGL(const BlendFunc blendFunc)
+[[maybe_unused]] static GLenum convertBlendFuncToOpenGL(const BlendFunc blendFunc)
 {
     switch (blendFunc)
     {
@@ -316,7 +311,7 @@ GLenum convertBlendFuncToOpenGL(const BlendFunc blendFunc)
     }
 }
 
-void setClientState(const GLenum array, bool enable)
+[[maybe_unused]] static void setClientState(const GLenum array, bool enable)
 {
     switch (array)
     {
@@ -347,7 +342,7 @@ void setClientState(const GLenum array, bool enable)
     }
 }
 
-Type convertType(GLenum type)
+[[maybe_unused]] static Type convertType(GLenum type)
 {
     switch (type)
     {
@@ -370,7 +365,7 @@ Type convertType(GLenum type)
     }
 }
 
-GLenum convertTypeToOpenGL(Type type)
+[[maybe_unused]] static GLenum convertTypeToOpenGL(Type type)
 {
     switch (type)
     {
@@ -392,7 +387,7 @@ GLenum convertTypeToOpenGL(Type type)
     }
 }
 
-DrawMode convertDrawMode(GLenum drawMode)
+[[maybe_unused]] static DrawMode convertDrawMode(GLenum drawMode)
 {
     switch (drawMode)
     {
@@ -423,12 +418,13 @@ DrawMode convertDrawMode(GLenum drawMode)
     }
 }
 
-GLenum convertTextureWrapMode(TextureWrapMode& conf, const GLenum mode)
+[[maybe_unused]] static GLenum convertTextureWrapMode(TextureWrapMode& conf, const GLenum mode)
 {
     switch (mode)
     {
     case GL_CLAMP:
         SPDLOG_WARN("GL_CLAMP is not fully supported and emulated with GL_CLAMP_TO_EDGE");
+        [[fallthrough]];
     case GL_CLAMP_TO_EDGE:
         conf = TextureWrapMode::CLAMP_TO_EDGE;
         break;
@@ -443,7 +439,7 @@ GLenum convertTextureWrapMode(TextureWrapMode& conf, const GLenum mode)
     return GL_NO_ERROR;
 }
 
-GLenum convertTextureWrapModeToOpenGL(const TextureWrapMode conf)
+[[maybe_unused]] static GLenum convertTextureWrapModeToOpenGL(const TextureWrapMode conf)
 {
     switch (conf)
     {
@@ -457,7 +453,7 @@ GLenum convertTextureWrapModeToOpenGL(const TextureWrapMode conf)
     }
 }
 
-GLenum convertTestFunc(TestFunc& conf, const GLenum mode)
+[[maybe_unused]] static GLenum convertTestFunc(TestFunc& conf, const GLenum mode)
 {
     switch (mode)
     {
@@ -494,7 +490,7 @@ GLenum convertTestFunc(TestFunc& conf, const GLenum mode)
     return GL_NO_ERROR;
 }
 
-GLenum convertTestFuncToOpenGL(const TestFunc conf)
+[[maybe_unused]] static GLenum convertTestFuncToOpenGL(const TestFunc conf)
 {
     switch (conf)
     {
@@ -520,7 +516,7 @@ GLenum convertTestFuncToOpenGL(const TestFunc conf)
     }
 }
 
-GLenum convertStencilOp(StencilOp& conf, const GLenum mode)
+[[maybe_unused]] static GLenum convertStencilOp(StencilOp& conf, const GLenum mode)
 {
     switch (mode)
     {
@@ -557,7 +553,7 @@ GLenum convertStencilOp(StencilOp& conf, const GLenum mode)
     return GL_NO_ERROR;
 }
 
-GLenum convertStencilOpToOpenGL(const StencilOp conf)
+[[maybe_unused]] static GLenum convertStencilOpToOpenGL(const StencilOp conf)
 {
     switch (conf)
     {
@@ -583,7 +579,7 @@ GLenum convertStencilOpToOpenGL(const StencilOp conf)
     }
 }
 
-GLenum convertLogicOp(LogicOp& conf, const GLenum opcode)
+[[maybe_unused]] static GLenum convertLogicOp(LogicOp& conf, const GLenum opcode)
 {
     switch (opcode)
     {
@@ -643,7 +639,7 @@ GLenum convertLogicOp(LogicOp& conf, const GLenum opcode)
     return GL_NO_ERROR;
 }
 
-GLenum convertLogicOpToOpenGL(const LogicOp conf)
+[[maybe_unused]] static GLenum convertLogicOpToOpenGL(const LogicOp conf)
 {
     switch (conf)
     {
@@ -685,7 +681,7 @@ GLenum convertLogicOpToOpenGL(const LogicOp conf)
     }
 }
 
-GLenum convertFace(Face& conf, const GLenum mode)
+[[maybe_unused]] static GLenum convertFace(Face& conf, const GLenum mode)
 {
     switch (mode)
     {
@@ -706,7 +702,7 @@ GLenum convertFace(Face& conf, const GLenum mode)
     return GL_NO_ERROR;
 }
 
-GLenum convertFaceToOpenGL(const Face conf)
+[[maybe_unused]] static GLenum convertFaceToOpenGL(const Face conf)
 {
     switch (conf)
     {
@@ -722,7 +718,7 @@ GLenum convertFaceToOpenGL(const Face conf)
     }
 }
 
-GLenum convertFogMode(FogMode& conf, const GLenum mode)
+[[maybe_unused]] static GLenum convertFogMode(FogMode& conf, const GLenum mode)
 {
     switch (mode)
     {
@@ -743,7 +739,7 @@ GLenum convertFogMode(FogMode& conf, const GLenum mode)
     return GL_NO_ERROR;
 }
 
-GLenum convertFogModeToOpenGL(const FogMode conf)
+[[maybe_unused]] static GLenum convertFogModeToOpenGL(const FogMode conf)
 {
     switch (conf)
     {
@@ -759,7 +755,7 @@ GLenum convertFogModeToOpenGL(const FogMode conf)
     }
 }
 
-GLenum convertFrontFace(Orientation& conf, const GLenum mode)
+[[maybe_unused]] static GLenum convertFrontFace(Orientation& conf, const GLenum mode)
 {
     switch (mode)
     {
@@ -777,7 +773,7 @@ GLenum convertFrontFace(Orientation& conf, const GLenum mode)
     return GL_NO_ERROR;
 }
 
-GLenum convertFrontFaceToOpenGL(const Orientation conf)
+[[maybe_unused]] static GLenum convertFrontFaceToOpenGL(const Orientation conf)
 {
     switch (conf)
     {
@@ -791,7 +787,7 @@ GLenum convertFrontFaceToOpenGL(const Orientation conf)
     }
 }
 
-GLenum convertMatrixMode(MatrixMode& conf, const GLenum mode)
+[[maybe_unused]] static GLenum convertMatrixMode(MatrixMode& conf, const GLenum mode)
 {
     switch (mode)
     {
@@ -815,7 +811,7 @@ GLenum convertMatrixMode(MatrixMode& conf, const GLenum mode)
     return GL_NO_ERROR;
 }
 
-GLenum convertMatrixModeToOpenGL(const MatrixMode conf)
+[[maybe_unused]] static GLenum convertMatrixModeToOpenGL(const MatrixMode conf)
 {
     switch (conf)
     {
@@ -833,7 +829,7 @@ GLenum convertMatrixModeToOpenGL(const MatrixMode conf)
     }
 }
 
-GLenum convertBoolToGLboolean(const bool val)
+[[maybe_unused]] static GLenum convertBoolToGLboolean(const bool val)
 {
     return val ? GL_TRUE : GL_FALSE;
 }

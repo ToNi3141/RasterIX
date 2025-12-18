@@ -95,6 +95,9 @@ public:
     // ARM NEON optimized version which is much faster than the compiler generated code
     void transform(Vec4& __restrict dst, const Vec4& src) const
     {
+        const float* matptr = &mat[0][0];
+        float* dstp = dst.data();
+        const float* srcp = src.data();
         // Optimized transformation function for NEON.
         // Use of dedicated vmul and vadd to reduce stalling.
         // https://developer.arm.com/documentation/ddi0409/i/instruction-timing/instruction-specific-scheduling/advanced-simd-floating-point-instructions
@@ -121,8 +124,8 @@ public:
             "vadd.f32   q13, q13, q14       \n\t"
 
             "vst1.32    {d26, d27}, [%2]    \n\t" // dst = q13
-            :
-            : "r"(&mat[0][0]), "r"(src.data()), "r"(dst.data())
+            : "+r"(matptr)
+            : "r"(srcp), "r"(dstp)
             : "q0", "q9", "q13", "q14", "memory");
     }
 #else

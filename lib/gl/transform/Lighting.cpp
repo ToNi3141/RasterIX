@@ -121,7 +121,7 @@ void LightingCalc::calculateLight(
     const float nDotDir = std::clamp(n0.dot(dir), 0.0f, 1.0f);
 
     const float att = calculateAttenuation(lightConfig, v0);
-    const float specular = calculateSpecular(lightConfig.position, nDotDir, n0, dir, materialSpecularExponent);
+    const float specular = calculateSpecular(nDotDir, n0, dir, materialSpecularExponent);
     const float spot = calculateSpotlight(lightConfig, v0);
 
     const Vec4 ambientColor = lightConfig.ambientColor * materialAmbientColor;
@@ -182,7 +182,6 @@ float LightingCalc::calculateAttenuation(const LightingData::LightConfig& lightC
 }
 
 float LightingCalc::calculateSpecular(
-    const Vec4& lightPos,
     const float nDotDir,
     const Vec3& n0,
     const Vec3& dir,

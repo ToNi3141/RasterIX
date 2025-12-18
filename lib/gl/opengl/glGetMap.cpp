@@ -1,0 +1,43 @@
+// RasterIX
+// https://github.com/ToNi3141/RasterIX
+// Copyright (c) 2025 ToNi3141
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#include "GLImpl.h"
+#include <spdlog/spdlog.h>
+
+GLAPI void APIENTRY impl_glGetMapdv(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLenum query,
+    [[maybe_unused]] GLdouble* v)
+{
+    SPDLOG_WARN("glGetMapdv not implemented");
+}
+
+GLAPI void APIENTRY impl_glGetMapfv(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLenum query,
+    [[maybe_unused]] GLfloat* v)
+{
+    SPDLOG_WARN("glGetMapfv not implemented");
+}
+
+GLAPI void APIENTRY impl_glGetMapiv(
+    [[maybe_unused]] GLenum target,
+    [[maybe_unused]] GLenum query,
+    [[maybe_unused]] GLint* v)
+{
+    SPDLOG_WARN("glGetMapiv not implemented");
+}

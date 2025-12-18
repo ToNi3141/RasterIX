@@ -68,8 +68,10 @@ private:
     rr::MultiThreadRunner m_uploadThread {};
 } guard;
 
-GLAPI XVisualInfo* APIENTRY glXChooseVisual(Display* dpy, int screen,
-    int* attribList)
+GLAPI XVisualInfo* APIENTRY glXChooseVisual(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] int screen,
+    [[maybe_unused]] int* attribList)
 {
     SPDLOG_DEBUG("glXChooseVisual called");
     XVisualInfo* vi = new XVisualInfo;
@@ -92,8 +94,11 @@ GLAPI XVisualInfo* APIENTRY glXChooseVisual(Display* dpy, int screen,
     return vi;
 }
 
-GLAPI GLXContext APIENTRY glXCreateContext(Display* dpy, XVisualInfo* vis,
-    GLXContext shareList, Bool direct)
+GLAPI GLXContext APIENTRY glXCreateContext(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] XVisualInfo* vis,
+    [[maybe_unused]] GLXContext shareList,
+    [[maybe_unused]] Bool direct)
 {
     SPDLOG_DEBUG("glXCreateContext called");
 
@@ -115,44 +120,51 @@ GLAPI GLXContext APIENTRY glXCreateContext(Display* dpy, XVisualInfo* vis,
     return reinterpret_cast<GLXContext>(&guard.getInst());
 }
 
-GLAPI void APIENTRY glXDestroyContext(Display* dpy, GLXContext ctx)
+GLAPI void APIENTRY glXDestroyContext([[maybe_unused]] Display* dpy, [[maybe_unused]] GLXContext ctx)
 {
     SPDLOG_WARN("glXDestroyContext not implemented");
 }
 
-GLAPI Bool APIENTRY glXMakeCurrent(Display* dpy, GLXDrawable drawable,
-    GLXContext ctx)
+GLAPI Bool APIENTRY glXMakeCurrent(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXDrawable drawable,
+    [[maybe_unused]] GLXContext ctx)
 {
     SPDLOG_DEBUG("glXMakeCurrent called");
     // Nothing todo. Only one context exists
     return 1;
 }
 
-GLAPI void APIENTRY glXCopyContext(Display* dpy, GLXContext src, GLXContext dst,
-    unsigned long mask)
+GLAPI void APIENTRY glXCopyContext(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXContext src,
+    [[maybe_unused]] GLXContext dst,
+    [[maybe_unused]] unsigned long mask)
 {
     SPDLOG_WARN("glXCopyContext not implemented");
 }
 
-GLAPI void APIENTRY glXSwapBuffers(Display* dpy, GLXDrawable drawable)
+GLAPI void APIENTRY glXSwapBuffers([[maybe_unused]] Display* dpy, [[maybe_unused]] GLXDrawable drawable)
 {
     SPDLOG_DEBUG("glXSwapBuffers called");
     guard.render();
 }
 
-GLAPI GLXPixmap APIENTRY glXCreateGLXPixmap(Display* dpy, XVisualInfo* visual,
-    Pixmap pixmap)
+GLAPI GLXPixmap APIENTRY glXCreateGLXPixmap(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] XVisualInfo* visual,
+    [[maybe_unused]] Pixmap pixmap)
 {
     SPDLOG_WARN("glXCreateGLXPixmap not implemented");
     return 0;
 }
 
-GLAPI void APIENTRY glXDestroyGLXPixmap(Display* dpy, GLXPixmap pixmap)
+GLAPI void APIENTRY glXDestroyGLXPixmap([[maybe_unused]] Display* dpy, [[maybe_unused]] GLXPixmap pixmap)
 {
     SPDLOG_WARN("glXDestroyGLXPixmap not implemented");
 }
 
-GLAPI Bool APIENTRY glXQueryExtension(Display* dpy, int* errorb, int* event)
+GLAPI Bool APIENTRY glXQueryExtension([[maybe_unused]] Display* dpy, int* errorb, int* event)
 {
     SPDLOG_DEBUG("glXQueryExtension called");
     *errorb = 0;
@@ -160,20 +172,23 @@ GLAPI Bool APIENTRY glXQueryExtension(Display* dpy, int* errorb, int* event)
     return 1;
 }
 
-GLAPI Bool APIENTRY glXQueryVersion(Display* dpy, int* maj, int* min)
+GLAPI Bool APIENTRY glXQueryVersion([[maybe_unused]] Display* dpy, [[maybe_unused]] int* maj, [[maybe_unused]] int* min)
 {
     SPDLOG_WARN("glXQueryVersion not implemented");
     return 0;
 }
 
-GLAPI Bool APIENTRY glXIsDirect(Display* dpy, GLXContext ctx)
+GLAPI Bool APIENTRY glXIsDirect([[maybe_unused]] Display* dpy, [[maybe_unused]] GLXContext ctx)
 {
     SPDLOG_WARN("glXIsDirect not implemented");
     return 0;
 }
 
-GLAPI int APIENTRY glXGetConfig(Display* dpy, XVisualInfo* visual,
-    int attrib, int* value)
+GLAPI int APIENTRY glXGetConfig(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] XVisualInfo* visual,
+    [[maybe_unused]] int attrib,
+    [[maybe_unused]] int* value)
 {
     SPDLOG_WARN("glXGetConfig not implemented");
     return 0;
@@ -201,25 +216,29 @@ GLAPI void APIENTRY glXWaitX(void)
     SPDLOG_WARN("glXWaitX not implemented");
 }
 
-GLAPI void APIENTRY glXUseXFont(Font font, int first, int count, int list)
+GLAPI void APIENTRY glXUseXFont(
+    [[maybe_unused]] Font font,
+    [[maybe_unused]] int first,
+    [[maybe_unused]] int count,
+    [[maybe_unused]] int list)
 {
     SPDLOG_WARN("glXUseXFont not implemented");
 }
 
 /* GLX 1.1 and later */
-GLAPI const char* APIENTRY glXQueryExtensionsString(Display* dpy, int screen)
+GLAPI const char* APIENTRY glXQueryExtensionsString([[maybe_unused]] Display* dpy, [[maybe_unused]] int screen)
 {
     SPDLOG_WARN("glXQueryExtensionsString not implemented");
     return nullptr;
 }
 
-GLAPI const char* APIENTRY glXQueryServerString(Display* dpy, int screen, int name)
+GLAPI const char* APIENTRY glXQueryServerString([[maybe_unused]] Display* dpy, [[maybe_unused]] int screen, [[maybe_unused]] int name)
 {
     SPDLOG_WARN("glXQueryServerString not implemented");
     return nullptr;
 }
 
-GLAPI const char* APIENTRY glXGetClientString(Display* dpy, int name)
+GLAPI const char* APIENTRY glXGetClientString([[maybe_unused]] Display* dpy, [[maybe_unused]] int name)
 {
     SPDLOG_WARN("glXGetClientString not implemented");
     return nullptr;
@@ -233,86 +252,112 @@ GLAPI Display* APIENTRY glXGetCurrentDisplay(void)
 }
 
 /* GLX 1.3 and later */
-GLAPI GLXFBConfig* APIENTRY glXChooseFBConfig(Display* dpy, int screen,
-    const int* attribList, int* nitems)
+GLAPI GLXFBConfig* APIENTRY glXChooseFBConfig(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] int screen,
+    [[maybe_unused]] const int* attribList,
+    [[maybe_unused]] int* nitems)
 {
     SPDLOG_WARN("glXChooseFBConfig not implemented");
     return nullptr;
 }
 
-GLAPI int APIENTRY glXGetFBConfigAttrib(Display* dpy, GLXFBConfig config,
-    int attribute, int* value)
+GLAPI int APIENTRY glXGetFBConfigAttrib(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXFBConfig config,
+    [[maybe_unused]] int attribute,
+    [[maybe_unused]] int* value)
 {
     SPDLOG_WARN("glXGetFBConfigAttrib not implemented");
     return 0;
 }
 
-GLAPI GLXFBConfig* APIENTRY glXGetFBConfigs(Display* dpy, int screen,
-    int* nelements)
+GLAPI GLXFBConfig* APIENTRY glXGetFBConfigs(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] int screen,
+    [[maybe_unused]] int* nelements)
 {
     SPDLOG_WARN("glXGetFBConfigs not implemented");
     return nullptr;
 }
 
-GLAPI XVisualInfo* APIENTRY glXGetVisualFromFBConfig(Display* dpy,
-    GLXFBConfig config)
+GLAPI XVisualInfo* APIENTRY glXGetVisualFromFBConfig(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXFBConfig config)
 {
     SPDLOG_WARN("glXGetVisualFromFBConfig not implemented");
     return nullptr;
 }
 
-GLAPI GLXWindow APIENTRY glXCreateWindow(Display* dpy, GLXFBConfig config,
-    Window win, const int* attribList)
+GLAPI GLXWindow APIENTRY glXCreateWindow(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXFBConfig config,
+    [[maybe_unused]] Window win,
+    [[maybe_unused]] const int* attribList)
 {
     SPDLOG_WARN("glXCreateWindow not implemented");
     return 0;
 }
 
-GLAPI void APIENTRY glXDestroyWindow(Display* dpy, GLXWindow window)
+GLAPI void APIENTRY glXDestroyWindow([[maybe_unused]] Display* dpy, [[maybe_unused]] GLXWindow window)
 {
     SPDLOG_WARN("glXDestroyWindow not implemented");
 }
 
-GLAPI GLXPixmap APIENTRY glXCreatePixmap(Display* dpy, GLXFBConfig config,
-    Pixmap pixmap, const int* attribList)
+GLAPI GLXPixmap APIENTRY glXCreatePixmap(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXFBConfig config,
+    [[maybe_unused]] Pixmap pixmap,
+    [[maybe_unused]] const int* attribList)
 {
     SPDLOG_WARN("glXCreatePixmap not implemented");
     return 0;
 }
 
-GLAPI void APIENTRY glXDestroyPixmap(Display* dpy, GLXPixmap pixmap)
+GLAPI void APIENTRY glXDestroyPixmap([[maybe_unused]] Display* dpy, [[maybe_unused]] GLXPixmap pixmap)
 {
     SPDLOG_WARN("glXDestroyPixmap not implemented");
 }
 
-GLAPI GLXPbuffer APIENTRY glXCreatePbuffer(Display* dpy, GLXFBConfig config,
-    const int* attribList)
+GLAPI GLXPbuffer APIENTRY glXCreatePbuffer(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXFBConfig config,
+    [[maybe_unused]] const int* attribList)
 {
     SPDLOG_WARN("glXCreatePbuffer not implemented");
     return 0;
 }
 
-GLAPI void APIENTRY glXDestroyPbuffer(Display* dpy, GLXPbuffer pbuf)
+GLAPI void APIENTRY glXDestroyPbuffer([[maybe_unused]] Display* dpy, [[maybe_unused]] GLXPbuffer pbuf)
 {
     SPDLOG_WARN("glXDestroyPbuffer not implemented");
 }
 
-GLAPI void APIENTRY glXQueryDrawable(Display* dpy, GLXDrawable draw, int attribute,
-    unsigned int* value)
+GLAPI void APIENTRY glXQueryDrawable(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXDrawable draw,
+    [[maybe_unused]] int attribute,
+    [[maybe_unused]] unsigned int* value)
 {
     SPDLOG_WARN("glXQueryDrawable not implemented");
 }
 
-GLAPI GLXContext APIENTRY glXCreateNewContext(Display* dpy, GLXFBConfig config,
-    int renderType, GLXContext shareList,
-    Bool direct)
+GLAPI GLXContext APIENTRY glXCreateNewContext(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXFBConfig config,
+    [[maybe_unused]] int renderType,
+    [[maybe_unused]] GLXContext shareList,
+    [[maybe_unused]] Bool direct)
 {
     SPDLOG_WARN("glXCreateNewContext not implemented");
     return nullptr;
 }
 
-GLAPI Bool APIENTRY glXMakeContextCurrent(Display* dpy, GLXDrawable draw,
-    GLXDrawable read, GLXContext ctx)
+GLAPI Bool APIENTRY glXMakeContextCurrent(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXDrawable draw,
+    [[maybe_unused]] GLXDrawable read,
+    [[maybe_unused]] GLXContext ctx)
 {
     SPDLOG_WARN("glXMakeContextCurrent not implemented");
     return 0;
@@ -324,26 +369,33 @@ GLAPI GLXDrawable APIENTRY glXGetCurrentReadDrawable(void)
     return 0;
 }
 
-GLAPI int APIENTRY glXQueryContext(Display* dpy, GLXContext ctx, int attribute,
-    int* value)
+GLAPI int APIENTRY glXQueryContext(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXContext ctx,
+    [[maybe_unused]] int attribute,
+    [[maybe_unused]] int* value)
 {
     SPDLOG_WARN("glXQueryContext not implemented");
     return 0;
 }
 
-GLAPI void APIENTRY glXSelectEvent(Display* dpy, GLXDrawable drawable,
-    unsigned long mask)
+GLAPI void APIENTRY glXSelectEvent(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXDrawable drawable,
+    [[maybe_unused]] unsigned long mask)
 {
     SPDLOG_WARN("glXSelectEvent not implemented");
 }
 
-GLAPI void APIENTRY glXGetSelectedEvent(Display* dpy, GLXDrawable drawable,
-    unsigned long* mask)
+GLAPI void APIENTRY glXGetSelectedEvent(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXDrawable drawable,
+    [[maybe_unused]] unsigned long* mask)
 {
     SPDLOG_WARN("glXGetSelectedEvent not implemented");
 }
 
-GLAPI __GLXextFuncPtr APIENTRY glXGetProcAddressARB(const GLubyte* s)
+GLAPI __GLXextFuncPtr APIENTRY glXGetProcAddressARB([[maybe_unused]] const GLubyte* s)
 {
     SPDLOG_DEBUG("glXGetProcAddressARB {} called", s);
     return reinterpret_cast<__GLXextFuncPtr>(guard.getInst().getLibProcedure(reinterpret_cast<const char*>(s)));

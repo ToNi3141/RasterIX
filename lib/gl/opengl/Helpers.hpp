@@ -25,7 +25,7 @@
 namespace rr
 {
 
-const uint16_t* readFromColorBuffer(const GLint x, const GLint y, const GLint width, const GLint height, const bool readFromBackBuffer)
+[[maybe_unused]] static const uint16_t* readFromColorBuffer(const GLint x, const GLint y, const GLint width, const GLint height, const bool readFromBackBuffer)
 {
     const GLint cbw = RIXGL::getInstance().pipeline().getFramebufferWidth();
     const GLint cbh = RIXGL::getInstance().pipeline().getFramebufferHeight();

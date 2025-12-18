@@ -105,7 +105,6 @@ private:
 
     float calculateAttenuation(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
     float calculateSpecular(
-        const Vec4& lightPos,
         const float nDotDir,
         const Vec3& n0,
         const Vec3& dir,

@@ -236,6 +236,11 @@ public:
         return vec.data();
     }
 
+    float* data()
+    {
+        return vec.data();
+    }
+
     template <std::size_t S>
     friend bool operator==(const rr::Vec<S>& lhs, const rr::Vec<S>& rhs);
 

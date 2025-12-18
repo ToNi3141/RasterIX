@@ -21,6 +21,7 @@ TARGET = qtRasterizerFpga
 SOURCES += main.cpp\
         mainwindow.cpp \
     $${RIXGL_PATH}/RIXGL.cpp \
+    $${RIXGL_PATH}/opengl/*.cpp \
     $${RIXGL_PATH}/transform/Clipper.cpp \
     $${RIXGL_PATH}/transform/Lighting.cpp \
     $${RIXGL_PATH}/transform/TexGen.cpp \
@@ -36,7 +37,6 @@ SOURCES += main.cpp\
     $${RIXGL_PATH}/vertexpipeline/VertexPipeline.cpp \
     $${RIXGL_PATH}/vertexpipeline/RenderObj.cpp \
     $${RIXGL_PATH}/pixelpipeline/PixelPipeline.cpp \
-    $${RIXGL_PATH}/glImpl.cpp \
     $${RIXGL_PATH}/renderer/Rasterizer.cpp \
     $${RIXGL_PATH}/renderer/Renderer.cpp \
     $${RIXGL_PATH}/pixelpipeline/Fogging.cpp \
@@ -58,7 +58,8 @@ HEADERS  += mainwindow.h \
     $${RIXGL_PATH}/renderer/threadedRasterizer/* \
     $${RIXGL_PATH}/renderer/commands/* \
     $${RIXGL_PATH}/renderer/displaylist/*.hpp \
-    $${RIXGL_PATH}/../threadrunner/*.hpp
+    $${RIXGL_PATH}/../threadrunner/*.hpp \
+    $${RIXGL_PATH}/opengl/*.hpp
 
 
 # spdlog

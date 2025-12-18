@@ -19,7 +19,7 @@
 #include "ImageConverter.hpp"
 #include "MipMapGenerator.hpp"
 #include "RenderConfigs.hpp"
-#include "glImpl.h"
+#include "opengl/GLImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"
 #include "renderer/threadedRasterizer/ThreadedRasterizer.hpp"

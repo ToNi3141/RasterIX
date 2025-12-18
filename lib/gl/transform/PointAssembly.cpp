@@ -47,22 +47,22 @@ PointAssemblyCalc::Triangles PointAssemblyCalc::createPoint(const TransformingVe
     Triangles strip { vp };
 
     // Bottom-left
-    strip[0] = { center, vp.colorFront, vp.colorBack, vp.tex };
+    strip[0] = { center, vp.colorFront, vp.colorBack, vp.tex, vp.pointSize };
     strip[0].vertex[0] += -halfSizeX;
     strip[0].vertex[1] += -halfSizeY;
 
     // Bottom-right
-    strip[1] = { center, vp.colorFront, vp.colorBack, vp.tex };
+    strip[1] = { center, vp.colorFront, vp.colorBack, vp.tex, vp.pointSize };
     strip[1].vertex[0] += halfSizeX;
     strip[1].vertex[1] += -halfSizeY;
 
     // Top-right
-    strip[2] = { center, vp.colorFront, vp.colorBack, vp.tex };
+    strip[2] = { center, vp.colorFront, vp.colorBack, vp.tex, vp.pointSize };
     strip[2].vertex[0] += halfSizeX;
     strip[2].vertex[1] += halfSizeY;
 
     // Top-left
-    strip[3] = { center, vp.colorFront, vp.colorBack, vp.tex };
+    strip[3] = { center, vp.colorFront, vp.colorBack, vp.tex, vp.pointSize };
     strip[3].vertex[0] += -halfSizeX;
     strip[3].vertex[1] += halfSizeY;
 

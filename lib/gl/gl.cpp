@@ -15,9 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#define NOMINMAX // Windows workaround
 #include "gl.h"
-#include "glImpl.h"
+#include "opengl/GLImpl.h"
 
 // Wrapper
 // Open GL 1.0
