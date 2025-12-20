@@ -22,7 +22,7 @@
 #include "opengl/GLImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"
-#include "renderer/threadedRasterizer/ThreadedRasterizer.hpp"
+#include "renderer/threadedrasterizer/ThreadedRasterizer.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexBuffer.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
