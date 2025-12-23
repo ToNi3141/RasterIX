@@ -15,8 +15,10 @@
 #undef VOID // Undef void because it is defined in the tcl.h and there is a typedef in WinTypes.h (which is used for the FT2232 library)
 #include "FT60XBusConnector.hpp"
 #endif
+#if USE_SOFTWARE
+#include "SoftwareRasterizerBusConnector.hpp"
+#endif
 
-#include "VerilatorBusConnector.hpp"
 #include "NoThreadRunner.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
@@ -50,6 +52,16 @@ private:
     uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
 
     rr::VerilatorBusConnector<uint32_t> m_busConnector{reinterpret_cast<uint32_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
+#endif
+
+#if USE_SOFTWARE
+public:
+    static const uint32_t PREVIEW_WINDOW_SCALING = 1;
+    static const uint32_t RESOLUTION_W = 640;
+    static const uint32_t RESOLUTION_H = 480;
+private:
+    uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
+    rr::SoftwareRasterizerBusConnector<> m_busConnector{m_framebuffer, RESOLUTION_W, RESOLUTION_H};
 #endif
 
 #if USE_HARDWARE

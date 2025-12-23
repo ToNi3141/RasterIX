@@ -22,6 +22,7 @@
 #include "opengl/GLImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"
+#include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
 #include "renderer/threadedrasterizer/ThreadedRasterizer.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexBuffer.hpp"
@@ -46,10 +47,10 @@ RIXGL& RIXGL::getInstance()
     return *instance;
 }
 
-class WithThreadedRasterization
+class ThreadedHardwareRasterizer
 {
 public:
-    WithThreadedRasterization(IBusConnector& busConnector, IThreadRunner& uploadThread, IThreadRunner& workerThread)
+    ThreadedHardwareRasterizer(IBusConnector& busConnector, IThreadRunner& uploadThread, IThreadRunner& workerThread)
         : dmaStreamEngine { busConnector }
         , device { dmaStreamEngine, uploadThread, workerThread }
     {
@@ -65,10 +66,10 @@ public:
     ThreadedRasterizer device;
 };
 
-class OnlyDse
+class HardwareRasterizer
 {
 public:
-    OnlyDse(IBusConnector& busConnector, IThreadRunner&, IThreadRunner&)
+    HardwareRasterizer(IBusConnector& busConnector, IThreadRunner&, IThreadRunner&)
         : device { busConnector }
     {
     }
@@ -79,6 +80,41 @@ public:
     }
 
     DSEC::DmaStreamEngine device;
+};
+
+class SoftwareRasterizer
+{
+public:
+    SoftwareRasterizer(IBusConnector& busConnector, IThreadRunner&, IThreadRunner&)
+        : device { busConnector }
+    {
+    }
+
+    void deinit()
+    {
+        device.deinit();
+    }
+
+    softwarerasterizer::SoftwareRasterizer device;
+};
+
+class ThreadedSoftwareRasterizer
+{
+public:
+    ThreadedSoftwareRasterizer(IBusConnector& busConnector, IThreadRunner& uploadThread, IThreadRunner& workerThread)
+        : rasterizer { busConnector }
+        , device { rasterizer, uploadThread, workerThread }
+    {
+    }
+
+    void deinit()
+    {
+        device.deinit();
+        rasterizer.deinit();
+    }
+
+    softwarerasterizer::SoftwareRasterizer rasterizer;
+    ThreadedRasterizer device;
 };
 
 class RenderDevice
@@ -98,7 +134,9 @@ public:
         device.deinit();
     }
 
-    using Device = std::conditional<RenderConfig::THREADED_RASTERIZATION, WithThreadedRasterization, OnlyDse>::type;
+    using ThreadedHwDevice = std::conditional<RenderConfig::THREADED_RASTERIZATION, ThreadedHardwareRasterizer, HardwareRasterizer>::type;
+    using ThreadedSwDevice = std::conditional<RenderConfig::THREADED_RASTERIZATION, ThreadedSoftwareRasterizer, SoftwareRasterizer>::type;
+    using Device = std::conditional<RenderConfig::SOFTWARE_RASTERIZATION, ThreadedSwDevice, ThreadedHwDevice>::type;
 
     Device device;
     PixelPipeline pixelPipeline;

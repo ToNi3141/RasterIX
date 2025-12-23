@@ -54,7 +54,7 @@ static constexpr uint32_t DEVICE_MIN_TRANSFER_SIZE { 64 }; // The DSE only suppo
 struct Command
 {
 #pragma pack(push, 4)
-    uint32_t op;
+    SCT op;
     uint32_t addr;
 #pragma pack(pop)
 };

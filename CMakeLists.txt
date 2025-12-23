@@ -13,6 +13,7 @@ option(RIX_DRIVER_FT60X "Includes a driver for a FT60X bus connector" OFF)
 option(RIX_DRIVER_VERILATOR "Includes a driver for the Verilator simulation" OFF)
 option(RIX_DRIVER_DMA_PROXY "Includes a driver for the DMA Proxy bus connector" OFF)
 option(RIX_DRIVER_STANDALONE_XIL_CDMA "Includes a driver for the Xilinx CDMA bus connector" OFF)
+option(RIX_DRIVER_SOFTWARE_RASTERIZER "Includes a driver for the Software Rasterizer" OFF)
 # Enables logging
 option(RIX_ENABLE_SPDLOG "Enables logging via the spdlog library" OFF)
 
@@ -46,6 +47,7 @@ set(RIX_CORE_ENABLE_VSYNC "false" CACHE STRING "Enables vsync. Requires two fram
 set(RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE "1024 * 1024 * 4" CACHE STRING "Sets the size of the display list. Bigger lists are required for the IF config. The EF config allows smaller lists because of intermediate uploads.")
 set(RIX_CORE_MAX_VBO_COUNT "256" CACHE STRING "The maximum number of VBOs")
 set(RIX_CORE_PERFORMANCE_MODE "false" CACHE STRING "Can increase the rendering performance by sacrificing compatibility.")
+set(RIX_CORE_SOFTWARE_RASTERIZATION "false" CACHE STRING "Enables software rasterization")
 
 set(CMAKE_CXX_STANDARD 17)
 

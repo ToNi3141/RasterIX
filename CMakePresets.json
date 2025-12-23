@@ -33,7 +33,8 @@
                 "RIX_CORE_THREADED_RASTERIZATION": "true",
                 "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "1024 * 1024 * 16",
                 "RIX_CORE_ENABLE_VSYNC": "false",
-                "RIX_CORE_PERFORMANCE_MODE": "true"
+                "RIX_CORE_PERFORMANCE_MODE": "true",
+                "RIX_CORE_SOFTWARE_RASTERIZATION": "false"
             }
         },
         {
@@ -88,7 +89,8 @@
                 "RIX_CORE_THREADED_RASTERIZATION": "true",
                 "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "1024 * 1024 * 4",
                 "RIX_CORE_ENABLE_VSYNC": "false",
-                "RIX_CORE_PERFORMANCE_MODE": "true"
+                "RIX_CORE_PERFORMANCE_MODE": "true",
+                "RIX_CORE_SOFTWARE_RASTERIZATION": "false"
             }
         },
         {
@@ -126,6 +128,34 @@
             {
                 "RIX_CORE_TMU_COUNT": "1",
                 "RIX_CORE_MAX_TEXTURE_SIZE": "128",
+                "RIX_CORE_ENABLE_MIPMAPPING": "true",
+                "RIX_CORE_MAX_DISPLAY_WIDTH": "320",
+                "RIX_CORE_MAX_DISPLAY_HEIGHT": "240",
+                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
+                "RIX_CORE_USE_FLOAT_INTERPOLATION": "false",
+                "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "68",
+                "RIX_CORE_NUMBER_OF_TEXTURES": "68",
+                "RIX_CORE_TEXTURE_PAGE_SIZE": "2048",
+                "RIX_CORE_GRAM_MEMORY_LOC": "0x0",
+                "RIX_CORE_COLOR_BUFFER_LOC_0": "0x35000",
+                "RIX_CORE_COLOR_BUFFER_LOC_1": "0x35000",
+                "RIX_CORE_COLOR_BUFFER_LOC_2": "0x35000",
+                "RIX_CORE_DEPTH_BUFFER_LOC": "0x5A800",
+                "RIX_CORE_STENCIL_BUFFER_LOC": "0x22400",
+                "RIX_CORE_THREADED_RASTERIZATION": "false",
+                "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "0",
+                "RIX_CORE_ENABLE_VSYNC": "false",
+                "RIX_CORE_MAX_VBO_COUNT": "4"
+            }
+        },
+        {
+            "name": "softwarerasterizer",
+            "hidden": true,
+            "description": "Configuration for the software rasterizer",
+            "cacheVariables": 
+            {
+                "RIX_CORE_TMU_COUNT": "2",
+                "RIX_CORE_MAX_TEXTURE_SIZE": "256",
                 "RIX_CORE_ENABLE_MIPMAPPING": "true",
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "320",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "240",

@@ -34,7 +34,7 @@ void MainWindow::newFrame()
 
     rr::RIXGL::getInstance().swapDisplayList();
 
-#if USE_SIMULATION
+#if USE_SIMULATION || USE_SOFTWARE
     for (uint32_t i = 0; i < RESOLUTION_H; i++)
     {
         for (uint32_t j = 0; j < RESOLUTION_W; j++)
