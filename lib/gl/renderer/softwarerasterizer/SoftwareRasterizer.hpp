@@ -166,7 +166,7 @@ private:
                 const uint16_t color = ((colorR >> 3) << 11) | ((colorG >> 2) << 5) | ((colorB >> 3) << 0);
                 const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
                 const uint16_t depthInterp = static_cast<uint16_t>(interpolatedAttributes.depthZ * 65535.0f);
-                if (depthInterp >= depth)
+                if (depthInterp <= depth)
                 {
                     m_depthBuffer.writeFragment(depthInterp, fmd.index);
                     m_colorBuffer.writeFragment(color, fmd.index);
@@ -246,6 +246,7 @@ private:
 
     bool handleRegister(const DepthBufferClearDepthReg& reg)
     {
+        m_depthBuffer.setClearColor(reg.getValue());
         return true;
     }
 
@@ -294,6 +295,7 @@ private:
 
     bool handleRegister(const StencilReg& reg)
     {
+        m_stencilBuffer.setClearColor(reg.getClearStencil());
         return true;
     }
 
