@@ -273,12 +273,12 @@ private:
     int32_t m_x {};
     int32_t m_y {};
 
-    uint32_t m_yScreen {};
-    uint32_t m_yScreenEnd {};
-    uint32_t m_bbStartX {};
-    uint32_t m_bbEndX {};
-    uint32_t m_bbStartY {};
-    uint32_t m_yLineResolution {};
+    int32_t m_yScreen {};
+    int32_t m_yScreenEnd {};
+    int32_t m_bbStartX {};
+    int32_t m_bbEndX {};
+    int32_t m_bbStartY {};
+    int32_t m_yLineResolution {};
 
     EdgeWalkerDirection m_dir {};
     EdgeWalkerState m_state {};

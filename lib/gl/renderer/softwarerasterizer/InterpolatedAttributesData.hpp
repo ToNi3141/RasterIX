@@ -15,23 +15,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _FRAGMENT_DATA_HPP_
-#define _FRAGMENT_DATA_HPP_
+#ifndef _INTERPOLATED_ATTRIBUTES_DATA_HPP_
+#define _INTERPOLATED_ATTRIBUTES_DATA_HPP_
 
+#include "RenderConfigs.hpp"
 #include <cstdint>
 
 namespace rr::softwarerasterizer
 {
-struct FragmentData
+struct InterpolatedAttributesData
 {
-    const bool hit;
-    std::size_t index;
-    const int32_t bbx;
-    const int32_t bby;
-    const int32_t spx;
-    const int32_t spy;
+    struct Texture
+    {
+        float s; // S16.15
+        float t; // S16.15
+        float q; // S16.15
+    };
+    std::array<Texture, RenderConfig::TMU_COUNT> tex;
+    std::array<Texture, RenderConfig::TMU_COUNT> texMipmap;
+    float depthW;
+    float depthZ; // Q16.16
+    float colorR; // Qn.0
+    float colorG; // Qn.0
+    float colorB; // Qn.0
+    float colorA; // Qn.0
 };
 
 } // namespace rr::softwarerasterizer
 
-#endif // _FRAGMENT_DATA_HPP_
+#endif // _INTERPOLATED_ATTRIBUTES_DATA_HPP_

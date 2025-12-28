@@ -30,6 +30,7 @@
 #include "renderer/registers/BaseColorReg.hpp"
 #include "renderer/registers/RegisterVariant.hpp"
 
+#include "AttributeInterpolator.hpp"
 #include "Framebuffer.hpp"
 #include "Rasterizer.hpp"
 #include "ResolutionData.hpp"
@@ -151,13 +152,25 @@ private:
 
     bool handleCommand(const TriangleStreamCmd& cmd)
     {
-        m_rasterizer.init(cmd.payload()[0]);
+        m_attributesData = cmd.payload()[0];
+        m_rasterizer.init(m_attributesData);
         while (!m_rasterizer.isDone())
         {
-            FragmentData fmd = m_rasterizer.hit();
+            const FragmentData fmd = m_rasterizer.hit();
             if (fmd.hit)
             {
-                m_colorBuffer.writeFragment(0x0, fmd.index);
+                InterpolatedAttributesData interpolatedAttributes = m_attributeInterpolator.interpolate(fmd.bbx, fmd.bby);
+                const uint16_t colorR = static_cast<uint16_t>(interpolatedAttributes.colorR * 255.0f);
+                const uint16_t colorG = static_cast<uint16_t>(interpolatedAttributes.colorG * 255.0f);
+                const uint16_t colorB = static_cast<uint16_t>(interpolatedAttributes.colorB * 255.0f);
+                const uint16_t color = ((colorR >> 3) << 11) | ((colorG >> 2) << 5) | ((colorB >> 3) << 0);
+                const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
+                const uint16_t depthInterp = static_cast<uint16_t>(interpolatedAttributes.depthZ * 65535.0f);
+                if (depthInterp >= depth)
+                {
+                    m_depthBuffer.writeFragment(depthInterp, fmd.index);
+                    m_colorBuffer.writeFragment(color, fmd.index);
+                }
             }
             m_rasterizer.walk();
         }
@@ -317,11 +330,13 @@ private:
 
     ScissorData m_scissorData {};
     ResolutionData m_resolutionData {};
+    TriangleStreamTypes::TriangleDesc m_attributesData {};
 
     Framebuffer<uint16_t> m_colorBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint16_t> m_depthBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint8_t> m_stencilBuffer { m_scissorData, m_resolutionData };
     Rasterizer m_rasterizer { m_resolutionData };
+    AttributeInterpolator m_attributeInterpolator { m_attributesData };
 };
 
 } // namespace rr::softwarerasterizer

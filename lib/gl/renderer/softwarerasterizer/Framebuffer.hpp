@@ -76,6 +76,11 @@ public:
         m_gram[index + m_address] = fragment;
     }
 
+    FBType readFragment(std::size_t index) const
+    {
+        return m_gram[index + m_address];
+    }
+
 private:
     tcb::span<FBType> m_gram {};
     uint32_t m_address {};
