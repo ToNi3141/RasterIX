@@ -73,18 +73,32 @@ public:
 
     void writeFragment(const FBType fragment, std::size_t index)
     {
+        if (!m_enable)
+        {
+            return;
+        }
         m_gram[index + m_address] = fragment;
     }
 
     FBType readFragment(std::size_t index) const
     {
+        if (!m_enable)
+        {
+            return m_clearColor;
+        }
         return m_gram[index + m_address];
+    }
+
+    void setEnable(const bool enable)
+    {
+        m_enable = enable;
     }
 
 private:
     tcb::span<FBType> m_gram {};
     uint32_t m_address {};
     FBType m_clearColor {};
+    bool m_enable { true };
 
     const ResolutionData& m_resolutionData {};
     const ScissorData& m_scissorData {};

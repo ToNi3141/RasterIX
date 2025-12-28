@@ -35,6 +35,7 @@
 #include "Rasterizer.hpp"
 #include "ResolutionData.hpp"
 #include "ScissorData.hpp"
+#include "TestFunc.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -166,7 +167,9 @@ private:
                 const uint16_t color = ((colorR >> 3) << 11) | ((colorG >> 2) << 5) | ((colorB >> 3) << 0);
                 const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
                 const uint16_t depthInterp = static_cast<uint16_t>(interpolatedAttributes.depthZ * 65535.0f);
-                if (depthInterp <= depth)
+                const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
+                m_depthFunc.setReferenceValue(depth);
+                if (m_depthFunc.check(depthInterp) && m_stencilFunc.check(stencil))
                 {
                     m_depthBuffer.writeFragment(depthInterp, fmd.index);
                     m_colorBuffer.writeFragment(color, fmd.index);
@@ -253,6 +256,11 @@ private:
     bool handleRegister(const FeatureEnableReg& reg)
     {
         m_scissorData.enabled = reg.getEnableScissor();
+        m_alphaFunc.setEnable(reg.getEnableAlphaTest());
+        m_depthFunc.setEnable(reg.getEnableDepthTest());
+        m_depthBuffer.setEnable(reg.getEnableDepthTest());
+        m_stencilFunc.setEnable(reg.getEnableStencilTest());
+        m_stencilBuffer.setEnable(reg.getEnableStencilTest());
         return true;
     }
 
@@ -263,6 +271,10 @@ private:
 
     bool handleRegister(const FragmentPipelineReg& reg)
     {
+        m_alphaFunc.setFunction(reg.getAlphaFunc());
+        m_alphaFunc.setReferenceValue(reg.getRefAlphaValue());
+        m_depthFunc.setFunction(reg.getDepthFunc());
+        // todo: depth and color mask
         return true;
     }
 
@@ -296,6 +308,9 @@ private:
     bool handleRegister(const StencilReg& reg)
     {
         m_stencilBuffer.setClearColor(reg.getClearStencil());
+        m_stencilFunc.setReferenceValue(reg.getRef());
+        m_stencilFunc.setFunction(reg.getTestFunc());
+        // TODO: stencil mask
         return true;
     }
 
@@ -337,6 +352,9 @@ private:
     Framebuffer<uint16_t> m_colorBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint16_t> m_depthBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint8_t> m_stencilBuffer { m_scissorData, m_resolutionData };
+    TestFunc<uint16_t> m_depthFunc {};
+    TestFunc<uint8_t> m_stencilFunc {};
+    TestFunc<uint8_t> m_alphaFunc {};
     Rasterizer m_rasterizer { m_resolutionData };
     AttributeInterpolator m_attributeInterpolator { m_attributesData };
 };
