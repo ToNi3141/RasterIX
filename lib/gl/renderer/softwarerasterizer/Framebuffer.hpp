@@ -39,15 +39,21 @@ public:
 
     void setGRAM(tcb::span<uint8_t> gram)
     {
-        m_gram = {
-            reinterpret_cast<FBType*>(gram.subspan(m_address).data()),
-            gram.size() / sizeof(FBType)
-        };
+        m_gram = gram;
     }
 
     void setAddress(const uint32_t addr)
     {
         m_address = addr / sizeof(FBType);
+        m_fb = {
+            reinterpret_cast<FBType*>(m_gram.subspan(m_address).data()),
+            m_gram.size() / sizeof(FBType)
+        };
+    }
+
+    uint32_t getAddress() const
+    {
+        return m_address;
     }
 
     void setClearColor(const FBType color)
@@ -66,7 +72,7 @@ public:
             for (std::size_t x = startX; x < endX; x++)
             {
                 const std::size_t fbPos = x + ((m_resolutionData.y - y - 1) * m_resolutionData.x);
-                m_gram[fbPos + m_address] = m_clearColor;
+                m_fb[fbPos] = m_clearColor;
             }
         }
     }
@@ -77,7 +83,7 @@ public:
         {
             return;
         }
-        m_gram[index + m_address] = fragment;
+        m_fb[index] = fragment;
     }
 
     FBType readFragment(std::size_t index) const
@@ -86,7 +92,7 @@ public:
         {
             return m_clearColor;
         }
-        return m_gram[index + m_address];
+        return m_fb[index];
     }
 
     void setEnable(const bool enable)
@@ -95,7 +101,8 @@ public:
     }
 
 private:
-    tcb::span<FBType> m_gram {};
+    tcb::span<uint8_t> m_gram {};
+    tcb::span<FBType> m_fb {};
     uint32_t m_address {};
     FBType m_clearColor {};
     bool m_enable { true };

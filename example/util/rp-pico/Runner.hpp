@@ -23,11 +23,11 @@ public:
 
     virtual ~BusConnector() = default;
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override
+    virtual void writeData(const uint8_t index, const uint32_t size, const uint32_t offset) override
     {
         tcb::span<const uint8_t> data = requestWriteBuffer(index);
         uint32_t dataToSend = size;
-        uint32_t counter = 0;
+        uint32_t counter = offset;
         while (dataToSend != 0)
         {
             blockUntilTransferIsComplete();

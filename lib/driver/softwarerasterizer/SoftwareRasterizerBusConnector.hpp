@@ -36,10 +36,10 @@ public:
     {
     }
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override
+    virtual void writeData(const uint8_t index, const uint32_t size, const uint32_t offset) override
     {
         tcb::span<uint8_t> buffer8 = this->requestWriteBuffer(index);
-        tcb::span<uint16_t> buffer16 = tcb::span<uint16_t>(reinterpret_cast<uint16_t*>(buffer8.data()), size / sizeof(uint16_t));
+        tcb::span<uint16_t> buffer16 = tcb::span<uint16_t>(reinterpret_cast<uint16_t*>(buffer8.subspan(offset).data()), size / sizeof(uint16_t));
 
         for (std::size_t i = 0; i < buffer16.size(); i++)
         {

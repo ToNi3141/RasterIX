@@ -32,10 +32,10 @@ public:
         clk();
     }
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override
+    virtual void writeData(const uint8_t index, const uint32_t size, const uint32_t offset) override
     {
         // Convert data to 32 bit variables to ease the access
-        const uint32_t* data32 = reinterpret_cast<const uint32_t*>(this->m_dlMemTx[index].data());
+        const uint32_t* data32 = reinterpret_cast<const uint32_t*>(this->m_dlMemTx[index].data() + offset);
         const uint32_t bytes32 = size / sizeof(*data32);
         for (uint32_t i = 0; i < bytes32;)
         {

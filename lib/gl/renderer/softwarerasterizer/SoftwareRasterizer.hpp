@@ -132,8 +132,7 @@ private:
         {
             if (cmd.getSelectColorBuffer())
             {
-                // TODO: Get address from the color buffer
-                m_busConnector.writeData(0, m_resolutionData.x * m_resolutionData.y * 2);
+                m_busConnector.writeData(0, m_resolutionData.x * m_resolutionData.y * 2, m_colorBuffer.getAddress());
             }
             return true;
         }
