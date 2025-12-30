@@ -231,6 +231,14 @@ public:
         }
     }
 
+    void clamp(const float minVal, const float maxVal)
+    {
+        for (std::size_t i = 0; i < VecSize; i++)
+        {
+            vec[i] = std::clamp(vec[i], minVal, maxVal);
+        }
+    }
+
     const float* data() const
     {
         return vec.data();

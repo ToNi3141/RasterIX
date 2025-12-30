@@ -57,6 +57,7 @@ public:
     void deserialize(const uint32_t data) { m_regVal.data = data; }
     uint32_t getAddr() const { return getAddr(m_tmu); }
     static constexpr uint32_t getAddr(const std::size_t tmu) { return 0xC + (tmu * TMU_OFFSET); }
+    std::size_t getTmuFromAddr() const { return (getAddr() - 0xC) / TMU_OFFSET; }
 
 private:
     static constexpr std::size_t TMU_OFFSET { 3 };

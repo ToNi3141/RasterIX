@@ -37,6 +37,7 @@
 #include "ScissorData.hpp"
 #include "SoftwareRasterizerHelpers.hpp"
 #include "TestFunc.hpp"
+#include "TexEnv.hpp"
 #include "TextureMapper.hpp"
 
 #include <spdlog/spdlog.h>
@@ -54,7 +55,8 @@ public:
         m_colorBuffer.setGRAM(m_gram);
         m_depthBuffer.setGRAM(m_gram);
         m_stencilBuffer.setGRAM(m_gram);
-        m_textureMapper.setGRAM(m_gram);
+        m_textureMapper[0].setGRAM(m_gram);
+        m_textureMapper[1].setGRAM(m_gram);
         SPDLOG_INFO("Software rasterization enabled");
     }
 
@@ -166,13 +168,16 @@ private:
                 InterpolatedAttributesData interpolatedAttributes = m_attributeInterpolator.interpolate(fmd.bbx, fmd.bby);
                 const float depth = softwarerasterizerhelpers::deserializeDepth(m_depthBuffer.readFragment(fmd.index));
                 const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
-                const Vec4 texel = m_textureMapper.getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
+                const Vec4 texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
+                const Vec4 texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
                 m_depthFunc.setReferenceValue(depth);
+                Vec4 texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
+                Vec4 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
                 if (m_depthFunc.check(interpolatedAttributes.depthZ) && m_stencilFunc.check(stencil))
                 {
                     m_depthBuffer.writeFragment(softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ), fmd.index);
                     // m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(interpolatedAttributes.color), fmd.index);
-                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(texel), fmd.index);
+                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(texEnvTexel1), fmd.index);
                 }
             }
             m_rasterizer.walk();
@@ -213,7 +218,7 @@ private:
 
     bool handleCommand(const TextureStreamCmd& cmd)
     {
-        m_textureMapper.setPages(cmd.payload());
+        m_textureMapper[cmd.getTmu()].setPages(cmd.payload());
         return true;
     }
 
@@ -262,6 +267,10 @@ private:
         m_depthBuffer.setEnable(reg.getEnableDepthTest());
         m_stencilFunc.setEnable(reg.getEnableStencilTest());
         m_stencilBuffer.setEnable(reg.getEnableStencilTest());
+        m_textureMapper[0].setEnable(reg.getEnableTmu(0));
+        m_textureMapper[1].setEnable(reg.getEnableTmu(1));
+        m_texEnv[0].setEnable(reg.getEnableTmu(0));
+        m_texEnv[1].setEnable(reg.getEnableTmu(1));
         return true;
     }
 
@@ -317,21 +326,38 @@ private:
 
     bool handleRegister(const TexEnvColorReg& reg)
     {
+        m_texEnv[reg.getTmuFromAddr()].setEnvColor(reg.getColorf());
         return true;
     }
 
     bool handleRegister(const TexEnvReg& reg)
     {
+        m_texEnv[reg.getTmuFromAddr()].setCombineRgb(reg.getCombineRgb());
+        m_texEnv[reg.getTmuFromAddr()].setCombineAlpha(reg.getCombineAlpha());
+        m_texEnv[reg.getTmuFromAddr()].setSrcRegRgb0(reg.getSrcRegRgb0());
+        m_texEnv[reg.getTmuFromAddr()].setSrcRegRgb1(reg.getSrcRegRgb1());
+        m_texEnv[reg.getTmuFromAddr()].setSrcRegRgb2(reg.getSrcRegRgb2());
+        m_texEnv[reg.getTmuFromAddr()].setSrcRegAlpha0(reg.getSrcRegAlpha0());
+        m_texEnv[reg.getTmuFromAddr()].setSrcRegAlpha1(reg.getSrcRegAlpha1());
+        m_texEnv[reg.getTmuFromAddr()].setSrcRegAlpha2(reg.getSrcRegAlpha2());
+        m_texEnv[reg.getTmuFromAddr()].setOperandRgb0(reg.getOperandRgb0());
+        m_texEnv[reg.getTmuFromAddr()].setOperandRgb1(reg.getOperandRgb1());
+        m_texEnv[reg.getTmuFromAddr()].setOperandRgb2(reg.getOperandRgb2());
+        m_texEnv[reg.getTmuFromAddr()].setOperandAlpha0(reg.getOperandAlpha0());
+        m_texEnv[reg.getTmuFromAddr()].setOperandAlpha1(reg.getOperandAlpha1());
+        m_texEnv[reg.getTmuFromAddr()].setOperandAlpha2(reg.getOperandAlpha2());
+        m_texEnv[reg.getTmuFromAddr()].setShiftRgb(reg.getShiftRgb());
+        m_texEnv[reg.getTmuFromAddr()].setShiftAlpha(reg.getShiftAlpha());
         return true;
     }
 
     bool handleRegister(const TmuTextureReg& reg)
     {
-        m_textureMapper.setTextureSize(reg.getTextureWidth(), reg.getTextureHeight());
-        m_textureMapper.setWrapMode(reg.getWrapModeS(), reg.getWrapModeT());
-        m_textureMapper.setEnableMagFilter(reg.getEnableMagFilter());
-        m_textureMapper.setEnableMinFilter(reg.getEnableMinFilter());
-        m_textureMapper.setPixelFormat(reg.getPixelFormat());
+        m_textureMapper[reg.getTmuFromAddr()].setTextureSize(reg.getTextureWidth(), reg.getTextureHeight());
+        m_textureMapper[reg.getTmuFromAddr()].setWrapMode(reg.getWrapModeS(), reg.getWrapModeT());
+        m_textureMapper[reg.getTmuFromAddr()].setEnableMagFilter(reg.getEnableMagFilter());
+        m_textureMapper[reg.getTmuFromAddr()].setEnableMinFilter(reg.getEnableMinFilter());
+        m_textureMapper[reg.getTmuFromAddr()].setPixelFormat(reg.getPixelFormat());
         return true;
     }
 
@@ -363,7 +389,8 @@ private:
     TestFunc<float> m_alphaFunc {};
     Rasterizer m_rasterizer { m_resolutionData };
     AttributeInterpolator m_attributeInterpolator { m_attributesData };
-    TextureMapper m_textureMapper {};
+    std::array<TextureMapper, 2> m_textureMapper {};
+    std::array<TexEnv, 2> m_texEnv {};
 };
 
 } // namespace rr::softwarerasterizer

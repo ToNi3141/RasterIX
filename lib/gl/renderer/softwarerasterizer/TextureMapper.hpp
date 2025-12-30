@@ -38,6 +38,11 @@ public:
 
     Vec4 getTexel(const float s, const float t) const
     {
+        if (!m_enable)
+        {
+            return Vec4::createHomogeneous();
+        }
+
         // TODO: Mipmapping (m_enableMinFilter)
         if (m_enableMagFilter)
         {
@@ -79,6 +84,11 @@ public:
     void setPixelFormat(const DevicePixelFormat format)
     {
         m_pixelFormat = format;
+    }
+
+    void setEnable(const bool enable)
+    {
+        m_enable = enable;
     }
 
 private:
@@ -158,6 +168,8 @@ private:
     bool m_enableMinFilter { false };
 
     DevicePixelFormat m_pixelFormat { DevicePixelFormat::RGBA4444 };
+
+    bool m_enable { false };
 };
 
 } // namespace rr::softwarerasterizer
