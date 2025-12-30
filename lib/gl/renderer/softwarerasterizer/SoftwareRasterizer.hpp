@@ -35,7 +35,9 @@
 #include "Rasterizer.hpp"
 #include "ResolutionData.hpp"
 #include "ScissorData.hpp"
+#include "SoftwareRasterizerHelpers.hpp"
 #include "TestFunc.hpp"
+#include "TextureMapper.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -52,6 +54,7 @@ public:
         m_colorBuffer.setGRAM(m_gram);
         m_depthBuffer.setGRAM(m_gram);
         m_stencilBuffer.setGRAM(m_gram);
+        m_textureMapper.setGRAM(m_gram);
         SPDLOG_INFO("Software rasterization enabled");
     }
 
@@ -81,6 +84,7 @@ public:
 
     bool writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
     {
+        std::copy(data.begin(), data.end(), m_gram.data() + addr - RenderConfig::GRAM_MEMORY_LOC);
         return true;
     }
 
@@ -160,18 +164,15 @@ private:
             if (fmd.hit)
             {
                 InterpolatedAttributesData interpolatedAttributes = m_attributeInterpolator.interpolate(fmd.bbx, fmd.bby);
-                const uint16_t colorR = static_cast<uint16_t>(interpolatedAttributes.colorR * 255.0f);
-                const uint16_t colorG = static_cast<uint16_t>(interpolatedAttributes.colorG * 255.0f);
-                const uint16_t colorB = static_cast<uint16_t>(interpolatedAttributes.colorB * 255.0f);
-                const uint16_t color = ((colorR >> 3) << 11) | ((colorG >> 2) << 5) | ((colorB >> 3) << 0);
-                const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
-                const uint16_t depthInterp = static_cast<uint16_t>(interpolatedAttributes.depthZ * 65535.0f);
+                const float depth = softwarerasterizerhelpers::deserializeDepth(m_depthBuffer.readFragment(fmd.index));
                 const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
+                const Vec4 texel = m_textureMapper.getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
                 m_depthFunc.setReferenceValue(depth);
-                if (m_depthFunc.check(depthInterp) && m_stencilFunc.check(stencil))
+                if (m_depthFunc.check(interpolatedAttributes.depthZ) && m_stencilFunc.check(stencil))
                 {
-                    m_depthBuffer.writeFragment(depthInterp, fmd.index);
-                    m_colorBuffer.writeFragment(color, fmd.index);
+                    m_depthBuffer.writeFragment(softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ), fmd.index);
+                    // m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(interpolatedAttributes.color), fmd.index);
+                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(texel), fmd.index);
                 }
             }
             m_rasterizer.walk();
@@ -212,6 +213,7 @@ private:
 
     bool handleCommand(const TextureStreamCmd& cmd)
     {
+        m_textureMapper.setPages(cmd.payload());
         return true;
     }
 
@@ -271,7 +273,7 @@ private:
     bool handleRegister(const FragmentPipelineReg& reg)
     {
         m_alphaFunc.setFunction(reg.getAlphaFunc());
-        m_alphaFunc.setReferenceValue(reg.getRefAlphaValue());
+        m_alphaFunc.setReferenceValue(static_cast<float>(reg.getRefAlphaValue()) / 255.0f);
         m_depthFunc.setFunction(reg.getDepthFunc());
         // todo: depth and color mask
         return true;
@@ -325,6 +327,11 @@ private:
 
     bool handleRegister(const TmuTextureReg& reg)
     {
+        m_textureMapper.setTextureSize(reg.getTextureWidth(), reg.getTextureHeight());
+        m_textureMapper.setWrapMode(reg.getWrapModeS(), reg.getWrapModeT());
+        m_textureMapper.setEnableMagFilter(reg.getEnableMagFilter());
+        m_textureMapper.setEnableMinFilter(reg.getEnableMinFilter());
+        m_textureMapper.setPixelFormat(reg.getPixelFormat());
         return true;
     }
 
@@ -351,11 +358,12 @@ private:
     Framebuffer<uint16_t> m_colorBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint16_t> m_depthBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint8_t> m_stencilBuffer { m_scissorData, m_resolutionData };
-    TestFunc<uint16_t> m_depthFunc {};
+    TestFunc<float> m_depthFunc {};
     TestFunc<uint8_t> m_stencilFunc {};
-    TestFunc<uint8_t> m_alphaFunc {};
+    TestFunc<float> m_alphaFunc {};
     Rasterizer m_rasterizer { m_resolutionData };
     AttributeInterpolator m_attributeInterpolator { m_attributesData };
+    TextureMapper m_textureMapper {};
 };
 
 } // namespace rr::softwarerasterizer

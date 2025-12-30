@@ -156,5 +156,7 @@ using VecInt = int32_t;
 using Vec2i = Veci<VecInt, 2>;
 using Vec3i = Veci<VecInt, 3>;
 using Vec4i = Veci<VecInt, 4>;
+
+using Vec4ui8 = Veci<uint8_t, 4>;
 } // namespace rr
 #endif // VECI_HPP

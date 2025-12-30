@@ -38,8 +38,8 @@ public:
     TmuTextureReg() = default;
     void setTextureWidth(const uint16_t val) { m_regVal.fields.texWidth = static_cast<uint32_t>(log2f(static_cast<float>(val))); }
     void setTextureHeight(const uint16_t val) { m_regVal.fields.texHeight = static_cast<uint32_t>(log2f(static_cast<float>(val))); }
-    void setWarpModeS(const TextureWrapMode val) { m_regVal.fields.wrapModeS = static_cast<uint32_t>(val); }
-    void setWarpModeT(const TextureWrapMode val) { m_regVal.fields.wrapModeT = static_cast<uint32_t>(val); }
+    void setWrapModeS(const TextureWrapMode val) { m_regVal.fields.wrapModeS = static_cast<uint32_t>(val); }
+    void setWrapModeT(const TextureWrapMode val) { m_regVal.fields.wrapModeT = static_cast<uint32_t>(val); }
     void setEnableMagFilter(const bool val) { m_regVal.fields.enableMagFilter = val; }
     void setEnableMinFilter(const bool val) { m_regVal.fields.enableMinFilter = val; }
     void setPixelFormat(const DevicePixelFormat val) { m_regVal.fields.pixelFormat = static_cast<uint32_t>(val); }

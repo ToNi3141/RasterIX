@@ -248,6 +248,15 @@ private:
     std::array<float, VecSize> vec {};
 };
 
+template <std::size_t T>
+inline Vec<T> interpolate(const Vec<T>& a, const Vec<T>& b, const float factor)
+{
+    Vec<T> t;
+    for (std::size_t i = 0; i < T; i++)
+        t[i] = a[i] + (b[i] - a[i]) * factor;
+    return t;
+}
+
 template <std::size_t S, std::size_t T>
 inline Vec<T> operator*(const Vec<S>& lhs, const Vec<T>& rhs)
 {

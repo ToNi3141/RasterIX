@@ -35,10 +35,7 @@ struct InterpolatedAttributesData
     std::array<Texture, RenderConfig::TMU_COUNT> texMipmap;
     float depthW;
     float depthZ; // Q16.16
-    float colorR; // Qn.0
-    float colorG; // Qn.0
-    float colorB; // Qn.0
-    float colorA; // Qn.0
+    Vec4 color; // Qn.0
 };
 
 } // namespace rr::softwarerasterizer

@@ -67,6 +67,12 @@ struct RenderConfig
         }
         return size;
     }
+
+    static constexpr uint32_t getMaxTexturePages()
+    {
+        constexpr float MAX_TEXTURE_SIZE_BYTES { static_cast<float>(MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE * 2.0f * 1.33f) };
+        return static_cast<uint32_t>((MAX_TEXTURE_SIZE_BYTES / static_cast<float>(TEXTURE_PAGE_SIZE)) + 1.0f);
+    }
 };
 
 } // namespace rr

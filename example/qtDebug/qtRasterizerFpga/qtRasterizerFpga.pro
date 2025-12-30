@@ -57,6 +57,7 @@ HEADERS  += mainwindow.h \
     $${RIXGL_PATH}/renderer/registers/* \
     $${RIXGL_PATH}/renderer/dse/* \
     $${RIXGL_PATH}/renderer/threadedrasterizer/* \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/* \
     $${RIXGL_PATH}/renderer/commands/* \
     $${RIXGL_PATH}/renderer/displaylist/*.hpp \
     $${RIXGL_PATH}/../threadrunner/*.hpp \
@@ -90,9 +91,9 @@ DEFINES += RIX_CORE_TEXTURE_PAGE_SIZE=4096
 # address calculations. Mostly useful for architectures with shared memory
 DEFINES += RIX_CORE_GRAM_MEMORY_LOC=0x0 # No shared memory
 # Framebuffer Memory Location
-DEFINES += RIX_CORE_COLOR_BUFFER_LOC_0=0
-DEFINES += RIX_CORE_COLOR_BUFFER_LOC_1=0
-DEFINES += RIX_CORE_COLOR_BUFFER_LOC_2=0
+DEFINES += RIX_CORE_COLOR_BUFFER_LOC_0=0x01E00000
+DEFINES += RIX_CORE_COLOR_BUFFER_LOC_1=0x01E00000
+DEFINES += RIX_CORE_COLOR_BUFFER_LOC_2=0x01C00000
 DEFINES += RIX_CORE_DEPTH_BUFFER_LOC=0x01A00000
 DEFINES += RIX_CORE_STENCIL_BUFFER_LOC=0x01900000
 DEFINES += RIX_CORE_THREADED_RASTERIZATION=true

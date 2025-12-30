@@ -92,10 +92,7 @@ public:
             .texMipmap = textureMipmap,
             .depthW = 1.0f / depthW,
             .depthZ = depthZ,
-            .colorR = std::clamp(colorR, 0.0f, 1.0f),
-            .colorG = std::clamp(colorG, 0.0f, 1.0f),
-            .colorB = std::clamp(colorB, 0.0f, 1.0f),
-            .colorA = std::clamp(colorA, 0.0f, 1.0f),
+            .color = Vec4 { std::clamp(colorR, 0.0f, 1.0f), std::clamp(colorG, 0.0f, 1.0f), std::clamp(colorB, 0.0f, 1.0f), std::clamp(colorA, 0.0f, 1.0f) },
         };
     }
 
