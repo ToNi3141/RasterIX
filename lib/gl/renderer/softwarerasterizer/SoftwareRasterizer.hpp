@@ -31,6 +31,7 @@
 #include "renderer/registers/RegisterVariant.hpp"
 
 #include "AttributeInterpolator.hpp"
+#include "Fog.hpp"
 #include "Framebuffer.hpp"
 #include "Rasterizer.hpp"
 #include "ResolutionData.hpp"
@@ -38,7 +39,7 @@
 #include "SoftwareRasterizerHelpers.hpp"
 #include "TestFunc.hpp"
 #include "TexEnv.hpp"
-#include "TextureMapper.hpp"
+#include "TextureMap.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -153,6 +154,13 @@ private:
 
     bool handleCommand(const FogLutStreamCmd& cmd)
     {
+        Fog::FogLut lut {};
+        for (std::size_t i = 0; i < lut.size(); i++)
+        {
+            lut[i].m = cmd.getLutM(i);
+            lut[i].b = cmd.getLutB(i);
+        }
+        m_fog.setFogLut(lut, cmd.getLowerBound(), cmd.getUpperBound());
         return true;
     }
 
@@ -173,11 +181,13 @@ private:
                 m_depthFunc.setReferenceValue(depth);
                 Vec4 texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
                 Vec4 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
+                Vec4 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
+
                 if (m_depthFunc.check(interpolatedAttributes.depthZ) && m_stencilFunc.check(stencil))
                 {
                     m_depthBuffer.writeFragment(softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ), fmd.index);
                     // m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(interpolatedAttributes.color), fmd.index);
-                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(texEnvTexel1), fmd.index);
+                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(foggedColor), fmd.index);
                 }
             }
             m_rasterizer.walk();
@@ -271,11 +281,13 @@ private:
         m_textureMapper[1].setEnable(reg.getEnableTmu(1));
         m_texEnv[0].setEnable(reg.getEnableTmu(0));
         m_texEnv[1].setEnable(reg.getEnableTmu(1));
+        m_fog.setEnable(reg.getEnableFog());
         return true;
     }
 
     bool handleRegister(const FogColorReg& reg)
     {
+        m_fog.setFogColor(reg.getColorf());
         return true;
     }
 
@@ -389,8 +401,9 @@ private:
     TestFunc<float> m_alphaFunc {};
     Rasterizer m_rasterizer { m_resolutionData };
     AttributeInterpolator m_attributeInterpolator { m_attributesData };
-    std::array<TextureMapper, 2> m_textureMapper {};
+    std::array<TextureMap, 2> m_textureMapper {};
     std::array<TexEnv, 2> m_texEnv {};
+    Fog m_fog {};
 };
 
 } // namespace rr::softwarerasterizer

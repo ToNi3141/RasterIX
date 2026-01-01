@@ -63,10 +63,10 @@ public:
 
     void clear()
     {
-        const std::size_t startX = (m_scissorData.enabled) ? m_scissorData.startX : 0;
-        const std::size_t endX = (m_scissorData.enabled) ? m_scissorData.endX : m_resolutionData.x;
-        const std::size_t startY = (m_scissorData.enabled) ? m_scissorData.startY : 0;
-        const std::size_t endY = (m_scissorData.enabled) ? m_scissorData.endY : m_resolutionData.y;
+        const std::size_t startX = (m_scissorData.enabled) ? std::min(m_scissorData.startX, static_cast<int32_t>(m_resolutionData.x)) : 0;
+        const std::size_t endX = (m_scissorData.enabled) ? std::min(m_scissorData.endX, static_cast<int32_t>(m_resolutionData.x)) : m_resolutionData.x;
+        const std::size_t startY = (m_scissorData.enabled) ? std::min(m_scissorData.startY, static_cast<int32_t>(m_resolutionData.y)) : 0;
+        const std::size_t endY = (m_scissorData.enabled) ? std::min(m_scissorData.endY, static_cast<int32_t>(m_resolutionData.y)) : m_resolutionData.y;
         for (std::size_t y = startY; y < endY; y++)
         {
             for (std::size_t x = startX; x < endX; x++)
