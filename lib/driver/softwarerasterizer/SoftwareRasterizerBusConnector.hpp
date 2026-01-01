@@ -29,7 +29,7 @@ class SoftwareRasterizerBusConnector : public GenericMemoryBusConnector<NUMBER_O
 public:
     virtual ~SoftwareRasterizerBusConnector() = default;
 
-    SoftwareRasterizerBusConnector(uint16_t* framebuffer, const uint16_t resolutionW = 128, const uint16_t resolutionH = 128)
+    SoftwareRasterizerBusConnector(tcb::span<uint16_t> framebuffer, const uint16_t resolutionW = 128, const uint16_t resolutionH = 128)
         : m_resolutionW { resolutionW }
         , m_resolutionH { resolutionH }
         , m_framebuffer { framebuffer }
@@ -41,7 +41,8 @@ public:
         tcb::span<uint8_t> buffer8 = this->requestWriteBuffer(index);
         tcb::span<uint16_t> buffer16 = tcb::span<uint16_t>(reinterpret_cast<uint16_t*>(buffer8.subspan(offset).data()), size / sizeof(uint16_t));
 
-        for (std::size_t i = 0; i < buffer16.size(); i++)
+        std::size_t fbSize = std::min(buffer16.size(), m_framebuffer.size());
+        for (std::size_t i = 0; i < fbSize; i++)
         {
             m_framebuffer[i] = buffer16[i];
         }
@@ -58,7 +59,7 @@ public:
 private:
     const uint16_t m_resolutionW = 128;
     const uint16_t m_resolutionH = 128;
-    uint16_t* m_framebuffer = nullptr;
+    tcb::span<uint16_t> m_framebuffer {};
 };
 
 } // namespace rr

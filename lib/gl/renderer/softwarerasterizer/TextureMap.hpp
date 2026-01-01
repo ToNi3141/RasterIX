@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _TEXTURE_MAPPER_HPP_
-#define _TEXTURE_MAPPER_HPP_
+#ifndef _TEXTURE_MAP_HPP_
+#define _TEXTURE_MAP_HPP_
 
 #include "Enums.hpp"
 #include "RenderConfigs.hpp"
@@ -28,7 +28,7 @@
 namespace rr::softwarerasterizer
 {
 
-class TextureMapper
+class TextureMap
 {
 public:
     void setGRAM(const tcb::span<const uint8_t> gram)
@@ -174,4 +174,4 @@ private:
 
 } // namespace rr::softwarerasterizer
 
-#endif // _TEXTURE_MAPPER_HPP_
+#endif // _TEXTURE_MAP_HPP_
