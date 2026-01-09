@@ -46,6 +46,7 @@ public:
         const float factor = computeFogFactor(w);
         Vec4 foggedColor = interpolate(m_fogColor, color, std::clamp(factor, 0.0f, 1.0f));
         foggedColor.clamp(0.0f, 1.0f);
+        foggedColor[3] = color[3]; // Preserve alpha
         return foggedColor;
     }
 

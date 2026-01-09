@@ -73,6 +73,15 @@ static uint16_t serializeToRgb565(const Vec4 color)
     return r | g | b;
 }
 
+static Vec4 deserializeFromRgb565(const uint16_t color)
+{
+    constexpr float inv255 = 1.0f / 255.0f;
+    const uint8_t r = ((color >> 11) & 0x1F) << 3;
+    const uint8_t g = ((color >> 5) & 0x3F) << 2;
+    const uint8_t b = ((color >> 0) & 0x1F) << 3;
+    return Vec4 { r * inv255, g * inv255, b * inv255, 1.0f };
+}
+
 static float deserializeDepth(const uint16_t depth)
 {
     return static_cast<float>(depth) / 65535.0f;

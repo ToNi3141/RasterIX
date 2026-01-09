@@ -31,6 +31,7 @@
 #include "renderer/registers/RegisterVariant.hpp"
 
 #include "AttributeInterpolator.hpp"
+#include "BlendFunc.hpp"
 #include "Fog.hpp"
 #include "Framebuffer.hpp"
 #include "Rasterizer.hpp"
@@ -176,18 +177,22 @@ private:
                 InterpolatedAttributesData interpolatedAttributes = m_attributeInterpolator.interpolate(fmd.bbx, fmd.bby);
                 const float depth = softwarerasterizerhelpers::deserializeDepth(m_depthBuffer.readFragment(fmd.index));
                 const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
-                const Vec4 texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
-                const Vec4 texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
                 m_depthFunc.setReferenceValue(depth);
-                Vec4 texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
-                Vec4 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
-                Vec4 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
 
                 if (m_depthFunc.check(interpolatedAttributes.depthZ) && m_stencilFunc.check(stencil))
                 {
+                    // Fragment processing
+                    const Vec4 texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
+                    const Vec4 texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
+                    const Vec4 texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
+                    const Vec4 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
+                    const Vec4 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
+                    const Vec4 destColor = softwarerasterizerhelpers::deserializeFromRgb565(m_colorBuffer.readFragment(fmd.index));
+                    const Vec4 blendedColor = m_blendFunc.blend(foggedColor, destColor);
+
                     m_depthBuffer.writeFragment(softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ), fmd.index);
                     // m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(interpolatedAttributes.color), fmd.index);
-                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(foggedColor), fmd.index);
+                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(blendedColor), fmd.index);
                 }
             }
             m_rasterizer.walk();
@@ -282,6 +287,7 @@ private:
         m_texEnv[0].setEnable(reg.getEnableTmu(0));
         m_texEnv[1].setEnable(reg.getEnableTmu(1));
         m_fog.setEnable(reg.getEnableFog());
+        m_blendFunc.setEnable(reg.getEnableBlending());
         return true;
     }
 
@@ -296,6 +302,8 @@ private:
         m_alphaFunc.setFunction(reg.getAlphaFunc());
         m_alphaFunc.setReferenceValue(static_cast<float>(reg.getRefAlphaValue()) / 255.0f);
         m_depthFunc.setFunction(reg.getDepthFunc());
+        m_blendFunc.setSFactor(reg.getBlendFuncSFactor());
+        m_blendFunc.setDFactor(reg.getBlendFuncDFactor());
         // todo: depth and color mask
         return true;
     }
@@ -404,6 +412,7 @@ private:
     std::array<TextureMap, 2> m_textureMapper {};
     std::array<TexEnv, 2> m_texEnv {};
     Fog m_fog {};
+    BlendFunc m_blendFunc {};
 };
 
 } // namespace rr::softwarerasterizer
