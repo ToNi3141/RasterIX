@@ -102,7 +102,7 @@ public:
     {
         Veci<T, VecSize> vec;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * (1ul << shift)) + 0.5f;
+            vec[i] = (val[i] * (static_cast<float>(1ul << shift) - 1.0f)) + 0.5f;
         return vec;
     }
 
@@ -110,7 +110,7 @@ public:
     void fromVec(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * (1ul << shift)) + 0.5f;
+            vec[i] = (val[i] * (static_cast<float>(1ul << shift) - 1.0f)) + 0.5f;
     }
 
     T& operator[](int index) { return vec[index]; }
@@ -151,6 +151,51 @@ public:
 private:
     std::array<T, VecSize> vec {};
 };
+
+template <typename T, std::size_t VecSize>
+inline Veci<T, VecSize> operator&(const Veci<T, VecSize> lhs, const Veci<T, VecSize>& rhs)
+{
+    Veci<T, VecSize> t;
+    for (std::size_t i = 0; i < VecSize; i++)
+        t[i] = lhs[i] & rhs[i];
+    return t;
+}
+
+template <typename T, std::size_t VecSize>
+inline Veci<T, VecSize> operator-(const Veci<T, VecSize>& lhs, const Veci<T, VecSize>& rhs)
+{
+    Veci<T, VecSize> t;
+    for (std::size_t i = 0; i < VecSize; i++)
+        t[i] = lhs[i] - rhs[i];
+    return t;
+}
+
+template <typename T, std::size_t VecSize>
+inline Veci<T, VecSize> operator+(const Veci<T, VecSize>& lhs, const Veci<T, VecSize>& rhs)
+{
+    Veci<T, VecSize> t;
+    for (std::size_t i = 0; i < VecSize; i++)
+        t[i] = lhs[i] + rhs[i];
+    return t;
+}
+
+template <typename T, std::size_t VecSize>
+inline Veci<T, VecSize> operator|(const Veci<T, VecSize>& lhs, const Veci<T, VecSize>& rhs)
+{
+    Veci<T, VecSize> t;
+    for (std::size_t i = 0; i < VecSize; i++)
+        t[i] = lhs[i] | rhs[i];
+    return t;
+}
+
+template <typename T, std::size_t VecSize>
+inline Veci<T, VecSize> operator^(const Veci<T, VecSize>& lhs, const Veci<T, VecSize>& rhs)
+{
+    Veci<T, VecSize> t;
+    for (std::size_t i = 0; i < VecSize; i++)
+        t[i] = lhs[i] ^ rhs[i];
+    return t;
+}
 
 using VecInt = int32_t;
 using Vec2i = Veci<VecInt, 2>;

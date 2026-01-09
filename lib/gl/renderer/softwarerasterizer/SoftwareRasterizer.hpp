@@ -34,6 +34,7 @@
 #include "BlendFunc.hpp"
 #include "Fog.hpp"
 #include "Framebuffer.hpp"
+#include "LogicOp.hpp"
 #include "Rasterizer.hpp"
 #include "ResolutionData.hpp"
 #include "ScissorData.hpp"
@@ -188,11 +189,17 @@ private:
                     const Vec4 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
                     const Vec4 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
                     const Vec4 destColor = softwarerasterizerhelpers::deserializeFromRgb565(m_colorBuffer.readFragment(fmd.index));
-                    const Vec4 blendedColor = m_blendFunc.blend(foggedColor, destColor);
-
+                    Vec4 finalColor;
+                    if (m_logicOp.getEnable())
+                    {
+                        finalColor = m_logicOp.op(foggedColor, destColor);
+                    }
+                    else
+                    {
+                        finalColor = m_blendFunc.blend(foggedColor, destColor);
+                    }
                     m_depthBuffer.writeFragment(softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ), fmd.index);
-                    // m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(interpolatedAttributes.color), fmd.index);
-                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(blendedColor), fmd.index);
+                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(finalColor), fmd.index);
                 }
             }
             m_rasterizer.walk();
@@ -288,6 +295,7 @@ private:
         m_texEnv[1].setEnable(reg.getEnableTmu(1));
         m_fog.setEnable(reg.getEnableFog());
         m_blendFunc.setEnable(reg.getEnableBlending());
+        m_logicOp.setEnable(reg.getEnableLogicOp());
         return true;
     }
 
@@ -304,6 +312,7 @@ private:
         m_depthFunc.setFunction(reg.getDepthFunc());
         m_blendFunc.setSFactor(reg.getBlendFuncSFactor());
         m_blendFunc.setDFactor(reg.getBlendFuncDFactor());
+        m_logicOp.setLogicOp(reg.getLogicOp());
         // todo: depth and color mask
         return true;
     }
@@ -413,6 +422,7 @@ private:
     std::array<TexEnv, 2> m_texEnv {};
     Fog m_fog {};
     BlendFunc m_blendFunc {};
+    LogicOp m_logicOp {};
 };
 
 } // namespace rr::softwarerasterizer

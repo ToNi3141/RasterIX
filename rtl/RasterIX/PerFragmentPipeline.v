@@ -329,7 +329,7 @@ module PerFragmentPipeline
         if (step1_valid)
         begin : step2
             reg logicOpEnable;
-            logicOpEnable = conf[RENDER_CONFIG_FRAGMENT_LOGIC_OP_POS +: RENDER_CONFIG_FRAGMENT_LOGIC_OP_SIZE];
+            logicOpEnable = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_LOGIC_OP_POS];
             
             m_frag_taddr <= step1_index;
             m_frag_tscreenPosX <= step1_screenPosX;
