@@ -26,7 +26,7 @@
 namespace rr::softwarerasterizer::softwarerasterizerhelpers
 {
 
-static Vec4ui8 deserializeTexelInt(const uint16_t texel, const DevicePixelFormat format)
+[[maybe_unused]] static Vec4ui8 deserializeTexelInt(const uint16_t texel, const DevicePixelFormat format)
 {
     Vec4ui8 color;
     switch (format)
@@ -53,7 +53,7 @@ static Vec4ui8 deserializeTexelInt(const uint16_t texel, const DevicePixelFormat
     return color;
 }
 
-static uint16_t convertColorMask(const bool r, const bool g, const bool b, const bool a, const DevicePixelFormat format)
+[[maybe_unused]] static uint16_t convertColorMask(const bool r, const bool g, const bool b, const bool a, const DevicePixelFormat format)
 {
     uint16_t mask = 0;
     switch (format)
@@ -90,12 +90,12 @@ static uint16_t convertColorMask(const bool r, const bool g, const bool b, const
     return mask;
 }
 
-static uint16_t convertDepthMask(const bool depthMask)
+[[maybe_unused]] static uint16_t convertDepthMask(const bool depthMask)
 {
     return depthMask ? 0xFFFF : 0x0000;
 }
 
-static Vec4 deserializeTexel(const uint16_t texel, const DevicePixelFormat format)
+[[maybe_unused]] static Vec4 deserializeTexel(const uint16_t texel, const DevicePixelFormat format)
 {
     constexpr float inv255 = 1.0f / 255.0f;
     Vec4ui8 colorUi8 = deserializeTexelInt(texel, format);
@@ -107,7 +107,7 @@ static Vec4 deserializeTexel(const uint16_t texel, const DevicePixelFormat forma
     return color;
 }
 
-static uint16_t serializeToRgb565(const Vec4 color)
+[[maybe_unused]] static uint16_t serializeToRgb565(const Vec4 color)
 {
     const uint16_t r = (static_cast<uint16_t>(color[0] * 255.0f) >> 3) << 11;
     const uint16_t g = (static_cast<uint16_t>(color[1] * 255.0f) >> 2) << 5;
@@ -115,7 +115,7 @@ static uint16_t serializeToRgb565(const Vec4 color)
     return r | g | b;
 }
 
-static Vec4 deserializeFromRgb565(const uint16_t color)
+[[maybe_unused]] static Vec4 deserializeFromRgb565(const uint16_t color)
 {
     constexpr float inv255 = 1.0f / 255.0f;
     const uint8_t r = ((color >> 11) & 0x1F) << 3;
@@ -124,12 +124,12 @@ static Vec4 deserializeFromRgb565(const uint16_t color)
     return Vec4 { r * inv255, g * inv255, b * inv255, 1.0f };
 }
 
-static float deserializeDepth(const uint16_t depth)
+[[maybe_unused]] static float deserializeDepth(const uint16_t depth)
 {
     return static_cast<float>(depth) / 65535.0f;
 }
 
-static uint16_t serializeDepth(const float depth)
+[[maybe_unused]] static uint16_t serializeDepth(const float depth)
 {
     return static_cast<uint16_t>(depth * 65535.0f);
 }

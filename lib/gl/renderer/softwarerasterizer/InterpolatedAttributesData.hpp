@@ -19,6 +19,8 @@
 #define _INTERPOLATED_ATTRIBUTES_DATA_HPP_
 
 #include "RenderConfigs.hpp"
+#include "math/Vec.hpp"
+#include <array>
 #include <cstdint>
 
 namespace rr::softwarerasterizer

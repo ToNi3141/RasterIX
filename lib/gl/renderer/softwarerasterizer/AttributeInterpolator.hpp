@@ -32,69 +32,7 @@ public:
     InterpolatedAttributesData interpolate(
         const TriangleStreamTypes::TriangleDesc& attributesData,
         const int32_t boundingBoxX,
-        const int32_t boundingBoxY) const
-    {
-        const float bbx = static_cast<float>(boundingBoxX);
-        const float bby = static_cast<float>(boundingBoxY);
-        const float bbxMipMap = static_cast<float>(bbx + 1);
-        const float bbyMipMap = static_cast<float>(bby + 1);
-        std::array<InterpolatedAttributesData::Texture, RenderConfig::TMU_COUNT> textures;
-        std::array<InterpolatedAttributesData::Texture, RenderConfig::TMU_COUNT> textureMipmap;
-        // Texture 0 (texStq: [S, T, Q])
-        for (std::size_t i = 0; i < attributesData.texture.size(); i++)
-        {
-            if (!m_tmuEnable[i])
-                continue;
-            textures[i] = interpolateTexture(attributesData.texture[i], bbx, bby);
-            textureMipmap[i] = interpolateTexture(attributesData.texture[i], bbxMipMap, bbyMipMap);
-        }
-        // Depth: depthZw = { Z, W }
-        const float depthW = interpolateAttribute(
-            attributesData.param.depthZw[1],
-            attributesData.param.depthZwXInc[1],
-            attributesData.param.depthZwYInc[1],
-            bbx,
-            bby);
-        const float depthZ = interpolateAttribute(
-            attributesData.param.depthZw[0],
-            attributesData.param.depthZwXInc[0],
-            attributesData.param.depthZwYInc[0],
-            bbx,
-            bby);
-        // Color RGBA
-        const float colorR = interpolateAttribute(
-            attributesData.param.color[0],
-            attributesData.param.colorXInc[0],
-            attributesData.param.colorYInc[0],
-            bbx,
-            bby);
-        const float colorG = interpolateAttribute(
-            attributesData.param.color[1],
-            attributesData.param.colorXInc[1],
-            attributesData.param.colorYInc[1],
-            bbx,
-            bby);
-        const float colorB = interpolateAttribute(
-            attributesData.param.color[2],
-            attributesData.param.colorXInc[2],
-            attributesData.param.colorYInc[2],
-            bbx,
-            bby);
-        const float colorA = interpolateAttribute(
-            attributesData.param.color[3],
-            attributesData.param.colorXInc[3],
-            attributesData.param.colorYInc[3],
-            bbx,
-            bby);
-
-        return {
-            .tex = textures,
-            .texMipmap = textureMipmap,
-            .depthW = 1.0f / depthW,
-            .depthZ = depthZ,
-            .color = Vec4 { std::clamp(colorR, 0.0f, 1.0f), std::clamp(colorG, 0.0f, 1.0f), std::clamp(colorB, 0.0f, 1.0f), std::clamp(colorA, 0.0f, 1.0f) },
-        };
-    }
+        const int32_t boundingBoxY) const;
 
     void setEnableTMU(const std::size_t tmuIndex, const bool enable)
     {
@@ -115,34 +53,7 @@ private:
     static InterpolatedAttributesData::Texture interpolateTexture(
         const TriangleStreamTypes::Texture& texture,
         const float bbx,
-        const float bby)
-    {
-        InterpolatedAttributesData::Texture tex {
-            .s = interpolateAttribute(
-                texture.texStq[0],
-                texture.texStqXInc[0],
-                texture.texStqYInc[0],
-                bbx,
-                bby),
-            .t = interpolateAttribute(
-                texture.texStq[1],
-                texture.texStqXInc[1],
-                texture.texStqYInc[1],
-                bbx,
-                bby),
-            .q = interpolateAttribute(
-                texture.texStq[2],
-                texture.texStqXInc[2],
-                texture.texStqYInc[2],
-                bbx,
-                bby)
-        };
-
-        tex.q = 1.0f / tex.q;
-        tex.s *= tex.q;
-        tex.t *= tex.q;
-        return tex;
-    }
+        const float bby);
 
     std::array<bool, RenderConfig::TMU_COUNT> m_tmuEnable {};
 };

@@ -36,42 +36,7 @@ public:
     }
     virtual ~Rasterizer() = default;
 
-    void init(const TriangleStreamTypes::TriangleDesc& triangle)
-    {
-        m_yLineResolution = m_resolutionData.y;
-
-        m_wXInc = triangle.param.wXInc;
-        m_wYInc = triangle.param.wYInc;
-        m_w = triangle.param.wInit;
-
-        if (m_yOffset <= triangle.param.bbStartY)
-        {
-            m_yScreen = triangle.param.bbStartY;
-            m_y = triangle.param.bbStartY - m_yOffset;
-        }
-        else
-        {
-            m_yScreen = m_yOffset;
-            m_y = 0;
-        }
-
-        if ((m_yOffset + m_yLineResolution) <= triangle.param.bbEndY)
-        {
-            m_yScreenEnd = m_yOffset + m_yLineResolution;
-        }
-        else
-        {
-            m_yScreenEnd = triangle.param.bbEndY;
-        }
-
-        m_bbStartX = triangle.param.bbStartX;
-        m_bbEndX = triangle.param.bbEndX;
-        m_bbStartY = triangle.param.bbStartY;
-        m_dir = EdgeWalkerDirection::RIGHT;
-        m_state = EdgeWalkerState::INIT;
-        m_x = m_bbStartX;
-        m_tryOtherSide = false;
-    }
+    void init(const TriangleStreamTypes::TriangleDesc& triangle);
 
     FragmentData hit() const
     {
@@ -85,75 +50,7 @@ public:
         };
     }
 
-    void walk()
-    {
-        if (!isDone())
-        {
-            switch (m_state)
-            {
-            case EdgeWalkerState::INIT:
-                if (isInTriangle())
-                {
-                    m_state = EdgeWalkerState::WALK_OUT;
-                }
-                else
-                {
-                    m_state = EdgeWalkerState::SEARCH_EDGE;
-                }
-                break;
-
-            case EdgeWalkerState::SEARCH_EDGE:
-                if (searchEdge())
-                {
-                    m_state = EdgeWalkerState::WALKING;
-                }
-                else
-                {
-                    xInc();
-                }
-                break;
-
-            case EdgeWalkerState::WALK_OUT:
-                if (!isInTriangle() || (m_x == m_bbStartX) || (m_x >= m_bbEndX))
-                {
-                    switchEdgeWalkDirection();
-                    m_state = EdgeWalkerState::SEARCH_EDGE;
-                }
-                else
-                {
-                    xInc();
-                }
-                break;
-
-            case EdgeWalkerState::CHECK_DIRECTION:
-                if (isInTriangle())
-                {
-                    m_state = EdgeWalkerState::WALK_OUT;
-                }
-                else
-                {
-                    switchEdgeWalkDirection();
-                    m_state = EdgeWalkerState::SEARCH_EDGE;
-                }
-                break;
-
-            case EdgeWalkerState::WALKING:
-                if (!isInTriangle())
-                {
-                    yInc();
-                    m_state = EdgeWalkerState::CHECK_DIRECTION;
-                }
-                else
-                {
-                    xInc();
-                }
-                break;
-
-            default:
-                break;
-            };
-        }
-    }
+    void walk();
 
     bool isDone() const
     {
@@ -204,41 +101,7 @@ private:
         }
     }
 
-    bool searchEdge()
-    {
-        if (isInTriangleAndInBounds())
-        {
-            m_tryOtherSide = false;
-            return true;
-        }
-        else if (m_x >= m_bbEndX)
-        {
-            if (m_dir == EdgeWalkerDirection::RIGHT && m_tryOtherSide)
-            {
-                m_tryOtherSide = false;
-                return true;
-            }
-            else
-            {
-                m_tryOtherSide = true;
-                m_dir = EdgeWalkerDirection::LEFT;
-            }
-        }
-        else if (m_x <= m_bbStartX)
-        {
-            if ((m_dir == EdgeWalkerDirection::LEFT) && m_tryOtherSide)
-            {
-                m_tryOtherSide = false;
-                return true;
-            }
-            else
-            {
-                m_tryOtherSide = true;
-                m_dir = EdgeWalkerDirection::RIGHT;
-            }
-        }
-        return false;
-    }
+    bool searchEdge();
 
     void yInc()
     {

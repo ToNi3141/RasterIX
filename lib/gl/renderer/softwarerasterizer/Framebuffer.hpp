@@ -107,8 +107,8 @@ private:
     FBType m_clearColor {};
     FBType m_mask {};
 
-    const ResolutionData& m_resolutionData {};
     const ScissorData& m_scissorData {};
+    const ResolutionData& m_resolutionData {};
 };
 
 } // namespace rr::softwarerasterizer

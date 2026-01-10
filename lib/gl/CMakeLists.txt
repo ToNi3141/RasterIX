@@ -181,6 +181,15 @@ add_library(gl STATIC
     pixelpipeline/Texture.cpp
     renderer/Rasterizer.cpp
     renderer/Renderer.cpp
+    renderer/softwarerasterizer/AttributeInterpolator.cpp
+    renderer/softwarerasterizer/BlendFunc.cpp
+    renderer/softwarerasterizer/Fog.cpp
+    renderer/softwarerasterizer/LogicOp.cpp
+    renderer/softwarerasterizer/Rasterizer.cpp
+    renderer/softwarerasterizer/StencilOp.cpp
+    renderer/softwarerasterizer/TexEnv.cpp
+    renderer/softwarerasterizer/TextureMap.cpp
+    renderer/softwarerasterizer/SoftwareRasterizer.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog span)

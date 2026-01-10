@@ -20,7 +20,9 @@
 
 #include "Op.hpp"
 #include <array>
+#include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <tcb/span.hpp>
 
 namespace rr

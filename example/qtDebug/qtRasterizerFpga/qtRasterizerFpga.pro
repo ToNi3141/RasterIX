@@ -11,6 +11,7 @@ RIXGL_PATH = $${PATH_PREFIX}/lib/gl
 QT       += core gui
 CONFIG += c++17
 QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.15
+CONFIG += object_parallel_to_source
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -40,6 +41,15 @@ SOURCES += main.cpp\
     $${RIXGL_PATH}/pixelpipeline/PixelPipeline.cpp \
     $${RIXGL_PATH}/renderer/Rasterizer.cpp \
     $${RIXGL_PATH}/renderer/Renderer.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/AttributeInterpolator.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/BlendFunc.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/Fog.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/LogicOp.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/Rasterizer.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/StencilOp.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/TexEnv.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/TextureMap.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/SoftwareRasterizer.cpp \
     $${RIXGL_PATH}/pixelpipeline/Fogging.cpp \
     $${RIXGL_PATH}/pixelpipeline/Texture.cpp \
     $${RIXGL_PATH}/gl.cpp \
