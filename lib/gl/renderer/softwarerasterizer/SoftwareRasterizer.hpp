@@ -90,12 +90,13 @@ public:
 
     bool writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
     {
-        std::copy(data.begin(), data.end(), m_gram.data() + addr - RenderConfig::GRAM_MEMORY_LOC);
+        std::copy(data.begin(), data.end(), m_gram.data() + addr);
         return true;
     }
 
     bool readFromDeviceMemory(tcb::span<uint8_t> data, const uint32_t addr) override
     {
+        std::copy(m_gram.data() + addr, m_gram.data() + addr + data.size(), data.begin());
         return true;
     }
 
@@ -118,6 +119,7 @@ private:
     {
         if (cmd.getSwapFramebuffer())
         {
+            // No need to swap a external framebuffer in the software rasterizer
             return true;
         }
         // Clear
@@ -149,6 +151,7 @@ private:
         // Load
         if (cmd.getLoadFramebuffer())
         {
+            // No need to load an framebuffer. The software rasterizer always works on a full framebuffer.
             return true;
         }
         SPDLOG_CRITICAL("FramebufferCmd was not correctly handled and is ignored. This might cause the renderer to crash ...");
@@ -169,14 +172,14 @@ private:
 
     bool handleCommand(const TriangleStreamCmd& cmd)
     {
-        m_attributesData = cmd.payload()[0];
-        m_rasterizer.init(m_attributesData);
+        const TriangleStreamTypes::TriangleDesc attributesData = cmd.payload()[0];
+        m_rasterizer.init(attributesData);
         while (!m_rasterizer.isDone())
         {
             const FragmentData fmd = m_rasterizer.hit();
             if (fmd.hit)
             {
-                InterpolatedAttributesData interpolatedAttributes = m_attributeInterpolator.interpolate(fmd.bbx, fmd.bby);
+                const InterpolatedAttributesData interpolatedAttributes = m_attributeInterpolator.interpolate(attributesData, fmd.bbx, fmd.bby);
                 const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
                 const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
                 m_depthFunc.setReferenceValue(depth);
@@ -219,28 +222,33 @@ private:
         return true;
     }
 
-    bool handleCommand(const PushVertexCmd& cmd)
+    bool handleCommand(const PushVertexCmd&)
     {
+        SPDLOG_WARN("PushVertexCmd is not implemented in the software rasterizer and is ignored.");
         return true;
     }
 
-    bool handleCommand(const SetElementGlobalCtxCmd& cmd)
+    bool handleCommand(const SetElementGlobalCtxCmd&)
     {
+        SPDLOG_WARN("SetElementGlobalCtxCmd is not implemented in the software rasterizer and is ignored.");
         return true;
     }
 
-    bool handleCommand(const SetElementLocalCtxCmd& cmd)
+    bool handleCommand(const SetElementLocalCtxCmd&)
     {
+        SPDLOG_WARN("SetElementLocalCtxCmd is not implemented in the software rasterizer and is ignored.");
         return true;
     }
 
-    bool handleCommand(const SetLightingCtxCmd& cmd)
+    bool handleCommand(const SetLightingCtxCmd&)
     {
+        SPDLOG_WARN("SetLightingCtxCmd is not implemented in the software rasterizer and is ignored.");
         return true;
     }
 
     bool handleCommand(const DrawNewElementCmd&)
     {
+        SPDLOG_WARN("DrawNewElementCmd is not implemented in the software rasterizer and is ignored.");
         return true;
     }
 
@@ -303,6 +311,8 @@ private:
         m_blendFunc.setEnable(reg.getEnableBlending());
         m_logicOp.setEnable(reg.getEnableLogicOp());
         m_stencilOp.setEnable(reg.getEnableStencilTest());
+        m_attributeInterpolator.setEnableTMU(0, reg.getEnableTmu(0));
+        m_attributeInterpolator.setEnableTMU(1, reg.getEnableTmu(1));
         return true;
     }
 
@@ -360,13 +370,13 @@ private:
     bool handleRegister(const StencilReg& reg)
     {
         m_stencilBuffer.setClearColor(reg.getClearStencil());
+        m_stencilBuffer.setMask(reg.getStencilMask());
         m_stencilFunc.setReferenceValue(reg.getRef() & reg.getStencilMask());
         m_stencilFunc.setFunction(reg.getTestFunc());
         m_stencilOp.setFailOp(reg.getOpFail());
         m_stencilOp.setZFailOp(reg.getOpZFail());
         m_stencilOp.setZPassOp(reg.getOpZPass());
         m_stencilOp.setRefValue(reg.getRef());
-        m_stencilBuffer.setMask(reg.getStencilMask());
         return true;
     }
 
@@ -407,8 +417,9 @@ private:
         return true;
     }
 
-    bool handleRegister(const YOffsetReg&)
+    bool handleRegister(const YOffsetReg& reg)
     {
+        m_rasterizer.setYOffset(reg.getY());
         return true;
     }
 
@@ -425,16 +436,15 @@ private:
 
     ScissorData m_scissorData {};
     ResolutionData m_resolutionData {};
-    TriangleStreamTypes::TriangleDesc m_attributesData {};
 
     Framebuffer<uint16_t> m_colorBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint16_t> m_depthBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint8_t> m_stencilBuffer { m_scissorData, m_resolutionData };
     TestFunc<uint16_t> m_depthFunc {};
+    AttributeInterpolator m_attributeInterpolator {};
     TestFunc<uint8_t> m_stencilFunc {};
     TestFunc<float> m_alphaFunc {};
     Rasterizer m_rasterizer { m_resolutionData };
-    AttributeInterpolator m_attributeInterpolator { m_attributesData };
     std::array<TextureMap, 2> m_textureMapper {};
     std::array<TexEnv, 2> m_texEnv {};
     Fog m_fog {};

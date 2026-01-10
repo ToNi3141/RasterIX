@@ -20,7 +20,6 @@
 
 #include "FragmentData.hpp"
 #include "ResolutionData.hpp"
-#include "YOffsetData.hpp"
 #include "renderer/commands/TriangleStreamTypes.hpp"
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -43,20 +42,15 @@ public:
 
         m_wXInc = triangle.param.wXInc;
         m_wYInc = triangle.param.wYInc;
+        m_w = triangle.param.wInit;
 
         if (m_yOffset <= triangle.param.bbStartY)
         {
-            m_w = triangle.param.wInit;
-
             m_yScreen = triangle.param.bbStartY;
             m_y = triangle.param.bbStartY - m_yOffset;
         }
         else
         {
-            m_w = m_wYInc;
-            m_w.mul<0>(m_yOffset - triangle.param.bbStartY);
-            m_w += triangle.param.wInit;
-
             m_yScreen = m_yOffset;
             m_y = 0;
         }
@@ -164,6 +158,11 @@ public:
     bool isDone() const
     {
         return m_y >= m_yScreenEnd;
+    }
+
+    void setYOffset(const uint32_t yOffset)
+    {
+        m_yOffset = yOffset;
     }
 
 private:

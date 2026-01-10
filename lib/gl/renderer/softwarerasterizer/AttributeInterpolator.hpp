@@ -29,12 +29,10 @@ namespace rr::softwarerasterizer
 class AttributeInterpolator
 {
 public:
-    AttributeInterpolator(const TriangleStreamTypes::TriangleDesc& attributesData)
-        : m_attributesData { attributesData }
-    {
-    }
-
-    InterpolatedAttributesData interpolate(const int32_t boundingBoxX, const int32_t boundingBoxY)
+    InterpolatedAttributesData interpolate(
+        const TriangleStreamTypes::TriangleDesc& attributesData,
+        const int32_t boundingBoxX,
+        const int32_t boundingBoxY) const
     {
         const float bbx = static_cast<float>(boundingBoxX);
         const float bby = static_cast<float>(boundingBoxY);
@@ -43,47 +41,49 @@ public:
         std::array<InterpolatedAttributesData::Texture, RenderConfig::TMU_COUNT> textures;
         std::array<InterpolatedAttributesData::Texture, RenderConfig::TMU_COUNT> textureMipmap;
         // Texture 0 (texStq: [S, T, Q])
-        for (std::size_t i = 0; i < m_attributesData.texture.size(); i++)
+        for (std::size_t i = 0; i < attributesData.texture.size(); i++)
         {
-            textures[i] = interpolateTexture(m_attributesData.texture[i], bbx, bby);
-            textureMipmap[i] = interpolateTexture(m_attributesData.texture[i], bbxMipMap, bbyMipMap);
+            if (!m_tmuEnable[i])
+                continue;
+            textures[i] = interpolateTexture(attributesData.texture[i], bbx, bby);
+            textureMipmap[i] = interpolateTexture(attributesData.texture[i], bbxMipMap, bbyMipMap);
         }
         // Depth: depthZw = { Z, W }
         const float depthW = interpolateAttribute(
-            m_attributesData.param.depthZw[1],
-            m_attributesData.param.depthZwXInc[1],
-            m_attributesData.param.depthZwYInc[1],
+            attributesData.param.depthZw[1],
+            attributesData.param.depthZwXInc[1],
+            attributesData.param.depthZwYInc[1],
             bbx,
             bby);
         const float depthZ = interpolateAttribute(
-            m_attributesData.param.depthZw[0],
-            m_attributesData.param.depthZwXInc[0],
-            m_attributesData.param.depthZwYInc[0],
+            attributesData.param.depthZw[0],
+            attributesData.param.depthZwXInc[0],
+            attributesData.param.depthZwYInc[0],
             bbx,
             bby);
         // Color RGBA
         const float colorR = interpolateAttribute(
-            m_attributesData.param.color[0],
-            m_attributesData.param.colorXInc[0],
-            m_attributesData.param.colorYInc[0],
+            attributesData.param.color[0],
+            attributesData.param.colorXInc[0],
+            attributesData.param.colorYInc[0],
             bbx,
             bby);
         const float colorG = interpolateAttribute(
-            m_attributesData.param.color[1],
-            m_attributesData.param.colorXInc[1],
-            m_attributesData.param.colorYInc[1],
+            attributesData.param.color[1],
+            attributesData.param.colorXInc[1],
+            attributesData.param.colorYInc[1],
             bbx,
             bby);
         const float colorB = interpolateAttribute(
-            m_attributesData.param.color[2],
-            m_attributesData.param.colorXInc[2],
-            m_attributesData.param.colorYInc[2],
+            attributesData.param.color[2],
+            attributesData.param.colorXInc[2],
+            attributesData.param.colorYInc[2],
             bbx,
             bby);
         const float colorA = interpolateAttribute(
-            m_attributesData.param.color[3],
-            m_attributesData.param.colorXInc[3],
-            m_attributesData.param.colorYInc[3],
+            attributesData.param.color[3],
+            attributesData.param.colorXInc[3],
+            attributesData.param.colorYInc[3],
             bbx,
             bby);
 
@@ -96,21 +96,26 @@ public:
         };
     }
 
+    void setEnableTMU(const std::size_t tmuIndex, const bool enable)
+    {
+        m_tmuEnable[tmuIndex] = enable;
+    }
+
 private:
-    float interpolateAttribute(
+    static float interpolateAttribute(
         const float attrStart,
         const float attrIncX,
         const float attrIncY,
         const float bbx,
-        const float bby) const
+        const float bby)
     {
         return attrStart + (attrIncX * bbx) + (attrIncY * bby);
     }
 
-    InterpolatedAttributesData::Texture interpolateTexture(
+    static InterpolatedAttributesData::Texture interpolateTexture(
         const TriangleStreamTypes::Texture& texture,
         const float bbx,
-        const float bby) const
+        const float bby)
     {
         InterpolatedAttributesData::Texture tex {
             .s = interpolateAttribute(
@@ -139,7 +144,7 @@ private:
         return tex;
     }
 
-    const TriangleStreamTypes::TriangleDesc& m_attributesData;
+    std::array<bool, RenderConfig::TMU_COUNT> m_tmuEnable {};
 };
 
 } // namespace rr::softwarerasterizer
