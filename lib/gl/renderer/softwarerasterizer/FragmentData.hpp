@@ -18,6 +18,7 @@
 #ifndef _FRAGMENT_DATA_HPP_
 #define _FRAGMENT_DATA_HPP_
 
+#include <cstddef>
 #include <cstdint>
 
 namespace rr::softwarerasterizer
@@ -25,7 +26,7 @@ namespace rr::softwarerasterizer
 struct FragmentData
 {
     const bool hit;
-    std::size_t index;
+    const std::size_t index;
     const int32_t bbx;
     const int32_t bby;
     const int32_t spx;

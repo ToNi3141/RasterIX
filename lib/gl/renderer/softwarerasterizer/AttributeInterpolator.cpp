@@ -82,11 +82,11 @@ InterpolatedAttributesData AttributeInterpolator::interpolate(
         bby);
 
     return {
-        .tex = textures,
-        .texMipmap = textureMipmap,
-        .depthW = 1.0f / depthW,
-        .depthZ = depthZ,
-        .color = Vec4 { std::clamp(colorR, 0.0f, 1.0f), std::clamp(colorG, 0.0f, 1.0f), std::clamp(colorB, 0.0f, 1.0f), std::clamp(colorA, 0.0f, 1.0f) },
+        textures,
+        textureMipmap,
+        1.0f / depthW,
+        depthZ,
+        Vec4 { std::clamp(colorR, 0.0f, 1.0f), std::clamp(colorG, 0.0f, 1.0f), std::clamp(colorB, 0.0f, 1.0f), std::clamp(colorA, 0.0f, 1.0f) },
     };
 }
 
@@ -96,24 +96,24 @@ InterpolatedAttributesData::Texture AttributeInterpolator::interpolateTexture(
     const float bby)
 {
     InterpolatedAttributesData::Texture tex {
-        .s = interpolateAttribute(
+        interpolateAttribute(
             texture.texStq[0],
             texture.texStqXInc[0],
             texture.texStqYInc[0],
             bbx,
-            bby),
-        .t = interpolateAttribute(
+            bby), // s
+        interpolateAttribute(
             texture.texStq[1],
             texture.texStqXInc[1],
             texture.texStqYInc[1],
             bbx,
-            bby),
-        .q = interpolateAttribute(
+            bby), // t
+        interpolateAttribute(
             texture.texStq[2],
             texture.texStqXInc[2],
             texture.texStqYInc[2],
             bbx,
-            bby)
+            bby) // q
     };
 
     tex.q = 1.0f / tex.q;

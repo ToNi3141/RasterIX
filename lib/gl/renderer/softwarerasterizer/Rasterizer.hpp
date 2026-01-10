@@ -41,12 +41,12 @@ public:
     FragmentData hit() const
     {
         return {
-            .hit = isInTriangleAndInBounds() && (m_state == EdgeWalkerState::WALKING),
-            .index = (((m_yLineResolution - 1) - m_y) * m_resolutionData.x) + m_x,
-            .bbx = m_x - m_bbStartX,
-            .bby = m_yScreen - m_bbStartY,
-            .spx = m_x,
-            .spy = m_yScreen,
+            isInTriangleAndInBounds() && (m_state == EdgeWalkerState::WALKING),
+            (((m_yLineResolution - 1) - m_y) * m_resolutionData.x) + m_x,
+            m_x - m_bbStartX,
+            m_yScreen - m_bbStartY,
+            m_x,
+            m_yScreen,
         };
     }
 

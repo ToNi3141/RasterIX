@@ -17,10 +17,12 @@
 
 #ifndef VEC_HPP
 #define VEC_HPP
+#include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <math.h>
 
 namespace rr
 {
