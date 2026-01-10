@@ -79,10 +79,6 @@ public:
 
     void writeFragment(const FBType fragment, const std::size_t index, const std::size_t x, const std::size_t y)
     {
-        if (!m_enable)
-        {
-            return;
-        }
         if (m_scissorData.enabled)
         {
             if (x < static_cast<std::size_t>(m_scissorData.startX) || x >= static_cast<std::size_t>(m_scissorData.endX)
@@ -96,16 +92,7 @@ public:
 
     FBType readFragment(std::size_t index) const
     {
-        if (!m_enable)
-        {
-            return m_clearColor;
-        }
         return m_fb[index];
-    }
-
-    void setEnable(const bool enable)
-    {
-        m_enable = enable;
     }
 
     void setMask(const FBType mask)
@@ -118,7 +105,6 @@ private:
     tcb::span<FBType> m_fb {};
     uint32_t m_address {};
     FBType m_clearColor {};
-    bool m_enable { true };
     FBType m_mask {};
 
     const ResolutionData& m_resolutionData {};

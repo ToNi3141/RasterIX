@@ -177,10 +177,11 @@ private:
             if (fmd.hit)
             {
                 InterpolatedAttributesData interpolatedAttributes = m_attributeInterpolator.interpolate(fmd.bbx, fmd.bby);
-                const float depth = softwarerasterizerhelpers::deserializeDepth(m_depthBuffer.readFragment(fmd.index));
+                const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
                 const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
                 m_depthFunc.setReferenceValue(depth);
-                const bool zPass = m_depthFunc.check(interpolatedAttributes.depthZ);
+                const uint16_t depthZ16 = softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ);
+                const bool zPass = m_depthFunc.check(depthZ16);
                 const bool stencilPass = m_stencilFunc.check(stencil);
                 if (m_stencilOp.getEnable())
                 {
@@ -208,7 +209,7 @@ private:
                         {
                             finalColor = m_blendFunc.blend(foggedColor, destColor);
                         }
-                        m_depthBuffer.writeFragment(softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ), fmd.index, fmd.spx, fmd.spy);
+                        m_depthBuffer.writeFragment(depthZ16, fmd.index, fmd.spx, fmd.spy);
                         m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(finalColor), fmd.index, fmd.spx, fmd.spy);
                     }
                 }
@@ -293,9 +294,7 @@ private:
         m_scissorData.enabled = reg.getEnableScissor();
         m_alphaFunc.setEnable(reg.getEnableAlphaTest());
         m_depthFunc.setEnable(reg.getEnableDepthTest());
-        m_depthBuffer.setEnable(reg.getEnableDepthTest());
         m_stencilFunc.setEnable(reg.getEnableStencilTest());
-        m_stencilBuffer.setEnable(reg.getEnableStencilTest());
         m_textureMapper[0].setEnable(reg.getEnableTmu(0));
         m_textureMapper[1].setEnable(reg.getEnableTmu(1));
         m_texEnv[0].setEnable(reg.getEnableTmu(0));
@@ -431,7 +430,7 @@ private:
     Framebuffer<uint16_t> m_colorBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint16_t> m_depthBuffer { m_scissorData, m_resolutionData };
     Framebuffer<uint8_t> m_stencilBuffer { m_scissorData, m_resolutionData };
-    TestFunc<float> m_depthFunc {};
+    TestFunc<uint16_t> m_depthFunc {};
     TestFunc<uint8_t> m_stencilFunc {};
     TestFunc<float> m_alphaFunc {};
     Rasterizer m_rasterizer { m_resolutionData };

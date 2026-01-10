@@ -25,6 +25,7 @@
 #include "../../stencilShadow/StencilShadow.hpp"
 #include "../../minimal/Minimal.hpp"
 #include "../../mipmap/Mipmap.hpp"
+#include "../../vbo/VboExample.hpp"
 
 namespace Ui {
 class MainWindow;

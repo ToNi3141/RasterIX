@@ -64,7 +64,7 @@ public:
 
     void setRefValue(const uint8_t ref)
     {
-        m_refValue = ref & MAX_STNECIL_VALUE;
+        m_refValue = ref & MAX_STENCIL_VALUE;
     }
 
     void setEnable(const bool enable)
@@ -78,28 +78,28 @@ public:
     }
 
 private:
-    static constexpr uint8_t MAX_STNECIL_VALUE { 15 };
+    static constexpr uint8_t MAX_STENCIL_VALUE { 15 };
 
     uint8_t applyOp(const uint8_t val, const rr::StencilOp op) const
     {
         switch (op)
         {
         case rr::StencilOp::KEEP:
-            return val & MAX_STNECIL_VALUE;
+            return val & MAX_STENCIL_VALUE;
         case rr::StencilOp::ZERO:
             return 0;
         case rr::StencilOp::REPLACE:
             return m_refValue;
         case rr::StencilOp::INCR:
-            return (val == MAX_STNECIL_VALUE) ? MAX_STNECIL_VALUE : (val + 1);
+            return (val == MAX_STENCIL_VALUE) ? MAX_STENCIL_VALUE : (val + 1);
         case rr::StencilOp::INCR_WRAP:
-            return (val == MAX_STNECIL_VALUE) ? 0 : (val + 1);
+            return (val == MAX_STENCIL_VALUE) ? 0 : (val + 1);
         case rr::StencilOp::DECR:
             return (val == 0) ? 0 : (val - 1);
         case rr::StencilOp::DECR_WRAP:
-            return (val == 0) ? MAX_STNECIL_VALUE : (val - 1);
+            return (val == 0) ? MAX_STENCIL_VALUE : (val - 1);
         case rr::StencilOp::INVERT:
-            return ~val & MAX_STNECIL_VALUE;
+            return ~val & MAX_STENCIL_VALUE;
         default:
             return val;
         }
