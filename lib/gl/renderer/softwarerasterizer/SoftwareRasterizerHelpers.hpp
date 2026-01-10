@@ -53,6 +53,48 @@ static Vec4ui8 deserializeTexelInt(const uint16_t texel, const DevicePixelFormat
     return color;
 }
 
+static uint16_t convertColorMask(const bool r, const bool g, const bool b, const bool a, const DevicePixelFormat format)
+{
+    uint16_t mask = 0;
+    switch (format)
+    {
+    case DevicePixelFormat::RGBA4444:
+        if (r)
+            mask |= 0xF000;
+        if (g)
+            mask |= 0x0F00;
+        if (b)
+            mask |= 0x00F0;
+        if (a)
+            mask |= 0x000F;
+        break;
+    case DevicePixelFormat::RGBA5551:
+        if (r)
+            mask |= 0xF800;
+        if (g)
+            mask |= 0x07C0;
+        if (b)
+            mask |= 0x003E;
+        if (a)
+            mask |= 0x0001;
+        break;
+    case DevicePixelFormat::RGB565:
+        if (r)
+            mask |= 0xF800;
+        if (g)
+            mask |= 0x07E0;
+        if (b)
+            mask |= 0x001F;
+        break;
+    }
+    return mask;
+}
+
+static uint16_t convertDepthMask(const bool depthMask)
+{
+    return depthMask ? 0xFFFF : 0x0000;
+}
+
 static Vec4 deserializeTexel(const uint16_t texel, const DevicePixelFormat format)
 {
     constexpr float inv255 = 1.0f / 255.0f;

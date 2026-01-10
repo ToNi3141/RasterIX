@@ -39,6 +39,7 @@
 #include "ResolutionData.hpp"
 #include "ScissorData.hpp"
 #include "SoftwareRasterizerHelpers.hpp"
+#include "StencilOp.hpp"
 #include "TestFunc.hpp"
 #include "TexEnv.hpp"
 #include "TextureMap.hpp"
@@ -179,27 +180,37 @@ private:
                 const float depth = softwarerasterizerhelpers::deserializeDepth(m_depthBuffer.readFragment(fmd.index));
                 const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
                 m_depthFunc.setReferenceValue(depth);
+                const bool zPass = m_depthFunc.check(interpolatedAttributes.depthZ);
+                const bool stencilPass = m_stencilFunc.check(stencil);
+                if (m_stencilOp.getEnable())
+                {
+                    const uint8_t newStencilValue = m_stencilOp.op(stencil, zPass, stencilPass);
+                    m_stencilBuffer.writeFragment(newStencilValue, fmd.index, fmd.spx, fmd.spy);
+                }
 
-                if (m_depthFunc.check(interpolatedAttributes.depthZ) && m_stencilFunc.check(stencil))
+                if (zPass && stencilPass)
                 {
                     // Fragment processing
                     const Vec4 texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
                     const Vec4 texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
                     const Vec4 texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
                     const Vec4 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
-                    const Vec4 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
-                    const Vec4 destColor = softwarerasterizerhelpers::deserializeFromRgb565(m_colorBuffer.readFragment(fmd.index));
-                    Vec4 finalColor;
-                    if (m_logicOp.getEnable())
+                    if (m_alphaFunc.check(texEnvTexel1[3]))
                     {
-                        finalColor = m_logicOp.op(foggedColor, destColor);
+                        const Vec4 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
+                        const Vec4 destColor = softwarerasterizerhelpers::deserializeFromRgb565(m_colorBuffer.readFragment(fmd.index));
+                        Vec4 finalColor;
+                        if (m_logicOp.getEnable())
+                        {
+                            finalColor = m_logicOp.op(foggedColor, destColor);
+                        }
+                        else
+                        {
+                            finalColor = m_blendFunc.blend(foggedColor, destColor);
+                        }
+                        m_depthBuffer.writeFragment(softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ), fmd.index, fmd.spx, fmd.spy);
+                        m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(finalColor), fmd.index, fmd.spx, fmd.spy);
                     }
-                    else
-                    {
-                        finalColor = m_blendFunc.blend(foggedColor, destColor);
-                    }
-                    m_depthBuffer.writeFragment(softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ), fmd.index);
-                    m_colorBuffer.writeFragment(softwarerasterizerhelpers::serializeToRgb565(finalColor), fmd.index);
                 }
             }
             m_rasterizer.walk();
@@ -220,7 +231,6 @@ private:
     bool handleCommand(const SetElementLocalCtxCmd& cmd)
     {
         return true;
-        ;
     }
 
     bool handleCommand(const SetLightingCtxCmd& cmd)
@@ -262,10 +272,7 @@ private:
 
     bool handleRegister(const ColorBufferClearColorReg& reg)
     {
-        const uint16_t clearColor = ((static_cast<uint16_t>(reg.getColor()[0]) >> 3) << 11)
-            | ((static_cast<uint16_t>(reg.getColor()[1]) >> 2) << 5)
-            | ((static_cast<uint16_t>(reg.getColor()[2]) >> 3) << 0);
-        m_colorBuffer.setClearColor(clearColor);
+        m_colorBuffer.setClearColor(softwarerasterizerhelpers::serializeToRgb565(reg.getColorf()));
         return true;
     }
 
@@ -296,6 +303,7 @@ private:
         m_fog.setEnable(reg.getEnableFog());
         m_blendFunc.setEnable(reg.getEnableBlending());
         m_logicOp.setEnable(reg.getEnableLogicOp());
+        m_stencilOp.setEnable(reg.getEnableStencilTest());
         return true;
     }
 
@@ -313,7 +321,13 @@ private:
         m_blendFunc.setSFactor(reg.getBlendFuncSFactor());
         m_blendFunc.setDFactor(reg.getBlendFuncDFactor());
         m_logicOp.setLogicOp(reg.getLogicOp());
-        // todo: depth and color mask
+        m_colorBuffer.setMask(softwarerasterizerhelpers::convertColorMask(
+            reg.getColorMaskR(),
+            reg.getColorMaskG(),
+            reg.getColorMaskB(),
+            reg.getColorMaskA(),
+            DevicePixelFormat::RGB565));
+        m_depthBuffer.setMask(softwarerasterizerhelpers::convertDepthMask(reg.getDepthMask()));
         return true;
     }
 
@@ -347,9 +361,13 @@ private:
     bool handleRegister(const StencilReg& reg)
     {
         m_stencilBuffer.setClearColor(reg.getClearStencil());
-        m_stencilFunc.setReferenceValue(reg.getRef());
+        m_stencilFunc.setReferenceValue(reg.getRef() & reg.getStencilMask());
         m_stencilFunc.setFunction(reg.getTestFunc());
-        // TODO: stencil mask
+        m_stencilOp.setFailOp(reg.getOpFail());
+        m_stencilOp.setZFailOp(reg.getOpZFail());
+        m_stencilOp.setZPassOp(reg.getOpZPass());
+        m_stencilOp.setRefValue(reg.getRef());
+        m_stencilBuffer.setMask(reg.getStencilMask());
         return true;
     }
 
@@ -423,6 +441,7 @@ private:
     Fog m_fog {};
     BlendFunc m_blendFunc {};
     LogicOp m_logicOp {};
+    StencilOp m_stencilOp {};
 };
 
 } // namespace rr::softwarerasterizer

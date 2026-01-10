@@ -46,14 +46,14 @@ public:
     {
         m_address = addr / sizeof(FBType);
         m_fb = {
-            reinterpret_cast<FBType*>(m_gram.subspan(m_address).data()),
-            m_gram.size() / sizeof(FBType)
+            reinterpret_cast<FBType*>(m_gram.subspan(addr).data()),
+            (m_gram.size() / sizeof(FBType)) - m_address
         };
     }
 
     uint32_t getAddress() const
     {
-        return m_address;
+        return m_address * sizeof(FBType);
     }
 
     void setClearColor(const FBType color)
@@ -72,18 +72,26 @@ public:
             for (std::size_t x = startX; x < endX; x++)
             {
                 const std::size_t fbPos = x + ((m_resolutionData.y - y - 1) * m_resolutionData.x);
-                m_fb[fbPos] = m_clearColor;
+                writeFragment(m_clearColor, fbPos, x, y);
             }
         }
     }
 
-    void writeFragment(const FBType fragment, std::size_t index)
+    void writeFragment(const FBType fragment, const std::size_t index, const std::size_t x, const std::size_t y)
     {
         if (!m_enable)
         {
             return;
         }
-        m_fb[index] = fragment;
+        if (m_scissorData.enabled)
+        {
+            if (x < static_cast<std::size_t>(m_scissorData.startX) || x >= static_cast<std::size_t>(m_scissorData.endX)
+                || y < static_cast<std::size_t>(m_scissorData.startY) || y >= static_cast<std::size_t>(m_scissorData.endY))
+            {
+                return;
+            }
+        }
+        m_fb[index] = (fragment & m_mask) | (m_fb[index] & ~m_mask);
     }
 
     FBType readFragment(std::size_t index) const
@@ -100,12 +108,18 @@ public:
         m_enable = enable;
     }
 
+    void setMask(const FBType mask)
+    {
+        m_mask = mask;
+    }
+
 private:
     tcb::span<uint8_t> m_gram {};
     tcb::span<FBType> m_fb {};
     uint32_t m_address {};
     FBType m_clearColor {};
     bool m_enable { true };
+    FBType m_mask {};
 
     const ResolutionData& m_resolutionData {};
     const ScissorData& m_scissorData {};
