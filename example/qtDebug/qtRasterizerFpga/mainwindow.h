@@ -50,9 +50,9 @@ public:
     static const uint32_t RESOLUTION_W = 640;
     static const uint32_t RESOLUTION_H = 480;
 private:
-    uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
+    uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 4];
 
-    rr::VerilatorBusConnector<uint32_t> m_busConnector{reinterpret_cast<uint32_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
+    rr::VerilatorBusConnector<> m_busConnector{reinterpret_cast<uint32_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
 #endif
 
 #if USE_SOFTWARE
@@ -61,8 +61,8 @@ public:
     static const uint32_t RESOLUTION_W = 640;
     static const uint32_t RESOLUTION_H = 480;
 private:
-    uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
-    rr::SoftwareRasterizerBusConnector<> m_busConnector{m_framebuffer, RESOLUTION_W, RESOLUTION_H};
+    uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 4];
+    rr::SoftwareRasterizerBusConnector<> m_busConnector{m_framebuffer};
 #endif
 
 #if USE_HARDWARE
