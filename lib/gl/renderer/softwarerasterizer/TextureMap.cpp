@@ -30,7 +30,7 @@ Vec4 TextureMap::getTexel(const float s, const float t) const
     // TODO: Mipmapping (m_enableMinFilter)
     if (m_enableMagFilter)
     {
-        return getFilteredTexel(s, t);
+        return getFilteredTexel(s - (0.5f / m_textureSizeW), t - (0.5f / m_textureSizeH));
     }
     else
     {
@@ -40,18 +40,23 @@ Vec4 TextureMap::getTexel(const float s, const float t) const
 
 Vec4 TextureMap::getFilteredTexel(const float s, const float t) const
 {
+    const float oow = 1.0f / m_textureSizeW;
+    const float ooh = 1.0f / m_textureSizeH;
+
     const uint16_t texel00 = readTexel(s, t);
-    const uint16_t texel01 = readTexel(s, t + 1.0f / m_textureSizeW);
-    const uint16_t texel10 = readTexel(s + 1.0f / m_textureSizeH, t);
-    const uint16_t texel11 = readTexel(s + 1.0f / m_textureSizeH, t + 1.0f / m_textureSizeW);
+    const uint16_t texel01 = readTexel(s, t + ooh);
+    const uint16_t texel10 = readTexel(s + oow, t);
+    const uint16_t texel11 = readTexel(s + oow, t + ooh);
 
     const Vec4 c00 = softwarerasterizerhelpers::deserializeTexel(texel00, m_pixelFormat);
     const Vec4 c01 = softwarerasterizerhelpers::deserializeTexel(texel01, m_pixelFormat);
     const Vec4 c10 = softwarerasterizerhelpers::deserializeTexel(texel10, m_pixelFormat);
     const Vec4 c11 = softwarerasterizerhelpers::deserializeTexel(texel11, m_pixelFormat);
 
-    const float factorS = (s * m_textureSizeW) - static_cast<uint32_t>(s * m_textureSizeW);
-    const float factorT = (t * m_textureSizeH) - static_cast<uint32_t>(t * m_textureSizeH);
+    // TODO Clamping of the texel quad?
+
+    const float factorS = ((s * m_textureSizeW) - static_cast<int32_t>(s * m_textureSizeW));
+    const float factorT = ((t * m_textureSizeH) - static_cast<int32_t>(t * m_textureSizeH));
 
     const Vec4 c0 = rr::interpolate(c00, c01, factorT);
     const Vec4 c1 = rr::interpolate(c10, c11, factorT);
@@ -59,26 +64,32 @@ Vec4 TextureMap::getFilteredTexel(const float s, const float t) const
     return c;
 }
 
-uint32_t TextureMap::clampTexCoord(const float coord, const float size, const TextureWrapMode wrapMode) const
+float TextureMap::clampTexCoord(const float coord, const TextureWrapMode wrapMode) const
 {
     if (wrapMode == TextureWrapMode::CLAMP_TO_EDGE)
     {
-        if (coord >= size)
+        if (coord >= 1.0)
         {
-            return static_cast<uint32_t>(size) - 1;
+            return 1.0f;
         }
         if (coord < 0.0f)
         {
-            return 0;
+            return 0.0f;
         }
     }
-    return static_cast<uint32_t>(coord);
+    return coord;
 }
 
 uint32_t TextureMap::getTexelAddr(const float s, const float t) const
 {
-    const uint32_t uS = clampTexCoord(s * m_textureSizeW, m_textureSizeW, m_wrapModeS);
-    const uint32_t uT = clampTexCoord(t * m_textureSizeH, m_textureSizeH, m_wrapModeT);
+    const float cS = clampTexCoord(s, m_wrapModeS);
+    const float cT = clampTexCoord(t, m_wrapModeT);
+
+    const int32_t iS = static_cast<int32_t>(cS * (m_textureSizeW)) % static_cast<int32_t>(m_textureSizeW);
+    const int32_t iT = static_cast<int32_t>(cT * (m_textureSizeH)) % static_cast<int32_t>(m_textureSizeH);
+
+    const uint32_t uS = (iS < 0) ? static_cast<uint32_t>(static_cast<int32_t>(m_textureSizeW) + iS) : static_cast<uint32_t>(iS);
+    const uint32_t uT = (iT < 0) ? static_cast<uint32_t>(static_cast<int32_t>(m_textureSizeH) + iT) : static_cast<uint32_t>(iT);
 
     const uint32_t index = uT * m_textureSizeW + uS;
     const uint32_t addr = index * 2;

@@ -84,7 +84,7 @@ private:
         return *reinterpret_cast<const uint16_t*>(&m_gram[texelAddress]);
     }
 
-    uint32_t clampTexCoord(const float coord, const float size, const TextureWrapMode wrapMode) const;
+    float clampTexCoord(const float coord, const TextureWrapMode wrapMode) const;
 
     uint32_t getTexelAddr(const float s, const float t) const;
 
