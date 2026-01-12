@@ -38,10 +38,18 @@ Vec4 TextureMap::getTexel(const float s, const float t) const
     }
 }
 
-Vec4 TextureMap::getFilteredTexel(const float s, const float t) const
+Vec4 TextureMap::getFilteredTexel(float s, float t) const
 {
     const float oow = 1.0f / m_textureSizeW;
     const float ooh = 1.0f / m_textureSizeH;
+
+    int32_t sInt = static_cast<int32_t>(s);
+    int32_t tInt = static_cast<int32_t>(t);
+    float sFrac = s - sInt;
+    float tFrac = t - tInt;
+
+    s = (s < 0.0f) ? (abs(sInt) + (1.0f - sFrac)) : (sInt + sFrac);
+    t = (t < 0.0f) ? (abs(tInt) + (1.0f - tFrac)) : (tInt + tFrac);
 
     const uint16_t texel00 = readTexel(s, t);
     const uint16_t texel01 = readTexel(s, t + ooh);
