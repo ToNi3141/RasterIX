@@ -47,6 +47,10 @@ public:
     {
         m_textureSizeW = w;
         m_textureSizeH = h;
+        m_textureSizeOOW = 1.0f / w;
+        m_textureSizeOOH = 1.0f / h;
+        m_halfTexelSizeW = 0.5f / w;
+        m_halfTexelSizeH = 0.5f / h;
     }
 
     void setWrapMode(const TextureWrapMode s, const TextureWrapMode t)
@@ -76,6 +80,7 @@ public:
     }
 
 private:
+    Vec4 getUnfilteredTexel(const float s, const float t) const;
     Vec4 getFilteredTexel(const float s, const float t) const;
 
     uint16_t readTexel(const float s, const float t) const
@@ -102,6 +107,10 @@ private:
 
     float m_textureSizeW { 0.0f };
     float m_textureSizeH { 0.0f };
+    float m_textureSizeOOW { 0.0f };
+    float m_textureSizeOOH { 0.0f };
+    float m_halfTexelSizeW { 0.0f };
+    float m_halfTexelSizeH { 0.0f };
 
     TextureWrapMode m_wrapModeS { TextureWrapMode::REPEAT };
     TextureWrapMode m_wrapModeT { TextureWrapMode::REPEAT };
