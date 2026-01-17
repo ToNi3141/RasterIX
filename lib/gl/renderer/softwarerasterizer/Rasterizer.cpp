@@ -66,7 +66,7 @@ void Rasterizer::walk()
         case EdgeWalkerState::INIT:
             if (isInTriangle())
             {
-                m_state = EdgeWalkerState::WALK_OUT;
+                m_state = EdgeWalkerState::WALKING;
             }
             else
             {
@@ -110,7 +110,7 @@ void Rasterizer::walk()
             break;
 
         case EdgeWalkerState::WALKING:
-            if (!isInTriangle())
+            if (!isInTriangleAndInBounds())
             {
                 yInc();
                 m_state = EdgeWalkerState::CHECK_DIRECTION;
