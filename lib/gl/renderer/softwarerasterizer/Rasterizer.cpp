@@ -86,7 +86,7 @@ void Rasterizer::walk()
             break;
 
         case EdgeWalkerState::WALK_OUT:
-            if (!isInTriangle() || (m_x == m_bbStartX) || (m_x >= m_bbEndX))
+            if (!isInTriangle() || (m_x <= m_bbStartX) || (m_x >= m_bbEndX))
             {
                 switchEdgeWalkDirection();
                 m_state = EdgeWalkerState::SEARCH_EDGE;

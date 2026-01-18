@@ -1,2 +1,58 @@
 # Software unit tests
-# Add test targets here
+
+# Function to add a software unit test
+# Usage: add_software_unittest(<name>)
+function(add_software_unittest NAME)
+    set(TARGET_NAME "test_${NAME}")
+    set(TEST_FILE "test_${NAME}.cpp")
+    
+    add_executable(${TARGET_NAME} ${TEST_FILE})
+    target_include_directories(${TARGET_NAME} PRIVATE ${GL_SRC_DIR})
+    target_link_libraries(${TARGET_NAME} PRIVATE gl span)
+    target_compile_features(${TARGET_NAME} PRIVATE cxx_std_17)
+    
+    # Add the same compile definitions as the gl library
+    target_compile_definitions(${TARGET_NAME} PRIVATE
+        RIX_CORE_TMU_COUNT=${RIX_CORE_TMU_COUNT}
+        RIX_CORE_MAX_TEXTURE_SIZE=${RIX_CORE_MAX_TEXTURE_SIZE}
+        RIX_CORE_ENABLE_MIPMAPPING=${RIX_CORE_ENABLE_MIPMAPPING}
+        RIX_CORE_MAX_DISPLAY_WIDTH=${RIX_CORE_MAX_DISPLAY_WIDTH}
+        RIX_CORE_MAX_DISPLAY_HEIGHT=${RIX_CORE_MAX_DISPLAY_HEIGHT}
+        RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=${RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG}
+        RIX_CORE_USE_FLOAT_INTERPOLATION=${RIX_CORE_USE_FLOAT_INTERPOLATION}
+        RIX_CORE_NUMBER_OF_TEXTURE_PAGES=${RIX_CORE_NUMBER_OF_TEXTURE_PAGES}
+        RIX_CORE_NUMBER_OF_TEXTURES=${RIX_CORE_NUMBER_OF_TEXTURES}
+        RIX_CORE_TEXTURE_PAGE_SIZE=${RIX_CORE_TEXTURE_PAGE_SIZE}
+        RIX_CORE_GRAM_MEMORY_LOC=${RIX_CORE_GRAM_MEMORY_LOC}
+        RIX_CORE_COLOR_BUFFER_LOC_0=${RIX_CORE_COLOR_BUFFER_LOC_0}
+        RIX_CORE_COLOR_BUFFER_LOC_1=${RIX_CORE_COLOR_BUFFER_LOC_1}
+        RIX_CORE_COLOR_BUFFER_LOC_2=${RIX_CORE_COLOR_BUFFER_LOC_2}
+        RIX_CORE_DEPTH_BUFFER_LOC=${RIX_CORE_DEPTH_BUFFER_LOC}
+        RIX_CORE_STENCIL_BUFFER_LOC=${RIX_CORE_STENCIL_BUFFER_LOC}
+        RIX_CORE_THREADED_RASTERIZATION=${RIX_CORE_THREADED_RASTERIZATION}
+        RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE=${RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE}
+        RIX_CORE_ENABLE_VSYNC=${RIX_CORE_ENABLE_VSYNC}
+        RIX_CORE_MAX_VBO_COUNT=${RIX_CORE_MAX_VBO_COUNT}
+        RIX_CORE_PERFORMANCE_MODE=${RIX_CORE_PERFORMANCE_MODE}
+        RIX_CORE_SOFTWARE_RASTERIZATION=${RIX_CORE_SOFTWARE_RASTERIZATION}
+    )
+    
+    # Convert name to camelCase for test name (e.g., BlendFunc -> blendFunc)
+    string(SUBSTRING ${NAME} 0 1 FIRST_CHAR)
+    string(TOLOWER ${FIRST_CHAR} FIRST_CHAR_LOWER)
+    string(SUBSTRING ${NAME} 1 -1 REST)
+    set(TEST_NAME "${FIRST_CHAR_LOWER}${REST}")
+    
+    add_test(NAME ${TEST_NAME} COMMAND ${TARGET_NAME})
+endfunction()
+
+# Add unit tests
+add_software_unittest(AttributeInterpolator)
+add_software_unittest(BlendFunc)
+add_software_unittest(Fog)
+add_software_unittest(LogicOp)
+add_software_unittest(Rasterizer)
+add_software_unittest(StencilOp)
+add_software_unittest(TestFunc)
+add_software_unittest(TexEnv)
+add_software_unittest(TextureMap)

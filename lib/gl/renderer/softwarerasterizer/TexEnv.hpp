@@ -165,8 +165,8 @@ private:
     Operand m_operandAlpha1 {};
     Operand m_operandAlpha2 {};
 
-    uint8_t m_scaleRgb { 0 };
-    uint8_t m_scaleAlpha { 0 };
+    uint8_t m_scaleRgb { 1 };
+    uint8_t m_scaleAlpha { 1 };
 
     bool m_enable { false };
 };
