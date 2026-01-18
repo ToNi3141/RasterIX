@@ -6,6 +6,9 @@ option(RIX_BUILD_ZYNQ_EMBEDDED_LINUX "Sets up a cross build environment for embe
 option(RIX_BUILD_RPPICO "Sets up a cross compilation build for the RPPico" OFF)
 # Enables the examples
 option(RIX_BUILD_EXAMPLES "Builds the examples" OFF)
+# Enables the unit tests
+option(RIX_BUILD_TESTS_VERILATOR "Builds the Verilator RTL unit tests" OFF)
+option(RIX_BUILD_TESTS_SOFTWARE "Builds the software unit tests" OFF)
 # Builds a dynamic library
 option(RIX_BUILD_SHARED_LIBRARY "Builds a dynamic loadable library" OFF)
 # Selects the bus connector
@@ -88,4 +91,12 @@ add_compile_definitions(SPDLOG_ACTIVE_LEVEL=3)
 if (RIX_BUILD_EXAMPLES)
     add_subdirectory(example)
 endif()
-add_subdirectory(lib)
+
+if (RIX_BUILD_TESTS_VERILATOR OR RIX_BUILD_TESTS_SOFTWARE)
+    enable_testing()
+    add_subdirectory(unittest)
+endif()
+
+if (NOT RIX_BUILD_TESTS_VERILATOR OR RIX_BUILD_TESTS_SOFTWARE)
+    add_subdirectory(lib)
+endif()

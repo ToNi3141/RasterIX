@@ -277,6 +277,30 @@
                 "RIX_BUILD_EXAMPLES": "ON",
                 "RIX_BUILD_SHARED_LIBRARY": "ON"
             }
+        },
+        {
+            "name": "unittest_verilator",
+            "displayName": "Verilator Unit Tests",
+            "description": "Unit tests for RTL simulation using Verilator",
+            "binaryDir": "${sourceDir}/build/unittest-verilator",
+            "generator": "Unix Makefiles",
+            "cacheVariables": 
+            {
+                "RIX_BUILD_TESTS_VERILATOR": "ON",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "unittest_software",
+            "displayName": "Software Unit Tests",
+            "description": "Unit tests for the software components",
+            "binaryDir": "${sourceDir}/build/unittest-software",
+            "generator": "Unix Makefiles",
+            "cacheVariables": 
+            {
+                "RIX_BUILD_TESTS_SOFTWARE": "ON",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
         }
     ]
 }

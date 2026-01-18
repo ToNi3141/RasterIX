@@ -19,7 +19,7 @@
 #define GENERAL_HPP
 
 #define CATCH_CONFIG_MAIN // This tells Catch to provide a main() - only do this in one cpp file
-#include "../3rdParty/catch.hpp"
+#include "../../3rdParty/catch.hpp"
 
 // Include common routines
 #include <verilated.h>
