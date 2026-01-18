@@ -329,7 +329,7 @@ module PerFragmentPipeline
         if (step1_valid)
         begin : step2
             reg logicOpEnable;
-            logicOpEnable = conf[RENDER_CONFIG_FRAGMENT_LOGIC_OP_POS +: RENDER_CONFIG_FRAGMENT_LOGIC_OP_SIZE];
+            logicOpEnable = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_LOGIC_OP_POS];
             
             m_frag_taddr <= step1_index;
             m_frag_tscreenPosX <= step1_screenPosX;
@@ -342,8 +342,8 @@ module PerFragmentPipeline
         m_frag_tvalid <= step1_valid;
         m_frag_tlast <= step1_last;
         m_frag_color_tstrb <= step1_keep & step1_writeFramebuffer;
-        m_frag_depth_tstrb <= step1_keep & step1_writeFramebuffer && confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS];
-        m_frag_stencil_tstrb <= step1_keep & step1_writeStencilBuffer && confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_STENCIL_TEST_POS];
+        m_frag_depth_tstrb <= step1_keep & step1_writeFramebuffer;
+        m_frag_stencil_tstrb <= step1_keep & step1_writeStencilBuffer;
     end
 endmodule
 

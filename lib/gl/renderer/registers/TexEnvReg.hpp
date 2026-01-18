@@ -85,6 +85,7 @@ public:
     void setTmu(const std::size_t tmu) { m_tmu = tmu; }
     static constexpr uint32_t getAddr(std::size_t tmu) { return 0xA + (tmu * TMU_OFFSET); }
     uint32_t getAddr() const { return getAddr(m_tmu); }
+    std::size_t getTmuFromAddr() const { return (getAddr() - 0xA) / TMU_OFFSET; }
 
     uint32_t serialize() const { return m_regVal.data; }
     void deserialize(const uint32_t data) { m_regVal.data = data; }

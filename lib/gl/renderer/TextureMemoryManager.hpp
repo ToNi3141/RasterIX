@@ -103,8 +103,8 @@ public:
         m_textureEntryFlags[textureSlot].requiresUpload = true;
         m_textureEntryFlags[textureSlot].requiresDelete = false;
 
-        m_textures[textureSlot].tmuConfig.setWarpModeS(m_textures[textureSlotOld].tmuConfig.getWrapModeS());
-        m_textures[textureSlot].tmuConfig.setWarpModeT(m_textures[textureSlotOld].tmuConfig.getWrapModeT());
+        m_textures[textureSlot].tmuConfig.setWrapModeS(m_textures[textureSlotOld].tmuConfig.getWrapModeS());
+        m_textures[textureSlot].tmuConfig.setWrapModeT(m_textures[textureSlotOld].tmuConfig.getWrapModeT());
         m_textures[textureSlot].tmuConfig.setEnableMagFilter(m_textures[textureSlotOld].tmuConfig.getEnableMagFilter());
         m_textures[textureSlot].tmuConfig.setEnableMinFilter(m_textures[textureSlotOld].tmuConfig.getEnableMinFilter());
 
@@ -136,7 +136,7 @@ public:
             return;
         }
         Texture& tex = m_textures[*m_textureLut[texId]];
-        tex.tmuConfig.setWarpModeS(mode);
+        tex.tmuConfig.setWrapModeS(mode);
     }
 
     TextureWrapMode getTextureWrapModeS(const uint16_t texId) const
@@ -158,7 +158,7 @@ public:
             return;
         }
         Texture& tex = m_textures[*m_textureLut[texId]];
-        tex.tmuConfig.setWarpModeT(mode);
+        tex.tmuConfig.setWrapModeT(mode);
     }
 
     TextureWrapMode getTextureWrapModeT(const uint16_t texId) const

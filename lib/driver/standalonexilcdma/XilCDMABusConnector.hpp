@@ -47,7 +47,7 @@ public:
         waitForDma();
     }
 
-    virtual void writeData(const uint8_t index, const uint32_t size)
+    virtual void writeData(const uint8_t index, const uint32_t size, const uint32_t offset) override
     {
         int Status;
         int TimeOut = 10000;
@@ -56,7 +56,7 @@ public:
         // is enabled
         Xil_L1DCacheFlush();
 
-        Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR)(m_dlMem[index].data()), size, XAXIDMA_DMA_TO_DEVICE);
+        Status = XAxiDma_SimpleTransfer(&AxiDma, (UINTPTR)(m_dlMem[index].data() + offset), size, XAXIDMA_DMA_TO_DEVICE);
         // Wait till transfer is done or 1usec * 10^6 iterations of timeout occurs
         waitForDma();
     }

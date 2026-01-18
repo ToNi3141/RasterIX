@@ -181,6 +181,15 @@ add_library(gl STATIC
     pixelpipeline/Texture.cpp
     renderer/Rasterizer.cpp
     renderer/Renderer.cpp
+    renderer/softwarerasterizer/AttributeInterpolator.cpp
+    renderer/softwarerasterizer/BlendFunc.cpp
+    renderer/softwarerasterizer/Fog.cpp
+    renderer/softwarerasterizer/LogicOp.cpp
+    renderer/softwarerasterizer/Rasterizer.cpp
+    renderer/softwarerasterizer/StencilOp.cpp
+    renderer/softwarerasterizer/TexEnv.cpp
+    renderer/softwarerasterizer/TextureMap.cpp
+    renderer/softwarerasterizer/SoftwareRasterizer.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog span)
@@ -208,4 +217,5 @@ add_compile_definitions(
     RIX_CORE_ENABLE_VSYNC=${RIX_CORE_ENABLE_VSYNC}
     RIX_CORE_MAX_VBO_COUNT=${RIX_CORE_MAX_VBO_COUNT}
     RIX_CORE_PERFORMANCE_MODE=${RIX_CORE_PERFORMANCE_MODE}
+    RIX_CORE_SOFTWARE_RASTERIZATION=${RIX_CORE_SOFTWARE_RASTERIZATION}
 )

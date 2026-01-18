@@ -33,8 +33,8 @@
 #include "renderer/registers/BaseColorReg.hpp"
 #include "renderer/registers/RegisterVariant.hpp"
 
-#include "renderer/threadedRasterizer/DeviceUploadList.hpp"
-#include "renderer/threadedRasterizer/RenderState.hpp"
+#include "renderer/threadedrasterizer/DeviceUploadList.hpp"
+#include "renderer/threadedrasterizer/RenderState.hpp"
 
 #include <spdlog/spdlog.h>
 

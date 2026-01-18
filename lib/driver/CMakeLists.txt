@@ -13,3 +13,7 @@ endif()
 if (RIX_DRIVER_STANDALONE_XIL_CDMA)
     add_subdirectory(standalonexilcdma)
 endif()
+
+if (RIX_DRIVER_SOFTWARE_RASTERIZER)
+    add_subdirectory(softwarerasterizer)
+endif()

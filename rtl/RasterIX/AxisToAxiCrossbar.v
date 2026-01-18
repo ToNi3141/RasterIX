@@ -100,7 +100,7 @@ module AxisToAxiCrossbar #(
     genvar i;
     `define MAX(a, b) ((a) > (b) ? (a) : (b))
     
-    reg  [ 3 : 0]               portSelect;
+    reg  [$clog2(NPRT) - 1 : 0] portSelect;
     reg                         writeToMemory;
     reg                         transferActive;
 

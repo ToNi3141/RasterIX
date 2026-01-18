@@ -30,9 +30,10 @@ public:
     /// @brief Uploads a chunk of data
     /// @param index The index of the buffer to upload
     /// @param size How many bytes of this buffer to upload
+    /// @param offset The offset in the buffer to start uploading from
     /// @note: A new transfer is started when the previous one is finished.
     ///     As long as the previous one is ongoing, this function blocks.
-    virtual void writeData(const uint8_t index, const uint32_t size) = 0;
+    virtual void writeData(const uint8_t index, const uint32_t size, const uint32_t offset = 0) = 0;
 
     /// @brief Downloads a chunk of data
     /// @param index The index of the buffer to download

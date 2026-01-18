@@ -56,12 +56,16 @@ DMAProxyBusConnector::~DMAProxyBusConnector()
     blockUntilTransferIsComplete();
 }
 
-void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size)
+void DMAProxyBusConnector::writeData(const uint8_t index, const uint32_t size, const uint32_t offset)
 {
     if (index >= TX_BUFFER_COUNT)
     {
         SPDLOG_ERROR("Index {} out of bounds.", index);
         return;
+    }
+    if (offset != 0)
+    {
+        SPDLOG_WARN("DMAProxyBusConnector does not support offsets in writeData(). Offset {} will be ignored.", offset);
     }
     blockUntilTransferIsComplete();
     int buffer_id = index;

@@ -36,6 +36,7 @@ public:
     std::size_t getTmu() const { return m_tmu; }
     uint32_t getAddr() const { return getAddr(m_tmu); }
     static constexpr uint32_t getAddr(const std::size_t tmu) { return 0xB + (tmu * TMU_OFFSET); }
+    std::size_t getTmuFromAddr() const { return (getAddr() - 0xB) / TMU_OFFSET; }
 
 private:
     static constexpr std::size_t TMU_OFFSET { 3 };

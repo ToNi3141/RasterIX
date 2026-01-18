@@ -75,7 +75,7 @@ public:
 
     TriangleStreamCmd& operator=(const TriangleStreamCmd& rhs)
     {
-        m_buffer = rhs.m_buffer;
+        std::copy(rhs.m_desc.begin(), rhs.m_desc.end(), m_buffer.begin());
         m_desc = { m_buffer };
         m_visible = rhs.m_visible;
         return *this;

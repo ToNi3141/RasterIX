@@ -34,17 +34,14 @@ void MainWindow::newFrame()
 
     rr::RIXGL::getInstance().swapDisplayList();
 
-#if USE_SIMULATION
+#if USE_SIMULATION || USE_SOFTWARE
     for (uint32_t i = 0; i < RESOLUTION_H; i++)
     {
         for (uint32_t j = 0; j < RESOLUTION_W; j++)
         {
-            uint8_t r = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 11) & 0x1f) << 3;
-            uint8_t g = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 5) & 0x3f) << 2;
-            uint8_t b = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 0) & 0x1f) << 3;
-            // uint8_t r = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 24) & 0xff) << 0;
-            // uint8_t g = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 16) & 0xff) << 0;
-            // uint8_t b = ((m_framebuffer[(i*RESOLUTION_W)+j] >> 8) & 0xff) << 0;
+            const uint8_t r = m_framebuffer[((i*RESOLUTION_W)+j)*4+0];
+            const uint8_t g = m_framebuffer[((i*RESOLUTION_W)+j)*4+1];
+            const uint8_t b = m_framebuffer[((i*RESOLUTION_W)+j)*4+2];
             m_image.setPixelColor(QPoint(j, i), QColor(r, g, b));
         }
     }

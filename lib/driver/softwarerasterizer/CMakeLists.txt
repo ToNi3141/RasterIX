@@ -1,0 +1,4 @@
+add_library(softwarerasterizerbusconnector INTERFACE)
+
+target_link_libraries(softwarerasterizerbusconnector INTERFACE gl spdlog::spdlog)
+target_include_directories(softwarerasterizerbusconnector INTERFACE .)

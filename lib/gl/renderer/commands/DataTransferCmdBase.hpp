@@ -21,6 +21,7 @@
 #include "Op.hpp"
 #include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
+#include "renderer/displaylist/DisplayList.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>

@@ -46,6 +46,16 @@ public:
         return Vec4i { getRed(), getGreen(), getBlue(), getAlpha() };
     }
 
+    Vec4 getColorf() const
+    {
+        return {
+            static_cast<float>(getRed()) / 255.0f,
+            static_cast<float>(getGreen()) / 255.0f,
+            static_cast<float>(getBlue()) / 255.0f,
+            static_cast<float>(getAlpha()) / 255.0f,
+        };
+    }
+
     void setRed(const uint8_t val) { m_regVal.fields.red = val; }
     void setGreen(const uint8_t val) { m_regVal.fields.green = val; }
     void setBlue(const uint8_t val) { m_regVal.fields.blue = val; }
