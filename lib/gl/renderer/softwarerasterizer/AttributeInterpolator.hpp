@@ -53,7 +53,34 @@ private:
     static InterpolatedAttributesData::Texture interpolateTexture(
         const TriangleStreamTypes::Texture& texture,
         const float bbx,
-        const float bby);
+        const float bby)
+    {
+        InterpolatedAttributesData::Texture tex {
+            interpolateAttribute(
+                texture.texStq[0],
+                texture.texStqXInc[0],
+                texture.texStqYInc[0],
+                bbx,
+                bby), // s
+            interpolateAttribute(
+                texture.texStq[1],
+                texture.texStqXInc[1],
+                texture.texStqYInc[1],
+                bbx,
+                bby), // t
+            interpolateAttribute(
+                texture.texStq[2],
+                texture.texStqXInc[2],
+                texture.texStqYInc[2],
+                bbx,
+                bby) // q
+        };
+
+        tex.q = 1.0f / tex.q;
+        tex.s *= tex.q;
+        tex.t *= tex.q;
+        return tex;
+    }
 
     std::array<bool, RenderConfig::TMU_COUNT> m_tmuEnable {};
 };

@@ -89,9 +89,43 @@ private:
         return *reinterpret_cast<const uint16_t*>(&m_gram[texelAddress]);
     }
 
-    float clampTexCoord(const float coord, const TextureWrapMode wrapMode) const;
+    float clampTexCoord(const float coord, const TextureWrapMode wrapMode) const
+    {
+        if (wrapMode == TextureWrapMode::CLAMP_TO_EDGE)
+        {
+            if (coord < 0.0f)
+            {
+                return 0.0f;
+            }
+            else if (coord > 1.0f)
+            {
+                return 1.0f;
+            }
+        }
+        const int32_t cInt = static_cast<int32_t>(coord);
+        const float cFrac = coord - static_cast<float>(cInt);
+        return (cFrac < 0.0f) ? (1.0f + cFrac) : cFrac;
+    }
 
-    uint32_t getTexelAddr(const float s, const float t) const;
+    uint32_t getTexelAddr(const float s, const float t) const
+    {
+        uint32_t uS = static_cast<uint32_t>(s * m_textureSizeW);
+        uint32_t uT = static_cast<uint32_t>(t * m_textureSizeH);
+        if (m_wrapModeS == TextureWrapMode::CLAMP_TO_EDGE)
+        {
+            uS = std::clamp(uS, 0u, static_cast<uint32_t>(m_textureSizeW) - 1u);
+            uT = std::clamp(uT, 0u, static_cast<uint32_t>(m_textureSizeH) - 1u);
+        }
+        else // REPEAT
+        {
+            uS = uS % static_cast<uint32_t>(m_textureSizeW);
+            uT = uT % static_cast<uint32_t>(m_textureSizeH);
+        }
+        const uint32_t index = uT * m_textureSizeW + uS;
+        const uint32_t addr = index * 2;
+        const uint32_t texelAddress = translateAddress(addr);
+        return texelAddress;
+    }
 
     uint32_t translateAddress(const uint32_t addr) const
     {

@@ -182,8 +182,6 @@ add_library(gl STATIC
     renderer/Rasterizer.cpp
     renderer/Renderer.cpp
     renderer/softwarerasterizer/AttributeInterpolator.cpp
-    renderer/softwarerasterizer/BlendFunc.cpp
-    renderer/softwarerasterizer/Fog.cpp
     renderer/softwarerasterizer/Rasterizer.cpp
     renderer/softwarerasterizer/TexEnv.cpp
     renderer/softwarerasterizer/TextureMap.cpp

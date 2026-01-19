@@ -36,7 +36,19 @@ public:
     };
     using FogLut = std::array<FogLutEntry, 32>;
 
-    Vec4 calculateFog(const float w, const Vec4& color) const;
+    Vec4 calculateFog(const float w, const Vec4& color) const
+    {
+        if (!m_enable)
+        {
+            return color;
+        }
+
+        const float factor = computeFogFactor(w);
+        Vec4 foggedColor = interpolate(m_fogColor, color, std::clamp(factor, 0.0f, 1.0f));
+        foggedColor.clamp(0.0f, 1.0f);
+        foggedColor[3] = color[3]; // Preserve alpha
+        return foggedColor;
+    }
 
     void setFogLut(const FogLut& lut, const float lowerBound, const float upperBound)
     {
@@ -56,7 +68,26 @@ public:
     }
 
 private:
-    float computeFogFactor(const float w) const;
+    float computeFogFactor(const float w) const
+    {
+        if (w <= m_lowerBound)
+        {
+            return 1.0f;
+        }
+        if (w >= m_upperBound)
+        {
+            return 0.0f;
+        }
+
+        const float exp = std::log2(w);
+        float wInt;
+        const float wFrac = std::modf(exp, &wInt);
+        std::size_t index = static_cast<std::size_t>(wInt);
+        index = std::clamp(index, static_cast<std::size_t>(0), m_fogLut.size() - 1);
+        const FogLutEntry& entry = m_fogLut[index];
+        const float f = (entry.m * wFrac) + entry.b;
+        return f;
+    }
 
     FogLut m_fogLut {};
     float m_lowerBound { 1.0f };
