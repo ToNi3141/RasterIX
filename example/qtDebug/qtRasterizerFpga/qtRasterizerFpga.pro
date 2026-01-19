@@ -44,9 +44,7 @@ SOURCES += main.cpp\
     $${RIXGL_PATH}/renderer/softwarerasterizer/AttributeInterpolator.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/BlendFunc.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/Fog.cpp \
-    $${RIXGL_PATH}/renderer/softwarerasterizer/LogicOp.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/Rasterizer.cpp \
-    $${RIXGL_PATH}/renderer/softwarerasterizer/StencilOp.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/TexEnv.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/TextureMap.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/SoftwareRasterizer.cpp \
