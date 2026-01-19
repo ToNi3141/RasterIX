@@ -129,22 +129,144 @@ private:
         const Vec4& texture,
         const Vec4& constant,
         const Vec4& primaryColor,
-        const Vec4& previous) const;
+        const Vec4& previous) const
+    {
+        switch (srcReg)
+        {
+        case SrcReg::TEXTURE:
+            return texture[3];
+        case SrcReg::CONSTANT:
+            return constant[3];
+        case SrcReg::PRIMARY_COLOR:
+            return primaryColor[3];
+        case SrcReg::PREVIOUS:
+            return previous[3];
+        default:
+            return 0.0f;
+        }
+    }
 
     Vec3 selectSrcRgb(
         const SrcReg& srcReg,
         const Vec4& texture,
         const Vec4& constant,
         const Vec4& primaryColor,
-        const Vec4& previous) const;
+        const Vec4& previous) const
+    {
+        switch (srcReg)
+        {
+        case SrcReg::TEXTURE:
+            return Vec3 { texture[0], texture[1], texture[2] };
+        case SrcReg::CONSTANT:
+            return Vec3 { constant[0], constant[1], constant[2] };
+        case SrcReg::PRIMARY_COLOR:
+            return Vec3 { primaryColor[0], primaryColor[1], primaryColor[2] };
+        case SrcReg::PREVIOUS:
+            return Vec3 { previous[0], previous[1], previous[2] };
+        default:
+            return Vec3 { 0.0f, 0.0f, 0.0f };
+        }
+    }
 
-    Vec3 selectRgbOperand(const Operand& operand, const Vec3& color) const;
+    Vec3 selectRgbOperand(const Operand& operand, const Vec3& color) const
+    {
+        switch (operand)
+        {
+        case Operand::SRC_ALPHA:
+            return Vec3 { color[3], color[3], color[3] };
+        case Operand::ONE_MINUS_SRC_ALPHA:
+            return Vec3 { 1.0f - color[3], 1.0f - color[3], 1.0f - color[3] };
+        case Operand::SRC_COLOR:
+            return color;
+        case Operand::ONE_MINUS_SRC_COLOR:
+            return Vec3 { 1.0f - color[0], 1.0f - color[1], 1.0f - color[2] };
+        default:
+            return Vec3 { 0.0f, 0.0f, 0.0f };
+        }
+    }
 
-    float selectAlphaOperand(const Operand& operand, const float& color) const;
+    float selectAlphaOperand(const Operand& operand, const float& color) const
+    {
+        switch (operand)
+        {
+        case Operand::SRC_ALPHA:
+            return color;
+        case Operand::ONE_MINUS_SRC_ALPHA:
+            return 1.0f - color;
+        default:
+            return 0.0f;
+        }
+    }
 
-    Vec3 combineRgb(const Combine& combine, const Vec3& op0, const Vec3& op1, const Vec3& op2) const;
+    Vec3 combineRgb(const Combine& combine, const Vec3& op0, const Vec3& op1, const Vec3& op2) const
+    {
+        Vec3 result {};
+        switch (combine)
+        {
+        case Combine::REPLACE:
+            result = op0;
+            break;
+        case Combine::MODULATE:
+            result = op0;
+            result *= op1;
+            break;
+        case Combine::ADD:
+            result = op0;
+            result += op1;
+            break;
+        case Combine::ADD_SIGNED:
+            result = op0;
+            result += op1;
+            result -= Vec3 { 0.5f, 0.5f, 0.5f };
+            break;
+        case Combine::INTERPOLATE:
+            result = op0 + (op1 - op2) * op2;
+            break;
+        case Combine::SUBTRACT:
+            result = op0;
+            result -= op1;
+            break;
+        case Combine::DOT3_RGB:
+        case Combine::DOT3_RGBA:
+        {
+            const float dot = (op0 - Vec3 { 0.5f, 0.5f, 0.5f }).dot(op1 - Vec3 { 0.5f, 0.5f, 0.5f }) * 4.0f;
+            result = Vec3 { dot, dot, dot };
+        }
+        break;
+        default:
+            break;
+        }
+        return result;
+    }
 
-    float combineAlpha(const Combine& combine, const float& op0, const float& op1, const float& op2) const;
+    float combineAlpha(const Combine& combine, const float& op0, const float& op1, const float& op2) const
+    {
+        float result {};
+        switch (combine)
+        {
+        case Combine::REPLACE:
+            result = op0;
+            break;
+        case Combine::MODULATE:
+            result = op0 * op1;
+            break;
+        case Combine::ADD:
+            result = op0 + op1;
+            break;
+        case Combine::ADD_SIGNED:
+            result = op0 + op1 - 0.5f;
+            break;
+        case Combine::INTERPOLATE:
+            result = op0 + (op1 - op2) * op2;
+            break;
+        case Combine::SUBTRACT:
+            result = op0 - op1;
+            break;
+        default:
+            break;
+        }
+        return result;
+    }
 
     Vec4 m_envColor {};
 
