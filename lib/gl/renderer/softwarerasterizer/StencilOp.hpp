@@ -28,7 +28,24 @@ namespace rr::softwarerasterizer
 class StencilOp
 {
 public:
-    uint8_t op(const uint8_t val, const bool zTestPassed, const bool stencilTestPassed) const;
+    uint8_t op(const uint8_t val, const bool zTestPassed, const bool stencilTestPassed) const
+    {
+        if (!m_enable)
+            return val;
+
+        if (!stencilTestPassed)
+        {
+            return applyOp(val, m_stencilFailOp);
+        }
+        else if (!zTestPassed)
+        {
+            return applyOp(val, m_zFailOp);
+        }
+        else
+        {
+            return applyOp(val, m_zPassOp);
+        }
+    }
 
     void setZFailOp(const rr::StencilOp op)
     {
@@ -63,7 +80,30 @@ public:
 private:
     static constexpr uint8_t MAX_STENCIL_VALUE { 15 };
 
-    uint8_t applyOp(const uint8_t val, const rr::StencilOp op) const;
+    uint8_t applyOp(const uint8_t val, const rr::StencilOp op) const
+    {
+        switch (op)
+        {
+        case rr::StencilOp::KEEP:
+            return val & MAX_STENCIL_VALUE;
+        case rr::StencilOp::ZERO:
+            return 0;
+        case rr::StencilOp::REPLACE:
+            return m_refValue;
+        case rr::StencilOp::INCR:
+            return (val == MAX_STENCIL_VALUE) ? MAX_STENCIL_VALUE : (val + 1);
+        case rr::StencilOp::INCR_WRAP:
+            return (val == MAX_STENCIL_VALUE) ? 0 : (val + 1);
+        case rr::StencilOp::DECR:
+            return (val == 0) ? 0 : (val - 1);
+        case rr::StencilOp::DECR_WRAP:
+            return (val == 0) ? MAX_STENCIL_VALUE : (val - 1);
+        case rr::StencilOp::INVERT:
+            return ~val & MAX_STENCIL_VALUE;
+        default:
+            return val;
+        }
+    }
 
     rr::StencilOp m_zFailOp { rr::StencilOp::KEEP };
     rr::StencilOp m_zPassOp { rr::StencilOp::KEEP };
