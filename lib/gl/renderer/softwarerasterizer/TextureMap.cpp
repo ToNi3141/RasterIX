@@ -93,13 +93,22 @@ float TextureMap::clampTexCoord(const float coord, const TextureWrapMode wrapMod
 
 uint32_t TextureMap::getTexelAddr(const float s, const float t) const
 {
-    const uint32_t maxS = static_cast<uint32_t>(m_textureSizeW) - 1;
-    const uint32_t maxT = static_cast<uint32_t>(m_textureSizeH) - 1;
-    const uint32_t uS = std::min(static_cast<uint32_t>(s * m_textureSizeW), maxS);
-    const uint32_t uT = std::min(static_cast<uint32_t>(t * m_textureSizeH), maxT);
+    uint32_t uS = static_cast<uint32_t>(s * m_textureSizeW);
+    uint32_t uT = static_cast<uint32_t>(t * m_textureSizeH);
+    if (m_wrapModeS == TextureWrapMode::CLAMP_TO_EDGE)
+    {
+        uS = std::clamp(uS, 0u, static_cast<uint32_t>(m_textureSizeW) - 1u);
+        uT = std::clamp(uT, 0u, static_cast<uint32_t>(m_textureSizeH) - 1u);
+    }
+    else // REPEAT
+    {
+        uS = uS % static_cast<uint32_t>(m_textureSizeW);
+        uT = uT % static_cast<uint32_t>(m_textureSizeH);
+    }
     const uint32_t index = uT * m_textureSizeW + uS;
     const uint32_t addr = index * 2;
-    return translateAddress(addr);
+    const uint32_t texelAddress = translateAddress(addr);
+    return texelAddress;
 }
 
 } // namespace rr::softwarerasterizer

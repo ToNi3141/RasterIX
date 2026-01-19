@@ -203,6 +203,79 @@ TEST_CASE("TextureMap wrap mode REPEAT", "[TextureMap]")
     }
 }
 
+TEST_CASE("TextureMap wrap mode REPEAT edge cases", "[TextureMap]")
+{
+    // 2x2 texture layout:
+    // (0,0) Red     (1,0) Green    <- t in [0.0, 0.5)
+    // (0,1) Blue    (1,1) White    <- t in [0.5, 1.0)
+    //   ^             ^
+    //   s in [0,0.5)  s in [0.5,1.0)
+    
+    auto textureData = TestTextureHelper::create2x2TextureRGBA4444(
+        TestTextureHelper::rgba4444(15, 0, 0, 15), // (0,0) Red
+        TestTextureHelper::rgba4444(0, 15, 0, 15), // (1,0) Green
+        TestTextureHelper::rgba4444(0, 0, 15, 15), // (0,1) Blue
+        TestTextureHelper::rgba4444(15, 15, 15, 15)); // (1,1) White
+
+    TextureMap texMap = createTestTextureMap(tcb::span<const uint8_t>(textureData), 2.0f, 2.0f);
+    texMap.setEnableMagFilter(false);
+    texMap.setWrapMode(TextureWrapMode::REPEAT, TextureWrapMode::REPEAT);
+
+    SECTION("s=1.0 wraps to s=0.0 -> texel (0,0) Red")
+    {
+        Vec4 result = texMap.getTexel(1.0f, 0.25f);
+        Vec4 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
+        INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
+        REQUIRE(rr::ut::vec4Approx(result, expected));
+    }
+
+    SECTION("t=1.0 wraps to t=0.0 -> texel (0,0) Red")
+    {
+        Vec4 result = texMap.getTexel(0.25f, 1.0f);
+        Vec4 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
+        INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
+        REQUIRE(rr::ut::vec4Approx(result, expected));
+    }
+
+    SECTION("s=2.0 wraps to s=0.0 -> texel (0,0) Red")
+    {
+        Vec4 result = texMap.getTexel(2.0f, 0.25f);
+        Vec4 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
+        INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
+        REQUIRE(rr::ut::vec4Approx(result, expected));
+    }
+
+    SECTION("s=1.75 wraps to s=0.75 -> texel (1,0) Green")
+    {
+        Vec4 result = texMap.getTexel(1.75f, 0.25f);
+        Vec4 expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
+        INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
+        INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
+        REQUIRE(rr::ut::vec4Approx(result, expected));
+    }
+
+    SECTION("s=0.0, t=0.0 -> texel (0,0) Red")
+    {
+        Vec4 result = texMap.getTexel(0.0f, 0.0f);
+        Vec4 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
+        INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
+        REQUIRE(rr::ut::vec4Approx(result, expected));
+    }
+
+    SECTION("s=1.0, t=1.0 wraps to (0,0) Red")
+    {
+        Vec4 result = texMap.getTexel(1.0f, 1.0f);
+        Vec4 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
+        INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
+        REQUIRE(rr::ut::vec4Approx(result, expected));
+    }
+}
+
 TEST_CASE("TextureMap wrap mode CLAMP_TO_EDGE", "[TextureMap]")
 {
     auto textureData = TestTextureHelper::create2x2TextureRGBA4444(
