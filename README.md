@@ -118,12 +118,11 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RIX_CORE_COLOR_BUFFER_LOC_2            | Location of the second framebuffer. |
 | RIX_CORE_DEPTH_BUFFER_LOC              | Location of the depth buffer (unused in `rixif`). |
 | RIX_CORE_STENCIL_BUFFER_LOC            | Location of the stencil buffer (unused in `rixif`). |
-| RIX_CORE_THREADED_RASTERIZATION        | Will run the rasterization and transformation in a thread. A threaded runner is for the `rixif` required. Can significantly improve the performance of the vertex pipeline. |
+| RIX_CORE_THREADED_RASTERIZATION        | Will disable the vertex transformation in the RIX lib. Instead it pushes untransformed triangles into the display list. A `ThreadedVertexTransformer` is required for vertex transforming before it is send to the FPGA. For the `rixif` config a `ThreadedVertexTransformer` is required. On multicore systems, it can drastically improve performance. |
 | RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE | Sets the size of the display list. A good value is a size similar of `IDevice::requestDisplayListBuffer().size()`. Most of the times smaller lists are also working perfectly fine. |
 | RIX_CORE_ENABLE_VSYNC                  | Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals. |
 | MAX_VBO_COUNT                          | Max usable VBOs (Vertex Buffer Objects). Default is 256. VBOs are used mainly for compatibility with OpenGL, but do not provide performance advantages in this driver. |
 | RIX_CORE_PERFORMANCE_MODE              | Enables the performance mode which exchanges compatibility with performance optimizations. For instance, the intermediate display upload (where a frame is split in several display lists, when a display list overflows) will break on the `rixif` config, because the depth and stencil buffer are not reloaded. |
-| RIX_CORE_SOFTWARE_RASTERIZATION | Enables the software rasterization. |
 
 ## How to use the Core
 1. Add the files in the following directories to your project: `rtl/RasterIX/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.

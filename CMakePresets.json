@@ -33,8 +33,7 @@
                 "RIX_CORE_THREADED_RASTERIZATION": "true",
                 "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "1024 * 1024 * 16",
                 "RIX_CORE_ENABLE_VSYNC": "false",
-                "RIX_CORE_PERFORMANCE_MODE": "true",
-                "RIX_CORE_SOFTWARE_RASTERIZATION": "false"
+                "RIX_CORE_PERFORMANCE_MODE": "true"
             }
         },
         {
@@ -89,8 +88,7 @@
                 "RIX_CORE_THREADED_RASTERIZATION": "true",
                 "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "1024 * 1024 * 4",
                 "RIX_CORE_ENABLE_VSYNC": "false",
-                "RIX_CORE_PERFORMANCE_MODE": "true",
-                "RIX_CORE_SOFTWARE_RASTERIZATION": "false"
+                "RIX_CORE_PERFORMANCE_MODE": "true"
             }
         },
         {

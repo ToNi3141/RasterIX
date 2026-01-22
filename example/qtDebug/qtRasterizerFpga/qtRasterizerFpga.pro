@@ -46,6 +46,7 @@ SOURCES += main.cpp\
     $${RIXGL_PATH}/renderer/softwarerasterizer/TexEnv.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/TextureMap.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/SoftwareRasterizer.cpp \
+    $${RIXGL_PATH}/renderer/dse/DmaStreamEngine.cpp \
     $${RIXGL_PATH}/pixelpipeline/Fogging.cpp \
     $${RIXGL_PATH}/pixelpipeline/Texture.cpp \
     $${RIXGL_PATH}/gl.cpp \
@@ -110,7 +111,6 @@ DEFINES += RIX_CORE_PERFORMANCE_MODE=true
 
 equals(TARGET_BUILD, "hardware") {
     DEFINES += USE_HARDWARE
-    DEFINES += RIX_CORE_SOFTWARE_RASTERIZATION=false
     equals(VARIANT, "RasterIX_IF") {
         DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=15
     }
@@ -147,7 +147,6 @@ equals(TARGET_BUILD, "simulation") {
     VERILATOR_CODE_GEN_PATH = $${PATH_PREFIX}/rtl/top/Verilator/obj_dir
 
     DEFINES += USE_SIMULATION
-    DEFINES += RIX_CORE_SOFTWARE_RASTERIZATION=false
     equals(VARIANT, "RasterIX_IF") {
         DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=15
     }
@@ -165,7 +164,6 @@ equals(TARGET_BUILD, "simulation") {
 }
 equals(TARGET_BUILD, "software") {
     DEFINES += USE_SOFTWARE
-    DEFINES += RIX_CORE_SOFTWARE_RASTERIZATION=true
     DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
 
     BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/softwarerasterizer

@@ -18,11 +18,14 @@
 #ifndef _THREADED_RASTERIZER_HPP_
 #define _THREADED_RASTERIZER_HPP_
 
+#include "RenderConfigs.hpp"
 #include "renderer/IDevice.hpp"
 #include "renderer/displaylist/DisplayList.hpp"
 #include "renderer/displaylist/DisplayListAssembler.hpp"
+#include "renderer/displaylist/DisplayListDispatcher.hpp"
 #include "renderer/displaylist/DisplayListDoubleBuffer.hpp"
 #include "renderer/displaylist/RIXDisplayListAssembler.hpp"
+#include "transform/VertexTransforming.hpp"
 #include <cstdint>
 #include <tcb/span.hpp>
 

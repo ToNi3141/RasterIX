@@ -17,11 +17,14 @@
 #endif
 #if USE_SOFTWARE
 #include "SoftwareRasterizerBusConnector.hpp"
+#include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
 #endif
 
 #include "NoThreadRunner.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
+#include "renderer/dse/DmaStreamEngine.hpp"
+#include "renderer/threadedrasterizer/ThreadedRasterizer.hpp"
 #include "../../stencilShadow/StencilShadow.hpp"
 #include "../../minimal/Minimal.hpp"
 #include "../../mipmap/Mipmap.hpp"
@@ -52,7 +55,8 @@ public:
 private:
     uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 4];
 
-    rr::VerilatorBusConnector<> m_busConnector{reinterpret_cast<uint32_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
+    rr::VerilatorBusConnector<> m_busConnector{m_framebuffer, RESOLUTION_W, RESOLUTION_H};
+    rr::dsec::DmaStreamEngine m_device{m_busConnector};
 #endif
 
 #if USE_SOFTWARE
@@ -63,6 +67,7 @@ public:
 private:
     uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 4];
     rr::SoftwareRasterizerBusConnector<> m_busConnector{m_framebuffer};
+    rr::softwarerasterizer::SoftwareRasterizer m_device{m_busConnector};
 #endif
 
 #if USE_HARDWARE
@@ -71,10 +76,12 @@ public:
     static const uint32_t RESOLUTION_W = 1024;
 private:
     rr::FT60XBusConnector m_busConnector;
+    rr::dsec::DmaStreamEngine m_device{m_busConnector};
 #endif
 
     rr::NoThreadRunner m_workerThread{};
     rr::NoThreadRunner m_uploadThread{};
+    rr::ThreadedRasterizer m_threadedRasterizer{m_device, m_workerThread, m_uploadThread};
 
     Ui::MainWindow *ui;
 

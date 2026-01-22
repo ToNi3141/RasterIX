@@ -19,6 +19,8 @@
 #include "DMAProxyBusConnector.hpp"
 #include "MultiThreadRunner.hpp"
 #include "RIXGL.hpp"
+#include "renderer/dse/DmaStreamEngine.hpp"
+#include "renderer/threadedrasterizer/ThreadedRasterizer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
@@ -30,7 +32,7 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
-        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
+        rr::RIXGL::createInstance(m_threadedRasterizer);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
         rr::RIXGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
         rr::RIXGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
@@ -66,6 +68,8 @@ private:
     rr::DMAProxyBusConnector m_busConnector {};
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
+    rr::dsec::DmaStreamEngine m_dseDevice { m_busConnector };
+    rr::ThreadedRasterizer m_threadedRasterizer { m_dseDevice, m_workerThread, m_uploadThread };
 } guard;
 
 GLAPI XVisualInfo* APIENTRY glXChooseVisual(

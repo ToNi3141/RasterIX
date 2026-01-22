@@ -20,6 +20,8 @@
 #include "MultiThreadRunner.hpp"
 #include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
+#include "renderer/dse/DmaStreamEngine.hpp"
+#include "renderer/threadedrasterizer/ThreadedRasterizer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
@@ -27,14 +29,13 @@ using namespace rr;
 
 static const uint32_t RESOLUTION_H = 600;
 static const uint32_t RESOLUTION_W = 1024;
-FT60XBusConnector m_busConnector;
 
 class GLInitGuard
 {
 public:
     GLInitGuard()
     {
-        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
+        rr::RIXGL::createInstance(m_threadedRasterizer);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
         rr::RIXGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
         rr::RIXGL::getInstance().addLibExtension("WGL_ARB_render_texture");
@@ -71,6 +72,9 @@ public:
 private:
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
+    FT60XBusConnector m_busConnector {};
+    rr::dsec::DmaStreamEngine m_dseDevice { m_busConnector };
+    rr::ThreadedRasterizer m_threadedRasterizer { m_dseDevice, m_workerThread, m_uploadThread };
 } guard;
 
 // Wiggle API

@@ -2,6 +2,7 @@
 #include "RIXGL.hpp"
 #include "gl.h"
 #include "glu.h"
+#include "renderer/dse/DmaStreamEngine.hpp"
 
 #include <hardware/dma.h>
 #include <hardware/spi.h>
@@ -132,7 +133,7 @@ public:
         gpio_init(LED_PIN);
         gpio_set_dir(LED_PIN, GPIO_OUT);
         m_busConnector.init();
-        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
+        rr::RIXGL::createInstance(m_device);
         rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
@@ -158,8 +159,7 @@ private:
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
     BusConnector<4096> m_busConnector {};
-    rr::NoThreadRunner m_workerThread {};
-    rr::NoThreadRunner m_uploadThread {};
+    rr::dsec::DmaStreamEngine m_device { m_busConnector };
     bool led = false;
     Scene m_scene {};
 };

@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <tcb/span.hpp>
 
-namespace rr::DSEC
+namespace rr::dsec
 {
 
 using SCT = uint32_t;
@@ -59,6 +59,6 @@ struct Command
 #pragma pack(pop)
 };
 
-} // namespace rr::DSEC
+} // namespace rr::dsec
 
 #endif // _DMA_STREAM_ENGINE_COMMANDS_HPP_

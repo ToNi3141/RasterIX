@@ -34,7 +34,6 @@ function(add_software_unittest NAME)
         RIX_CORE_ENABLE_VSYNC=${RIX_CORE_ENABLE_VSYNC}
         RIX_CORE_MAX_VBO_COUNT=${RIX_CORE_MAX_VBO_COUNT}
         RIX_CORE_PERFORMANCE_MODE=${RIX_CORE_PERFORMANCE_MODE}
-        RIX_CORE_SOFTWARE_RASTERIZATION=${RIX_CORE_SOFTWARE_RASTERIZATION}
     )
     
     # Convert name to camelCase for test name (e.g., BlendFunc -> blendFunc)
