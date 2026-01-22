@@ -113,8 +113,8 @@ private:
         uint32_t uT = static_cast<uint32_t>(t * m_textureSizeH);
         if (m_wrapModeS == TextureWrapMode::CLAMP_TO_EDGE)
         {
-            uS = std::clamp(uS, 0u, static_cast<uint32_t>(m_textureSizeW) - 1u);
-            uT = std::clamp(uT, 0u, static_cast<uint32_t>(m_textureSizeH) - 1u);
+            uS = std::clamp(uS, static_cast<uint32_t>(0u), static_cast<uint32_t>(m_textureSizeW) - static_cast<uint32_t>(1u));
+            uT = std::clamp(uT, static_cast<uint32_t>(0u), static_cast<uint32_t>(m_textureSizeH) - static_cast<uint32_t>(1u));
         }
         else // REPEAT
         {

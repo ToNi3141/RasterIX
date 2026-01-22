@@ -210,7 +210,7 @@ TEST_CASE("TextureMap wrap mode REPEAT edge cases", "[TextureMap]")
     // (0,1) Blue    (1,1) White    <- t in [0.5, 1.0)
     //   ^             ^
     //   s in [0,0.5)  s in [0.5,1.0)
-    
+
     auto textureData = TestTextureHelper::create2x2TextureRGBA4444(
         TestTextureHelper::rgba4444(15, 0, 0, 15), // (0,0) Red
         TestTextureHelper::rgba4444(0, 15, 0, 15), // (1,0) Green
