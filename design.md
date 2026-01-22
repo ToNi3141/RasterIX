@@ -43,7 +43,7 @@ The driver is build with the following components:
 - `Rasterizer`: It implements the edge equation to calculate barycentric coordinates and also calculates increments which are later used in the hardware to rasterize the triangle. This is also done for texture coordinates and w.
 - `DisplayList`: Contains all render commands produced from the Renderer and buffers them, before they are streamed to the RasterIX.
 - `TextureMemoryManager`: Manager for the texture memory on the device.
-- `ThreadedRasterizer`: Optional step and derives from the `IDevice` interface. Fetches the data from the datastream and decodes it. It performs the transformation on the vertices and rasterizes the triangle. Usually this class runs in a thread.
+- `ThreadedVertexTransformer`: Optional step and derives from the `IDevice` interface. Fetches the data from the datastream and decodes it. It performs the transformation on the vertices and rasterizes the triangle. Usually this class runs in a thread.
 - `DmaStreamEngine`: Derives from the `IDevice` interface. Adds a header to the data stream with information about the size of the data and where to stream the data (to the RasterIX or to the device memory).
 - `BusConnector`: Derives from the `IBusConnector` interface. It is used to transfer the data via a  defined interface like USB on a PC build, AXI on the Zynq build or SPI for microcontrollers to the RasterIX.
 - `IBusConnector`: Interface description which abstracts the physical access to the hardware.

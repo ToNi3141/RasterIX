@@ -4,7 +4,7 @@
 #include "gl.h"
 #include "glu.h"
 #include "renderer/dse/DmaStreamEngine.hpp"
-#include "renderer/threadedrasterizer/ThreadedRasterizer.hpp"
+#include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <spdlog/spdlog.h>
 #include <stdio.h>
 
@@ -41,6 +41,6 @@ private:
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
     rr::dsec::DmaStreamEngine m_dseDevice { m_busConnector };
-    rr::ThreadedRasterizer m_device { m_dseDevice, m_workerThread, m_uploadThread };
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_device { m_dseDevice, m_workerThread, m_uploadThread };
     Scene m_scene {};
 };

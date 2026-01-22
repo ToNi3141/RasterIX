@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _THREADED_RASTERIZER_HPP_
-#define _THREADED_RASTERIZER_HPP_
+#ifndef _THREADED_VERTEX_TRANSFORMER_HPP_
+#define _THREADED_VERTEX_TRANSFORMER_HPP_
 
 #include "RenderConfigs.hpp"
 #include "renderer/IDevice.hpp"
@@ -36,18 +36,18 @@
 #include "renderer/registers/BaseColorReg.hpp"
 #include "renderer/registers/RegisterVariant.hpp"
 
-#include "renderer/threadedrasterizer/DeviceUploadList.hpp"
-#include "renderer/threadedrasterizer/RenderState.hpp"
+#include "renderer/threadedvertextransformer/DeviceUploadList.hpp"
+#include "renderer/threadedvertextransformer/RenderState.hpp"
 
 #include <spdlog/spdlog.h>
 
-namespace rr
+namespace rr::threadedvertextransformer
 {
 
-class ThreadedRasterizer : public IDevice
+class ThreadedVertexTransformer : public IDevice
 {
 public:
-    ThreadedRasterizer(IDevice& device, IThreadRunner& uploadThread, IThreadRunner& workerThread)
+    ThreadedVertexTransformer(IDevice& device, IThreadRunner& uploadThread, IThreadRunner& workerThread)
         : m_device { device }
         , m_uploadThread { uploadThread }
         , m_workerThread { workerThread }
@@ -402,7 +402,7 @@ private:
 
     bool handleCommand(const TriangleStreamCmd&)
     {
-        SPDLOG_CRITICAL("TriangleStreamCmd not allowed in ThreadedRasterizer. This might cause the renderer to crash ...");
+        SPDLOG_CRITICAL("TriangleStreamCmd not allowed in ThreadedVertexTransformer. This might cause the renderer to crash ...");
         return true;
     }
 
@@ -647,6 +647,6 @@ private:
     int32_t m_scissorYEnd { 0 };
 };
 
-} // namespace rr
+} // namespace rr::threadedvertextransformer
 
 #endif // _THREADED_RASTERIZER_HPP_

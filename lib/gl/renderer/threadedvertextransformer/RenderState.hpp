@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <tcb/span.hpp>
 
-namespace rr
+namespace rr::threadedvertextransformer
 {
 
 class RenderState
@@ -89,6 +89,6 @@ private:
     State m_state {};
 };
 
-} // namespace rr
+} // namespace rr::threadedvertextransformer
 
 #endif // _RENDER_STATE_HPP_

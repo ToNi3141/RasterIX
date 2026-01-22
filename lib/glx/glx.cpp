@@ -20,7 +20,7 @@
 #include "MultiThreadRunner.hpp"
 #include "RIXGL.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"
-#include "renderer/threadedrasterizer/ThreadedRasterizer.hpp"
+#include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
@@ -69,7 +69,7 @@ private:
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
     rr::dsec::DmaStreamEngine m_dseDevice { m_busConnector };
-    rr::ThreadedRasterizer m_threadedRasterizer { m_dseDevice, m_workerThread, m_uploadThread };
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedRasterizer { m_dseDevice, m_workerThread, m_uploadThread };
 } guard;
 
 GLAPI XVisualInfo* APIENTRY glXChooseVisual(

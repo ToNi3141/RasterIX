@@ -24,7 +24,7 @@
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
 #include "renderer/dse/DmaStreamEngine.hpp"
-#include "renderer/threadedrasterizer/ThreadedRasterizer.hpp"
+#include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include "../../stencilShadow/StencilShadow.hpp"
 #include "../../minimal/Minimal.hpp"
 #include "../../mipmap/Mipmap.hpp"
@@ -81,7 +81,7 @@ private:
 
     rr::NoThreadRunner m_workerThread{};
     rr::NoThreadRunner m_uploadThread{};
-    rr::ThreadedRasterizer m_threadedRasterizer{m_device, m_workerThread, m_uploadThread};
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedRasterizer{m_device, m_workerThread, m_uploadThread};
 
     Ui::MainWindow *ui;
 
