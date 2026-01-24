@@ -46,6 +46,7 @@ struct RenderConfig
     static constexpr bool ENABLE_VSYNC { RIX_CORE_ENABLE_VSYNC };
     static constexpr std::size_t MAX_VBO_COUNT { RIX_CORE_MAX_VBO_COUNT };
     static constexpr bool PERFORMANCE_MODE { RIX_CORE_PERFORMANCE_MODE };
+    static constexpr bool SOFTWARE_RENDERING { RIX_CORE_SOFTWARE_RENDERING };
 
     static constexpr std::size_t getDisplayLines()
     {

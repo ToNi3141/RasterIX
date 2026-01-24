@@ -1,7 +1,7 @@
 #TARGET_BUILD = simulation
 #TARGET_BUILD = hardware
 TARGET_BUILD = software
-#VARIANT = RasterIX_IF
+#VARIANT = RasterIX_EF
 VARIANT = RasterIX_IF
 
 PATH_PREFIX = ../../..
@@ -117,6 +117,7 @@ equals(TARGET_BUILD, "hardware") {
     equals(VARIANT, "RasterIX_EF") {
         DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
     }
+    DEFINES += RIX_CORE_SOFTWARE_RENDERING=false
 
     FT60X_BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/ft60x
     FT60X_LIB_PATH = $${PATH_PREFIX}/lib/driver/ft60x/ftd3xx/osx
@@ -142,6 +143,7 @@ equals(TARGET_BUILD, "simulation") {
     macx: {
         VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
     }
+    DEFINES += RIX_CORE_SOFTWARE_RENDERING=false
 
     VERILATOR_BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/verilator
     VERILATOR_CODE_GEN_PATH = $${PATH_PREFIX}/rtl/top/Verilator/obj_dir
@@ -165,6 +167,7 @@ equals(TARGET_BUILD, "simulation") {
 equals(TARGET_BUILD, "software") {
     DEFINES += USE_SOFTWARE
     DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    DEFINES += RIX_CORE_SOFTWARE_RENDERING=true
 
     BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/softwarerasterizer
 

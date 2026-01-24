@@ -18,13 +18,18 @@
 #ifndef SOFTWARERASTERIZERBUSCONNECTOR_H
 #define SOFTWARERASTERIZERBUSCONNECTOR_H
 
-#include "GenericMemoryBusConnector.hpp"
 #include <tcb/span.hpp>
 
 namespace rr
 {
-template <uint32_t NUMBER_OF_DISPLAY_LISTS = 2, uint32_t DISPLAY_LIST_SIZE = 32 * 1024 * 1024, bool RGB565 = false>
-class SoftwareRasterizerBusConnector : public GenericMemoryBusConnector<NUMBER_OF_DISPLAY_LISTS, DISPLAY_LIST_SIZE>
+enum SoftwareRasterizerBusConnectorColorFormat
+{
+    RGB565,
+    BGR888,
+};
+
+template <uint32_t GRAM_SIZE = 32 * 1024 * 1024, SoftwareRasterizerBusConnectorColorFormat colorFormat = SoftwareRasterizerBusConnectorColorFormat::RGB565>
+class SoftwareRasterizerBusConnector : public IBusConnector
 {
 public:
     virtual ~SoftwareRasterizerBusConnector() = default;
@@ -39,13 +44,13 @@ public:
         tcb::span<uint8_t> deviceMemory = this->requestWriteBuffer(index);
         tcb::span<const uint8_t> devicefb = tcb::span<const uint8_t> { reinterpret_cast<const uint8_t*>(deviceMemory.data() + offset), size };
 
-        if constexpr (RGB565)
+        if constexpr (colorFormat == SoftwareRasterizerBusConnectorColorFormat::RGB565)
         {
             copyRgb565ToFramebuffer(devicefb);
         }
         else
         {
-            copyRgba8888ToFramebuffer(devicefb);
+            copyBgr888ToFramebuffer(devicefb);
         }
     }
 
@@ -57,8 +62,28 @@ public:
     {
     }
 
+    virtual tcb::span<uint8_t> requestWriteBuffer(const uint8_t index) override
+    {
+        return { m_gram };
+    }
+
+    virtual tcb::span<uint8_t> requestReadBuffer(const uint8_t index) override
+    {
+        return {};
+    }
+
+    virtual uint8_t getWriteBufferCount() const override
+    {
+        return 1;
+    }
+
+    virtual uint8_t getReadBufferCount() const override
+    {
+        return 0;
+    }
+
 private:
-    void copyRgb565ToFramebuffer(const tcb::span<uint8_t>& devicefb)
+    void copyRgb565ToFramebuffer(const tcb::span<const uint8_t>& devicefb)
     {
         std::size_t fbSize = std::min(devicefb.size(), m_framebuffer.size());
         for (std::size_t i = 0; i < fbSize; i++)
@@ -67,7 +92,7 @@ private:
         }
     }
 
-    void copyRgba8888ToFramebuffer(const tcb::span<const uint8_t>& devicefb)
+    void copyBgr888ToFramebuffer(const tcb::span<const uint8_t>& devicefb)
     {
         std::size_t fbSize = std::min(devicefb.size(), m_framebuffer.size());
         tcb::span<const uint16_t> fbAs16Bit { reinterpret_cast<const uint16_t*>(devicefb.data()), devicefb.size() / 2 };
@@ -76,14 +101,14 @@ private:
             const uint32_t r = (fbAs16Bit[i] >> 11) & 0x1F;
             const uint32_t g = (fbAs16Bit[i] >> 5) & 0x3F;
             const uint32_t b = (fbAs16Bit[i] >> 0) & 0x1F;
-            m_framebuffer[i * 4 + 0] = (r << 3) | (r >> 2);
-            m_framebuffer[i * 4 + 1] = (g << 2) | (g >> 4);
-            m_framebuffer[i * 4 + 2] = (b << 3) | (b >> 2);
-            m_framebuffer[i * 4 + 3] = 0xFF;
+            m_framebuffer[i * 3 + 2] = (r << 3) | (r >> 2);
+            m_framebuffer[i * 3 + 1] = (g << 2) | (g >> 4);
+            m_framebuffer[i * 3 + 0] = (b << 3) | (b >> 2);
         }
     }
 
     tcb::span<uint8_t> m_framebuffer {};
+    std::array<uint8_t, GRAM_SIZE> m_gram;
 };
 
 } // namespace rr

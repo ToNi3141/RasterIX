@@ -82,16 +82,16 @@ public:
         if (m_top.resetn == 0)
             return;
 
-        const std::size_t framebufferSize = (m_resolutionW * m_resolutionH * 4); // 4 for 32 bit color
+        const std::size_t framebufferSize = (m_resolutionW * m_resolutionH * 3); // 3 for 24 bit color
         if (m_top.m_framebuffer_axis_tvalid && (m_streamAddr < framebufferSize) && (!m_framebuffer.empty()))
         {
             const uint16_t f0 = m_top.m_framebuffer_axis_tdata & 0xFFFF;
             const uint16_t f1 = (m_top.m_framebuffer_axis_tdata >> 16) & 0xFFFF;
 
-            toRgba8888(m_framebuffer.subspan(m_streamAddr, 4), f0);
-            m_streamAddr += 4;
-            toRgba8888(m_framebuffer.subspan(m_streamAddr, 4), f1);
-            m_streamAddr += 4;
+            toBgr888(m_framebuffer.subspan(m_streamAddr, 3), f0);
+            m_streamAddr += 3;
+            toBgr888(m_framebuffer.subspan(m_streamAddr, 3), f1);
+            m_streamAddr += 3;
         }
 
         if ((m_streamAddr >= framebufferSize) && m_top.m_framebuffer_axis_tlast)
@@ -109,15 +109,14 @@ public:
     }
 
 private:
-    void toRgba8888(tcb::span<uint8_t> dst, const uint16_t pixelData)
+    void toBgr888(tcb::span<uint8_t> dst, const uint16_t pixelData)
     {
         const uint32_t r = (pixelData >> 11) & 0x1F;
         const uint32_t g = (pixelData >> 5) & 0x3F;
         const uint32_t b = (pixelData >> 0) & 0x1F;
-        dst[0] = (r << 3) | (r >> 2);
+        dst[2] = (r << 3) | (r >> 2);
         dst[1] = (g << 2) | (g >> 4);
-        dst[2] = (b << 3) | (b >> 2);
-        dst[3] = 0xFF;
+        dst[0] = (b << 3) | (b >> 2);
     }
 
     const uint16_t m_resolutionW = 128;

@@ -53,7 +53,7 @@ public:
     static const uint32_t RESOLUTION_W = 640;
     static const uint32_t RESOLUTION_H = 480;
 private:
-    uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 4];
+    uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 3];
 
     rr::VerilatorBusConnector<> m_busConnector{m_framebuffer, RESOLUTION_W, RESOLUTION_H};
     rr::devicedatauploader::DeviceDataUploader m_device{m_busConnector};
@@ -65,8 +65,8 @@ public:
     static const uint32_t RESOLUTION_W = 640;
     static const uint32_t RESOLUTION_H = 480;
 private:
-    uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 4];
-    rr::SoftwareRasterizerBusConnector<> m_busConnector{m_framebuffer};
+    uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 3];
+    rr::SoftwareRasterizerBusConnector<32 * 1024 * 1024, rr::SoftwareRasterizerBusConnectorColorFormat::BGR888> m_busConnector{m_framebuffer};
     rr::softwarerasterizer::SoftwareRasterizer m_device{m_busConnector};
 #endif
 

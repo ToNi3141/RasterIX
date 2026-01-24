@@ -39,9 +39,9 @@ void MainWindow::newFrame()
     {
         for (uint32_t j = 0; j < RESOLUTION_W; j++)
         {
-            const uint8_t r = m_framebuffer[((i*RESOLUTION_W)+j)*4+0];
-            const uint8_t g = m_framebuffer[((i*RESOLUTION_W)+j)*4+1];
-            const uint8_t b = m_framebuffer[((i*RESOLUTION_W)+j)*4+2];
+            const uint8_t r = m_framebuffer[((i*RESOLUTION_W)+j)*3+2];
+            const uint8_t g = m_framebuffer[((i*RESOLUTION_W)+j)*3+1];
+            const uint8_t b = m_framebuffer[((i*RESOLUTION_W)+j)*3+0];
             m_image.setPixelColor(QPoint(j, i), QColor(r, g, b));
         }
     }

@@ -21,42 +21,54 @@
 #include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
+#include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
 #include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
+#include <type_traits>
 
 using namespace rr;
 
-static const uint32_t RESOLUTION_H = 600;
-static const uint32_t RESOLUTION_W = 1024;
+void addExtensions()
+{
+#define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
+    rr::RIXGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
+    rr::RIXGL::getInstance().addLibExtension("WGL_ARB_render_texture");
+    rr::RIXGL::getInstance().addLibExtension("WGL_ARB_pixel_format");
+    rr::RIXGL::getInstance().addLibExtension("WGL_ARB_pbuffer");
+    rr::RIXGL::getInstance().addLibProcedure("wglGetExtensionsStringARB", ADDRESS_OF(impl_wglGetExtensionsString));
+    rr::RIXGL::getInstance().addLibProcedure("wglCreatePbufferARB", ADDRESS_OF(impl_wglCreatePbufferARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglGetPbufferDCARB", ADDRESS_OF(impl_wglGetPbufferDCARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglReleasePbufferDCARB", ADDRESS_OF(impl_wglReleasePbufferDCARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglDestroyPbufferARB", ADDRESS_OF(impl_wglDestroyPbufferARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglQueryPbufferARB", ADDRESS_OF(impl_wglQueryPbufferARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglGetPixelFormatAttribivARB", ADDRESS_OF(impl_wglGetPixelFormatAttribivARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglGetPixelFormatAttribfvARB", ADDRESS_OF(impl_wglGetPixelFormatAttribfvARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglChoosePixelFormatARB", ADDRESS_OF(impl_wglChoosePixelFormatARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglBindTexImageARB", ADDRESS_OF(impl_wglBindTexImageARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglReleaseTexImageARB", ADDRESS_OF(impl_wglReleaseTexImageARB));
+    rr::RIXGL::getInstance().addLibProcedure("wglSetPbufferAttribARB", ADDRESS_OF(impl_wglSetPbufferAttribARB));
+#undef ADDRESS_OF
+}
 
-class GLInitGuard
+class GLHWRenderer
 {
 public:
-    GLInitGuard()
+    static const uint32_t RESOLUTION_H = 600;
+    static const uint32_t RESOLUTION_W = 1024;
+
+    GLHWRenderer()
     {
-        rr::RIXGL::createInstance(m_threadedRasterizer);
-#define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
-        rr::RIXGL::getInstance().addLibExtension("WGL_ARB_extensions_string");
-        rr::RIXGL::getInstance().addLibExtension("WGL_ARB_render_texture");
-        rr::RIXGL::getInstance().addLibExtension("WGL_ARB_pixel_format");
-        rr::RIXGL::getInstance().addLibExtension("WGL_ARB_pbuffer");
-        rr::RIXGL::getInstance().addLibProcedure("wglGetExtensionsStringARB", ADDRESS_OF(impl_wglGetExtensionsString));
-        rr::RIXGL::getInstance().addLibProcedure("wglCreatePbufferARB", ADDRESS_OF(impl_wglCreatePbufferARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglGetPbufferDCARB", ADDRESS_OF(impl_wglGetPbufferDCARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglReleasePbufferDCARB", ADDRESS_OF(impl_wglReleasePbufferDCARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglDestroyPbufferARB", ADDRESS_OF(impl_wglDestroyPbufferARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglQueryPbufferARB", ADDRESS_OF(impl_wglQueryPbufferARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglGetPixelFormatAttribivARB", ADDRESS_OF(impl_wglGetPixelFormatAttribivARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglGetPixelFormatAttribfvARB", ADDRESS_OF(impl_wglGetPixelFormatAttribfvARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglChoosePixelFormatARB", ADDRESS_OF(impl_wglChoosePixelFormatARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglBindTexImageARB", ADDRESS_OF(impl_wglBindTexImageARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglReleaseTexImageARB", ADDRESS_OF(impl_wglReleaseTexImageARB));
-        rr::RIXGL::getInstance().addLibProcedure("wglSetPbufferAttribARB", ADDRESS_OF(impl_wglSetPbufferAttribARB));
-#undef ADDRESS_OF
+        rr::RIXGL::createInstance(m_threadedTransformer);
+        addExtensions();
     }
-    ~GLInitGuard()
+    ~GLHWRenderer()
     {
+    }
+
+    void init()
+    {
+        RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
     void deinit()
@@ -64,7 +76,7 @@ public:
         rr::RIXGL::destroy();
     }
 
-    void render()
+    void render(HDC)
     {
         rr::RIXGL::getInstance().swapDisplayList();
     }
@@ -74,8 +86,64 @@ private:
     rr::MultiThreadRunner m_uploadThread {};
     FT60XBusConnector m_busConnector {};
     rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
-    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedRasterizer { m_dduDevice, m_workerThread, m_uploadThread };
-} guard;
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedTransformer { m_dduDevice, m_workerThread, m_uploadThread };
+};
+
+class GLSWRenderer
+{
+public:
+    static const uint32_t RESOLUTION_H = 600;
+    static const uint32_t RESOLUTION_W = 800;
+
+    GLSWRenderer()
+    {
+        rr::RIXGL::createInstance(m_threadedTransformer);
+        addExtensions();
+
+        ZeroMemory(&m_bmi, sizeof(m_bmi));
+        m_bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+        m_bmi.bmiHeader.biWidth = RESOLUTION_W;
+        m_bmi.bmiHeader.biHeight = -RESOLUTION_H; // TOP-DOWN
+        m_bmi.bmiHeader.biPlanes = 1;
+        m_bmi.bmiHeader.biBitCount = 24;
+        m_bmi.bmiHeader.biCompression = BI_RGB;
+    }
+
+    ~GLSWRenderer()
+    {
+    }
+
+    void deinit()
+    {
+        rr::RIXGL::destroy();
+    }
+
+    void render(HDC hdc)
+    {
+        rr::RIXGL::getInstance().swapDisplayList();
+        SetDIBitsToDevice(
+            hdc,
+            0, 0,
+            RESOLUTION_W, RESOLUTION_H,
+            0, 0,
+            0, RESOLUTION_H,
+            m_buffer.data(),
+            &m_bmi,
+            DIB_RGB_COLORS);
+    }
+
+private:
+    std::size_t bla {};
+    rr::MultiThreadRunner m_workerThread {};
+    rr::MultiThreadRunner m_uploadThread {};
+    BITMAPINFO m_bmi {};
+    std::array<uint8_t, RESOLUTION_W * RESOLUTION_H * 3> m_buffer {};
+    rr::SoftwareRasterizerBusConnector<32 * 1024 * 1024, rr::SoftwareRasterizerBusConnectorColorFormat::BGR888> m_swBusConnector { m_buffer };
+    rr::softwarerasterizer::SoftwareRasterizer m_softwareRasterizer { m_swBusConnector };
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedTransformer { m_softwareRasterizer, m_workerThread, m_uploadThread };
+};
+
+std::conditional<RenderConfig::SOFTWARE_RENDERING, GLSWRenderer, GLHWRenderer> renderer {};
 
 // Wiggle API
 // -------------------------------------------------------
@@ -102,7 +170,7 @@ GLAPI HGLRC APIENTRY impl_wglCreateContext(HDC hdc)
 
     // or you can even set multi_sink logger as default logger
     spdlog::set_default_logger(logger);
-    RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    renderer.init();
 
     return reinterpret_cast<HGLRC>(&RIXGL::getInstance());
 }
@@ -116,7 +184,7 @@ GLAPI HGLRC APIENTRY impl_wglCreateLayerContext(HDC hdc, int iLayerPlane)
 GLAPI BOOL APIENTRY impl_wglDeleteContext(HGLRC hglrc)
 {
     SPDLOG_DEBUG("wglDeleteContext called");
-    guard.deinit();
+    renderer.deinit();
     return TRUE;
 }
 
@@ -219,7 +287,7 @@ GLAPI BOOL APIENTRY impl_wglShareLists(HGLRC hglrc, HGLRC hglrc2)
 GLAPI BOOL APIENTRY impl_wglSwapBuffers(HDC hdc)
 {
     SPDLOG_DEBUG("wglSwapBuffers called");
-    guard.render();
+    guard.render(hdc);
     return TRUE;
 }
 
@@ -230,7 +298,7 @@ GLAPI BOOL APIENTRY impl_wglSwapLayerBuffers(HDC hdc, UINT planes)
     if ((planes & WGL_SWAP_MAIN_PLANE) != 0U)
     {
 
-        guard.render();
+        guard.render(hdc);
     }
 
     return TRUE;

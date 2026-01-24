@@ -25,7 +25,7 @@
 
 namespace rr
 {
-template <uint32_t NUMBER_OF_DISPLAY_LISTS, uint32_t DISPLAY_LIST_SIZE>
+template <uint32_t NUMBER_OF_TX_BUFFERS, uint32_t TX_BUFFER_SIZE>
 class GenericMemoryBusConnector : public IBusConnector
 {
 public:
@@ -37,8 +37,8 @@ public:
     virtual uint8_t getReadBufferCount() const override { return m_dlMemRx.size(); }
 
 protected:
-    std::array<std::array<uint8_t, DISPLAY_LIST_SIZE>, 1> m_dlMemRx;
-    std::array<std::array<uint8_t, DISPLAY_LIST_SIZE>, NUMBER_OF_DISPLAY_LISTS> m_dlMemTx;
+    std::array<std::array<uint8_t, TX_BUFFER_SIZE>, 1> m_dlMemRx;
+    std::array<std::array<uint8_t, TX_BUFFER_SIZE>, NUMBER_OF_TX_BUFFERS> m_dlMemTx;
 };
 
 } // namespace rr
