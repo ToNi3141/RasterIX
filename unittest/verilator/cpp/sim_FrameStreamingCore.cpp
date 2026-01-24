@@ -21,9 +21,9 @@
 #include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
-#include "VDmaStreamEngine.h"
+#include "VFrameStreamingCore.h"
 
-void reset(VDmaStreamEngine& t)
+void reset(VFrameStreamingCore& t)
 {
     t.resetn = 0;
 
@@ -39,7 +39,7 @@ void reset(VDmaStreamEngine& t)
     rr::ut::clk(&t);
 }
 
-void configPhase(VDmaStreamEngine& t, uint32_t command, uint32_t addr)
+void configPhase(VFrameStreamingCore& t, uint32_t command, uint32_t addr)
 {
     // COMMAND ///////////////////////////
     // Outputs
@@ -82,8 +82,8 @@ void configPhase(VDmaStreamEngine& t, uint32_t command, uint32_t addr)
 
 TEST_CASE("Mux data simple (st0 -> st0)", "[Stream]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0x5000'0000;
@@ -165,8 +165,8 @@ TEST_CASE("Mux data simple (st0 -> st0)", "[Stream]")
 
 TEST_CASE("Mux data simple (st0 -> st1)", "[Stream]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0x9000'0000;
@@ -248,8 +248,8 @@ TEST_CASE("Mux data simple (st0 -> st1)", "[Stream]")
 
 TEST_CASE("Mux data simple (st1 -> st1)", "[Stream]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0xA000'0000;
@@ -331,8 +331,8 @@ TEST_CASE("Mux data simple (st1 -> st1)", "[Stream]")
 
 TEST_CASE("Mux data simple (st1 -> st0)", "[Stream]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0x6000'0000;
@@ -414,8 +414,8 @@ TEST_CASE("Mux data simple (st1 -> st0)", "[Stream]")
 
 TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0x5000'0000;
@@ -524,8 +524,8 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
 
 TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0x5000'0000;
@@ -636,8 +636,8 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
 
 TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0xd000'0000;
@@ -830,8 +830,8 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
 
 TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0xe000'0000;
@@ -1024,8 +1024,8 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
 
 TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0x7000'0000;
@@ -1178,8 +1178,8 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
 
 TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t OP = 0xb000'0000;
@@ -1332,8 +1332,8 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
 
 TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]")
 {
-    VDmaStreamEngine* top = new VDmaStreamEngine();
-    VDmaStreamEngine& t = *top;
+    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore& t = *top;
 
     reset(t);
     static constexpr uint32_t SIZE_ST0_TO_INT = 0x0000'0004;

@@ -23,7 +23,7 @@
 #include "NoThreadRunner.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
-#include "renderer/dse/DmaStreamEngine.hpp"
+#include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 #include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include "../../stencilShadow/StencilShadow.hpp"
 #include "../../minimal/Minimal.hpp"
@@ -56,7 +56,7 @@ private:
     uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 4];
 
     rr::VerilatorBusConnector<> m_busConnector{m_framebuffer, RESOLUTION_W, RESOLUTION_H};
-    rr::dsec::DmaStreamEngine m_device{m_busConnector};
+    rr::devicedatauploader::DeviceDataUploader m_device{m_busConnector};
 #endif
 
 #if USE_SOFTWARE
@@ -76,7 +76,7 @@ public:
     static const uint32_t RESOLUTION_W = 1024;
 private:
     rr::FT60XBusConnector m_busConnector;
-    rr::dsec::DmaStreamEngine m_device{m_busConnector};
+    rr::devicedatauploader::DeviceDataUploader m_device{m_busConnector};
 #endif
 
     rr::NoThreadRunner m_workerThread{};

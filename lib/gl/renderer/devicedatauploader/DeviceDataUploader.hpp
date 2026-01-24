@@ -15,20 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _DMASTREAMENGINE_HPP_
-#define _DMASTREAMENGINE_HPP_
+#ifndef _DEVICEDATAUPLOADER_HPP_
+#define _DEVICEDATAUPLOADER_HPP_
 
-#include "DmaStreamEngineCommands.hpp"
+#include "DeviceDataUploaderCommands.hpp"
 #include "IBusConnector.hpp"
 #include "renderer/IDevice.hpp"
 
-namespace rr::dsec
+namespace rr::devicedatauploader
 {
 
-class DmaStreamEngine : public IDevice
+/// @brief Software-side implementation of the Frame Transfer Protocol.
+/// @details This class communicates with the RTL module FrameStreamingCore (FrameStreamingCore.v).
+///          It handles streaming of display lists, and reading/writing device memory.
+class DeviceDataUploader : public IDevice
 {
 public:
-    DmaStreamEngine(IBusConnector& busConnector)
+    DeviceDataUploader(IBusConnector& busConnector)
         : m_busConnector { busConnector }
     {
     }
@@ -68,19 +71,19 @@ private:
         return m_busConnector.getWriteBufferCount() - 1;
     }
 
-    uint32_t addDseStreamCommand(const uint8_t index, const uint32_t size)
+    uint32_t addDduStreamCommand(const uint8_t index, const uint32_t size)
     {
-        return addDseCommand(index, OP_STREAM, size, 0);
+        return addDduCommand(index, OP_STREAM, size, 0);
     }
 
-    uint32_t addDseStoreCommand(const uint32_t size, const uint32_t addr)
+    uint32_t addDduStoreCommand(const uint32_t size, const uint32_t addr)
     {
-        return addDseCommand(getStoreBufferIndex(), OP_STORE, size, addr);
+        return addDduCommand(getStoreBufferIndex(), OP_STORE, size, addr);
     }
 
-    uint32_t addDseLoadCommand(const uint32_t size, const uint32_t addr) { return addDseCommand(getStoreBufferIndex(), OP_LOAD, size, addr); }
-    uint32_t addDseStorePayload(const std::size_t offset, const tcb::span<const uint8_t> payload);
-    uint32_t addDseCommand(
+    uint32_t addDduLoadCommand(const uint32_t size, const uint32_t addr) { return addDduCommand(getStoreBufferIndex(), OP_LOAD, size, addr); }
+    uint32_t addDduStorePayload(const std::size_t offset, const tcb::span<const uint8_t> payload);
+    uint32_t addDduCommand(
         const uint8_t index,
         const uint32_t op,
         const uint32_t size,
@@ -91,6 +94,6 @@ private:
     IBusConnector& m_busConnector;
 };
 
-} // namespace rr::dsec
+} // namespace rr::devicedatauploader
 
-#endif // _DMASTREAMENGINE_HPP_
+#endif // _DEVICEDATAUPLOADER_HPP_

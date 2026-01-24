@@ -2,7 +2,7 @@
 #include "RIXGL.hpp"
 #include "gl.h"
 #include "glu.h"
-#include "renderer/dse/DmaStreamEngine.hpp"
+#include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 
 #include <hardware/dma.h>
 #include <hardware/spi.h>
@@ -159,7 +159,7 @@ private:
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
     BusConnector<4096> m_busConnector {};
-    rr::dsec::DmaStreamEngine m_device { m_busConnector };
+    rr::devicedatauploader::DeviceDataUploader m_device { m_busConnector };
     bool led = false;
     Scene m_scene {};
 };

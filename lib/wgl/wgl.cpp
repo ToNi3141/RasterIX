@@ -20,7 +20,7 @@
 #include "MultiThreadRunner.hpp"
 #include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
-#include "renderer/dse/DmaStreamEngine.hpp"
+#include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 #include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -73,8 +73,8 @@ private:
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
     FT60XBusConnector m_busConnector {};
-    rr::dsec::DmaStreamEngine m_dseDevice { m_busConnector };
-    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedRasterizer { m_dseDevice, m_workerThread, m_uploadThread };
+    rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedRasterizer { m_dduDevice, m_workerThread, m_uploadThread };
 } guard;
 
 // Wiggle API

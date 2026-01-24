@@ -46,7 +46,7 @@ SOURCES += main.cpp\
     $${RIXGL_PATH}/renderer/softwarerasterizer/TexEnv.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/TextureMap.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/SoftwareRasterizer.cpp \
-    $${RIXGL_PATH}/renderer/dse/DmaStreamEngine.cpp \
+    $${RIXGL_PATH}/renderer/devicedatauploader/DeviceDataUploader.cpp \
     $${RIXGL_PATH}/pixelpipeline/Fogging.cpp \
     $${RIXGL_PATH}/pixelpipeline/Texture.cpp \
     $${RIXGL_PATH}/gl.cpp \
@@ -62,7 +62,7 @@ HEADERS  += mainwindow.h \
     $${RIXGL_PATH}/transform/*.hpp \
     $${RIXGL_PATH}/*.h \
     $${RIXGL_PATH}/renderer/registers/* \
-    $${RIXGL_PATH}/renderer/dse/* \
+    $${RIXGL_PATH}/renderer/devicedatauploader/* \
     $${RIXGL_PATH}/renderer/threadedvertextransformer/* \
     $${RIXGL_PATH}/renderer/softwarerasterizer/* \
     $${RIXGL_PATH}/renderer/commands/* \

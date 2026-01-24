@@ -56,7 +56,7 @@ function(add_verilator_test TEST_NAME TOP_MODULE VERILOG_FILE)
 endfunction()
 
 # Register tests
-add_verilator_test(dmaStreamEngine DmaStreamEngine ${RTL_RASTERIX}/DmaStreamEngine.v)
+add_verilator_test(frameStreamingCore FrameStreamingCore ${RTL_RASTERIX}/FrameStreamingCore.v)
 add_verilator_test(simulationILI9486 DisplayController8BitILI9486 ${RTL_DISPLAY}/DisplayController8BitILI9486.v)
 add_verilator_test(simulationILI9341 DisplayController8BitILI9341 ${RTL_DISPLAY}/DisplayController8BitILI9341.v)
 add_verilator_test(attributeInterpolator AttributeInterpolator ${RTL_RASTERIX}/AttributeInterpolator.v)

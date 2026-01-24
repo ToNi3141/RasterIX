@@ -181,7 +181,7 @@ add_library(gl STATIC
     pixelpipeline/Texture.cpp
     renderer/Rasterizer.cpp
     renderer/Renderer.cpp
-    renderer/dse/DmaStreamEngine.cpp
+    renderer/devicedatauploader/DeviceDataUploader.cpp
     renderer/softwarerasterizer/AttributeInterpolator.cpp
     renderer/softwarerasterizer/Rasterizer.cpp
     renderer/softwarerasterizer/TexEnv.cpp

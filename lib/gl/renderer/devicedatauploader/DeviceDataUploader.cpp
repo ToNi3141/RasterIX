@@ -15,33 +15,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "DmaStreamEngine.hpp"
+#include "DeviceDataUploader.hpp"
 #include "RenderConfigs.hpp"
 #include <algorithm>
 
-namespace rr::dsec
+namespace rr::devicedatauploader
 {
 
-void DmaStreamEngine::streamDisplayList(const uint8_t index, uint32_t size)
+void DeviceDataUploader::streamDisplayList(const uint8_t index, uint32_t size)
 {
     blockUntilDeviceIsIdle();
     size = fillWhenDataIsTooSmall(index, size);
-    const uint32_t commandSize = addDseStreamCommand(index, size);
+    const uint32_t commandSize = addDduStreamCommand(index, size);
     m_busConnector.writeData(index, size + commandSize);
 }
 
-bool DmaStreamEngine::writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr)
+bool DeviceDataUploader::writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr)
 {
     blockUntilDeviceIsIdle();
-    const uint32_t commandSize = addDseStoreCommand(
+    const uint32_t commandSize = addDduStoreCommand(
         (std::max)(static_cast<uint32_t>(data.size()), DEVICE_MIN_TRANSFER_SIZE),
         addr + RenderConfig::GRAM_MEMORY_LOC);
-    addDseStorePayload(commandSize, data);
+    addDduStorePayload(commandSize, data);
     m_busConnector.writeData(getStoreBufferIndex(), commandSize + data.size());
     return true;
 }
 
-bool DmaStreamEngine::readFromDeviceMemory(tcb::span<uint8_t> data, const uint32_t addr)
+bool DeviceDataUploader::readFromDeviceMemory(tcb::span<uint8_t> data, const uint32_t addr)
 {
     if (hasLoadBuffer())
     {
@@ -60,14 +60,14 @@ bool DmaStreamEngine::readFromDeviceMemory(tcb::span<uint8_t> data, const uint32
     return true;
 }
 
-uint32_t DmaStreamEngine::addDseStorePayload(const std::size_t offset, const tcb::span<const uint8_t> payload)
+uint32_t DeviceDataUploader::addDduStorePayload(const std::size_t offset, const tcb::span<const uint8_t> payload)
 {
     tcb::span<uint8_t> s = m_busConnector.requestWriteBuffer(getStoreBufferIndex());
     std::copy(payload.begin(), payload.end(), s.last(s.size() - offset).begin());
     return (std::max)(static_cast<uint32_t>(payload.size()), DEVICE_MIN_TRANSFER_SIZE);
 }
 
-uint32_t DmaStreamEngine::addDseCommand(
+uint32_t DeviceDataUploader::addDduCommand(
     const uint8_t index,
     const uint32_t op,
     const uint32_t size,
@@ -80,7 +80,7 @@ uint32_t DmaStreamEngine::addDseCommand(
     return sizeof(Command);
 }
 
-uint32_t DmaStreamEngine::fillWhenDataIsTooSmall(const uint8_t index, const uint32_t size)
+uint32_t DeviceDataUploader::fillWhenDataIsTooSmall(const uint8_t index, const uint32_t size)
 {
     if (size < DEVICE_MIN_TRANSFER_SIZE)
     {
@@ -90,9 +90,9 @@ uint32_t DmaStreamEngine::fillWhenDataIsTooSmall(const uint8_t index, const uint
     return (std::max)(size, DEVICE_MIN_TRANSFER_SIZE);
 }
 
-void DmaStreamEngine::loadChunk(const tcb::span<uint8_t> data, const std::size_t alignedSize, const uint32_t addr)
+void DeviceDataUploader::loadChunk(const tcb::span<uint8_t> data, const std::size_t alignedSize, const uint32_t addr)
 {
-    const uint32_t commandSize = addDseLoadCommand(alignedSize, addr);
+    const uint32_t commandSize = addDduLoadCommand(alignedSize, addr);
     m_busConnector.writeData(getStoreBufferIndex(), commandSize);
     blockUntilDeviceIsIdle();
 
@@ -103,4 +103,4 @@ void DmaStreamEngine::loadChunk(const tcb::span<uint8_t> data, const std::size_t
     std::copy(loadedData.begin(), loadedData.end(), data.begin());
 }
 
-} // namespace rr::dsec
+} // namespace rr::devicedatauploader

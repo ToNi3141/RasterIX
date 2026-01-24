@@ -107,12 +107,12 @@ module DisplayFramebufferReader #(
     localparam STATE_WAIT_DSE = 2;
     reg [ 1 : 0] state;
 
-    DmaStreamEngine #(
+    FrameStreamingCore #(
         .STREAM_WIDTH(STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .STRB_WIDTH(STRB_WIDTH),
         .ID_WIDTH(ID_WIDTH)
-    ) dse (
+    ) fte (
         .aclk(aclk),
         .resetn(resetn),
         
