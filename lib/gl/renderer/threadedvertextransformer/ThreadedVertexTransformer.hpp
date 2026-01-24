@@ -25,7 +25,7 @@
 #include "renderer/displaylist/DisplayListDispatcher.hpp"
 #include "renderer/displaylist/DisplayListDoubleBuffer.hpp"
 #include "renderer/displaylist/RIXDisplayListAssembler.hpp"
-#include "transform/VertexTransforming.hpp"
+#include "transform/VertexTransformer.hpp"
 #include <cstdint>
 #include <tcb/span.hpp>
 
@@ -631,8 +631,8 @@ private:
     const std::function<bool(const StencilReg&)> m_setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
     { return setStencilBufferConfig(stencilConf); };
 
-    vertextransforming::VertexTransformingData m_vertexCtx {};
-    vertextransforming::VertexTransformingCalc<decltype(m_drawTriangleLambda), decltype(m_setStencilBufferConfigLambda)> m_vertexTransform {
+    vertextransformer::VertexTransformerData m_vertexCtx {};
+    vertextransformer::VertexTransformerCalc<decltype(m_drawTriangleLambda), decltype(m_setStencilBufferConfigLambda)> m_vertexTransform {
         m_vertexCtx,
         m_drawTriangleLambda,
         m_setStencilBufferConfigLambda,

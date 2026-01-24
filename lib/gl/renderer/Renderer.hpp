@@ -68,7 +68,7 @@
 #include "registers/YOffsetReg.hpp"
 #include "transform/ElementGlobalData.hpp"
 #include "transform/ElementLocalData.hpp"
-#include "transform/VertexTransforming.hpp"
+#include "transform/VertexTransformer.hpp"
 
 namespace rr
 {
@@ -412,8 +412,8 @@ private:
     const std::function<bool(const StencilReg&)> m_setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
     { return setStencilBufferConfig(stencilConf); };
 
-    vertextransforming::VertexTransformingData m_vertexCtx {};
-    vertextransforming::VertexTransformingCalc<decltype(m_drawTriangleLambda), decltype(m_setStencilBufferConfigLambda)> m_vertexTransform {
+    vertextransformer::VertexTransformerData m_vertexCtx {};
+    vertextransformer::VertexTransformerCalc<decltype(m_drawTriangleLambda), decltype(m_setStencilBufferConfigLambda)> m_vertexTransform {
         m_vertexCtx,
         m_drawTriangleLambda,
         m_setStencilBufferConfigLambda,
