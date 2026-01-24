@@ -19,6 +19,7 @@
 #include "FT60XBusConnector.hpp"
 #include "MultiThreadRunner.hpp"
 #include "NoThreadRunner.hpp"
+#include "SoftwareRasterizerBusConnector.hpp"
 #include "RIXGL.hpp"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 #include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
@@ -113,6 +114,11 @@ public:
     {
     }
 
+    void init()
+    {
+        RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    }
+
     void deinit()
     {
         rr::RIXGL::destroy();
@@ -133,17 +139,16 @@ public:
     }
 
 private:
-    std::size_t bla {};
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
     BITMAPINFO m_bmi {};
-    std::array<uint8_t, RESOLUTION_W * RESOLUTION_H * 3> m_buffer {};
+    std::array<uint8_t, RenderConfig::MAX_DISPLAY_HEIGHT * RenderConfig::MAX_DISPLAY_WIDTH * 3> m_buffer {};
     rr::SoftwareRasterizerBusConnector<32 * 1024 * 1024, rr::SoftwareRasterizerBusConnectorColorFormat::BGR888> m_swBusConnector { m_buffer };
     rr::softwarerasterizer::SoftwareRasterizer m_softwareRasterizer { m_swBusConnector };
     rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedTransformer { m_softwareRasterizer, m_workerThread, m_uploadThread };
 };
 
-std::conditional<RenderConfig::SOFTWARE_RENDERING, GLSWRenderer, GLHWRenderer> renderer {};
+std::conditional<RenderConfig::SOFTWARE_RENDERING, GLSWRenderer, GLHWRenderer>::type renderer {};
 
 // Wiggle API
 // -------------------------------------------------------
@@ -287,7 +292,7 @@ GLAPI BOOL APIENTRY impl_wglShareLists(HGLRC hglrc, HGLRC hglrc2)
 GLAPI BOOL APIENTRY impl_wglSwapBuffers(HDC hdc)
 {
     SPDLOG_DEBUG("wglSwapBuffers called");
-    guard.render(hdc);
+    renderer.render(hdc);
     return TRUE;
 }
 
@@ -298,7 +303,7 @@ GLAPI BOOL APIENTRY impl_wglSwapLayerBuffers(HDC hdc, UINT planes)
     if ((planes & WGL_SWAP_MAIN_PLANE) != 0U)
     {
 
-        guard.render(hdc);
+        renderer.render(hdc);
     }
 
     return TRUE;

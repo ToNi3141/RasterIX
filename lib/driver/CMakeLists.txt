@@ -15,5 +15,5 @@ if (RIX_DRIVER_STANDALONE_XIL_CDMA)
 endif()
 
 if (RIX_DRIVER_SOFTWARE_RASTERIZER)
-    add_subdirectory(softwarerasterizer)
+    add_subdirectory(softwarerasterizerbusconnector)
 endif()

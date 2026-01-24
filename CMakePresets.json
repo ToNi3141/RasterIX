@@ -216,7 +216,6 @@
             {
                 "RIX_BUILD_NATIVE": "ON",
                 "RIX_ENABLE_SPDLOG": "ON",
-                "RIX_DRIVER_FT60X": "ON",
                 "RIX_BUILD_EXAMPLES": "ON",
                 "RIX_BUILD_SHARED_LIBRARY": "ON"
             },
@@ -226,19 +225,31 @@
             "name": "win32_rixif",
             "displayName": "Win32 build",
             "description": "Native native build for Windows resulting in a 32bit wgl dll. It uses the nexys rixif build.",
-            "inherits": ["win32", "nexys_rixif"]
+            "inherits": ["win32", "nexys_rixif"],
+            "cacheVariables":
+            {   
+                "RIX_DRIVER_FT60X": "ON"
+            }
         },
         {
             "name": "win32_rixef",
             "displayName": "Win32 build",
             "description": "Native native build for Windows resulting in a 32bit wgl dll. It uses the nexys rixef build.",
-            "inherits": ["win32", "nexys_rixef"]
+            "inherits": ["win32", "nexys_rixef"],
+            "cacheVariables":
+            {   
+                "RIX_DRIVER_FT60X": "ON"
+            }
         },
         {
             "name": "win32_sw",
             "displayName": "Win32 build",
             "description": "Native native build for Windows resulting in a 32bit wgl dll. It uses a software rasterizer implementation.",
-            "inherits": ["win32", "softwarerasterizer"]
+            "inherits": ["win32", "softwarerasterizer"],
+            "cacheVariables":
+            {   
+                "RIX_DRIVER_SOFTWARE_RASTERIZER": "ON"
+            }
         },
         {
             "name": "rppico",
