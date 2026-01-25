@@ -102,12 +102,28 @@ public:
     {
         Veci<T, VecSize> vec;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * (static_cast<float>(1ul << shift) - 1.0f)) + 0.5f;
+            vec[i] = (val[i] * static_cast<float>(1ul << shift)) + 0.5f;
         return vec;
     }
 
     template <typename TV, std::size_t shift = 0>
     void fromVec(const TV& val)
+    {
+        for (std::size_t i = 0; i < VecSize; i++)
+            vec[i] = (val[i] * static_cast<float>(1ul << shift)) + 0.5f;
+    }
+
+    template <typename TV, std::size_t shift = 0>
+    static Veci<T, VecSize> createFromVecToInt(const TV& val)
+    {
+        Veci<T, VecSize> vec;
+        for (std::size_t i = 0; i < VecSize; i++)
+            vec[i] = (val[i] * (static_cast<float>(1ul << shift) - 1.0f)) + 0.5f;
+        return vec;
+    }
+
+    template <typename TV, std::size_t shift = 0>
+    void fromVecToInt(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] = (val[i] * (static_cast<float>(1ul << shift) - 1.0f)) + 0.5f;

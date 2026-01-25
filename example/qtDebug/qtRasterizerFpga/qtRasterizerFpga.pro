@@ -1,6 +1,6 @@
-#TARGET_BUILD = simulation
+TARGET_BUILD = simulation
 #TARGET_BUILD = hardware
-TARGET_BUILD = software
+#TARGET_BUILD = software
 #VARIANT = RasterIX_EF
 VARIANT = RasterIX_IF
 
@@ -168,15 +168,15 @@ equals(TARGET_BUILD, "software") {
     DEFINES += USE_SOFTWARE
     DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
     DEFINES += RIX_CORE_SOFTWARE_RENDERING=true
+    DEFINES += RIX_DRIVER_SOFTWARE_RASTERIZER=true
 
-    BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/softwarerasterizer
+    BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/softwarerasterizerbusconnector
 
     QMAKE_CXXFLAGS += -I$${BUS_CONNECTOR_PATH}/
 
     QMAKE_CFLAGS += -I$${BUS_CONNECTOR_PATH}/
 
     HEADERS += $${BUS_CONNECTOR_PATH}/SoftwareRasterizerBusConnector.hpp
-#    SOURCES += $${BUS_CONNECTOR_PATH}/FT60XBusConnector.cpp
 }
 
 FORMS    += mainwindow.ui

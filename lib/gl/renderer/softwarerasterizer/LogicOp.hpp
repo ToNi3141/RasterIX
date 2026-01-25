@@ -33,8 +33,8 @@ public:
         if (!m_enable)
             return src;
 
-        const Vec4ui8 srcInt = Vec4ui8::createFromVec<Vec4, 8>(src);
-        const Vec4ui8 dstInt = Vec4ui8::createFromVec<Vec4, 8>(dst);
+        const Vec4ui8 srcInt = Vec4ui8::createFromVecToInt<Vec4, 8>(src);
+        const Vec4ui8 dstInt = Vec4ui8::createFromVecToInt<Vec4, 8>(dst);
         const Vec4ui8 resultInt = calcOp(srcInt, dstInt);
         const Vec4 result { static_cast<float>(resultInt[0]) / 255.0f,
             static_cast<float>(resultInt[1]) / 255.0f,
