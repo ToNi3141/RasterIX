@@ -18,6 +18,7 @@
 #ifndef _THREADED_VERTEX_TRANSFORMER_HPP_
 #define _THREADED_VERTEX_TRANSFORMER_HPP_
 
+#include "IThreadRunner.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/IDevice.hpp"
 #include "renderer/displaylist/DisplayList.hpp"
