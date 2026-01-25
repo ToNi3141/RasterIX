@@ -1,6 +1,6 @@
-TARGET_BUILD = simulation
+#TARGET_BUILD = simulation
 #TARGET_BUILD = hardware
-#TARGET_BUILD = software
+TARGET_BUILD = software
 #VARIANT = RasterIX_EF
 VARIANT = RasterIX_IF
 
