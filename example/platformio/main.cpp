@@ -1,9 +1,9 @@
 // This file is an example how to integrate the rix with an arduino.
 // Note: Only platformio is supported due to the lack of c++17 features in the arduino IDE.
+#include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 #include <Arduino.h>
 #include <IBusConnector.hpp>
 #include <Minimal.hpp>
-#include <NoThreadRunner.hpp>
 #include <RIXGL.hpp>
 #include <SPI.h>
 #include <StencilShadow.hpp>
@@ -26,7 +26,7 @@ public:
 
     virtual ~ArduinoBusConnector() = default;
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override
+    virtual void writeData(const uint8_t index, const uint32_t size, const uint32_t) override
     {
         tcb::span<uint8_t> data = requestWriteBuffer(index);
         uint32_t dataToSend = size;
@@ -111,13 +111,11 @@ private:
 };
 
 static ArduinoBusConnector<> m_busConnector {};
+rr::devicedatauploader::DeviceDataUploader m_device { m_busConnector };
 static constexpr uint32_t RESOLUTION_H = 240;
 static constexpr uint32_t RESOLUTION_W = 320;
 static constexpr uint LED_PIN = 25;
 bool state { false };
-
-static rr::NoThreadRunner m_workerThread {};
-static rr::NoThreadRunner m_uploadThread {};
 
 // Select a demo
 static Minimal m_scene {};
@@ -129,7 +127,7 @@ void setup()
     // Initialize the connector
     m_busConnector.init();
     // Create a instance with the current connector. This will also initialize the library.
-    rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
+    rr::RIXGL::createInstance(m_device);
     // Set the display resolution
     rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     // Initialize the scene
