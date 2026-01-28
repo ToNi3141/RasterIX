@@ -120,7 +120,7 @@ private:
 
     IBusConnector& m_busConnector;
 
-    std::array<std::array<uint8_t, RenderConfig::THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE>, 2> m_buffer;
+    std::array<std::array<uint8_t, RenderConfig::THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE>, RenderConfig::getDisplayLines() * 2> m_buffer;
 
     tcb::span<uint8_t> m_gram {};
 

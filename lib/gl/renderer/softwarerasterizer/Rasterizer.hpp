@@ -40,11 +40,30 @@ public:
 
     FragmentData hit() const
     {
+        int32_t bby = 0;
+        if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+        {
+            // In this case, the attributes are not preprocessed. The rasterizer
+            // needs to calculate the correct y position within the bounding box,
+            // based on the current screen y position.
+            // The current triangle might start outside of the current tile.
+            bby = m_yScreen - m_bbStartY;
+        }
+        else
+        {
+            // In this case, the attributes are preprocessed. They starting always
+            // in the current tile. The vertex transformer adjusts it.
+            // That means, our reference position is the current position on the line,
+            // and not the screen position like it is above.
+            bby = m_y - m_yi;
+        }
+        const int32_t bbx = m_x - m_bbStartX;
+        const std::size_t index = (((m_yLineResolution - 1) - m_y) * m_resolutionData.x) + m_x;
         return {
             isInTriangleAndInBounds() && (m_state == EdgeWalkerState::WALKING),
-            (((m_yLineResolution - 1) - m_y) * m_resolutionData.x) + m_x,
-            m_x - m_bbStartX,
-            m_yScreen - m_bbStartY,
+            index,
+            bbx,
+            bby,
             m_x,
             m_yScreen,
         };
@@ -134,6 +153,7 @@ private:
 
     int32_t m_x {};
     int32_t m_y {};
+    int32_t m_yi {};
 
     int32_t m_yScreen {};
     int32_t m_yScreenEnd {};

@@ -42,6 +42,11 @@ public:
         m_gram = gram;
     }
 
+    void setYOffset(const uint32_t yOffset)
+    {
+        m_yOffset = yOffset;
+    }
+
     void setAddress(const uint32_t addr)
     {
         m_address = addr / sizeof(FBType);
@@ -65,27 +70,24 @@ public:
     {
         const std::size_t startX = (m_scissorData.enabled) ? std::min(m_scissorData.startX, static_cast<int32_t>(m_resolutionData.x)) : 0;
         const std::size_t endX = (m_scissorData.enabled) ? std::min(m_scissorData.endX, static_cast<int32_t>(m_resolutionData.x)) : m_resolutionData.x;
-        const std::size_t startY = (m_scissorData.enabled) ? std::min(m_scissorData.startY, static_cast<int32_t>(m_resolutionData.y)) : 0;
-        const std::size_t endY = (m_scissorData.enabled) ? std::min(m_scissorData.endY, static_cast<int32_t>(m_resolutionData.y)) : m_resolutionData.y;
+        const std::size_t startY = (m_scissorData.enabled) ? std::min(m_scissorData.startY, static_cast<int32_t>(m_resolutionData.y + m_yOffset)) : 0;
+        const std::size_t endY = (m_scissorData.enabled) ? std::min(m_scissorData.endY, static_cast<int32_t>(m_resolutionData.y + m_yOffset)) : (m_resolutionData.y + m_yOffset);
         for (std::size_t y = startY; y < endY; y++)
         {
             for (std::size_t x = startX; x < endX; x++)
             {
-                const std::size_t fbPos = x + ((m_resolutionData.y - y - 1) * m_resolutionData.x);
-                writeFragment(m_clearColor, fbPos, x, y);
+                const std::size_t yLine = y - m_yOffset;
+                const std::size_t index = x + ((m_resolutionData.y - yLine - 1) * m_resolutionData.x);
+                writeFragment(m_clearColor, index, x, y);
             }
         }
     }
 
     void writeFragment(const FBType fragment, const std::size_t index, const std::size_t x, const std::size_t y)
     {
-        if (m_scissorData.enabled)
+        if (!checkScissor(x, y))
         {
-            if (x < static_cast<std::size_t>(m_scissorData.startX) || x >= static_cast<std::size_t>(m_scissorData.endX)
-                || y < static_cast<std::size_t>(m_scissorData.startY) || y >= static_cast<std::size_t>(m_scissorData.endY))
-            {
-                return;
-            }
+            return;
         }
         m_fb[index] = (fragment & m_mask) | (m_fb[index] & ~m_mask);
     }
@@ -101,6 +103,19 @@ public:
     }
 
 private:
+    bool checkScissor(const std::size_t x, const std::size_t y) const
+    {
+        if (m_scissorData.enabled)
+        {
+            if (x < static_cast<std::size_t>(m_scissorData.startX) || x >= static_cast<std::size_t>(m_scissorData.endX)
+                || y < static_cast<std::size_t>(m_scissorData.startY) || y >= static_cast<std::size_t>(m_scissorData.endY))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     tcb::span<uint8_t> m_gram {};
     tcb::span<FBType> m_fb {};
     uint32_t m_address {};
@@ -109,6 +124,8 @@ private:
 
     const ScissorData& m_scissorData {};
     const ResolutionData& m_resolutionData {};
+
+    uint32_t m_yOffset {};
 };
 
 } // namespace rr::softwarerasterizer

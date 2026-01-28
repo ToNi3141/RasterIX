@@ -57,7 +57,10 @@ bool SoftwareRasterizer::handleCommand(const FramebufferCmd& cmd)
 {
     if (cmd.getSwapFramebuffer())
     {
-        // No need to swap a external framebuffer in the software rasterizer
+        if (cmd.getSelectColorBuffer())
+        {
+            m_busConnector.writeData(0, cmd.getFramebufferSizeInPixel() * 2, m_colorBuffer.getAddress());
+        }
         return true;
     }
     // Clear
@@ -80,10 +83,7 @@ bool SoftwareRasterizer::handleCommand(const FramebufferCmd& cmd)
     // Commit
     if (cmd.getCommitFramebuffer())
     {
-        if (cmd.getSelectColorBuffer())
-        {
-            m_busConnector.writeData(0, m_resolutionData.x * m_resolutionData.y * 2, m_colorBuffer.getAddress());
-        }
+        // No need to commit an framebuffer. The software rasterizer always works on a full framebuffer.
         return true;
     }
     // Load
@@ -358,6 +358,9 @@ bool SoftwareRasterizer::handleRegister(const TmuTextureReg& reg)
 bool SoftwareRasterizer::handleRegister(const YOffsetReg& reg)
 {
     m_rasterizer.setYOffset(reg.getY());
+    m_colorBuffer.setYOffset(reg.getY());
+    m_depthBuffer.setYOffset(reg.getY());
+    m_stencilBuffer.setYOffset(reg.getY());
     return true;
 }
 
