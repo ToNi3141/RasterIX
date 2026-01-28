@@ -32,7 +32,7 @@
 #include "transform/PrimitiveAssembler.hpp"
 #include "transform/Stencil.hpp"
 #include "transform/TexGen.hpp"
-#include "transform/VertexTransforming.hpp"
+#include "transform/VertexTransformer.hpp"
 #include "transform/ViewPort.hpp"
 #include <cstdint>
 

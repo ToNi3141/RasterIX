@@ -15,19 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _DMA_STREAM_ENGINE_COMMANDS_HPP_
-#define _DMA_STREAM_ENGINE_COMMANDS_HPP_
+#ifndef _FRAME_TRANSFER_ENGINE_COMMANDS_HPP_
+#define _FRAME_TRANSFER_ENGINE_COMMANDS_HPP_
 
 #include <cstdint>
 #include <tcb/span.hpp>
 
-namespace rr::DSEC
+namespace rr::devicedatauploader
 {
 
 using SCT = uint32_t;
 
-// OPs for the DMA Stream Engine
-// Refer the DmaStreamEngine.v for more details. In short the anatomy of a command:
+// OPs for the Frame Transfer Engine
+// This software component communicates with the RTL module FrameStreamingCore.
+// Refer FrameStreamingCore.v for more details. In short the anatomy of a command:
 // Standard operation
 // Beat 1:
 // +----------+---------+-----------------------------+
@@ -49,16 +50,16 @@ static constexpr SCT OP_STORE { 0xD000'0000 };
 static constexpr SCT OP_LOAD { 0x7000'0000 };
 static constexpr SCT OP_STREAM { 0x9000'0000 };
 
-static constexpr uint32_t DEVICE_MIN_TRANSFER_SIZE { 64 }; // The DSE only supports 16 * 4 byte transfers
+static constexpr uint32_t DEVICE_MIN_TRANSFER_SIZE { 64 }; // The FTE only supports 16 * 4 byte transfers
 
 struct Command
 {
 #pragma pack(push, 4)
-    uint32_t op;
+    SCT op;
     uint32_t addr;
 #pragma pack(pop)
 };
 
-} // namespace rr::DSEC
+} // namespace rr::devicedatauploader
 
-#endif // _DMA_STREAM_ENGINE_COMMANDS_HPP_
+#endif // _FRAME_TRANSFER_ENGINE_COMMANDS_HPP_

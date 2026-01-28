@@ -20,7 +20,9 @@
 
 #include "Op.hpp"
 #include <array>
+#include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <tcb/span.hpp>
 
 namespace rr
@@ -30,7 +32,7 @@ class FogLutStreamCmd
 {
     static constexpr std::size_t LUT_SIZE { 66 }; // upper bound, lower bound, 32 * (m and b)
 public:
-    using PayloadType = tcb::span<const uint32_t>;
+    using PayloadType = tcb::span<const int32_t>;
     using CommandType = uint32_t;
 
     FogLutStreamCmd() = default;
@@ -51,10 +53,9 @@ public:
             float f = fogLut[i];
             float fn = fogLut[i + 1];
 
-            const float diff = fn - f;
-            const float step = diff / 256.0f;
+            const float deltaF = fn - f;
 
-            const float m = step * powf(2, 30);
+            const float m = deltaF * powf(2, 22);
             const float b = f * powf(2, 30);
 
             setLutValue(i, m, b);
@@ -66,6 +67,30 @@ public:
     FogLutStreamCmd(const CommandType, const PayloadType& payload, const bool)
     {
         m_payload = payload;
+    }
+
+    float getLowerBound() const
+    {
+        float lowerBound;
+        std::memcpy(&lowerBound, &(m_payload[0]), sizeof(float));
+        return lowerBound;
+    }
+
+    float getUpperBound() const
+    {
+        float upperBound;
+        std::memcpy(&upperBound, &(m_payload[1]), sizeof(float));
+        return upperBound;
+    }
+
+    float getLutM(const std::size_t index) const
+    {
+        return static_cast<float>(m_payload[((index + 1) * 2)]) / std::pow(2, 22);
+    }
+
+    float getLutB(const std::size_t index) const
+    {
+        return static_cast<float>(m_payload[((index + 1) * 2) + 1]) / std::pow(2, 30);
     }
 
     const PayloadType& payload() const { return m_payload; }
@@ -94,7 +119,7 @@ private:
         m_lut[((index + 1) * 2) + 1] = static_cast<int32_t>(b);
     }
 
-    std::array<uint32_t, LUT_SIZE> m_lut;
+    std::array<int32_t, LUT_SIZE> m_lut;
     PayloadType m_payload;
 };
 

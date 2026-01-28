@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef VERTEXTRANSFORMING_HPP
-#define VERTEXTRANSFORMING_HPP
+#ifndef VERTEXTRANSFORMER_HPP
+#define VERTEXTRANSFORMER_HPP
 
 #include "Clipper.hpp"
 #include "Culling.hpp"
@@ -39,10 +39,10 @@
 #include <bitset>
 #include <tcb/span.hpp>
 
-namespace rr::vertextransforming
+namespace rr::vertextransformer
 {
 
-struct VertexTransformingData
+struct VertexTransformerData
 {
     void setElementLocalData(const transform::ElementLocalData& data)
     {
@@ -80,13 +80,13 @@ struct VertexTransformingData
 };
 
 template <typename TDrawTriangleFunc, typename TUpdateStencilFunc>
-class VertexTransformingCalc
+class VertexTransformerCalc
 {
     using Triangle = std::array<TransformingVertexParameter, 3>;
 
 public:
-    VertexTransformingCalc(
-        const VertexTransformingData& data,
+    VertexTransformerCalc(
+        const VertexTransformerData& data,
         const TDrawTriangleFunc& drawTriangleFunc,
         const TUpdateStencilFunc& updateStencilFunc)
         : m_data { data }
@@ -508,7 +508,7 @@ private:
 
     Mat44 m_normalMatrix {};
 
-    const VertexTransformingData& m_data;
+    const VertexTransformerData& m_data;
     const TDrawTriangleFunc m_drawTriangleFunc;
     const TUpdateStencilFunc m_updateStencilFunc;
     primitiveassembler::PrimitiveAssemblerCalc m_primitiveAssembler {
@@ -529,5 +529,5 @@ private:
     lighting::LightingCalc m_lighting { m_data.lighting };
 };
 
-} // namespace rr::vertextransforming
-#endif // VERTEXTRANSFORMING_HPP
+} // namespace rr::vertextransformer
+#endif // VERTEXTRANSFORMER_HPP

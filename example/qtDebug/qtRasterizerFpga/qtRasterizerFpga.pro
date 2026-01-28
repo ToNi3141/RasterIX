@@ -1,7 +1,8 @@
-TARGET_BUILD = simulation
+#TARGET_BUILD = simulation
 #TARGET_BUILD = hardware
-VARIANT = RasterIX_IF
+TARGET_BUILD = software
 #VARIANT = RasterIX_EF
+VARIANT = RasterIX_IF
 
 PATH_PREFIX = ../../..
 
@@ -10,6 +11,7 @@ RIXGL_PATH = $${PATH_PREFIX}/lib/gl
 QT       += core gui
 CONFIG += c++17
 QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.15
+CONFIG += object_parallel_to_source
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -39,6 +41,12 @@ SOURCES += main.cpp\
     $${RIXGL_PATH}/pixelpipeline/PixelPipeline.cpp \
     $${RIXGL_PATH}/renderer/Rasterizer.cpp \
     $${RIXGL_PATH}/renderer/Renderer.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/AttributeInterpolator.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/Rasterizer.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/TexEnv.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/TextureMap.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/SoftwareRasterizer.cpp \
+    $${RIXGL_PATH}/renderer/devicedatauploader/DeviceDataUploader.cpp \
     $${RIXGL_PATH}/pixelpipeline/Fogging.cpp \
     $${RIXGL_PATH}/pixelpipeline/Texture.cpp \
     $${RIXGL_PATH}/gl.cpp \
@@ -54,8 +62,9 @@ HEADERS  += mainwindow.h \
     $${RIXGL_PATH}/transform/*.hpp \
     $${RIXGL_PATH}/*.h \
     $${RIXGL_PATH}/renderer/registers/* \
-    $${RIXGL_PATH}/renderer/dse/* \
-    $${RIXGL_PATH}/renderer/threadedRasterizer/* \
+    $${RIXGL_PATH}/renderer/devicedatauploader/* \
+    $${RIXGL_PATH}/renderer/threadedvertextransformer/* \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/* \
     $${RIXGL_PATH}/renderer/commands/* \
     $${RIXGL_PATH}/renderer/displaylist/*.hpp \
     $${RIXGL_PATH}/../threadrunner/*.hpp \
@@ -100,15 +109,15 @@ DEFINES += RIX_CORE_ENABLE_VSYNC=false
 DEFINES += RIX_CORE_MAX_VBO_COUNT=256
 DEFINES += RIX_CORE_PERFORMANCE_MODE=true
 
-equals(VARIANT, "RasterIX_IF") {
-    DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=15
-}
-equals(VARIANT, "RasterIX_EF") {
-    DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
-}
-
 equals(TARGET_BUILD, "hardware") {
     DEFINES += USE_HARDWARE
+    equals(VARIANT, "RasterIX_IF") {
+        DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=15
+    }
+    equals(VARIANT, "RasterIX_EF") {
+        DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    }
+    DEFINES += RIX_CORE_SOFTWARE_RENDERING=false
 
     FT60X_BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/ft60x
     FT60X_LIB_PATH = $${PATH_PREFIX}/lib/driver/ft60x/ftd3xx/osx
@@ -134,11 +143,18 @@ equals(TARGET_BUILD, "simulation") {
     macx: {
         VERILATOR_PATH = /opt/homebrew/Cellar/verilator/4.220/share/verilator
     }
+    DEFINES += RIX_CORE_SOFTWARE_RENDERING=false
 
     VERILATOR_BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/verilator
     VERILATOR_CODE_GEN_PATH = $${PATH_PREFIX}/rtl/top/Verilator/obj_dir
 
     DEFINES += USE_SIMULATION
+    equals(VARIANT, "RasterIX_IF") {
+        DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=15
+    }
+    equals(VARIANT, "RasterIX_EF") {
+        DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    }
 
     HEADERS += $${VERILATOR_BUS_CONNECTOR_PATH}/VerilatorBusConnector.hpp
     HEADERS += $${PATH_PREFIX}/lib/utils/GenericMemoryBusConnector.hpp
@@ -147,6 +163,20 @@ equals(TARGET_BUILD, "simulation") {
     SOURCES += $${VERILATOR_PATH}/include/verilated_vcd_c.cpp
 
     LIBS += $${VERILATOR_CODE_GEN_PATH}/Vtop__ALL.a
+}
+equals(TARGET_BUILD, "software") {
+    DEFINES += USE_SOFTWARE
+    DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    DEFINES += RIX_CORE_SOFTWARE_RENDERING=true
+    DEFINES += RIX_DRIVER_SOFTWARE_RASTERIZER=true
+
+    BUS_CONNECTOR_PATH = $${PATH_PREFIX}/lib/driver/softwarerasterizerbusconnector
+
+    QMAKE_CXXFLAGS += -I$${BUS_CONNECTOR_PATH}/
+
+    QMAKE_CFLAGS += -I$${BUS_CONNECTOR_PATH}/
+
+    HEADERS += $${BUS_CONNECTOR_PATH}/SoftwareRasterizerBusConnector.hpp
 }
 
 FORMS    += mainwindow.ui

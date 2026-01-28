@@ -9,13 +9,13 @@
 
 namespace rr
 {
-template <typename FBType, uint32_t NUMBER_OF_DISPLAY_LISTS = 33, uint32_t DISPLAY_LIST_SIZE = 1024 * 1024>
+template <uint32_t NUMBER_OF_DISPLAY_LISTS = 33, uint32_t DISPLAY_LIST_SIZE = 128 * 1024>
 class VerilatorBusConnector : public GenericMemoryBusConnector<NUMBER_OF_DISPLAY_LISTS, DISPLAY_LIST_SIZE>
 {
 public:
     virtual ~VerilatorBusConnector() = default;
 
-    VerilatorBusConnector(FBType* framebuffer, const uint16_t resolutionW = 128, const uint16_t resolutionH = 128)
+    VerilatorBusConnector(tcb::span<uint8_t> framebuffer, const uint16_t resolutionW = 128, const uint16_t resolutionH = 128)
         : m_resolutionW(resolutionW)
         , m_resolutionH(resolutionH)
         , m_framebuffer(framebuffer)
@@ -32,10 +32,10 @@ public:
         clk();
     }
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override
+    virtual void writeData(const uint8_t index, const uint32_t size, const uint32_t offset) override
     {
         // Convert data to 32 bit variables to ease the access
-        const uint32_t* data32 = reinterpret_cast<const uint32_t*>(this->m_dlMemTx[index].data());
+        const uint32_t* data32 = reinterpret_cast<const uint32_t*>(this->m_dlMemTx[index].data() + offset);
         const uint32_t bytes32 = size / sizeof(*data32);
         for (uint32_t i = 0; i < bytes32;)
         {
@@ -82,11 +82,16 @@ public:
         if (m_top.resetn == 0)
             return;
 
-        const std::size_t framebufferSize = (m_resolutionW * m_resolutionH / (sizeof(FBType) / 2)); // 4 for 32 bit color
-        if (m_top.m_framebuffer_axis_tvalid && (m_streamAddr < framebufferSize) && (m_framebuffer != nullptr))
+        const std::size_t framebufferSize = (m_resolutionW * m_resolutionH * 3); // 3 for 24 bit color
+        if (m_top.m_framebuffer_axis_tvalid && (m_streamAddr < framebufferSize) && (!m_framebuffer.empty()))
         {
-            m_framebuffer[m_streamAddr] = m_top.m_framebuffer_axis_tdata;
-            m_streamAddr++;
+            const uint16_t f0 = m_top.m_framebuffer_axis_tdata & 0xFFFF;
+            const uint16_t f1 = (m_top.m_framebuffer_axis_tdata >> 16) & 0xFFFF;
+
+            toBgr888(m_framebuffer.subspan(m_streamAddr, 3), f0);
+            m_streamAddr += 3;
+            toBgr888(m_framebuffer.subspan(m_streamAddr, 3), f1);
+            m_streamAddr += 3;
         }
 
         if ((m_streamAddr >= framebufferSize) && m_top.m_framebuffer_axis_tlast)
@@ -104,9 +109,19 @@ public:
     }
 
 private:
+    void toBgr888(tcb::span<uint8_t> dst, const uint16_t pixelData)
+    {
+        const uint32_t r = (pixelData >> 11) & 0x1F;
+        const uint32_t g = (pixelData >> 5) & 0x3F;
+        const uint32_t b = (pixelData >> 0) & 0x1F;
+        dst[2] = (r << 3) | (r >> 2);
+        dst[1] = (g << 2) | (g >> 4);
+        dst[0] = (b << 3) | (b >> 2);
+    }
+
     const uint16_t m_resolutionW = 128;
     const uint16_t m_resolutionH = 128;
-    FBType* m_framebuffer = nullptr;
+    tcb::span<uint8_t> m_framebuffer;
     uint32_t m_streamAddr = 0;
     Vtop m_top;
 };

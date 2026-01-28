@@ -30,7 +30,7 @@ read_verilog ./../../../../RasterIX/ColorInterpolator.v
 read_verilog ./../../../../RasterIX/ColorMixerSigned.v
 read_verilog ./../../../../RasterIX/ColorMixer.v
 read_verilog ./../../../../RasterIX/CommandParser.v
-read_verilog ./../../../../RasterIX/DmaStreamEngine.v
+read_verilog ./../../../../RasterIX/FrameStreamingCore.v
 read_verilog ./../../../../RasterIX/DualPortRam.v
 read_verilog ./../../../../RasterIX/Fog.v
 read_verilog ./../../../../RasterIX/FramebufferReader.v

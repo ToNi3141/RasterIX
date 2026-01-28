@@ -3,6 +3,8 @@
 #include "RIXGL.hpp"
 #include "gl.h"
 #include "glu.h"
+#include "renderer/devicedatauploader/DeviceDataUploader.hpp"
+#include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <spdlog/spdlog.h>
 #include <stdio.h>
 
@@ -13,7 +15,7 @@ public:
     Runner()
     {
         spdlog::set_level(spdlog::level::trace);
-        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
+        rr::RIXGL::createInstance(m_device);
         rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
@@ -38,5 +40,7 @@ private:
     rr::DMAProxyBusConnector m_busConnector {};
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
+    rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_device { m_dduDevice, m_workerThread, m_uploadThread };
     Scene m_scene {};
 };

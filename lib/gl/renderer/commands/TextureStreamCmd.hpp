@@ -30,7 +30,6 @@ namespace rr
 
 class TextureStreamCmd
 {
-    static constexpr uint32_t MAX_PAGES { static_cast<uint32_t>((static_cast<float>(RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2.0f * 1.33f) / static_cast<float>(RenderConfig::TEXTURE_PAGE_SIZE)) + 1.0f) };
     static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 18 bit
     static constexpr uint32_t TEXTURE_STREAM_SIZE_MASK { 0x3FFFF }; // size: 18 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 19 }; // size: 2 bit
@@ -77,7 +76,7 @@ public:
     }
 
 private:
-    std::array<uint32_t, MAX_PAGES> m_pages;
+    std::array<uint32_t, RenderConfig::getMaxTexturePages()> m_pages;
     PayloadType m_payload {};
     CommandType m_op {};
 };

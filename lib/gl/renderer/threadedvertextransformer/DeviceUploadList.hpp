@@ -24,7 +24,7 @@
 #include <spdlog/spdlog.h>
 #include <tcb/span.hpp>
 
-namespace rr
+namespace rr::threadedvertextransformer
 {
 
 template <std::size_t BUFFER_SIZE, std::size_t PAGE_SIZE>
@@ -91,5 +91,5 @@ private:
     std::array<uint8_t, BUFFER_SIZE> m_buffer {};
 };
 
-} // namespace rr
+} // namespace rr::threadedvertextransformer
 #endif // DEVICE_UPLOAD_LIST_HPP

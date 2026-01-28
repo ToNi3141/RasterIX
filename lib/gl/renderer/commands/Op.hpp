@@ -27,7 +27,7 @@ static constexpr uint32_t FRAMEBUFFER { 0x2000'0000 };
 static constexpr uint32_t TRIANGLE_STREAM { 0x3000'0000 };
 static constexpr uint32_t FOG_LUT_STREAM { 0x4000'0000 };
 static constexpr uint32_t TEXTURE_STREAM { 0x5000'0000 };
-// Virtual commands only supported by the ThreadedRasterizer
+// Virtual commands only supported by the ThreadedVertexTransformer
 static constexpr uint32_t SET_ELEMENT_GLOBAL_CTX { 0xB000'0000 };
 static constexpr uint32_t SET_LIGHTING_CTX { 0xC000'0000 };
 static constexpr uint32_t PUSH_VERTEX { 0xD000'0000 };

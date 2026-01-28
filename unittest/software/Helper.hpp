@@ -1,6 +1,6 @@
 // RasterIX
 // https://github.com/ToNi3141/RasterIX
-// Copyright (c) 2023 ToNi3141
+// Copyright (c) 2025 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,48 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef GENERAL_HPP
-#define GENERAL_HPP
+#ifndef RR_UT_HELPER_HPP
+#define RR_UT_HELPER_HPP
 
-#define CATCH_CONFIG_MAIN // This tells Catch to provide a main() - only do this in one cpp file
-#include "../3rdParty/catch.hpp"
-
-// Include common routines
-#include <verilated.h>
+#include "math/Vec.hpp"
+#include <cmath>
 
 namespace rr::ut
 {
 
-template <typename T>
-void clk(T* t)
+// Helper to compare Vec4 with tolerance
+inline bool vec4Approx(const rr::Vec4& a, const rr::Vec4& b, float epsilon = 0.001f)
 {
-    t->aclk = 0;
-    t->eval();
-    t->aclk = 1;
-    t->eval();
-}
-
-template <typename T>
-void reset(T* t)
-{
-    t->resetn = 0;
-    clk(t);
-    t->resetn = 1;
-    clk(t);
-}
-
-void enableVerilatorTracing()
-{
-    Verilated::traceEverOn(true);
+    return std::abs(a[0] - b[0]) < epsilon && std::abs(a[1] - b[1]) < epsilon && std::abs(a[2] - b[2]) < epsilon && std::abs(a[3] - b[3]) < epsilon;
 }
 
 } // namespace rr::ut
 
-// Needed for verilator when tracing is enabled
-double sc_time_stamp()
-{
-    static double t = 0;
-    return ++t;
-}
-
-#endif // GENERAL_HPP
+#endif // RR_UT_HELPER_HPP

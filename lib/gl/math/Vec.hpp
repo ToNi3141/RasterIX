@@ -17,10 +17,12 @@
 
 #ifndef VEC_HPP
 #define VEC_HPP
+#include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <math.h>
 
 namespace rr
 {
@@ -231,6 +233,14 @@ public:
         }
     }
 
+    void clamp(const float minVal, const float maxVal)
+    {
+        for (std::size_t i = 0; i < VecSize; i++)
+        {
+            vec[i] = std::clamp(vec[i], minVal, maxVal);
+        }
+    }
+
     const float* data() const
     {
         return vec.data();
@@ -247,6 +257,15 @@ public:
 private:
     std::array<float, VecSize> vec {};
 };
+
+template <std::size_t T>
+inline Vec<T> interpolate(const Vec<T>& a, const Vec<T>& b, const float factor)
+{
+    Vec<T> t;
+    for (std::size_t i = 0; i < T; i++)
+        t[i] = a[i] + (b[i] - a[i]) * factor;
+    return t;
+}
 
 template <std::size_t S, std::size_t T>
 inline Vec<T> operator*(const Vec<S>& lhs, const Vec<T>& rhs)

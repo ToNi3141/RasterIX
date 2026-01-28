@@ -46,6 +46,7 @@ struct RenderConfig
     static constexpr bool ENABLE_VSYNC { RIX_CORE_ENABLE_VSYNC };
     static constexpr std::size_t MAX_VBO_COUNT { RIX_CORE_MAX_VBO_COUNT };
     static constexpr bool PERFORMANCE_MODE { RIX_CORE_PERFORMANCE_MODE };
+    static constexpr bool SOFTWARE_RENDERING { RIX_CORE_SOFTWARE_RENDERING };
 
     static constexpr std::size_t getDisplayLines()
     {
@@ -65,6 +66,12 @@ struct RenderConfig
             return (size | MASK) + 1;
         }
         return size;
+    }
+
+    static constexpr uint32_t getMaxTexturePages()
+    {
+        constexpr float MAX_TEXTURE_SIZE_BYTES { static_cast<float>(MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE * 2.0f * 1.33f) };
+        return static_cast<uint32_t>((MAX_TEXTURE_SIZE_BYTES / static_cast<float>(TEXTURE_PAGE_SIZE)) + 1.0f);
     }
 };
 

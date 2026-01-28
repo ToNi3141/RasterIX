@@ -15,14 +15,20 @@
 #undef VOID // Undef void because it is defined in the tcl.h and there is a typedef in WinTypes.h (which is used for the FT2232 library)
 #include "FT60XBusConnector.hpp"
 #endif
+#if USE_SOFTWARE
+#include "SoftwareRasterizerBusConnector.hpp"
+#include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
+#endif
 
-#include "VerilatorBusConnector.hpp"
 #include "NoThreadRunner.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
+#include "renderer/devicedatauploader/DeviceDataUploader.hpp"
+#include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include "../../stencilShadow/StencilShadow.hpp"
 #include "../../minimal/Minimal.hpp"
 #include "../../mipmap/Mipmap.hpp"
+#include "../../vbo/VboExample.hpp"
 
 namespace Ui {
 class MainWindow;
@@ -47,9 +53,21 @@ public:
     static const uint32_t RESOLUTION_W = 640;
     static const uint32_t RESOLUTION_H = 480;
 private:
-    uint16_t m_framebuffer[RESOLUTION_W * RESOLUTION_H];
+    uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 3];
 
-    rr::VerilatorBusConnector<uint32_t> m_busConnector{reinterpret_cast<uint32_t*>(m_framebuffer), RESOLUTION_W, RESOLUTION_H};
+    rr::VerilatorBusConnector<> m_busConnector{m_framebuffer, RESOLUTION_W, RESOLUTION_H};
+    rr::devicedatauploader::DeviceDataUploader m_device{m_busConnector};
+#endif
+
+#if USE_SOFTWARE
+public:
+    static const uint32_t PREVIEW_WINDOW_SCALING = 1;
+    static const uint32_t RESOLUTION_W = 640;
+    static const uint32_t RESOLUTION_H = 480;
+private:
+    uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 3];
+    rr::SoftwareRasterizerBusConnector<32 * 1024 * 1024, rr::SoftwareRasterizerBusConnectorColorFormat::BGR888> m_busConnector{m_framebuffer};
+    rr::softwarerasterizer::SoftwareRasterizer m_device{m_busConnector};
 #endif
 
 #if USE_HARDWARE
@@ -58,10 +76,12 @@ public:
     static const uint32_t RESOLUTION_W = 1024;
 private:
     rr::FT60XBusConnector m_busConnector;
+    rr::devicedatauploader::DeviceDataUploader m_device{m_busConnector};
 #endif
 
     rr::NoThreadRunner m_workerThread{};
     rr::NoThreadRunner m_uploadThread{};
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedRasterizer{m_device, m_workerThread, m_uploadThread};
 
     Ui::MainWindow *ui;
 

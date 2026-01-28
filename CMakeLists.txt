@@ -6,6 +6,9 @@ option(RIX_BUILD_ZYNQ_EMBEDDED_LINUX "Sets up a cross build environment for embe
 option(RIX_BUILD_RPPICO "Sets up a cross compilation build for the RPPico" OFF)
 # Enables the examples
 option(RIX_BUILD_EXAMPLES "Builds the examples" OFF)
+# Enables the unit tests
+option(RIX_BUILD_TESTS_VERILATOR "Builds the Verilator RTL unit tests" OFF)
+option(RIX_BUILD_TESTS_SOFTWARE "Builds the software unit tests" OFF)
 # Builds a dynamic library
 option(RIX_BUILD_SHARED_LIBRARY "Builds a dynamic loadable library" OFF)
 # Selects the bus connector
@@ -13,6 +16,7 @@ option(RIX_DRIVER_FT60X "Includes a driver for a FT60X bus connector" OFF)
 option(RIX_DRIVER_VERILATOR "Includes a driver for the Verilator simulation" OFF)
 option(RIX_DRIVER_DMA_PROXY "Includes a driver for the DMA Proxy bus connector" OFF)
 option(RIX_DRIVER_STANDALONE_XIL_CDMA "Includes a driver for the Xilinx CDMA bus connector" OFF)
+option(RIX_DRIVER_SOFTWARE_RASTERIZER "Includes a driver for the Software Rasterizer" OFF)
 # Enables logging
 option(RIX_ENABLE_SPDLOG "Enables logging via the spdlog library" OFF)
 
@@ -46,6 +50,7 @@ set(RIX_CORE_ENABLE_VSYNC "false" CACHE STRING "Enables vsync. Requires two fram
 set(RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE "1024 * 1024 * 4" CACHE STRING "Sets the size of the display list. Bigger lists are required for the IF config. The EF config allows smaller lists because of intermediate uploads.")
 set(RIX_CORE_MAX_VBO_COUNT "256" CACHE STRING "The maximum number of VBOs")
 set(RIX_CORE_PERFORMANCE_MODE "false" CACHE STRING "Can increase the rendering performance by sacrificing compatibility.")
+set(RIX_CORE_SOFTWARE_RENDERING "false" CACHE STRING "Enables the software rendering mode")
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -86,4 +91,12 @@ add_compile_definitions(SPDLOG_ACTIVE_LEVEL=3)
 if (RIX_BUILD_EXAMPLES)
     add_subdirectory(example)
 endif()
-add_subdirectory(lib)
+
+if (RIX_BUILD_TESTS_VERILATOR OR RIX_BUILD_TESTS_SOFTWARE)
+    enable_testing()
+    add_subdirectory(unittest)
+endif()
+
+if (NOT RIX_BUILD_TESTS_VERILATOR OR RIX_BUILD_TESTS_SOFTWARE)
+    add_subdirectory(lib)
+endif()

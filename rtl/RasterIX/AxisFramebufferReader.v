@@ -89,12 +89,12 @@ module AxisFramebufferReader #(
     localparam STATE_NOP = 3;
     reg [ 1 : 0] state;
 
-    DmaStreamEngine #(
+    FrameStreamingCore #(
         .STREAM_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .STRB_WIDTH(STRB_WIDTH),
         .ID_WIDTH(ID_WIDTH)
-    ) dse (
+    ) fte (
         .aclk(aclk),
         .resetn(resetn),
         

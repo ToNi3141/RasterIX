@@ -6,7 +6,8 @@ declare -a files=(
     lib/utils
     lib/wgl
     lib/threadrunner
-    unittest/cpp
+    unittest/verilator/cpp
+    unittest/software
     example/minimal
     example/mipmap
     example/stencilShadow

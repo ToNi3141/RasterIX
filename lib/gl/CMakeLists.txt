@@ -181,12 +181,18 @@ add_library(gl STATIC
     pixelpipeline/Texture.cpp
     renderer/Rasterizer.cpp
     renderer/Renderer.cpp
+    renderer/devicedatauploader/DeviceDataUploader.cpp
+    renderer/softwarerasterizer/AttributeInterpolator.cpp
+    renderer/softwarerasterizer/Rasterizer.cpp
+    renderer/softwarerasterizer/TexEnv.cpp
+    renderer/softwarerasterizer/TextureMap.cpp
+    renderer/softwarerasterizer/SoftwareRasterizer.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog span)
 target_include_directories(gl PUBLIC .)
 
-add_compile_definitions(
+target_compile_definitions(gl PUBLIC
     RIX_CORE_TMU_COUNT=${RIX_CORE_TMU_COUNT}
     RIX_CORE_MAX_TEXTURE_SIZE=${RIX_CORE_MAX_TEXTURE_SIZE}
     RIX_CORE_ENABLE_MIPMAPPING=${RIX_CORE_ENABLE_MIPMAPPING}
@@ -208,4 +214,5 @@ add_compile_definitions(
     RIX_CORE_ENABLE_VSYNC=${RIX_CORE_ENABLE_VSYNC}
     RIX_CORE_MAX_VBO_COUNT=${RIX_CORE_MAX_VBO_COUNT}
     RIX_CORE_PERFORMANCE_MODE=${RIX_CORE_PERFORMANCE_MODE}
+    RIX_CORE_SOFTWARE_RENDERING=${RIX_CORE_SOFTWARE_RENDERING}
 )

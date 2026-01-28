@@ -61,7 +61,7 @@ module ColorBlender
 );
 `include "RegisterAndDescriptorDefines.vh"
 
-    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH{1'h1} };
+    localparam [SUB_PIXEL_WIDTH - 1 : 0] ONE_POINT_ZERO = { SUB_PIXEL_WIDTH { 1'h1 } };
 
     reg [SUB_PIXEL_WIDTH - 1 : 0] v00;
     reg [SUB_PIXEL_WIDTH - 1 : 0] v01;

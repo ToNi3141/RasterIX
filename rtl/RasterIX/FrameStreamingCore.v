@@ -15,8 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-// This engine is used to store streams into memory, load streams from memory and initialize memory.
+// This core is used to store streams into memory, load streams from memory and initialize memory.
 // Padding calculation: padding = STREAM_WIDTH - 32.
 // The engine uses for the commands st0_axis.
 //
@@ -63,7 +62,7 @@
 // as out, then it will write to the memory.
 // Note: Used as in and out is a illegal configuration.
 
-module DmaStreamEngine #(
+module FrameStreamingCore #(
     // Width of the axi interfaces
     parameter STREAM_WIDTH = 32,
     // Width of address bus in bits
@@ -188,7 +187,7 @@ module DmaStreamEngine #(
     wire                         s_int_axis_tlast;
     wire [STREAM_WIDTH - 1 : 0]  s_int_axis_tdata;
 
-    DmaStreamEngineBusTerminate #(
+    FrameStreamingCoreBusTerminate #(
         .STREAM_WIDTH(STREAM_WIDTH)
     ) intBusTerminate (
         .aclk(aclk),
@@ -565,7 +564,7 @@ module DmaStreamEngine #(
 endmodule
 
 
-module DmaStreamEngineBusTerminate #(
+module FrameStreamingCoreBusTerminate #(
     // Width of the axi interfaces
     parameter STREAM_WIDTH = 32
 ) (

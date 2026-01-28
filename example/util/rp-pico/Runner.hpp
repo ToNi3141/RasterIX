@@ -2,6 +2,7 @@
 #include "RIXGL.hpp"
 #include "gl.h"
 #include "glu.h"
+#include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 
 #include <hardware/dma.h>
 #include <hardware/spi.h>
@@ -23,11 +24,11 @@ public:
 
     virtual ~BusConnector() = default;
 
-    virtual void writeData(const uint8_t index, const uint32_t size) override
+    virtual void writeData(const uint8_t index, const uint32_t size, const uint32_t offset) override
     {
         tcb::span<const uint8_t> data = requestWriteBuffer(index);
         uint32_t dataToSend = size;
-        uint32_t counter = 0;
+        uint32_t counter = offset;
         while (dataToSend != 0)
         {
             blockUntilTransferIsComplete();
@@ -132,7 +133,7 @@ public:
         gpio_init(LED_PIN);
         gpio_set_dir(LED_PIN, GPIO_OUT);
         m_busConnector.init();
-        rr::RIXGL::createInstance(m_busConnector, m_workerThread, m_uploadThread);
+        rr::RIXGL::createInstance(m_device);
         rr::RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
     }
 
@@ -158,8 +159,7 @@ private:
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
     BusConnector<4096> m_busConnector {};
-    rr::NoThreadRunner m_workerThread {};
-    rr::NoThreadRunner m_uploadThread {};
+    rr::devicedatauploader::DeviceDataUploader m_device { m_busConnector };
     bool led = false;
     Scene m_scene {};
 };

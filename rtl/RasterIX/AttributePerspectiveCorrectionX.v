@@ -195,9 +195,9 @@ module AttributePerspectiveCorrectionX #(
     ) step1_tex0_q_recip (
         .clk(aclk), 
         .ce(ce), 
-        // S3.30 >> 7 = U3.21 Clamp to 24 bit and remove sign, because the value is normalized between 1.0 and 0.0
+        // S3.28 >> 7 = U3.21 Clamp to 24 bit and remove sign, because the value is normalized between 1.0 and 0.0
         .in(tex0_q[ATTRIBUTE_SIZE - TEXQ_PRECISION - 1 +: TEXQ_PRECISION]), 
-        .out(step1_tex0_q)
+        .out(step1_tex0_q) // Q21.27
     );
 
     generate

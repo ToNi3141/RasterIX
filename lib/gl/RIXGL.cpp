@@ -21,8 +21,6 @@
 #include "RenderConfigs.hpp"
 #include "opengl/GLImpl.h"
 #include "pixelpipeline/PixelPipeline.hpp"
-#include "renderer/dse/DmaStreamEngine.hpp"
-#include "renderer/threadedRasterizer/ThreadedRasterizer.hpp"
 #include "vertexpipeline/VertexArray.hpp"
 #include "vertexpipeline/VertexBuffer.hpp"
 #include "vertexpipeline/VertexPipeline.hpp"
@@ -46,47 +44,11 @@ RIXGL& RIXGL::getInstance()
     return *instance;
 }
 
-class WithThreadedRasterization
-{
-public:
-    WithThreadedRasterization(IBusConnector& busConnector, IThreadRunner& uploadThread, IThreadRunner& workerThread)
-        : dmaStreamEngine { busConnector }
-        , device { dmaStreamEngine, uploadThread, workerThread }
-    {
-    }
-
-    void deinit()
-    {
-        device.deinit();
-        dmaStreamEngine.deinit();
-    }
-
-    DSEC::DmaStreamEngine dmaStreamEngine;
-    ThreadedRasterizer device;
-};
-
-class OnlyDse
-{
-public:
-    OnlyDse(IBusConnector& busConnector, IThreadRunner&, IThreadRunner&)
-        : device { busConnector }
-    {
-    }
-
-    void deinit()
-    {
-        device.deinit();
-    }
-
-    DSEC::DmaStreamEngine device;
-};
-
 class RenderDevice
 {
 public:
-    RenderDevice(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
-        : device { busConnector, uploadThread, workerThread }
-        , pixelPipeline { device.device }
+    RenderDevice(IDevice& device)
+        : pixelPipeline { device }
         , vertexPipeline { pixelPipeline }
     {
     }
@@ -95,12 +57,8 @@ public:
     {
         vertexPipeline.deinit();
         pixelPipeline.deinit();
-        device.deinit();
     }
 
-    using Device = std::conditional<RenderConfig::THREADED_RASTERIZATION, WithThreadedRasterization, OnlyDse>::type;
-
-    Device device;
     PixelPipeline pixelPipeline;
     VertexPipeline vertexPipeline;
     VertexQueue vertexQueue {};
@@ -112,13 +70,13 @@ public:
 
 alignas(RenderDevice) std::byte renderDeviceBuffer[sizeof(RenderDevice)];
 
-bool RIXGL::createInstance(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
+bool RIXGL::createInstance(IDevice& device)
 {
     if (instance)
     {
         instance->~RIXGL();
     }
-    instance = new (&buffer) RIXGL { busConnector, workerThread, uploadThread };
+    instance = new (&buffer) RIXGL { device };
     return instance != nullptr;
 }
 
@@ -132,8 +90,8 @@ void RIXGL::destroy()
     }
 }
 
-RIXGL::RIXGL(IBusConnector& busConnector, IThreadRunner& workerThread, IThreadRunner& uploadThread)
-    : m_renderDevice { new (&renderDeviceBuffer) RenderDevice { busConnector, workerThread, uploadThread } }
+RIXGL::RIXGL(IDevice& device)
+    : m_renderDevice { new (&renderDeviceBuffer) RenderDevice { device } }
 {
     // Register Open GL 1.0 procedures
     addLibProcedure("glAccum", ADDRESS_OF(impl_glAccum));

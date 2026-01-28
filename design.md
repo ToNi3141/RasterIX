@@ -43,8 +43,8 @@ The driver is build with the following components:
 - `Rasterizer`: It implements the edge equation to calculate barycentric coordinates and also calculates increments which are later used in the hardware to rasterize the triangle. This is also done for texture coordinates and w.
 - `DisplayList`: Contains all render commands produced from the Renderer and buffers them, before they are streamed to the RasterIX.
 - `TextureMemoryManager`: Manager for the texture memory on the device.
-- `ThreadedRasterizer`: Optional step and derives from the `IDevice` interface. Fetches the data from the datastream and decodes it. It performs the transformation on the vertices and rasterizes the triangle. Usually this class runs in a thread.
-- `DmaStreamEngine`: Derives from the `IDevice` interface. Adds a header to the data stream with information about the size of the data and where to stream the data (to the RasterIX or to the device memory).
+- `ThreadedVertexTransformer`: Optional step and derives from the `IDevice` interface. Fetches the data from the datastream and decodes it. It performs the transformation on the vertices and rasterizes the triangle. Usually this class runs in a thread.
+- `DeviceDataUploader`: Derives from the `IDevice` interface. Adds a header to the data stream with information about the size of the data and where to stream the data (to the RasterIX or to the device memory). The corresponding RTL module is `FrameStreamingCore`.
 - `BusConnector`: Derives from the `IBusConnector` interface. It is used to transfer the data via a  defined interface like USB on a PC build, AXI on the Zynq build or SPI for microcontrollers to the RasterIX.
 - `IBusConnector`: Interface description which abstracts the physical access to the hardware.
 - `IDevice`: Interface which abstracts the access to the RasterIX as a whole. It has an interface to stream data to the RasterIX or to access the device memory to upload textures.
@@ -54,9 +54,9 @@ The driver is build with the following components:
 ![fpga flow diagram](pictures/fpgaFlow.drawio.png)
 
 - `ftdi_245fifo` (3rd party): Implements the ft245 interface.
-- `RasterIX_IF`: This is the main core. This module works as stand alone and is used to integrate into block designs or custom FPGA SoCs. It implements a crossbar so consolidate AXI channels and a `DmaStreamEngine` to stream data to the core and perform memory/texture management.
+- `RasterIX_IF`: This is the main core. This module works as stand alone and is used to integrate into block designs or custom FPGA SoCs. It implements a crossbar so consolidate AXI channels and a `FrameStreamingCore` to stream data to the core and perform memory/texture management.
   - `RasterIXCoreIF`: Abstracts the framebuffer handling in this core. The `RasterIXCoreEF` would instance other framebuffer types (see [Stream Framebuffer](#stream-framebuffer)).
-    - `DmaStreamEngine`: DMA engine to write data into the RAM, stream data from the RAM to the renderer or pass through the stream from the FTDI to the renderer.
+    - `FrameStreamingCore`: Core to write data into the RAM, stream data from the RAM to the renderer or pass through the stream from the FTDI to the renderer. The corresponding software implementation is `DeviceDataUploader`.
     - `RasterIXRenderCore`: This is the top module of the renderer. It contains all necessary modules to produce images.
       - `CommandParser`: Reads the data from the CMD_AXIS port, decodes the commands and controls the renderer. It also contains several control signals (not drawn for simplicity reasons) to observe the current state of the pipeline, the execution of framebuffer commands, the write channel of the fog LUT and so on.
       - `Rasterizer`: Takes the triangle parameters from the `Rasterizer` class (see the section in the Software) and rasterizes the triangle by using the precalculated values/increments.

@@ -440,7 +440,7 @@ module RasterIX_EF #(
     wire                             cmd_axis_tlast;
     wire [CMD_STREAM_WIDTH - 1 : 0]  cmd_axis_tdata;
 
-    DmaStreamEngine #(
+    FrameStreamingCore #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC)
