@@ -61,6 +61,10 @@ public:
 
     void streamDisplayList(const uint8_t index, const uint32_t size) override;
     void streamExternalDisplayList(tcb::span<const uint8_t> displayList);
+    void setSwapFramebufferEventHandler(std::function<void(const SoftwareRasterizer*)> swapFramebuffer)
+    {
+        m_swapFramebufferEvent = swapFramebuffer;
+    }
 
     bool writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
     {
@@ -142,6 +146,7 @@ private:
     BlendFunc m_blendFunc {};
     LogicOp m_logicOp {};
     StencilOp m_stencilOp {};
+    std::function<void(const SoftwareRasterizer*)> m_swapFramebufferEvent {};
 };
 
 } // namespace rr::softwarerasterizer

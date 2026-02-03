@@ -58,7 +58,7 @@ public:
     }
 
 private:
-    std::mutex m_mutex{};
+    std::mutex m_mutex {};
     std::thread m_renderThread;
 };
 

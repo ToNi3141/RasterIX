@@ -64,6 +64,7 @@ bool SoftwareRasterizer::handleCommand(const FramebufferCmd& cmd)
     {
         if (cmd.getSelectColorBuffer())
         {
+            m_swapFramebufferEvent(this);
             m_busConnector.writeData(0, cmd.getFramebufferSizeInPixel() * 2, m_colorBuffer.getAddress());
         }
         return true;

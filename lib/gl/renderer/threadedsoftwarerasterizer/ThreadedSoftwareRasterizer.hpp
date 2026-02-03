@@ -40,6 +40,11 @@ public:
         , m_workerThreads { workerThreads }
     {
         SPDLOG_INFO("Threaded Software Rasterizer initialized with {} threads", NUMBER_OF_THREADS);
+        for (auto& a : m_softwareRasterizers)
+        {
+            a.setSwapFramebufferEventHandler([this](const softwarerasterizer::SoftwareRasterizer* sender)
+                { waitForThreadsExcept(sender); });
+        }
     }
 
     void deinit()
@@ -105,6 +110,17 @@ private:
         m_workerThreads[m_threadIndex]->run(drawFunction);
         m_threadIndex = (m_threadIndex + 1) % NUMBER_OF_THREADS;
         m_threadsRunning++;
+    }
+
+    void waitForThreadsExcept(const softwarerasterizer::SoftwareRasterizer* sender)
+    {
+        for (std::size_t i = 0; i < NUMBER_OF_THREADS; i++)
+        {
+            if (&(m_softwareRasterizers[i]) != sender)
+            {
+                m_workerThreads[i]->wait();
+            }
+        }
     }
 
     IBusConnector& m_busConnector;
