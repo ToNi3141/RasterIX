@@ -64,6 +64,7 @@ HEADERS  += mainwindow.h \
     $${RIXGL_PATH}/renderer/registers/* \
     $${RIXGL_PATH}/renderer/devicedatauploader/* \
     $${RIXGL_PATH}/renderer/threadedvertextransformer/* \
+    $${RIXGL_PATH}/renderer/threadedsoftwarerasterizer/* \
     $${RIXGL_PATH}/renderer/softwarerasterizer/* \
     $${RIXGL_PATH}/renderer/commands/* \
     $${RIXGL_PATH}/renderer/displaylist/*.hpp \
@@ -166,7 +167,7 @@ equals(TARGET_BUILD, "simulation") {
 }
 equals(TARGET_BUILD, "software") {
     DEFINES += USE_SOFTWARE
-    DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=18
     DEFINES += RIX_CORE_SOFTWARE_RENDERING=true
     DEFINES += RIX_DRIVER_SOFTWARE_RASTERIZER=true
 

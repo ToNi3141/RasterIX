@@ -35,6 +35,7 @@ public:
 
     void wait() override
     {
+        std::lock_guard<std::mutex> lock(m_mutex);
         if (m_renderThread.joinable())
         {
             m_renderThread.join();
@@ -43,6 +44,8 @@ public:
 
     void run(const std::function<void()>& operation) override
     {
+        wait();
+
         m_renderThread = std::thread(operation);
 #ifdef WIN32
         SetThreadPriority(m_renderThread.native_handle(), 2);
@@ -55,6 +58,7 @@ public:
     }
 
 private:
+    std::mutex m_mutex{};
     std::thread m_renderThread;
 };
 

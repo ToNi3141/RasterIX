@@ -35,10 +35,15 @@ SoftwareRasterizer::SoftwareRasterizer(IBusConnector& busConnector)
 
 void SoftwareRasterizer::streamDisplayList(const uint8_t index, const uint32_t size)
 {
+    streamExternalDisplayList(requestDisplayListBuffer(index).first(size));
+}
+
+void SoftwareRasterizer::streamExternalDisplayList(tcb::span<const uint8_t> displayList)
+{
     displaylist::DisplayList srcList {};
-    srcList.setBuffer(requestDisplayListBuffer(index));
+    srcList.setBuffer({ const_cast<uint8_t*>(displayList.data()), displayList.size() });
     srcList.resetGet();
-    srcList.setCurrentSize(size);
+    srcList.setCurrentSize(static_cast<std::size_t>(displayList.size()));
     displaylist::DisplayListDisassembler disassembler { srcList };
 
     while (disassembler.hasNextCommand())
@@ -48,7 +53,7 @@ void SoftwareRasterizer::streamDisplayList(const uint8_t index, const uint32_t s
             disassembler.getNextCommand());
         if (!ret)
         {
-            SPDLOG_ERROR("Failed to handle command in display list. This might cause the renderer to crash ...");
+            SPDLOG_ERROR("Failed to handle command in external display list. This might cause the renderer to crash ...");
         }
     }
 }

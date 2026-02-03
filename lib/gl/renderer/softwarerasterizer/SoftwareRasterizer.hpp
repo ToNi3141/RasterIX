@@ -60,6 +60,7 @@ public:
     }
 
     void streamDisplayList(const uint8_t index, const uint32_t size) override;
+    void streamExternalDisplayList(tcb::span<const uint8_t> displayList);
 
     bool writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
     {
