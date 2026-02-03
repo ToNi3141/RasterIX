@@ -27,12 +27,16 @@ namespace rr::softwarerasterizer
 class BlendFunc
 {
 public:
+    // Function pointer type for blend factor calculation
+    using BlendFactorFn = Vec4 (*)(const Vec4&, const Vec4&);
+
     Vec4 blend(const Vec4& src, const Vec4& dst) const
     {
         if (!m_enable)
             return src;
-        const Vec4 srcFactor = calcBlendFactor(src, dst, m_sFactor);
-        const Vec4 dstFactor = calcBlendFactor(src, dst, m_dFactor);
+
+        const Vec4 srcFactor = m_sFactorFn(src, dst);
+        const Vec4 dstFactor = m_dFactorFn(src, dst);
         Vec4 result = src * srcFactor + dst * dstFactor;
         result.clamp(0.0f, 1.0f);
         return result;
@@ -45,63 +49,107 @@ public:
 
     void setSFactor(const rr::BlendFunc sFactor)
     {
-        m_sFactor = sFactor;
+        m_sFactorFn = getBlendFactorFn(sFactor);
     }
 
     void setDFactor(const rr::BlendFunc dFactor)
     {
-        m_dFactor = dFactor;
+        m_dFactorFn = getBlendFactorFn(dFactor);
     }
 
 private:
-    Vec4 calcBlendFactor(const Vec4& src, const Vec4& dst, const rr::BlendFunc& factor) const
+    // Static blend factor functions; no switch in hot path
+    static Vec4 blendZero(const Vec4&, const Vec4&)
     {
-        Vec4 color;
+        return Vec4 { 0.0f, 0.0f, 0.0f, 0.0f };
+    }
+
+    static Vec4 blendOne(const Vec4&, const Vec4&)
+    {
+        return Vec4 { 1.0f, 1.0f, 1.0f, 1.0f };
+    }
+
+    static Vec4 blendSrcColor(const Vec4& src, const Vec4&)
+    {
+        return src;
+    }
+
+    static Vec4 blendDstColor(const Vec4&, const Vec4& dst)
+    {
+        return dst;
+    }
+
+    static Vec4 blendOneMinusSrcColor(const Vec4& src, const Vec4&)
+    {
+        return Vec4 { 1.0f - src[0], 1.0f - src[1], 1.0f - src[2], 1.0f - src[3] };
+    }
+
+    static Vec4 blendOneMinusDstColor(const Vec4&, const Vec4& dst)
+    {
+        return Vec4 { 1.0f - dst[0], 1.0f - dst[1], 1.0f - dst[2], 1.0f - dst[3] };
+    }
+
+    static Vec4 blendSrcAlpha(const Vec4& src, const Vec4&)
+    {
+        return Vec4 { src[3], src[3], src[3], src[3] };
+    }
+
+    static Vec4 blendDstAlpha(const Vec4&, const Vec4& dst)
+    {
+        return Vec4 { dst[3], dst[3], dst[3], dst[3] };
+    }
+
+    static Vec4 blendOneMinusSrcAlpha(const Vec4& src, const Vec4&)
+    {
+        const float a = 1.0f - src[3];
+        return Vec4 { a, a, a, a };
+    }
+
+    static Vec4 blendOneMinusDstAlpha(const Vec4&, const Vec4& dst)
+    {
+        const float a = 1.0f - dst[3];
+        return Vec4 { a, a, a, a };
+    }
+
+    static Vec4 blendSrcAlphaSaturate(const Vec4& src, const Vec4& dst)
+    {
+        const float f = std::min(src[3], 1.0f - dst[3]);
+        return Vec4 { f, f, f, 1.0f };
+    }
+
+    static BlendFactorFn getBlendFactorFn(const rr::BlendFunc factor)
+    {
         switch (factor)
         {
         case rr::BlendFunc::ZERO:
-            color = Vec4 { 0.0f, 0.0f, 0.0f, 0.0f };
-            break;
+            return &blendZero;
         case rr::BlendFunc::ONE:
-            color = Vec4 { 1.0f, 1.0f, 1.0f, 1.0f };
-            break;
+            return &blendOne;
+        case rr::BlendFunc::SRC_COLOR:
+            return &blendSrcColor;
         case rr::BlendFunc::DST_COLOR:
-            color = dst;
-            break;
+            return &blendDstColor;
         case rr::BlendFunc::ONE_MINUS_SRC_COLOR:
-            color = Vec4 { 1.0f - src[0], 1.0f - src[1], 1.0f - src[2], 1.0f - src[3] };
-            break;
+            return &blendOneMinusSrcColor;
         case rr::BlendFunc::ONE_MINUS_DST_COLOR:
-            color = Vec4 { 1.0f - dst[0], 1.0f - dst[1], 1.0f - dst[2], 1.0f - dst[3] };
-            break;
+            return &blendOneMinusDstColor;
         case rr::BlendFunc::SRC_ALPHA:
-            color = Vec4 { src[3], src[3], src[3], src[3] };
-            break;
+            return &blendSrcAlpha;
         case rr::BlendFunc::DST_ALPHA:
-            color = Vec4 { dst[3], dst[3], dst[3], dst[3] };
-            break;
+            return &blendDstAlpha;
         case rr::BlendFunc::ONE_MINUS_SRC_ALPHA:
-            color = Vec4 { 1.0f - src[3], 1.0f - src[3], 1.0f - src[3], 1.0f - src[3] };
-            break;
+            return &blendOneMinusSrcAlpha;
         case rr::BlendFunc::ONE_MINUS_DST_ALPHA:
-            color = Vec4 { 1.0f - dst[3], 1.0f - dst[3], 1.0f - dst[3], 1.0f - dst[3] };
-            break;
+            return &blendOneMinusDstAlpha;
         case rr::BlendFunc::SRC_ALPHA_SATURATE:
-        {
-            const float f = (src[3] < 1.0f - dst[3]) ? src[3] : (1.0f - dst[3]);
-            color = Vec4 { f, f, f, 1.0f };
-            break;
-        }
+            return &blendSrcAlphaSaturate;
         default:
-            color = Vec4 { 1.0f, 1.0f, 1.0f, 1.0f };
-            break;
+            return &blendOne;
         }
-        return color;
     }
 
-    rr::BlendFunc m_sFactor { rr::BlendFunc::ONE };
-    rr::BlendFunc m_dFactor { rr::BlendFunc::ZERO };
-
+    BlendFactorFn m_sFactorFn { &blendOne };
+    BlendFactorFn m_dFactorFn { &blendZero };
     bool m_enable { false };
 };
 } // namespace rr::softwarerasterizer

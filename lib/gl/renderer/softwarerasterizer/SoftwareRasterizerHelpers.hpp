@@ -26,31 +26,51 @@
 namespace rr::softwarerasterizer::softwarerasterizerhelpers
 {
 
-[[maybe_unused]] static Vec4ui8 deserializeTexelInt(const uint16_t texel, const DevicePixelFormat format)
+[[maybe_unused]] static Vec4 deserializeTexelFloatRGBA4444(const uint16_t texel)
 {
-    Vec4ui8 color;
+    constexpr float inv255 = 1.0f / 255.0f;
+    const float r = static_cast<float>(((texel >> 12) & 0x0F) << 4) * inv255;
+    const float g = static_cast<float>(((texel >> 8) & 0x0F) << 4) * inv255;
+    const float b = static_cast<float>(((texel >> 4) & 0x0F) << 4) * inv255;
+    const float a = static_cast<float>(((texel >> 0) & 0x0F) << 4) * inv255;
+    return Vec4 { r, g, b, a };
+}
+
+[[maybe_unused]] static Vec4 deserializeTexelFloatRGBA5551(const uint16_t texel)
+{
+    constexpr float inv255 = 1.0f / 255.0f;
+    const float r = static_cast<float>(((texel >> 11) & 0x1F) << 3) * inv255;
+    const float g = static_cast<float>(((texel >> 6) & 0x1F) << 3) * inv255;
+    const float b = static_cast<float>(((texel >> 1) & 0x1F) << 3) * inv255;
+    const float a = ((texel >> 0) & 0x01) ? 1.0f : 0.0f;
+    return Vec4 { r, g, b, a };
+}
+
+[[maybe_unused]] static Vec4 deserializeTexelFloatRGB565(const uint16_t texel)
+{
+    constexpr float inv255 = 1.0f / 255.0f;
+    const float r = static_cast<float>(((texel >> 11) & 0x1F) << 3) * inv255;
+    const float g = static_cast<float>(((texel >> 5) & 0x3F) << 2) * inv255;
+    const float b = static_cast<float>(((texel >> 0) & 0x1F) << 3) * inv255;
+    return Vec4 { r, g, b, 1.0f };
+}
+
+// Function pointer type for float texel deserialization
+using DeserializeTexelFloatFn = Vec4 (*)(uint16_t);
+
+[[maybe_unused]] static DeserializeTexelFloatFn getDeserializeTexelFloatFn(const DevicePixelFormat format)
+{
     switch (format)
     {
     case DevicePixelFormat::RGBA4444:
-        color[0] = ((texel >> 12) & 0x0F) << 4;
-        color[1] = ((texel >> 8) & 0x0F) << 4;
-        color[2] = ((texel >> 4) & 0x0F) << 4;
-        color[3] = ((texel >> 0) & 0x0F) << 4;
-        break;
+        return &deserializeTexelFloatRGBA4444;
     case DevicePixelFormat::RGBA5551:
-        color[0] = ((texel >> 11) & 0x1F) << 3;
-        color[1] = ((texel >> 6) & 0x1F) << 3;
-        color[2] = ((texel >> 1) & 0x1F) << 3;
-        color[3] = ((texel >> 0) & 0x01) ? 255 : 0;
-        break;
+        return &deserializeTexelFloatRGBA5551;
     case DevicePixelFormat::RGB565:
-        color[0] = ((texel >> 11) & 0x1F) << 3;
-        color[1] = ((texel >> 5) & 0x3F) << 2;
-        color[2] = ((texel >> 0) & 0x1F) << 3;
-        color[3] = 255;
-        break;
+        return &deserializeTexelFloatRGB565;
+    default:
+        return &deserializeTexelFloatRGBA4444;
     }
-    return color;
 }
 
 [[maybe_unused]] static uint16_t convertColorMask(const bool r, const bool g, const bool b, const bool a, const DevicePixelFormat format)
@@ -93,18 +113,6 @@ namespace rr::softwarerasterizer::softwarerasterizerhelpers
 [[maybe_unused]] static uint16_t convertDepthMask(const bool depthMask)
 {
     return depthMask ? 0xFFFF : 0x0000;
-}
-
-[[maybe_unused]] static Vec4 deserializeTexel(const uint16_t texel, const DevicePixelFormat format)
-{
-    constexpr float inv255 = 1.0f / 255.0f;
-    Vec4ui8 colorUi8 = deserializeTexelInt(texel, format);
-    Vec4 color;
-    color[0] = colorUi8[0] * inv255;
-    color[1] = colorUi8[1] * inv255;
-    color[2] = colorUi8[2] * inv255;
-    color[3] = colorUi8[3] * inv255;
-    return color;
 }
 
 [[maybe_unused]] static uint16_t serializeToRgb565(const Vec4 color)
