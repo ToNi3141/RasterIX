@@ -25,11 +25,12 @@ namespace rr::softwarerasterizer
 {
 struct FragmentData
 {
-    const std::size_t index;
-    const int32_t bbx;
-    const int32_t bby;
-    const int32_t spx;
-    const int32_t spy;
+    std::size_t index;
+    int32_t bbx;
+    int32_t bby;
+    int32_t spx;
+    int32_t spy;
+    FragmentData& operator=(const FragmentData&) = default;
 };
 
 } // namespace rr::softwarerasterizer

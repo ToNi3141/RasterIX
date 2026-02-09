@@ -73,6 +73,7 @@ void Rasterizer::init(const TriangleStreamTypes::TriangleDesc& triangle)
     m_x = m_bbStartX;
     m_tryOtherSide = false;
     m_yi = m_y;
+    m_hit = false;
 }
 
 void Rasterizer::walk()
@@ -132,9 +133,12 @@ void Rasterizer::walk()
             {
                 yInc();
                 m_state = EdgeWalkerState::CHECK_DIRECTION;
+                m_hit = false;
             }
             else
             {
+                m_hit = true;
+                calcFragmentData();
                 xInc();
             }
             break;
@@ -142,6 +146,10 @@ void Rasterizer::walk()
         default:
             break;
         };
+    }
+    else
+    {
+        m_hit = false;
     }
 }
 

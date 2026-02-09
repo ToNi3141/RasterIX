@@ -30,9 +30,9 @@ std::vector<FragmentData> collectFragments(Rasterizer& rasterizer)
     std::vector<FragmentData> fragments;
     while (!rasterizer.isDone())
     {
-        FragmentData frag = rasterizer.hit();
-        if (frag.hit)
+        if (rasterizer.hit())
         {
+            FragmentData frag = rasterizer.fragmentData();
             fragments.push_back(frag);
         }
         rasterizer.walk();
