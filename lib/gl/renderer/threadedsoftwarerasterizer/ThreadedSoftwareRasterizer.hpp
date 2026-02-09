@@ -43,7 +43,7 @@ public:
         for (auto& a : m_softwareRasterizers)
         {
             a.setSwapFramebufferEventHandler([this](const softwarerasterizer::SoftwareRasterizer* sender)
-                { waitForThreadsExcept(sender); });
+                { waitExceptForOneThread(); });
         }
     }
 
@@ -112,14 +112,10 @@ private:
         m_threadsRunning++;
     }
 
-    void waitForThreadsExcept(const softwarerasterizer::SoftwareRasterizer* sender)
+    void waitExceptForOneThread()
     {
-        for (std::size_t i = 0; i < NUMBER_OF_THREADS; i++)
+        while (m_threadsRunning != 1)
         {
-            if (&(m_softwareRasterizers[i]) != sender)
-            {
-                m_workerThreads[i]->wait();
-            }
         }
     }
 

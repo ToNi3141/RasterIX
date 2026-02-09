@@ -120,9 +120,9 @@ bool SoftwareRasterizer::handleCommand(const TriangleStreamCmd& cmd)
     m_rasterizer.init(attributesData);
     while (!m_rasterizer.isDone())
     {
-        const FragmentData fmd = m_rasterizer.hit();
-        if (fmd.hit)
+        if (m_rasterizer.hit())
         {
+            const FragmentData fmd = m_rasterizer.fragmentData();
             const InterpolatedAttributesData interpolatedAttributes = m_attributeInterpolator.interpolate(attributesData, fmd.bbx, fmd.bby);
             const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
             const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);

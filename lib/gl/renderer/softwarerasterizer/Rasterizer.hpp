@@ -34,11 +34,10 @@ public:
         : m_resolutionData { resolutionData }
     {
     }
-    virtual ~Rasterizer() = default;
 
     void init(const TriangleStreamTypes::TriangleDesc& triangle);
 
-    FragmentData hit() const
+    FragmentData fragmentData() const
     {
         int32_t bby = 0;
         if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
@@ -60,7 +59,6 @@ public:
         const int32_t bbx = m_x - m_bbStartX;
         const std::size_t index = (((m_yLineResolution - 1) - m_y) * m_resolutionData.x) + m_x;
         return {
-            isInTriangleAndInBounds() && (m_state == EdgeWalkerState::WALKING),
             index,
             bbx,
             bby,
@@ -69,11 +67,16 @@ public:
         };
     }
 
+    bool hit() const
+    {
+        return isInTriangleAndInBounds() && (m_state == EdgeWalkerState::WALKING);
+    }
+
     void walk();
 
     bool isDone() const
     {
-        return m_y >= m_yScreenEnd;
+        return m_yScreen >= m_yScreenEnd;
     }
 
     void setYOffset(const uint32_t yOffset)
@@ -166,6 +169,7 @@ private:
     EdgeWalkerState m_state {};
 
     bool m_tryOtherSide { false };
+    bool m_hit { false };
 };
 
 } // namespace rr::softwarerasterizer

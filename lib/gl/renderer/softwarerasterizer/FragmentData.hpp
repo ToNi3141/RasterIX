@@ -25,7 +25,6 @@ namespace rr::softwarerasterizer
 {
 struct FragmentData
 {
-    const bool hit;
     const std::size_t index;
     const int32_t bbx;
     const int32_t bby;
