@@ -35,7 +35,6 @@ public:
 
     void wait() override
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         if (m_renderThread.joinable())
         {
             m_renderThread.join();
@@ -58,7 +57,6 @@ public:
     }
 
 private:
-    std::mutex m_mutex {};
     std::thread m_renderThread;
 };
 

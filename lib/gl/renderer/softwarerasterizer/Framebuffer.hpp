@@ -68,17 +68,20 @@ public:
 
     void clear()
     {
-        const std::size_t startX = (m_scissorData.enabled) ? std::min(m_scissorData.startX, static_cast<int32_t>(m_resolutionData.x)) : 0;
-        const std::size_t endX = (m_scissorData.enabled) ? std::min(m_scissorData.endX, static_cast<int32_t>(m_resolutionData.x)) : m_resolutionData.x;
-        const std::size_t startY = (m_scissorData.enabled) ? std::min(m_scissorData.startY, static_cast<int32_t>(m_resolutionData.y + m_yOffset)) : 0;
-        const std::size_t endY = (m_scissorData.enabled) ? std::min(m_scissorData.endY, static_cast<int32_t>(m_resolutionData.y + m_yOffset)) : (m_resolutionData.y + m_yOffset);
+        const int32_t tileHeight = static_cast<int32_t>(m_resolutionData.y);
+        const int32_t tileWidth = static_cast<int32_t>(m_resolutionData.x);
+        const int32_t yOff = static_cast<int32_t>(m_yOffset);
+        // Scissor bounds are in screen space — convert Y to local tile space by subtracting yOffset
+        const std::size_t startX = (m_scissorData.enabled) ? static_cast<std::size_t>(std::clamp(m_scissorData.startX, 0, tileWidth)) : 0;
+        const std::size_t endX = (m_scissorData.enabled) ? static_cast<std::size_t>(std::clamp(m_scissorData.endX, 0, tileWidth)) : m_resolutionData.x;
+        const std::size_t startY = (m_scissorData.enabled) ? static_cast<std::size_t>(std::clamp(m_scissorData.startY - yOff, 0, tileHeight)) : 0;
+        const std::size_t endY = (m_scissorData.enabled) ? static_cast<std::size_t>(std::clamp(m_scissorData.endY - yOff, 0, tileHeight)) : m_resolutionData.y;
         for (std::size_t y = startY; y < endY; y++)
         {
             for (std::size_t x = startX; x < endX; x++)
             {
-                const std::size_t yLine = y - m_yOffset;
-                const std::size_t index = x + ((m_resolutionData.y - yLine - 1) * m_resolutionData.x);
-                writeFragment(m_clearColor, index, x, y);
+                const std::size_t index = x + ((m_resolutionData.y - y - 1) * m_resolutionData.x);
+                writeFragment(m_clearColor, index, x, y + m_yOffset);
             }
         }
     }
