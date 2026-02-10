@@ -54,7 +54,7 @@ public:
         }
     }
 
-    virtual void readData(const uint8_t index, const uint32_t size) override
+    virtual void readData(const uint8_t, const uint32_t) override
     {
     }
 
@@ -62,12 +62,12 @@ public:
     {
     }
 
-    virtual tcb::span<uint8_t> requestWriteBuffer(const uint8_t index) override
+    virtual tcb::span<uint8_t> requestWriteBuffer(const uint8_t) override
     {
         return { m_gram };
     }
 
-    virtual tcb::span<uint8_t> requestReadBuffer(const uint8_t index) override
+    virtual tcb::span<uint8_t> requestReadBuffer(const uint8_t) override
     {
         return {};
     }
