@@ -55,8 +55,8 @@ public:
 
     void streamDisplayList(const uint8_t index, const uint32_t size) override
     {
-        waitTillThreadIsFree();
-        drawInThread(m_threadIndex, index, size);
+        const std::size_t threadIndex = findFreeThread();
+        drawInThread(threadIndex, index, size);
     }
 
     bool writeToDeviceMemory(tcb::span<const uint8_t> data, const uint32_t addr) override
@@ -95,12 +95,21 @@ private:
         }
     }
 
-    void waitTillThreadIsFree()
+    std::size_t findFreeThread()
     {
-        if (m_threadsRunning >= NUMBER_OF_THREADS)
+        // First, try to find a thread that is already free
+        for (std::size_t i = 0; i < NUMBER_OF_THREADS; i++)
         {
-            m_workerThreads[m_threadIndex]->wait();
+            if (!m_workerThreads[i]->isBusy())
+            {
+                return i;
+            }
         }
+        // All threads are busy, wait for the next one in round-robin order
+        m_workerThreads[m_nextThreadToWait]->wait();
+        const std::size_t freeThread = m_nextThreadToWait;
+        m_nextThreadToWait = (m_nextThreadToWait + 1) % NUMBER_OF_THREADS;
+        return freeThread;
     }
 
     void drawInThread(const std::size_t threadIndex, const uint8_t displayListIndex, const uint32_t displayListSize)
@@ -112,7 +121,6 @@ private:
         };
         m_threadsRunning++;
         m_workerThreads[threadIndex]->run(drawFunction);
-        m_threadIndex = (threadIndex + 1) % NUMBER_OF_THREADS;
     }
 
     void waitExceptForOneThread()
@@ -136,7 +144,7 @@ private:
     std::array<softwarerasterizer::SoftwareRasterizationInstance, NUMBER_OF_THREADS> m_softwareRasterizers {
         makeSoftwareRasterizers(std::make_index_sequence<NUMBER_OF_THREADS> {})
     };
-    std::atomic_size_t m_threadIndex { 0 };
+    std::size_t m_nextThreadToWait { 0 };
     std::atomic_size_t m_threadsRunning { 0 };
 };
 
