@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "wgl.h"
+#include "ArrayToPtrArray.hpp"
 #include "FT60XBusConnector.hpp"
 #include "MultiThreadRunner.hpp"
 #include "NoThreadRunner.hpp"
@@ -139,12 +140,17 @@ public:
     }
 
 private:
+    static constexpr std::size_t WORKER_THREAD_COUNT { 16 };
+
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
     BITMAPINFO m_bmi {};
     std::array<uint8_t, RenderConfig::MAX_DISPLAY_HEIGHT * RenderConfig::MAX_DISPLAY_WIDTH * 3> m_buffer {};
     rr::SoftwareRasterizerBusConnector<32 * 1024 * 1024, rr::SoftwareRasterizerBusConnectorColorFormat::BGR888> m_swBusConnector { m_buffer };
-    rr::softwarerasterizer::SoftwareRasterizer m_softwareRasterizer { m_swBusConnector };
+
+    std::array<rr::MultiThreadRunner, WORKER_THREAD_COUNT> m_workerThreads {};
+    std::array<rr::IThreadRunner*, WORKER_THREAD_COUNT> m_workerThreadsPtrs { rr::arrayToPtrArray<rr::IThreadRunner>(m_workerThreads) };
+    rr::softwarerasterizer::SoftwareRasterizer<WORKER_THREAD_COUNT> m_softwareRasterizer { m_swBusConnector, m_workerThreadsPtrs };
     rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedTransformer { m_softwareRasterizer, m_workerThread, m_uploadThread };
 };
 

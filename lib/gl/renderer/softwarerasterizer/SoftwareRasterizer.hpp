@@ -110,9 +110,9 @@ private:
             m_softwareRasterizers[threadIndex].streamDisplayList(tcb::span<const uint8_t> { m_buffer[displayListIndex].data(), displayListSize });
             m_threadsRunning--;
         };
-        m_workerThreads[m_threadIndex]->run(drawFunction);
-        m_threadIndex = (m_threadIndex + 1) % NUMBER_OF_THREADS;
         m_threadsRunning++;
+        m_workerThreads[threadIndex]->run(drawFunction);
+        m_threadIndex = (threadIndex + 1) % NUMBER_OF_THREADS;
     }
 
     void waitExceptForOneThread()
