@@ -63,10 +63,10 @@ Vec4 TextureMap::getFilteredTexel(const float s, const float t) const
     uint32_t uS0, uT0, uS1, uT1;
     if (m_wrapModeS == TextureWrapMode::CLAMP_TO_EDGE)
     {
-        uS0 = static_cast<uint32_t>(std::clamp(sInt, 0, static_cast<int32_t>(m_textureMaskW)));
-        uT0 = static_cast<uint32_t>(std::clamp(tInt, 0, static_cast<int32_t>(m_textureMaskH)));
-        uS1 = static_cast<uint32_t>(std::clamp(sInt + 1, 0, static_cast<int32_t>(m_textureMaskW)));
-        uT1 = static_cast<uint32_t>(std::clamp(tInt + 1, 0, static_cast<int32_t>(m_textureMaskH)));
+        uS0 = static_cast<uint32_t>(std::clamp(sInt, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskW)));
+        uT0 = static_cast<uint32_t>(std::clamp(tInt, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskH)));
+        uS1 = static_cast<uint32_t>(std::clamp(sInt + 1, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskW)));
+        uT1 = static_cast<uint32_t>(std::clamp(tInt + 1, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskH)));
     }
     else // REPEAT - use bitmask
     {

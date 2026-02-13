@@ -9,6 +9,8 @@
   - [How to port the Driver](#how-to-port-the-driver)
   - [How to use the Core](#how-to-use-the-core)
 - [Variant](#variant)
+- [Software Rasterization](#software-rasterization-1)
+  - [Windows Build](#windows-build)
 
 # About this Project
 The RasterIX* project is a rasterizer implementation for FPGAs written in Verilog. It implements a OpenGL ES 1.1 (except fixed point functions) plus some OpenGL 1.3 additions, fixed-function pixel pipeline with up to two TMUs and register combiners in hardware. The vertex pipeline is implemented in software.
@@ -131,6 +133,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RIX_CORE_ENABLE_VSYNC                  | Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals. |
 | MAX_VBO_COUNT                          | Max usable VBOs (Vertex Buffer Objects). Default is 256. VBOs are used mainly for compatibility with OpenGL, but do not provide performance advantages in this driver. |
 | RIX_CORE_PERFORMANCE_MODE              | Enables the performance mode which exchanges compatibility with performance optimizations. For instance, the intermediate display upload (where a frame is split in several display lists, when a display list overflows) will break on the `rixif` config, because the depth and stencil buffer are not reloaded. |
+| RIX_CORE_SOFTWARE_RENDERING            | This enables a software rendering mode. Only available under windows with WGL. When this mode is active, no FPGA hardware is required. |
 
 ## How to use the Core
 1. Add the files in the following directories to your project: `rtl/RasterIX/*`, `rtl/3rdParty/verilog-axi/*`, `rtl/3rdParty/verilog-axis/*`, `rtl/3rdParty/*.v`, and `rtl/Float/rtl/float/*`.
@@ -184,3 +187,14 @@ In non RIX_CORE_PERFORMANCE_MODE intermediate uploads are supported, but decreas
 The advantages are that it does not use FPGA memory resources for the framebuffers, freeing them for other designs, though it requires additional logic to handle memory requests. Another advantage is the use of much smaller display lists (a few kB) without impacting the performance of the render.
 
 Both variants can operate in either fixed-point or floating-point arithmetic. The fixed-point arithmetic provides almost the same image quality and compatibility as floating-point arithmetic. All tested games work perfectly fine with both, while the fixed-point configuration requires only half the logic of the floating-point configuration.
+
+# Software Rasterization
+## Windows Build
+WGL supports a software rendering build with 16 threads and 32MB VRAM. To build it, use the following commands to create a 32bit Visual Studio Project:
+```sh
+cd <rasterix_directory>
+cmake --preset win32_sw
+cmake --build .\build\win32\ --config Release --parallel
+```
+
+You will find the `OpenGL32.dll` in the build directory. The DLL is build for 32bit targets because games from that era are usually 32bit builds. Copy this dll into the game directly. Refer to the specific game documentation. For some games, it is enough just to copy the `OpenGL32.dll` into the root directory of the game.
