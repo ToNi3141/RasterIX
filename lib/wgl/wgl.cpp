@@ -17,7 +17,8 @@
 
 #include "wgl.h"
 #include "ArrayToPtrArray.hpp"
-#ifdef RIX_CORE_SOFTWARE_RENDERING
+#if RIX_CORE_SOFTWARE_RENDERING
+#include "SoftwareRasterizerBusConnector.hpp"
 #include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
 #else
 #include "FT60XBusConnector.hpp"
@@ -25,7 +26,6 @@
 #include "MultiThreadRunner.hpp"
 #include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
-#include "SoftwareRasterizerBusConnector.hpp"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 #include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
@@ -56,7 +56,7 @@ void addExtensions()
 #undef ADDRESS_OF
 }
 
-#ifdef RIX_CORE_SOFTWARE_RENDERING
+#if RIX_CORE_SOFTWARE_RENDERING
 class GLSWRenderer
 {
 public:
