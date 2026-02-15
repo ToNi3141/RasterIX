@@ -19,9 +19,21 @@
 #include "../3rdParty/catch.hpp"
 #include "Helper.hpp"
 #include "renderer/softwarerasterizer/Fog.hpp"
+#include <cmath>
 
 using namespace rr;
 using namespace rr::softwarerasterizer;
+
+// Helper functions to convert float values to the fixed-point format used by the fog LUT
+static int32_t floatToLutM(float m)
+{
+    return static_cast<int32_t>(m * std::pow(2.0f, 14.0f));
+}
+
+static int32_t floatToLutB(float b)
+{
+    return static_cast<int32_t>(b * std::pow(2.0f, 22.0f));
+}
 
 // Helper to create a simple linear fog LUT
 // Maps w values to fog factors linearly within the LUT range
@@ -35,8 +47,8 @@ Fog::FogLut createLinearFogLut()
         // Linear interpolation: factor goes from 1.0 to 0.0 as index increases
         float startFactor = 1.0f - (static_cast<float>(i) / static_cast<float>(lut.size()));
         float endFactor = 1.0f - (static_cast<float>(i + 1) / static_cast<float>(lut.size()));
-        lut[i].b = startFactor;
-        lut[i].m = endFactor - startFactor;
+        lut[i].b = floatToLutB(startFactor);
+        lut[i].m = floatToLutM(endFactor - startFactor);
     }
     return lut;
 }
@@ -47,8 +59,8 @@ Fog::FogLut createConstantFogLut(float factor)
     Fog::FogLut lut {};
     for (auto& entry : lut)
     {
-        entry.m = 0.0f;
-        entry.b = factor;
+        entry.m = floatToLutM(0.0f);
+        entry.b = floatToLutB(factor);
     }
     return lut;
 }
@@ -199,8 +211,8 @@ TEST_CASE("Fog LUT interpolation uses log2 of w", "[Fog]")
 
     // Create a LUT where entry 3 (w in range 8-16) returns factor 0.75
     Fog::FogLut lut = createConstantFogLut(0.0f);
-    lut[3].m = 0.0f;
-    lut[3].b = 0.75f;
+    lut[3].m = floatToLutM(0.0f);
+    lut[3].b = floatToLutB(0.75f);
     fog.setFogLut(lut, 1.0f, 10000.0f);
 
     const Vec4 inputColor { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -221,8 +233,8 @@ TEST_CASE("Fog LUT with slope interpolates within entry", "[Fog]")
 
     // Create a LUT where entry 3 interpolates from 1.0 to 0.5
     Fog::FogLut lut = createConstantFogLut(0.0f);
-    lut[3].b = 1.0f; // Start at 1.0
-    lut[3].m = -0.5f; // End at 0.5 (b + m*1.0 = 0.5)
+    lut[3].b = floatToLutB(1.0f); // Start at 1.0
+    lut[3].m = floatToLutM(-0.5f); // End at 0.5 (b + m*1.0 = 0.5)
     fog.setFogLut(lut, 1.0f, 10000.0f);
 
     const Vec4 inputColor { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -237,9 +249,9 @@ TEST_CASE("Fog LUT with slope interpolates within entry", "[Fog]")
 
     SECTION("At middle of range (frac=0.5)")
     {
-        // w = 8 * sqrt(2) ≈ 11.31 -> log2 ≈ 3.5 -> index 3, frac 0.5
+        // w = 12.0 = 1.5 * 2^3 -> index 3, mantissa represents 0.5
         // factor = 1.0 + (-0.5 * 0.5) = 0.75
-        const float w = 8.0f * std::sqrt(2.0f);
+        const float w = 12.0f;
         const Vec4 result = fog.calculateFog(w, inputColor);
         const Vec4 expected { 0.75f, 0.75f, 0.75f, 1.0f };
         REQUIRE(rr::ut::vec4Approx(result, expected));

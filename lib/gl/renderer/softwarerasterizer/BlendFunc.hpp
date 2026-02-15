@@ -20,6 +20,7 @@
 
 #include "Enums.hpp"
 #include "math/Vec.hpp"
+#include "math/Veci.hpp"
 #include <cstdint>
 
 namespace rr::softwarerasterizer
@@ -28,18 +29,24 @@ class BlendFunc
 {
 public:
     // Function pointer type for blend factor calculation
-    using BlendFactorFn = Vec4 (*)(const Vec4&, const Vec4&);
+    using BlendFactorFn = Vec4i16 (*)(const Vec4i16&, const Vec4i16&);
 
-    Vec4 blend(const Vec4& src, const Vec4& dst) const
+    Vec4 blend(const Vec4& srcf, const Vec4& dstf) const
     {
         if (!m_enable)
-            return src;
+            return srcf;
+        const Vec4i16 src = Vec4i16::createFromVec(srcf);
+        const Vec4i16 dst = Vec4i16::createFromVec(dstf);
 
-        const Vec4 srcFactor = m_sFactorFn(src, dst);
-        const Vec4 dstFactor = m_dFactorFn(src, dst);
-        Vec4 result = src * srcFactor + dst * dstFactor;
-        result.clamp(0.0f, 1.0f);
-        return result;
+        const Vec4i16 srcFactor = m_sFactorFn(src, dst);
+        const Vec4i16 dstFactor = m_dFactorFn(src, dst);
+        Vec4i16 result = src * srcFactor + dst * dstFactor;
+        result.clamp(Vec4i16::Zero, Vec4i16::One);
+
+        return Vec4 { static_cast<float>(result[0] / static_cast<float>(Vec4i16::One)),
+            static_cast<float>(result[1] / static_cast<float>(Vec4i16::One)),
+            static_cast<float>(result[2] / static_cast<float>(Vec4i16::One)),
+            static_cast<float>(result[3] / static_cast<float>(Vec4i16::One)) };
     }
 
     void setEnable(const bool enable)
@@ -59,62 +66,68 @@ public:
 
 private:
     // Static blend factor functions; no switch in hot path
-    static Vec4 blendZero(const Vec4&, const Vec4&)
+    static Vec4i16 blendZero(const Vec4i16&, const Vec4i16&)
     {
-        return Vec4 { 0.0f, 0.0f, 0.0f, 0.0f };
+        return Vec4i16 { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
     }
 
-    static Vec4 blendOne(const Vec4&, const Vec4&)
+    static Vec4i16 blendOne(const Vec4i16&, const Vec4i16&)
     {
-        return Vec4 { 1.0f, 1.0f, 1.0f, 1.0f };
+        return Vec4i16 { Vec4i16::One, Vec4i16::One, Vec4i16::One, Vec4i16::One };
     }
 
-    static Vec4 blendSrcColor(const Vec4& src, const Vec4&)
+    static Vec4i16 blendSrcColor(const Vec4i16& src, const Vec4i16&)
     {
         return src;
     }
 
-    static Vec4 blendDstColor(const Vec4&, const Vec4& dst)
+    static Vec4i16 blendDstColor(const Vec4i16&, const Vec4i16& dst)
     {
         return dst;
     }
 
-    static Vec4 blendOneMinusSrcColor(const Vec4& src, const Vec4&)
+    static Vec4i16 blendOneMinusSrcColor(const Vec4i16& src, const Vec4i16&)
     {
-        return Vec4 { 1.0f - src[0], 1.0f - src[1], 1.0f - src[2], 1.0f - src[3] };
+        return Vec4i16 { static_cast<Vec4i16::Type>(Vec4i16::One - src[0]),
+            static_cast<Vec4i16::Type>(Vec4i16::One - src[1]),
+            static_cast<Vec4i16::Type>(Vec4i16::One - src[2]),
+            static_cast<Vec4i16::Type>(Vec4i16::One - src[3]) };
     }
 
-    static Vec4 blendOneMinusDstColor(const Vec4&, const Vec4& dst)
+    static Vec4i16 blendOneMinusDstColor(const Vec4i16&, const Vec4i16& dst)
     {
-        return Vec4 { 1.0f - dst[0], 1.0f - dst[1], 1.0f - dst[2], 1.0f - dst[3] };
+        return Vec4i16 { static_cast<Vec4i16::Type>(Vec4i16::One - dst[0]),
+            static_cast<Vec4i16::Type>(Vec4i16::One - dst[1]),
+            static_cast<Vec4i16::Type>(Vec4i16::One - dst[2]),
+            static_cast<Vec4i16::Type>(Vec4i16::One - dst[3]) };
     }
 
-    static Vec4 blendSrcAlpha(const Vec4& src, const Vec4&)
+    static Vec4i16 blendSrcAlpha(const Vec4i16& src, const Vec4i16&)
     {
-        return Vec4 { src[3], src[3], src[3], src[3] };
+        return Vec4i16 { src[3], src[3], src[3], src[3] };
     }
 
-    static Vec4 blendDstAlpha(const Vec4&, const Vec4& dst)
+    static Vec4i16 blendDstAlpha(const Vec4i16&, const Vec4i16& dst)
     {
-        return Vec4 { dst[3], dst[3], dst[3], dst[3] };
+        return Vec4i16 { dst[3], dst[3], dst[3], dst[3] };
     }
 
-    static Vec4 blendOneMinusSrcAlpha(const Vec4& src, const Vec4&)
+    static Vec4i16 blendOneMinusSrcAlpha(const Vec4i16& src, const Vec4i16&)
     {
-        const float a = 1.0f - src[3];
-        return Vec4 { a, a, a, a };
+        Vec4i16::Type a = Vec4i16::One - src[3];
+        return Vec4i16 { a, a, a, a };
     }
 
-    static Vec4 blendOneMinusDstAlpha(const Vec4&, const Vec4& dst)
+    static Vec4i16 blendOneMinusDstAlpha(const Vec4i16&, const Vec4i16& dst)
     {
-        const float a = 1.0f - dst[3];
-        return Vec4 { a, a, a, a };
+        Vec4i16::Type a = Vec4i16::One - dst[3];
+        return Vec4i16 { a, a, a, a };
     }
 
-    static Vec4 blendSrcAlphaSaturate(const Vec4& src, const Vec4& dst)
+    static Vec4i16 blendSrcAlphaSaturate(const Vec4i16& src, const Vec4i16& dst)
     {
-        const float f = std::min(src[3], 1.0f - dst[3]);
-        return Vec4 { f, f, f, 1.0f };
+        Vec4i16::Type f = std::min(src[3], static_cast<Vec4i16::Type>(Vec4i16::One - dst[3]));
+        return Vec4i16 { f, f, f, Vec4i16::One };
     }
 
     static BlendFactorFn getBlendFactorFn(const rr::BlendFunc factor)

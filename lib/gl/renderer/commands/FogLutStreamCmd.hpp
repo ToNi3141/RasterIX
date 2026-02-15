@@ -83,14 +83,14 @@ public:
         return upperBound;
     }
 
-    float getLutM(const std::size_t index) const
+    int32_t getLutM(const std::size_t index) const
     {
-        return static_cast<float>(m_payload[((index + 1) * 2)]) / std::pow(2, 22);
+        return m_payload[((index + 1) * 2)];
     }
 
-    float getLutB(const std::size_t index) const
+    int32_t getLutB(const std::size_t index) const
     {
-        return static_cast<float>(m_payload[((index + 1) * 2) + 1]) / std::pow(2, 30);
+        return m_payload[((index + 1) * 2) + 1];
     }
 
     const PayloadType& payload() const { return m_payload; }

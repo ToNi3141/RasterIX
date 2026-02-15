@@ -25,7 +25,8 @@ namespace rr::ut
 {
 
 // Helper to compare Vec4 with tolerance
-inline bool vec4Approx(const rr::Vec4& a, const rr::Vec4& b, float epsilon = 0.001f)
+// Default epsilon accounts for 8-bit fixed-point precision (1/256 ≈ 0.004)
+inline bool vec4Approx(const rr::Vec4& a, const rr::Vec4& b, float epsilon = 0.005f)
 {
     return std::abs(a[0] - b[0]) < epsilon && std::abs(a[1] - b[1]) < epsilon && std::abs(a[2] - b[2]) < epsilon && std::abs(a[3] - b[3]) < epsilon;
 }

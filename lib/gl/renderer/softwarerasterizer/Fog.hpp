@@ -20,8 +20,10 @@
 
 #include "Enums.hpp"
 #include "math/Vec.hpp"
+#include "math/Veci.hpp"
 #include <array>
 #include <cstdint>
+#include <cstring>
 
 namespace rr::softwarerasterizer
 {
@@ -31,35 +33,45 @@ class Fog
 public:
     struct FogLutEntry
     {
-        float m {};
-        float b {};
+        int32_t m {}; // Qx.14
+        int32_t b {}; // Qx.22
     };
     using FogLut = std::array<FogLutEntry, 32>;
 
-    Vec4 calculateFog(const float w, const Vec4& color) const
+    Vec4 calculateFog(const float w, const Vec4& colorf) const
     {
         if (!m_enable)
         {
-            return color;
+            return colorf;
         }
 
-        const float factor = computeFogFactor(w);
-        Vec4 foggedColor = interpolate(m_fogColor, color, std::clamp(factor, 0.0f, 1.0f));
-        foggedColor.clamp(0.0f, 1.0f);
+        // Convert input color to fixed point
+        const Vec4i16 color = Vec4i16::createFromVec(colorf);
+
+        // Compute fog factor in fixed point (S1.8 format, matching Vec4i16)
+        const Vec4i16::Type factor = computeFogFactor(w);
+
+        Vec4i16 foggedColor = Vec4i16::interpolate(m_fogColor, color, std::clamp(factor, Vec4i16::Zero, Vec4i16::One));
+        foggedColor.clamp(Vec4i16::Zero, Vec4i16::One);
         foggedColor[3] = color[3]; // Preserve alpha
-        return foggedColor;
+
+        // Convert back to float
+        return Vec4 { static_cast<float>(foggedColor[0]) / static_cast<float>(Vec4i16::One),
+            static_cast<float>(foggedColor[1]) / static_cast<float>(Vec4i16::One),
+            static_cast<float>(foggedColor[2]) / static_cast<float>(Vec4i16::One),
+            static_cast<float>(foggedColor[3]) / static_cast<float>(Vec4i16::One) };
     }
 
     void setFogLut(const FogLut& lut, const float lowerBound, const float upperBound)
     {
-        m_lowerBound = lowerBound;
-        m_upperBound = upperBound;
+        std::memcpy(&m_lowerBound, &lowerBound, sizeof(m_lowerBound));
+        std::memcpy(&m_upperBound, &upperBound, sizeof(m_upperBound));
         m_fogLut = lut;
     }
 
     void setFogColor(const Vec4& color)
     {
-        m_fogColor = color;
+        m_fogColor = Vec4i16::createFromVec(color);
     }
 
     void setEnable(bool enable)
@@ -68,31 +80,49 @@ public:
     }
 
 private:
-    float computeFogFactor(const float w) const
+    static constexpr int32_t LUT_INTERPOLATION_STEPS = 8;
+
+    static std::pair<int32_t, int32_t> getExpAndMantissa(const float w)
     {
-        if (w <= m_lowerBound)
+        uint32_t wBits;
+        std::memcpy(&wBits, &w, sizeof(wBits));
+
+        const int32_t exponent = static_cast<int32_t>((wBits >> 23) & 0xFF) - 127; // Remove bias
+        const int32_t mantissa = wBits & 0x7FFFFF; // 23 bits
+        return { exponent, mantissa };
+    }
+
+    Vec4i16::Type computeFogFactor(const float w) const
+    {
+        uint32_t wBits;
+        std::memcpy(&wBits, &w, sizeof(wBits));
+        if (wBits <= m_lowerBound)
         {
-            return 1.0f;
+            return Vec4i16::One;
         }
-        if (w >= m_upperBound)
+        if (wBits >= m_upperBound)
         {
-            return 0.0f;
+            return Vec4i16::Zero;
         }
 
-        const float exp = std::log2(w);
-        float wInt;
-        const float wFrac = std::modf(exp, &wInt);
-        std::size_t index = static_cast<std::size_t>(wInt);
-        index = std::clamp(index, static_cast<std::size_t>(0), m_fogLut.size() - 1);
+        const auto [exponent, mantissa] = getExpAndMantissa(w);
+
+        // Use exponent as LUT index (clamped to valid range)
+        const std::size_t index = static_cast<std::size_t>(std::clamp(exponent, 0, static_cast<int32_t>(m_fogLut.size() - 1)));
         const FogLutEntry& entry = m_fogLut[index];
-        const float f = (entry.m * wFrac) + entry.b;
-        return f;
+
+        // xs: upper 8 bits of mantissa as interpolation factor (0 - 255, representing 0.0 - 1.0)
+        const int32_t xs = static_cast<int32_t>(mantissa >> (23 - LUT_INTERPOLATION_STEPS)); // Sx.8
+        const int32_t fx = entry.m * xs + entry.b; // Sx.22
+        const int32_t fx_scaled = fx >> 14; // S1.8
+
+        return static_cast<Vec4i16::Type>(fx_scaled);
     }
 
     FogLut m_fogLut {};
-    float m_lowerBound { 1.0f };
-    float m_upperBound { 1000.0f };
-    Vec4 m_fogColor {};
+    uint32_t m_lowerBound { 0x3F800000 }; // 1.0f
+    uint32_t m_upperBound { 0x447A0000 }; // 1000.0f
+    Vec4i16 m_fogColor {};
     bool m_enable { false };
 };
 
