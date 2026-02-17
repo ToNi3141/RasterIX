@@ -219,7 +219,7 @@ private:
             result -= Vec3 { 0.5f, 0.5f, 0.5f };
             break;
         case Combine::INTERPOLATE:
-            result = op0 * op2 + op1 * (Vec3 { 1.0f, 1.0f, 1.0f } - op2);
+            result = op0 + (op1 - op2) * op2;
             break;
         case Combine::SUBTRACT:
             result = op0;
@@ -256,7 +256,7 @@ private:
             result = op0 + op1 - 0.5f;
             break;
         case Combine::INTERPOLATE:
-            result = op0 * op2 + op1 * (1.0f - op2);
+            result = op0 + (op1 - op2) * op2;
             break;
         case Combine::SUBTRACT:
             result = op0 - op1;
@@ -286,8 +286,8 @@ private:
     Operand m_operandAlpha1 {};
     Operand m_operandAlpha2 {};
 
-    uint8_t m_scaleRgb { 1 };
-    uint8_t m_scaleAlpha { 1 };
+    float m_scaleRgb { 1.0f };
+    float m_scaleAlpha { 1.0f };
 
     bool m_enable { false };
 };
