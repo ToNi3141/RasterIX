@@ -29,9 +29,9 @@ class TexEnv
 {
 public:
     Vec4 apply(
-        const Vec4 previousColor,
-        const Vec4 texSrcColor,
-        const Vec4 primaryColor) const;
+        const Vec4& previousColor,
+        const Vec4& texSrcColor,
+        const Vec4& primaryColor) const;
 
     void setEnvColor(const Vec4& color)
     {
@@ -110,12 +110,12 @@ public:
 
     void setShiftRgb(const uint8_t val)
     {
-        m_scaleRgb = std::pow(2.0f, val);
+        m_scaleRgb = static_cast<float>(1 << val);
     }
 
     void setShiftAlpha(const uint8_t val)
     {
-        m_scaleAlpha = std::pow(2.0f, val);
+        m_scaleAlpha = static_cast<float>(1 << val);
     }
 
     void setEnable(bool enable)
@@ -146,7 +146,7 @@ private:
         }
     }
 
-    Vec3 selectSrcRgb(
+    const Vec4& selectSrc(
         const SrcReg& srcReg,
         const Vec4& texture,
         const Vec4& constant,
@@ -156,19 +156,18 @@ private:
         switch (srcReg)
         {
         case SrcReg::TEXTURE:
-            return Vec3 { texture[0], texture[1], texture[2] };
+            return texture;
         case SrcReg::CONSTANT:
-            return Vec3 { constant[0], constant[1], constant[2] };
+            return constant;
         case SrcReg::PRIMARY_COLOR:
-            return Vec3 { primaryColor[0], primaryColor[1], primaryColor[2] };
+            return primaryColor;
         case SrcReg::PREVIOUS:
-            return Vec3 { previous[0], previous[1], previous[2] };
         default:
-            return Vec3 { 0.0f, 0.0f, 0.0f };
+            return previous;
         }
     }
 
-    Vec3 selectRgbOperand(const Operand& operand, const Vec3& color) const
+    Vec3 selectRgbOperand(const Operand& operand, const Vec4& color) const
     {
         switch (operand)
         {
@@ -177,7 +176,7 @@ private:
         case Operand::ONE_MINUS_SRC_ALPHA:
             return Vec3 { 1.0f - color[3], 1.0f - color[3], 1.0f - color[3] };
         case Operand::SRC_COLOR:
-            return color;
+            return Vec3 { color[0], color[1], color[2] };
         case Operand::ONE_MINUS_SRC_COLOR:
             return Vec3 { 1.0f - color[0], 1.0f - color[1], 1.0f - color[2] };
         default:
@@ -287,8 +286,8 @@ private:
     Operand m_operandAlpha1 {};
     Operand m_operandAlpha2 {};
 
-    uint8_t m_scaleRgb { 1 };
-    uint8_t m_scaleAlpha { 1 };
+    float m_scaleRgb { 1.0f };
+    float m_scaleAlpha { 1.0f };
 
     bool m_enable { false };
 };

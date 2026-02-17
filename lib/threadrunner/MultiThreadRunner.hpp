@@ -19,6 +19,7 @@
 #define MULTITHREADRUNNER_HPP
 
 #include "IThreadRunner.hpp"
+#include <atomic>
 #include <thread>
 
 namespace rr
@@ -41,9 +42,20 @@ public:
         }
     }
 
+    bool isBusy() const override
+    {
+        return m_busy;
+    }
+
     void run(const std::function<void()>& operation) override
     {
-        m_renderThread = std::thread(operation);
+        wait();
+
+        m_busy = true;
+        m_renderThread = std::thread([this, operation]()
+            {
+            operation();
+            m_busy = false; });
 #ifdef WIN32
         SetThreadPriority(m_renderThread.native_handle(), 2);
 #else
@@ -56,6 +68,7 @@ public:
 
 private:
     std::thread m_renderThread;
+    std::atomic<bool> m_busy { false };
 };
 
 } // namespace rr

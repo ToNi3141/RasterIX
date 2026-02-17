@@ -159,11 +159,11 @@
             {
                 "RIX_CORE_TMU_COUNT": "2",
                 "RIX_CORE_MAX_TEXTURE_SIZE": "256",
-                "RIX_CORE_ENABLE_MIPMAPPING": "true",
+                "RIX_CORE_ENABLE_MIPMAPPING": "false",
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "1024",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "1024",
-                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
-                "RIX_CORE_USE_FLOAT_INTERPOLATION": "false",
+                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "15",
+                "RIX_CORE_USE_FLOAT_INTERPOLATION": "true",
                 "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "12288",
                 "RIX_CORE_NUMBER_OF_TEXTURES": "12288",
                 "RIX_CORE_TEXTURE_PAGE_SIZE": "2048",
@@ -174,7 +174,7 @@
                 "RIX_CORE_DEPTH_BUFFER_LOC": "0x01A00000",
                 "RIX_CORE_STENCIL_BUFFER_LOC": "0x01800000",
                 "RIX_CORE_THREADED_RASTERIZATION": "true",
-                "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "1024 * 1024 * 16",
+                "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "1024 * 1024 * 8",
                 "RIX_CORE_ENABLE_VSYNC": "false",
                 "RIX_CORE_PERFORMANCE_MODE": "true",
                 "RIX_CORE_SOFTWARE_RENDERING": "true"
@@ -214,9 +214,7 @@
             "generator": "Visual Studio 16 2019",
             "cacheVariables": 
             {
-                "RIX_BUILD_NATIVE": "ON",
                 "RIX_ENABLE_SPDLOG": "ON",
-                "RIX_BUILD_EXAMPLES": "ON",
                 "RIX_BUILD_SHARED_LIBRARY": "ON"
             },
             "architecture": "Win32"
@@ -228,7 +226,9 @@
             "inherits": ["win32", "nexys_rixif"],
             "cacheVariables":
             {   
-                "RIX_DRIVER_FT60X": "ON"
+                "RIX_DRIVER_FT60X": "ON",
+                "RIX_BUILD_NATIVE": "ON",
+                "RIX_BUILD_EXAMPLES": "ON"
             }
         },
         {
@@ -238,7 +238,9 @@
             "inherits": ["win32", "nexys_rixef"],
             "cacheVariables":
             {   
-                "RIX_DRIVER_FT60X": "ON"
+                "RIX_DRIVER_FT60X": "ON",
+                "RIX_BUILD_NATIVE": "ON",
+                "RIX_BUILD_EXAMPLES": "ON"
             }
         },
         {

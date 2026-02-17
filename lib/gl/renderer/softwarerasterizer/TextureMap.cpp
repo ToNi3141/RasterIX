@@ -42,35 +42,59 @@ Vec4 TextureMap::getUnfilteredTexel(const float s, const float t) const
 {
     const float cS = clampTexCoord(s, m_wrapModeS);
     const float cT = clampTexCoord(t, m_wrapModeT);
-    return softwarerasterizerhelpers::deserializeTexel(readTexel(cS, cT), m_pixelFormat);
+
+    const auto [uS, uT] = texCoordToTexel(cS, cT);
+    const uint32_t addr = getTexelAddrFromInt(uS, uT);
+    return m_deserialize(readTexelAtAddr(addr));
 }
 
 Vec4 TextureMap::getFilteredTexel(const float s, const float t) const
 {
     const float cS = clampTexCoord(s, m_wrapModeS);
     const float cT = clampTexCoord(t, m_wrapModeT);
-    const float cSInc = cS + m_textureSizeOOW;
-    const float cTInc = cT + m_textureSizeOOH;
 
-    const uint16_t texel00 = readTexel(cS, cT);
-    const uint16_t texel01 = readTexel(cS, cTInc);
-    const uint16_t texel10 = readTexel(cSInc, cT);
-    const uint16_t texel11 = readTexel(cSInc, cTInc);
+    // Convert to texel coordinates once
+    const float sTexel = cS * m_textureSizeW;
+    const float tTexel = cT * m_textureSizeH;
+    const int32_t sInt = static_cast<int32_t>(sTexel);
+    const int32_t tInt = static_cast<int32_t>(tTexel);
 
-    const Vec4 c00 = softwarerasterizerhelpers::deserializeTexel(texel00, m_pixelFormat);
-    const Vec4 c01 = softwarerasterizerhelpers::deserializeTexel(texel01, m_pixelFormat);
-    const Vec4 c10 = softwarerasterizerhelpers::deserializeTexel(texel10, m_pixelFormat);
-    const Vec4 c11 = softwarerasterizerhelpers::deserializeTexel(texel11, m_pixelFormat);
+    // Calculate texel coordinates for all 4 corners
+    uint32_t uS0, uT0, uS1, uT1;
+    if (m_wrapModeS == TextureWrapMode::CLAMP_TO_EDGE)
+    {
+        uS0 = static_cast<uint32_t>(std::clamp(sInt, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskW)));
+        uT0 = static_cast<uint32_t>(std::clamp(tInt, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskH)));
+        uS1 = static_cast<uint32_t>(std::clamp(sInt + 1, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskW)));
+        uT1 = static_cast<uint32_t>(std::clamp(tInt + 1, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskH)));
+    }
+    else // REPEAT - use bitmask
+    {
+        uS0 = static_cast<uint32_t>(sInt) & m_textureMaskW;
+        uT0 = static_cast<uint32_t>(tInt) & m_textureMaskH;
+        uS1 = static_cast<uint32_t>(sInt + 1) & m_textureMaskW;
+        uT1 = static_cast<uint32_t>(tInt + 1) & m_textureMaskH;
+    }
 
-    // TODO Clamping of the texel quad?
+    // Read all 4 texels
+    const uint16_t texel00 = readTexelAtAddr(getTexelAddrFromInt(uS0, uT0));
+    const uint16_t texel01 = readTexelAtAddr(getTexelAddrFromInt(uS0, uT1));
+    const uint16_t texel10 = readTexelAtAddr(getTexelAddrFromInt(uS1, uT0));
+    const uint16_t texel11 = readTexelAtAddr(getTexelAddrFromInt(uS1, uT1));
 
-    const float factorS = ((cS * m_textureSizeW) - static_cast<int32_t>(cS * m_textureSizeW));
-    const float factorT = ((cT * m_textureSizeH) - static_cast<int32_t>(cT * m_textureSizeH));
+    // Deserialize using function pointer (no switch in hot path)
+    const Vec4 c00 = m_deserialize(texel00);
+    const Vec4 c01 = m_deserialize(texel01);
+    const Vec4 c10 = m_deserialize(texel10);
+    const Vec4 c11 = m_deserialize(texel11);
+
+    // Bilinear interpolation factors
+    const float factorS = sTexel - static_cast<float>(sInt);
+    const float factorT = tTexel - static_cast<float>(tInt);
 
     const Vec4 c0 = rr::interpolate(c00, c01, factorT);
     const Vec4 c1 = rr::interpolate(c10, c11, factorT);
-    const Vec4 c = rr::interpolate(c0, c1, factorS);
-    return c;
+    return rr::interpolate(c0, c1, factorS);
 }
 
 } // namespace rr::softwarerasterizer

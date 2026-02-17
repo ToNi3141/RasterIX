@@ -186,7 +186,7 @@ add_library(gl STATIC
     renderer/softwarerasterizer/Rasterizer.cpp
     renderer/softwarerasterizer/TexEnv.cpp
     renderer/softwarerasterizer/TextureMap.cpp
-    renderer/softwarerasterizer/SoftwareRasterizer.cpp
+    renderer/softwarerasterizer/SoftwareRasterizationInstance.cpp
 )
 
 target_link_libraries(gl PRIVATE spdlog::spdlog span)

@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "SoftwareRasterizer.hpp"
+#include "SoftwareRasterizationInstance.hpp"
 #include <variant>
 
 namespace rr::softwarerasterizer
 {
 
-SoftwareRasterizer::SoftwareRasterizer(IBusConnector& busConnector)
+SoftwareRasterizationInstance::SoftwareRasterizationInstance(IBusConnector& busConnector)
     : m_busConnector { busConnector }
 {
     m_gram = busConnector.requestWriteBuffer(0);
@@ -30,15 +30,14 @@ SoftwareRasterizer::SoftwareRasterizer(IBusConnector& busConnector)
     m_stencilBuffer.setGRAM(m_gram);
     m_textureMapper[0].setGRAM(m_gram);
     m_textureMapper[1].setGRAM(m_gram);
-    SPDLOG_INFO("Software rasterization enabled");
 }
 
-void SoftwareRasterizer::streamDisplayList(const uint8_t index, const uint32_t size)
+void SoftwareRasterizationInstance::streamDisplayList(tcb::span<const uint8_t> displayList)
 {
     displaylist::DisplayList srcList {};
-    srcList.setBuffer(requestDisplayListBuffer(index));
+    srcList.setBuffer({ const_cast<uint8_t*>(displayList.data()), displayList.size() });
     srcList.resetGet();
-    srcList.setCurrentSize(size);
+    srcList.setCurrentSize(static_cast<std::size_t>(displayList.size()));
     displaylist::DisplayListDisassembler disassembler { srcList };
 
     while (disassembler.hasNextCommand())
@@ -48,16 +47,20 @@ void SoftwareRasterizer::streamDisplayList(const uint8_t index, const uint32_t s
             disassembler.getNextCommand());
         if (!ret)
         {
-            SPDLOG_ERROR("Failed to handle command in display list. This might cause the renderer to crash ...");
+            SPDLOG_ERROR("Failed to handle command in external display list. This might cause the renderer to crash ...");
         }
     }
 }
 
-bool SoftwareRasterizer::handleCommand(const FramebufferCmd& cmd)
+bool SoftwareRasterizationInstance::handleCommand(const FramebufferCmd& cmd)
 {
     if (cmd.getSwapFramebuffer())
     {
-        // No need to swap a external framebuffer in the software rasterizer
+        if (cmd.getSelectColorBuffer())
+        {
+            m_swapFramebufferEvent(this);
+            m_busConnector.writeData(0, cmd.getFramebufferSizeInPixel() * 2, m_colorBuffer.getAddress());
+        }
         return true;
     }
     // Clear
@@ -80,10 +83,7 @@ bool SoftwareRasterizer::handleCommand(const FramebufferCmd& cmd)
     // Commit
     if (cmd.getCommitFramebuffer())
     {
-        if (cmd.getSelectColorBuffer())
-        {
-            m_busConnector.writeData(0, m_resolutionData.x * m_resolutionData.y * 2, m_colorBuffer.getAddress());
-        }
+        // No need to commit an framebuffer. The software rasterizer always works on a full framebuffer.
         return true;
     }
     // Load
@@ -96,7 +96,7 @@ bool SoftwareRasterizer::handleCommand(const FramebufferCmd& cmd)
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const FogLutStreamCmd& cmd)
+bool SoftwareRasterizationInstance::handleCommand(const FogLutStreamCmd& cmd)
 {
     Fog::FogLut lut {};
     for (std::size_t i = 0; i < lut.size(); i++)
@@ -108,15 +108,15 @@ bool SoftwareRasterizer::handleCommand(const FogLutStreamCmd& cmd)
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const TriangleStreamCmd& cmd)
+bool SoftwareRasterizationInstance::handleCommand(const TriangleStreamCmd& cmd)
 {
     const TriangleStreamTypes::TriangleDesc attributesData = cmd.payload()[0];
     m_rasterizer.init(attributesData);
     while (!m_rasterizer.isDone())
     {
-        const FragmentData fmd = m_rasterizer.hit();
-        if (fmd.hit)
+        if (m_rasterizer.hit())
         {
+            const FragmentData& fmd = m_rasterizer.fragmentData();
             const InterpolatedAttributesData interpolatedAttributes = m_attributeInterpolator.interpolate(attributesData, fmd.bbx, fmd.bby);
             const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
             const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
@@ -160,48 +160,48 @@ bool SoftwareRasterizer::handleCommand(const TriangleStreamCmd& cmd)
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const PushVertexCmd&)
+bool SoftwareRasterizationInstance::handleCommand(const PushVertexCmd&)
 {
     SPDLOG_WARN("PushVertexCmd is not implemented in the software rasterizer and is ignored.");
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const SetElementGlobalCtxCmd&)
+bool SoftwareRasterizationInstance::handleCommand(const SetElementGlobalCtxCmd&)
 {
     SPDLOG_WARN("SetElementGlobalCtxCmd is not implemented in the software rasterizer and is ignored.");
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const SetElementLocalCtxCmd&)
+bool SoftwareRasterizationInstance::handleCommand(const SetElementLocalCtxCmd&)
 {
     SPDLOG_WARN("SetElementLocalCtxCmd is not implemented in the software rasterizer and is ignored.");
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const SetLightingCtxCmd&)
+bool SoftwareRasterizationInstance::handleCommand(const SetLightingCtxCmd&)
 {
     SPDLOG_WARN("SetLightingCtxCmd is not implemented in the software rasterizer and is ignored.");
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const DrawNewElementCmd&)
+bool SoftwareRasterizationInstance::handleCommand(const DrawNewElementCmd&)
 {
     SPDLOG_WARN("DrawNewElementCmd is not implemented in the software rasterizer and is ignored.");
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const NopCmd&)
+bool SoftwareRasterizationInstance::handleCommand(const NopCmd&)
 {
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const TextureStreamCmd& cmd)
+bool SoftwareRasterizationInstance::handleCommand(const TextureStreamCmd& cmd)
 {
     m_textureMapper[cmd.getTmu()].setPages(cmd.payload());
     return true;
 }
 
-bool SoftwareRasterizer::handleCommand(const WriteRegisterCmd& cmd)
+bool SoftwareRasterizationInstance::handleCommand(const WriteRegisterCmd& cmd)
 {
     return std::visit(
         [this](const auto& reg)
@@ -211,31 +211,31 @@ bool SoftwareRasterizer::handleCommand(const WriteRegisterCmd& cmd)
         cmd.getRegister());
 }
 
-bool SoftwareRasterizer::handleRegister(const ColorBufferAddrReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const ColorBufferAddrReg& reg)
 {
     m_colorBuffer.setAddress(reg.getValue());
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const ColorBufferClearColorReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const ColorBufferClearColorReg& reg)
 {
     m_colorBuffer.setClearColor(softwarerasterizerhelpers::serializeToRgb565(reg.getColorf()));
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const DepthBufferAddrReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const DepthBufferAddrReg& reg)
 {
     m_depthBuffer.setAddress(reg.getValue());
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const DepthBufferClearDepthReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const DepthBufferClearDepthReg& reg)
 {
     m_depthBuffer.setClearColor(reg.getValue());
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const FeatureEnableReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const FeatureEnableReg& reg)
 {
     m_scissorData.enabled = reg.getEnableScissor();
     m_alphaFunc.setEnable(reg.getEnableAlphaTest());
@@ -254,13 +254,13 @@ bool SoftwareRasterizer::handleRegister(const FeatureEnableReg& reg)
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const FogColorReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const FogColorReg& reg)
 {
     m_fog.setFogColor(reg.getColorf());
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const FragmentPipelineReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const FragmentPipelineReg& reg)
 {
     m_alphaFunc.setFunction(reg.getAlphaFunc());
     m_alphaFunc.setReferenceValue(static_cast<float>(reg.getRefAlphaValue()) / 255.0f);
@@ -278,34 +278,34 @@ bool SoftwareRasterizer::handleRegister(const FragmentPipelineReg& reg)
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(RenderResolutionReg reg)
+bool SoftwareRasterizationInstance::handleRegister(RenderResolutionReg reg)
 {
     m_resolutionData.x = reg.getX();
     m_resolutionData.y = reg.getY();
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const ScissorEndReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const ScissorEndReg& reg)
 {
     m_scissorData.endX = reg.getX();
     m_scissorData.endY = reg.getY();
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const ScissorStartReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const ScissorStartReg& reg)
 {
     m_scissorData.startX = reg.getX();
     m_scissorData.startY = reg.getY();
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const StencilBufferAddrReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const StencilBufferAddrReg& reg)
 {
     m_stencilBuffer.setAddress(reg.getValue());
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const StencilReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const StencilReg& reg)
 {
     m_stencilBuffer.setClearColor(reg.getClearStencil());
     m_stencilBuffer.setMask(reg.getStencilMask());
@@ -318,13 +318,13 @@ bool SoftwareRasterizer::handleRegister(const StencilReg& reg)
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const TexEnvColorReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const TexEnvColorReg& reg)
 {
     m_texEnv[reg.getTmuFromAddr()].setEnvColor(reg.getColorf());
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const TexEnvReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const TexEnvReg& reg)
 {
     m_texEnv[reg.getTmuFromAddr()].setCombineRgb(reg.getCombineRgb());
     m_texEnv[reg.getTmuFromAddr()].setCombineAlpha(reg.getCombineAlpha());
@@ -345,7 +345,7 @@ bool SoftwareRasterizer::handleRegister(const TexEnvReg& reg)
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const TmuTextureReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const TmuTextureReg& reg)
 {
     m_textureMapper[reg.getTmuFromAddr()].setTextureSize(reg.getTextureWidth(), reg.getTextureHeight());
     m_textureMapper[reg.getTmuFromAddr()].setWrapMode(reg.getWrapModeS(), reg.getWrapModeT());
@@ -355,13 +355,16 @@ bool SoftwareRasterizer::handleRegister(const TmuTextureReg& reg)
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const YOffsetReg& reg)
+bool SoftwareRasterizationInstance::handleRegister(const YOffsetReg& reg)
 {
     m_rasterizer.setYOffset(reg.getY());
+    m_colorBuffer.setYOffset(reg.getY());
+    m_depthBuffer.setYOffset(reg.getY());
+    m_stencilBuffer.setYOffset(reg.getY());
     return true;
 }
 
-bool SoftwareRasterizer::handleRegister(const std::monostate&)
+bool SoftwareRasterizationInstance::handleRegister(const std::monostate&)
 {
     return true;
 }

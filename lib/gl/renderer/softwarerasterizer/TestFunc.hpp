@@ -27,39 +27,21 @@ template <typename T>
 class TestFunc
 {
 public:
+    // Function pointer type for test function
+    using TestFn = bool (*)(const T, const T);
+
     bool check(const T value) const
     {
         if (!m_enable)
         {
             return true;
         }
-
-        switch (m_func)
-        {
-        case rr::TestFunc::ALWAYS:
-            return true;
-        case rr::TestFunc::NEVER:
-            return false;
-        case rr::TestFunc::LESS:
-            return value < m_refValue;
-        case rr::TestFunc::EQUAL:
-            return value == m_refValue;
-        case rr::TestFunc::LEQUAL:
-            return value <= m_refValue;
-        case rr::TestFunc::GREATER:
-            return value > m_refValue;
-        case rr::TestFunc::NOTEQUAL:
-            return value != m_refValue;
-        case rr::TestFunc::GEQUAL:
-            return value >= m_refValue;
-        default:
-            return false;
-        }
+        return m_testFn(value, m_refValue);
     }
 
     void setFunction(rr::TestFunc func)
     {
-        m_func = func;
+        m_testFn = getTestFn(func);
     }
 
     void setReferenceValue(const T value)
@@ -73,7 +55,73 @@ public:
     }
 
 private:
-    rr::TestFunc m_func { rr::TestFunc::ALWAYS };
+    // Static test functions - no switch in hot path
+    static bool testAlways(const T, const T)
+    {
+        return true;
+    }
+
+    static bool testNever(const T, const T)
+    {
+        return false;
+    }
+
+    static bool testLess(const T value, const T ref)
+    {
+        return value < ref;
+    }
+
+    static bool testEqual(const T value, const T ref)
+    {
+        return value == ref;
+    }
+
+    static bool testLEqual(const T value, const T ref)
+    {
+        return value <= ref;
+    }
+
+    static bool testGreater(const T value, const T ref)
+    {
+        return value > ref;
+    }
+
+    static bool testNotEqual(const T value, const T ref)
+    {
+        return value != ref;
+    }
+
+    static bool testGEqual(const T value, const T ref)
+    {
+        return value >= ref;
+    }
+
+    static TestFn getTestFn(const rr::TestFunc func)
+    {
+        switch (func)
+        {
+        case rr::TestFunc::ALWAYS:
+            return &testAlways;
+        case rr::TestFunc::NEVER:
+            return &testNever;
+        case rr::TestFunc::LESS:
+            return &testLess;
+        case rr::TestFunc::EQUAL:
+            return &testEqual;
+        case rr::TestFunc::LEQUAL:
+            return &testLEqual;
+        case rr::TestFunc::GREATER:
+            return &testGreater;
+        case rr::TestFunc::NOTEQUAL:
+            return &testNotEqual;
+        case rr::TestFunc::GEQUAL:
+            return &testGEqual;
+        default:
+            return &testAlways;
+        }
+    }
+
+    TestFn m_testFn { &testAlways };
     bool m_enable { false };
     T m_refValue { 0 };
 };

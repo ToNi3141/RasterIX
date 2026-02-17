@@ -39,6 +39,11 @@ public:
     {
         operation();
     }
+
+    bool isBusy() const override
+    {
+        return false;
+    }
 };
 
 } // namespace rr

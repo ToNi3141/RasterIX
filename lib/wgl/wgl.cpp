@@ -16,13 +16,17 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "wgl.h"
+#include "ArrayToPtrArray.hpp"
+#if RIX_CORE_SOFTWARE_RENDERING
+#include "SoftwareRasterizerBusConnector.hpp"
+#include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
+#else
 #include "FT60XBusConnector.hpp"
+#endif
 #include "MultiThreadRunner.hpp"
 #include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
-#include "SoftwareRasterizerBusConnector.hpp"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
-#include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
 #include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
@@ -52,44 +56,7 @@ void addExtensions()
 #undef ADDRESS_OF
 }
 
-class GLHWRenderer
-{
-public:
-    static const uint32_t RESOLUTION_H = 600;
-    static const uint32_t RESOLUTION_W = 1024;
-
-    GLHWRenderer()
-    {
-        rr::RIXGL::createInstance(m_threadedTransformer);
-        addExtensions();
-    }
-    ~GLHWRenderer()
-    {
-    }
-
-    void init()
-    {
-        RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
-    }
-
-    void deinit()
-    {
-        rr::RIXGL::destroy();
-    }
-
-    void render(HDC)
-    {
-        rr::RIXGL::getInstance().swapDisplayList();
-    }
-
-private:
-    rr::MultiThreadRunner m_workerThread {};
-    rr::MultiThreadRunner m_uploadThread {};
-    FT60XBusConnector m_busConnector {};
-    rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
-    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedTransformer { m_dduDevice, m_workerThread, m_uploadThread };
-};
-
+#if RIX_CORE_SOFTWARE_RENDERING
 class GLSWRenderer
 {
 public:
@@ -139,16 +106,60 @@ public:
     }
 
 private:
+    static constexpr std::size_t WORKER_THREAD_COUNT { 16 };
+
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
     BITMAPINFO m_bmi {};
     std::array<uint8_t, RenderConfig::MAX_DISPLAY_HEIGHT * RenderConfig::MAX_DISPLAY_WIDTH * 3> m_buffer {};
     rr::SoftwareRasterizerBusConnector<32 * 1024 * 1024, rr::SoftwareRasterizerBusConnectorColorFormat::BGR888> m_swBusConnector { m_buffer };
-    rr::softwarerasterizer::SoftwareRasterizer m_softwareRasterizer { m_swBusConnector };
+
+    std::array<rr::MultiThreadRunner, WORKER_THREAD_COUNT> m_workerThreads {};
+    std::array<rr::IThreadRunner*, WORKER_THREAD_COUNT> m_workerThreadsPtrs { rr::arrayToPtrArray<rr::IThreadRunner>(m_workerThreads) };
+    rr::softwarerasterizer::SoftwareRasterizer<WORKER_THREAD_COUNT> m_softwareRasterizer { m_swBusConnector, m_workerThreadsPtrs };
     rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedTransformer { m_softwareRasterizer, m_workerThread, m_uploadThread };
 };
+GLSWRenderer renderer {};
+#else
+class GLHWRenderer
+{
+public:
+    static const uint32_t RESOLUTION_H = 600;
+    static const uint32_t RESOLUTION_W = 1024;
 
-std::conditional<RenderConfig::SOFTWARE_RENDERING, GLSWRenderer, GLHWRenderer>::type renderer {};
+    GLHWRenderer()
+    {
+        rr::RIXGL::createInstance(m_threadedTransformer);
+        addExtensions();
+    }
+    ~GLHWRenderer()
+    {
+    }
+
+    void init()
+    {
+        RIXGL::getInstance().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    }
+
+    void deinit()
+    {
+        rr::RIXGL::destroy();
+    }
+
+    void render(HDC)
+    {
+        rr::RIXGL::getInstance().swapDisplayList();
+    }
+
+private:
+    rr::MultiThreadRunner m_workerThread {};
+    rr::MultiThreadRunner m_uploadThread {};
+    FT60XBusConnector m_busConnector {};
+    rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedTransformer { m_dduDevice, m_workerThread, m_uploadThread };
+};
+GLHWRenderer renderer {};
+#endif
 
 // Wiggle API
 // -------------------------------------------------------

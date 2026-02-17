@@ -45,7 +45,7 @@ SOURCES += main.cpp\
     $${RIXGL_PATH}/renderer/softwarerasterizer/Rasterizer.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/TexEnv.cpp \
     $${RIXGL_PATH}/renderer/softwarerasterizer/TextureMap.cpp \
-    $${RIXGL_PATH}/renderer/softwarerasterizer/SoftwareRasterizer.cpp \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/SoftwareRasterizationInstance.cpp \
     $${RIXGL_PATH}/renderer/devicedatauploader/DeviceDataUploader.cpp \
     $${RIXGL_PATH}/pixelpipeline/Fogging.cpp \
     $${RIXGL_PATH}/pixelpipeline/Texture.cpp \
@@ -64,6 +64,7 @@ HEADERS  += mainwindow.h \
     $${RIXGL_PATH}/renderer/registers/* \
     $${RIXGL_PATH}/renderer/devicedatauploader/* \
     $${RIXGL_PATH}/renderer/threadedvertextransformer/* \
+    $${RIXGL_PATH}/renderer/softwarerasterizer/* \
     $${RIXGL_PATH}/renderer/softwarerasterizer/* \
     $${RIXGL_PATH}/renderer/commands/* \
     $${RIXGL_PATH}/renderer/displaylist/*.hpp \
@@ -166,7 +167,7 @@ equals(TARGET_BUILD, "simulation") {
 }
 equals(TARGET_BUILD, "software") {
     DEFINES += USE_SOFTWARE
-    DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    DEFINES += RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=17
     DEFINES += RIX_CORE_SOFTWARE_RENDERING=true
     DEFINES += RIX_DRIVER_SOFTWARE_RASTERIZER=true
 

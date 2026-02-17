@@ -34,27 +34,24 @@ public:
         : m_resolutionData { resolutionData }
     {
     }
-    virtual ~Rasterizer() = default;
 
     void init(const TriangleStreamTypes::TriangleDesc& triangle);
 
-    FragmentData hit() const
+    const FragmentData& fragmentData() const
     {
-        return {
-            isInTriangleAndInBounds() && (m_state == EdgeWalkerState::WALKING),
-            (((m_yLineResolution - 1) - m_y) * m_resolutionData.x) + m_x,
-            m_x - m_bbStartX,
-            m_yScreen - m_bbStartY,
-            m_x,
-            m_yScreen,
-        };
+        return m_fragmentData;
+    }
+
+    bool hit() const
+    {
+        return m_hit;
     }
 
     void walk();
 
     bool isDone() const
     {
-        return m_y >= m_yScreenEnd;
+        return m_yScreen >= m_yScreenEnd;
     }
 
     void setYOffset(const uint32_t yOffset)
@@ -78,6 +75,33 @@ private:
         CHECK_DIRECTION,
         DONE,
     };
+
+    void calcFragmentData()
+    {
+        int32_t bby = 0;
+        if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+        {
+            // In this case, the attributes are not preprocessed. The rasterizer
+            // needs to calculate the correct y position within the bounding box,
+            // based on the current screen y position.
+            // The current triangle might start outside of the current tile.
+            bby = m_yScreen - m_bbStartY;
+        }
+        else
+        {
+            // In this case, the attributes are preprocessed. They starting always
+            // in the current tile. The vertex transformer adjusts it.
+            // That means, our reference position is the current position on the line,
+            // and not the screen position like it is above.
+            bby = m_y - m_yi;
+        }
+        m_fragmentData.index = (((m_yLineResolution - 1) - m_y) * m_resolutionData.x) + m_x;
+        m_fragmentData.bbx = m_x - m_bbStartX;
+        ;
+        m_fragmentData.bby = bby;
+        m_fragmentData.spx = m_x;
+        m_fragmentData.spy = m_yScreen;
+    }
 
     bool isInTriangle() const
     {
@@ -134,6 +158,7 @@ private:
 
     int32_t m_x {};
     int32_t m_y {};
+    int32_t m_yi {};
 
     int32_t m_yScreen {};
     int32_t m_yScreenEnd {};
@@ -146,6 +171,8 @@ private:
     EdgeWalkerState m_state {};
 
     bool m_tryOtherSide { false };
+    bool m_hit { false };
+    FragmentData m_fragmentData {};
 };
 
 } // namespace rr::softwarerasterizer

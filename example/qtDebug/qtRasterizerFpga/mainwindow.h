@@ -18,8 +18,10 @@
 #if USE_SOFTWARE
 #include "SoftwareRasterizerBusConnector.hpp"
 #include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
+#include "MultiThreadRunner.hpp"
 #endif
 
+#include "ArrayToPtrArray.hpp"
 #include "NoThreadRunner.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
@@ -65,9 +67,13 @@ public:
     static const uint32_t RESOLUTION_W = 640;
     static const uint32_t RESOLUTION_H = 480;
 private:
+    static constexpr size_t WORKER_THREAD_COUNT = 2;
+    
     uint8_t m_framebuffer[RESOLUTION_W * RESOLUTION_H * 3];
     rr::SoftwareRasterizerBusConnector<32 * 1024 * 1024, rr::SoftwareRasterizerBusConnectorColorFormat::BGR888> m_busConnector{m_framebuffer};
-    rr::softwarerasterizer::SoftwareRasterizer m_device{m_busConnector};
+    std::array<rr::MultiThreadRunner, WORKER_THREAD_COUNT> m_workerThreads{};
+    std::array<rr::IThreadRunner*, WORKER_THREAD_COUNT> m_workerThreadsPtrs{rr::arrayToPtrArray<rr::IThreadRunner>(m_workerThreads)};
+    rr::softwarerasterizer::SoftwareRasterizer<WORKER_THREAD_COUNT> m_device{m_busConnector, m_workerThreadsPtrs};
 #endif
 
 #if USE_HARDWARE

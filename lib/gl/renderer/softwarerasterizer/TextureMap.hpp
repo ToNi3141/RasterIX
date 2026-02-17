@@ -24,6 +24,7 @@
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
+#include <utility>
 
 namespace rr::softwarerasterizer
 {
@@ -38,6 +39,11 @@ public:
 
     Vec4 getTexel(const float s, const float t) const;
 
+    bool isEnabled() const
+    {
+        return m_enable;
+    }
+
     void setPages(const tcb::span<const uint32_t> pages)
     {
         std::copy(pages.begin(), pages.end(), m_pages.begin());
@@ -51,6 +57,11 @@ public:
         m_textureSizeOOH = 1.0f / h;
         m_halfTexelSizeW = 0.5f / w;
         m_halfTexelSizeH = 0.5f / h;
+        // Precompute integer sizes and masks for power-of-2 textures
+        m_textureSizeWInt = static_cast<uint32_t>(w);
+        m_textureSizeHInt = static_cast<uint32_t>(h);
+        m_textureMaskW = m_textureSizeWInt - 1;
+        m_textureMaskH = m_textureSizeHInt - 1;
     }
 
     void setWrapMode(const TextureWrapMode s, const TextureWrapMode t)
@@ -72,6 +83,8 @@ public:
     void setPixelFormat(const DevicePixelFormat format)
     {
         m_pixelFormat = format;
+        // Set function pointer based on pixel format using shared helper
+        m_deserialize = softwarerasterizerhelpers::getDeserializeTexelFloatFn(format);
     }
 
     void setEnable(const bool enable)
@@ -83,9 +96,8 @@ private:
     Vec4 getUnfilteredTexel(const float s, const float t) const;
     Vec4 getFilteredTexel(const float s, const float t) const;
 
-    uint16_t readTexel(const float s, const float t) const
+    uint16_t readTexelAtAddr(const uint32_t texelAddress) const
     {
-        const uint32_t texelAddress = getTexelAddr(s, t);
         return *reinterpret_cast<const uint16_t*>(&m_gram[texelAddress]);
     }
 
@@ -101,39 +113,63 @@ private:
             {
                 return 1.0f;
             }
+            return coord;
         }
+        // REPEAT mode
         const int32_t cInt = static_cast<int32_t>(coord);
         const float cFrac = coord - static_cast<float>(cInt);
         return (cFrac < 0.0f) ? (1.0f + cFrac) : cFrac;
     }
 
-    uint32_t getTexelAddr(const float s, const float t) const
+    // Convert normalized coordinates to integer texel coordinates with wrapping
+    std::pair<uint32_t, uint32_t> texCoordToTexel(const float s, const float t) const
     {
-        uint32_t uS = static_cast<uint32_t>(s * m_textureSizeW);
-        uint32_t uT = static_cast<uint32_t>(t * m_textureSizeH);
+        const int32_t sInt = static_cast<int32_t>(s * m_textureSizeW);
+        const int32_t tInt = static_cast<int32_t>(t * m_textureSizeH);
+
         if (m_wrapModeS == TextureWrapMode::CLAMP_TO_EDGE)
         {
-            uS = std::clamp(uS, static_cast<uint32_t>(0u), static_cast<uint32_t>(m_textureSizeW) - static_cast<uint32_t>(1u));
-            uT = std::clamp(uT, static_cast<uint32_t>(0u), static_cast<uint32_t>(m_textureSizeH) - static_cast<uint32_t>(1u));
+            return { static_cast<uint32_t>(std::clamp(sInt, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskW))),
+                static_cast<uint32_t>(std::clamp(tInt, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskH))) };
         }
-        else // REPEAT
+        // REPEAT - use bitmask for power-of-2 textures
+        return { static_cast<uint32_t>(sInt) & m_textureMaskW,
+            static_cast<uint32_t>(tInt) & m_textureMaskH };
+    }
+
+    // Calculate texel address from integer coordinates
+    uint32_t getTexelAddrFromInt(const uint32_t uS, const uint32_t uT) const
+    {
+        const uint32_t index = uT * m_textureSizeWInt + uS;
+        const uint32_t addr = index * 2; // 2 bytes per texel
+        return translateAddress(addr);
+    }
+
+    // Compute log2 at compile time for page size
+    static constexpr uint32_t log2PageSize()
+    {
+        static_assert((RenderConfig::TEXTURE_PAGE_SIZE & (RenderConfig::TEXTURE_PAGE_SIZE - 1)) == 0,
+            "TEXTURE_PAGE_SIZE must be a power of 2");
+        uint32_t size = RenderConfig::TEXTURE_PAGE_SIZE;
+        uint32_t shift = 0;
+        while (size > 1)
         {
-            uS = uS % static_cast<uint32_t>(m_textureSizeW);
-            uT = uT % static_cast<uint32_t>(m_textureSizeH);
+            size >>= 1;
+            shift++;
         }
-        const uint32_t index = uT * m_textureSizeW + uS;
-        const uint32_t addr = index * 2;
-        const uint32_t texelAddress = translateAddress(addr);
-        return texelAddress;
+        return shift;
     }
 
     uint32_t translateAddress(const uint32_t addr) const
     {
-        const uint32_t pageNr = addr / RenderConfig::TEXTURE_PAGE_SIZE;
-        const uint32_t offset = addr % RenderConfig::TEXTURE_PAGE_SIZE;
+        // Use bit operations instead of division/modulo (TEXTURE_PAGE_SIZE is power of 2)
+        constexpr uint32_t PAGE_SHIFT = log2PageSize();
+        constexpr uint32_t PAGE_MASK = RenderConfig::TEXTURE_PAGE_SIZE - 1;
+
+        const uint32_t pageNr = addr >> PAGE_SHIFT;
+        const uint32_t offset = addr & PAGE_MASK;
         const uint32_t pageOffset = m_pages[pageNr];
-        const uint32_t texelAddress = pageOffset + offset;
-        return texelAddress;
+        return pageOffset + offset;
     }
 
     tcb::span<const uint8_t> m_gram {};
@@ -146,6 +182,11 @@ private:
     float m_halfTexelSizeW { 0.0f };
     float m_halfTexelSizeH { 0.0f };
 
+    uint32_t m_textureSizeWInt { 0 };
+    uint32_t m_textureSizeHInt { 0 };
+    uint32_t m_textureMaskW { 0 };
+    uint32_t m_textureMaskH { 0 };
+
     TextureWrapMode m_wrapModeS { TextureWrapMode::REPEAT };
     TextureWrapMode m_wrapModeT { TextureWrapMode::REPEAT };
 
@@ -153,6 +194,9 @@ private:
     bool m_enableMinFilter { false };
 
     DevicePixelFormat m_pixelFormat { DevicePixelFormat::RGBA4444 };
+    softwarerasterizerhelpers::DeserializeTexelFloatFn m_deserialize {
+        &softwarerasterizerhelpers::deserializeTexelFloatRGBA4444
+    };
 
     bool m_enable { false };
 };

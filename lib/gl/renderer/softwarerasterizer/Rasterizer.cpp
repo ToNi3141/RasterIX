@@ -26,7 +26,24 @@ void Rasterizer::init(const TriangleStreamTypes::TriangleDesc& triangle)
 
     m_wXInc = triangle.param.wXInc;
     m_wYInc = triangle.param.wYInc;
-    m_w = triangle.param.wInit;
+    if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
+    {
+        if (m_yOffset <= triangle.param.bbStartY)
+        {
+            m_w = triangle.param.wInit;
+        }
+        else
+        {
+            const int32_t lineBBStartY = m_yOffset - static_cast<int32_t>(triangle.param.bbStartY);
+            m_w = m_wYInc;
+            m_w *= lineBBStartY;
+            m_w += triangle.param.wInit;
+        }
+    }
+    else
+    {
+        m_w = triangle.param.wInit;
+    }
 
     if (m_yOffset <= triangle.param.bbStartY)
     {
@@ -55,6 +72,8 @@ void Rasterizer::init(const TriangleStreamTypes::TriangleDesc& triangle)
     m_state = EdgeWalkerState::INIT;
     m_x = m_bbStartX;
     m_tryOtherSide = false;
+    m_yi = m_y;
+    m_hit = false;
 }
 
 void Rasterizer::walk()
@@ -114,9 +133,12 @@ void Rasterizer::walk()
             {
                 yInc();
                 m_state = EdgeWalkerState::CHECK_DIRECTION;
+                m_hit = false;
             }
             else
             {
+                m_hit = true;
+                calcFragmentData();
                 xInc();
             }
             break;
@@ -124,6 +146,10 @@ void Rasterizer::walk()
         default:
             break;
         };
+    }
+    else
+    {
+        m_hit = false;
     }
 }
 

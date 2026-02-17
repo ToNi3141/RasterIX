@@ -23,9 +23,9 @@ namespace rr::softwarerasterizer
 {
 
 Vec4 TexEnv::apply(
-    const Vec4 previousColor,
-    const Vec4 texSrcColor,
-    const Vec4 primaryColor) const
+    const Vec4& previousColor,
+    const Vec4& texSrcColor,
+    const Vec4& primaryColor) const
 {
     if (!m_enable)
     {
@@ -35,9 +35,9 @@ Vec4 TexEnv::apply(
     const Vec4 constantColor = m_envColor;
 
     // Select source colors
-    const Vec3 srcColorRgb0 = selectSrcRgb(m_srcRegRgb0, texSrcColor, constantColor, primaryColor, previousColor);
-    const Vec3 srcColorRgb1 = selectSrcRgb(m_srcRegRgb1, texSrcColor, constantColor, primaryColor, previousColor);
-    const Vec3 srcColorRgb2 = selectSrcRgb(m_srcRegRgb2, texSrcColor, constantColor, primaryColor, previousColor);
+    const Vec4& srcColorRgb0 = selectSrc(m_srcRegRgb0, texSrcColor, constantColor, primaryColor, previousColor);
+    const Vec4& srcColorRgb1 = selectSrc(m_srcRegRgb1, texSrcColor, constantColor, primaryColor, previousColor);
+    const Vec4& srcColorRgb2 = selectSrc(m_srcRegRgb2, texSrcColor, constantColor, primaryColor, previousColor);
 
     const float srcColorAlpha0 = selectSrcAlpha(m_srcRegAlpha0, texSrcColor, constantColor, primaryColor, previousColor);
     const float srcColorAlpha1 = selectSrcAlpha(m_srcRegAlpha1, texSrcColor, constantColor, primaryColor, previousColor);
