@@ -35,7 +35,7 @@ public:
     {
     }
 
-    void init(const TriangleStreamTypes::TriangleDesc& triangle);
+    void init(const TriangleStreamTypes::TriangleDescX& triangle);
 
     const FragmentData& fragmentData() const
     {

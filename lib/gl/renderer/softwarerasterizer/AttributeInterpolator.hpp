@@ -30,7 +30,7 @@ class AttributeInterpolator
 {
 public:
     InterpolatedAttributesData interpolate(
-        const TriangleStreamTypes::TriangleDesc& attributesData,
+        const TriangleStreamTypes::TriangleDescX& attributesData,
         const int32_t boundingBoxX,
         const int32_t boundingBoxY) const;
 
@@ -41,45 +41,40 @@ public:
 
 private:
     static float interpolateAttribute(
-        const float attrStart,
-        const float attrIncX,
-        const float attrIncY,
-        const float bbx,
-        const float bby)
+        const int32_t attrStart,
+        const int32_t attrIncX,
+        const int32_t attrIncY,
+        const int32_t bbx,
+        const int32_t bby)
     {
         return attrStart + (attrIncX * bbx) + (attrIncY * bby);
     }
 
     static InterpolatedAttributesData::Texture interpolateTexture(
-        const TriangleStreamTypes::Texture& texture,
-        const float bbx,
-        const float bby)
+        const TriangleStreamTypes::TextureX& texture,
+        const int32_t bbx,
+        const int32_t bby)
     {
-        InterpolatedAttributesData::Texture tex {
-            interpolateAttribute(
-                texture.texStq[0],
-                texture.texStqXInc[0],
-                texture.texStqYInc[0],
-                bbx,
-                bby), // s
-            interpolateAttribute(
-                texture.texStq[1],
-                texture.texStqXInc[1],
-                texture.texStqYInc[1],
-                bbx,
-                bby), // t
-            interpolateAttribute(
-                texture.texStq[2],
-                texture.texStqXInc[2],
-                texture.texStqYInc[2],
-                bbx,
-                bby) // q
-        };
+        int32_t s = interpolateAttribute(texture.texStq[0], texture.texStqXInc[0], texture.texStqYInc[0], bbx, bby); // S3.28
+        int32_t t = interpolateAttribute(texture.texStq[1], texture.texStqXInc[1], texture.texStqYInc[1], bbx, bby); // S3.28
+        int32_t q = interpolateAttribute(texture.texStq[2], texture.texStqXInc[2], texture.texStqYInc[2], bbx, bby); // S3.28
 
-        tex.q = 1.0f / tex.q;
-        tex.s *= tex.q;
-        tex.t *= tex.q;
-        return tex;
+        s = s >> 17; // S3.28 -> Sx.11
+        t = t >> 17; // S3.28 -> Sx.11
+        q = q >> 13; // S3.28 -> Sx.15
+
+        q = (static_cast<int32_t>(1) << 30) / q; // S1.30 / S3.15 -> Sx.15
+        s *= q; // Sx.11 * Sx.15 -> Sx.26
+        t *= q; // Sx.11 * Sx.15 -> Sx.26
+        s = s >> 11; // Sx.26 -> Sx.15
+        t = t >> 11; // Sx.26 -> Sx.15
+
+        const auto tmp = InterpolatedAttributesData::Texture {
+            static_cast<float>(s) / static_cast<float>(1 << 15),
+            static_cast<float>(t) / static_cast<float>(1 << 15),
+            static_cast<float>(q) / static_cast<float>(1 << 15)
+        };
+        return tmp;
     }
 
     std::array<bool, RenderConfig::TMU_COUNT> m_tmuEnable {};

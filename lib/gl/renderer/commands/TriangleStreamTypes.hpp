@@ -116,6 +116,14 @@ namespace TriangleStreamTypes
 #pragma pack(push, 4)
         StaticParamsX param;
         std::array<TextureX, RenderConfig::TMU_COUNT> texture;
+
+        TriangleDescX() = default;
+
+        TriangleDescX(const TriangleDesc& t)
+        {
+            *this = t;
+        }
+
         void operator=(const TriangleDesc& t)
         {
             param = t.param;

@@ -110,7 +110,7 @@ bool SoftwareRasterizationInstance::handleCommand(const FogLutStreamCmd& cmd)
 
 bool SoftwareRasterizationInstance::handleCommand(const TriangleStreamCmd& cmd)
 {
-    const TriangleStreamTypes::TriangleDesc attributesData = cmd.payload()[0];
+    const TriangleStreamTypes::TriangleDescX attributesData = cmd.payload()[0];
     m_rasterizer.init(attributesData);
     while (!m_rasterizer.isDone())
     {

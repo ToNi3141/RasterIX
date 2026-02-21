@@ -20,7 +20,7 @@
 namespace rr::softwarerasterizer
 {
 
-void Rasterizer::init(const TriangleStreamTypes::TriangleDesc& triangle)
+void Rasterizer::init(const TriangleStreamTypes::TriangleDescX& triangle)
 {
     m_yLineResolution = m_resolutionData.y;
 
