@@ -28,7 +28,7 @@ template <typename T, std::size_t VecSize, std::size_t DefaultShift = 0>
 class Veci
 {
 public:
-    static constexpr T One = static_cast<T>(1) << DefaultShift;
+    static constexpr T One = (static_cast<T>(1) << DefaultShift) - 1;
     static constexpr T Half = One >> 1;
     static constexpr T Zero = 0;
     using Type = T;
@@ -42,36 +42,36 @@ public:
     Veci<T, VecSize, DefaultShift>& operator*=(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = vec[i] * val;
+            vec[i] = (vec[i] * val) >> DefaultShift;
         return *this;
     }
 
     Veci<T, VecSize, DefaultShift>& operator*=(const Veci<T, VecSize, DefaultShift>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = vec[i] * val[i];
+            vec[i] = (vec[i] * val[i]) >> DefaultShift;
         return *this;
     }
 
-    template <std::size_t shift>
+    template <std::size_t Shift = DefaultShift>
     void div(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (((static_cast<int64_t>(vec[i]) << shift) / static_cast<int64_t>(val)));
+            vec[i] = (((static_cast<int64_t>(vec[i]) << Shift) / static_cast<int64_t>(val)));
     }
 
-    template <std::size_t shift>
+    template <std::size_t Shift = DefaultShift>
     void mul(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (static_cast<int64_t>(vec[i]) * val) >> shift;
+            vec[i] = (static_cast<int64_t>(vec[i]) * val) >> Shift;
     }
 
-    template <std::size_t shift>
+    template <std::size_t Shift = DefaultShift>
     void mul(const Veci<T, VecSize, DefaultShift>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (static_cast<int64_t>(vec[i]) * val[i]) >> shift;
+            vec[i] = (static_cast<int64_t>(vec[i]) * val[i]) >> Shift;
     }
 
     Veci<T, VecSize, DefaultShift>& operator+=(const Veci<T, VecSize, DefaultShift>& val)
@@ -275,5 +275,6 @@ using Vec4i = Veci<VecInt, 4, 0>;
 
 using Vec4ui8 = Veci<uint8_t, 4, 0>;
 using Vec4i16 = Veci<int16_t, 4, 8>;
+using Vec3i16 = Veci<int16_t, 3, 8>;
 } // namespace rr
 #endif // VECI_HPP

@@ -33,9 +33,9 @@ public:
         if (!m_enable)
             return src;
 
-        const Vec4ui8 srcInt = Vec4ui8::createFromVecToInt<Vec4, 8>(src);
-        const Vec4ui8 dstInt = Vec4ui8::createFromVecToInt<Vec4, 8>(dst);
-        const Vec4ui8 resultInt = calcOp(srcInt, dstInt);
+        const Vec4i16 srcInt = Vec4i16::createFromVecToInt<Vec4, 8>(src);
+        const Vec4i16 dstInt = Vec4i16::createFromVecToInt<Vec4, 8>(dst);
+        const Vec4i16 resultInt = calcOp(srcInt, dstInt);
         const Vec4 result { static_cast<float>(resultInt[0]) / 255.0f,
             static_cast<float>(resultInt[1]) / 255.0f,
             static_cast<float>(resultInt[2]) / 255.0f,
@@ -59,21 +59,21 @@ public:
     }
 
 private:
-    static Vec4ui8 invertColor(const Vec4ui8& color)
+    static Vec4i16 invertColor(const Vec4i16& color)
     {
-        return Vec4ui8 { 255, 255, 255, 255 } - color;
+        return Vec4i16 { Vec4i16::One, Vec4i16::One, Vec4i16::One, Vec4i16::One } - color;
     }
 
-    Vec4ui8 calcOp(const Vec4ui8& src, const Vec4ui8& dst) const
+    Vec4i16 calcOp(const Vec4i16& src, const Vec4i16& dst) const
     {
-        Vec4ui8 result;
+        Vec4i16 result;
         switch (m_logicOp)
         {
         case rr::LogicOp::CLEAR:
-            result = Vec4ui8 { 0, 0, 0, 0 };
+            result = Vec4i16 { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
             break;
         case rr::LogicOp::SET:
-            result = Vec4ui8 { 255, 255, 255, 255 };
+            result = Vec4i16 { Vec4i16::One, Vec4i16::One, Vec4i16::One, Vec4i16::One };
             break;
         case rr::LogicOp::COPY:
             result = src;

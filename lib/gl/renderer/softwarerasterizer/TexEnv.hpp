@@ -20,6 +20,7 @@
 
 #include "Enums.hpp"
 #include "math/Vec.hpp"
+#include "math/Veci.hpp"
 #include <cstdint>
 
 namespace rr::softwarerasterizer
@@ -33,7 +34,7 @@ public:
         const Vec4& texSrcColor,
         const Vec4& primaryColor) const;
 
-    void setEnvColor(const Vec4& color)
+    void setEnvColor(const Vec4i16& color)
     {
         m_envColor = color;
     }
@@ -110,12 +111,12 @@ public:
 
     void setShiftRgb(const uint8_t val)
     {
-        m_scaleRgb = static_cast<float>(1 << val);
+        m_scaleRgb = val;
     }
 
     void setShiftAlpha(const uint8_t val)
     {
-        m_scaleAlpha = static_cast<float>(1 << val);
+        m_scaleAlpha = val;
     }
 
     void setEnable(bool enable)
@@ -126,10 +127,10 @@ public:
 private:
     float selectSrcAlpha(
         const SrcReg& srcReg,
-        const Vec4& texture,
-        const Vec4& constant,
-        const Vec4& primaryColor,
-        const Vec4& previous) const
+        const Vec4i16& texture,
+        const Vec4i16& constant,
+        const Vec4i16& primaryColor,
+        const Vec4i16& previous) const
     {
         switch (srcReg)
         {
@@ -142,16 +143,16 @@ private:
         case SrcReg::PREVIOUS:
             return previous[3];
         default:
-            return 0.0f;
+            return Vec4i16::Zero;
         }
     }
 
-    const Vec4& selectSrc(
+    const Vec4i16& selectSrc(
         const SrcReg& srcReg,
-        const Vec4& texture,
-        const Vec4& constant,
-        const Vec4& primaryColor,
-        const Vec4& previous) const
+        const Vec4i16& texture,
+        const Vec4i16& constant,
+        const Vec4i16& primaryColor,
+        const Vec4i16& previous) const
     {
         switch (srcReg)
         {
@@ -167,39 +168,51 @@ private:
         }
     }
 
-    Vec3 selectRgbOperand(const Operand& operand, const Vec4& color) const
+    Vec3i16 selectRgbOperand(const Operand& operand, const Vec4i16& color) const
     {
         switch (operand)
         {
         case Operand::SRC_ALPHA:
-            return Vec3 { color[3], color[3], color[3] };
+            return Vec3i16 { color[3], color[3], color[3] };
         case Operand::ONE_MINUS_SRC_ALPHA:
-            return Vec3 { 1.0f - color[3], 1.0f - color[3], 1.0f - color[3] };
+            return Vec3i16 {
+                static_cast<Vec3i16::Type>(Vec4i16::One - color[3]),
+                static_cast<Vec3i16::Type>(Vec4i16::One - color[3]),
+                static_cast<Vec3i16::Type>(Vec4i16::One - color[3])
+            };
         case Operand::SRC_COLOR:
-            return Vec3 { color[0], color[1], color[2] };
+            return Vec3i16 { color[0], color[1], color[2] };
         case Operand::ONE_MINUS_SRC_COLOR:
-            return Vec3 { 1.0f - color[0], 1.0f - color[1], 1.0f - color[2] };
+            return Vec3i16 {
+                static_cast<Vec3i16::Type>(Vec4i16::One - color[0]),
+                static_cast<Vec3i16::Type>(Vec4i16::One - color[1]),
+                static_cast<Vec3i16::Type>(Vec4i16::One - color[2])
+            };
         default:
-            return Vec3 { 0.0f, 0.0f, 0.0f };
+            return Vec3i16 { Vec3i16::Zero, Vec3i16::Zero, Vec3i16::Zero };
         }
     }
 
-    float selectAlphaOperand(const Operand& operand, const float& color) const
+    Vec3i16::Type selectAlphaOperand(const Operand& operand, const Vec3i16::Type& color) const
     {
         switch (operand)
         {
         case Operand::SRC_ALPHA:
             return color;
         case Operand::ONE_MINUS_SRC_ALPHA:
-            return 1.0f - color;
+            return Vec3i16::One - color;
         default:
-            return 0.0f;
+            return Vec3i16::Zero;
         }
     }
 
-    Vec3 combineRgb(const Combine& combine, const Vec3& op0, const Vec3& op1, const Vec3& op2) const
+    Vec3i16 combineRgb(
+        const Combine& combine,
+        const Vec3i16& op0,
+        const Vec3i16& op1,
+        const Vec3i16& op2) const
     {
-        Vec3 result {};
+        Vec3i16 result {};
         switch (combine)
         {
         case Combine::REPLACE:
@@ -216,7 +229,7 @@ private:
         case Combine::ADD_SIGNED:
             result = op0;
             result += op1;
-            result -= Vec3 { 0.5f, 0.5f, 0.5f };
+            result -= Vec3i16 { Vec3i16::Half, Vec3i16::Half, Vec3i16::Half };
             break;
         case Combine::INTERPOLATE:
             result = op0 + (op1 - op2) * op2;
@@ -228,8 +241,8 @@ private:
         case Combine::DOT3_RGB:
         case Combine::DOT3_RGBA:
         {
-            const float dot = (op0 - Vec3 { 0.5f, 0.5f, 0.5f }).dot(op1 - Vec3 { 0.5f, 0.5f, 0.5f }) * 4.0f;
-            result = Vec3 { dot, dot, dot };
+            const Vec3i16::Type dot = (op0 - Vec3i16 { Vec3i16::Half, Vec3i16::Half, Vec3i16::Half }).dot(op1 - Vec3i16 { Vec3i16::Half, Vec3i16::Half, Vec3i16::Half }) << 2;
+            result = Vec3i16 { dot, dot, dot };
         }
         break;
         default:
@@ -238,7 +251,11 @@ private:
         return result;
     }
 
-    float combineAlpha(const Combine& combine, const float& op0, const float& op1, const float& op2) const
+    float combineAlpha(
+        const Combine& combine,
+        const Vec3i16::Type& op0,
+        const Vec3i16::Type& op1,
+        const Vec3i16::Type& op2) const
     {
         float result {};
         switch (combine)
@@ -253,7 +270,7 @@ private:
             result = op0 + op1;
             break;
         case Combine::ADD_SIGNED:
-            result = op0 + op1 - 0.5f;
+            result = op0 + op1 - Vec3i16::Half;
             break;
         case Combine::INTERPOLATE:
             result = op0 + (op1 - op2) * op2;
@@ -267,7 +284,7 @@ private:
         return result;
     }
 
-    Vec4 m_envColor {};
+    Vec4i16 m_envColor {};
 
     Combine m_combineRgb {};
     Combine m_combineAlpha {};
@@ -286,8 +303,8 @@ private:
     Operand m_operandAlpha1 {};
     Operand m_operandAlpha2 {};
 
-    float m_scaleRgb { 1.0f };
-    float m_scaleAlpha { 1.0f };
+    Vec3i16::Type m_scaleRgb { Vec3i16::One };
+    Vec3i16::Type m_scaleAlpha { Vec3i16::One };
 
     bool m_enable { false };
 };

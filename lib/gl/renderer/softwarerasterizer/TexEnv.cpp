@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "TexEnv.hpp"
+#include "math/Veci.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -23,59 +24,68 @@ namespace rr::softwarerasterizer
 {
 
 Vec4 TexEnv::apply(
-    const Vec4& previousColor,
-    const Vec4& texSrcColor,
-    const Vec4& primaryColor) const
+    const Vec4& previousColorf,
+    const Vec4& texSrcColorf,
+    const Vec4& primaryColorf) const
 {
+    const Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(previousColorf);
+    const Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(texSrcColorf);
+    const Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(primaryColorf);
     if (!m_enable)
     {
-        return previousColor;
+        return Vec4 { static_cast<float>(previousColor[0]) / static_cast<float>(Vec4i16::One),
+            static_cast<float>(previousColor[1]) / static_cast<float>(Vec4i16::One),
+            static_cast<float>(previousColor[2]) / static_cast<float>(Vec4i16::One),
+            static_cast<float>(previousColor[3]) / static_cast<float>(Vec4i16::One) };
     }
 
-    const Vec4 constantColor = m_envColor;
+    const Vec4i16 constantColor = m_envColor;
 
     // Select source colors
-    const Vec4& srcColorRgb0 = selectSrc(m_srcRegRgb0, texSrcColor, constantColor, primaryColor, previousColor);
-    const Vec4& srcColorRgb1 = selectSrc(m_srcRegRgb1, texSrcColor, constantColor, primaryColor, previousColor);
-    const Vec4& srcColorRgb2 = selectSrc(m_srcRegRgb2, texSrcColor, constantColor, primaryColor, previousColor);
+    const Vec4i16& srcColorRgb0 = selectSrc(m_srcRegRgb0, texSrcColor, constantColor, primaryColor, previousColor);
+    const Vec4i16& srcColorRgb1 = selectSrc(m_srcRegRgb1, texSrcColor, constantColor, primaryColor, previousColor);
+    const Vec4i16& srcColorRgb2 = selectSrc(m_srcRegRgb2, texSrcColor, constantColor, primaryColor, previousColor);
 
-    const float srcColorAlpha0 = selectSrcAlpha(m_srcRegAlpha0, texSrcColor, constantColor, primaryColor, previousColor);
-    const float srcColorAlpha1 = selectSrcAlpha(m_srcRegAlpha1, texSrcColor, constantColor, primaryColor, previousColor);
-    const float srcColorAlpha2 = selectSrcAlpha(m_srcRegAlpha2, texSrcColor, constantColor, primaryColor, previousColor);
+    const Vec3i16::Type srcColorAlpha0 = selectSrcAlpha(m_srcRegAlpha0, texSrcColor, constantColor, primaryColor, previousColor);
+    const Vec3i16::Type srcColorAlpha1 = selectSrcAlpha(m_srcRegAlpha1, texSrcColor, constantColor, primaryColor, previousColor);
+    const Vec3i16::Type srcColorAlpha2 = selectSrcAlpha(m_srcRegAlpha2, texSrcColor, constantColor, primaryColor, previousColor);
 
     // Select operands
-    const Vec3 operandRgb0 = selectRgbOperand(m_operandRgb0, srcColorRgb0);
-    const Vec3 operandRgb1 = selectRgbOperand(m_operandRgb1, srcColorRgb1);
-    const Vec3 operandRgb2 = selectRgbOperand(m_operandRgb2, srcColorRgb2);
+    const Vec3i16 operandRgb0 = selectRgbOperand(m_operandRgb0, srcColorRgb0);
+    const Vec3i16 operandRgb1 = selectRgbOperand(m_operandRgb1, srcColorRgb1);
+    const Vec3i16 operandRgb2 = selectRgbOperand(m_operandRgb2, srcColorRgb2);
 
-    const float operandAlpha0 = selectAlphaOperand(m_operandAlpha0, srcColorAlpha0);
-    const float operandAlpha1 = selectAlphaOperand(m_operandAlpha1, srcColorAlpha1);
-    const float operandAlpha2 = selectAlphaOperand(m_operandAlpha2, srcColorAlpha2);
+    const Vec3i16::Type operandAlpha0 = selectAlphaOperand(m_operandAlpha0, srcColorAlpha0);
+    const Vec3i16::Type operandAlpha1 = selectAlphaOperand(m_operandAlpha1, srcColorAlpha1);
+    const Vec3i16::Type operandAlpha2 = selectAlphaOperand(m_operandAlpha2, srcColorAlpha2);
 
-    Vec3 resultRgb = combineRgb(
+    Vec3i16 resultRgb = combineRgb(
         m_combineRgb,
         operandRgb0,
         operandRgb1,
         operandRgb2);
-    float resultAlpha = combineAlpha(
+    Vec3i16::Type resultAlpha = combineAlpha(
         m_combineAlpha,
         operandAlpha0,
         operandAlpha1,
         operandAlpha2);
 
     // Apply scale
-    resultRgb *= m_scaleRgb;
-    resultAlpha *= m_scaleAlpha;
+    resultRgb <<= m_scaleRgb;
+    resultAlpha <<= m_scaleAlpha;
 
-    resultRgb.clamp(0.0f, 1.0f);
-    resultAlpha = std::clamp(resultAlpha, 0.0f, 1.0f);
+    resultRgb.clamp(Vec3i16::Zero, Vec3i16::One);
+    resultAlpha = std::clamp(resultAlpha, Vec3i16::Zero, Vec3i16::One);
 
     if (m_combineRgb == Combine::DOT3_RGB || m_combineRgb == Combine::DOT3_RGBA)
     {
         resultAlpha = resultRgb[0];
     }
 
-    return Vec4 { resultRgb[0], resultRgb[1], resultRgb[2], resultAlpha };
+    return Vec4 { static_cast<float>(resultRgb[0]) / static_cast<float>(Vec4i16::One),
+        static_cast<float>(resultRgb[1]) / static_cast<float>(Vec4i16::One),
+        static_cast<float>(resultRgb[2]) / static_cast<float>(Vec4i16::One),
+        static_cast<float>(resultAlpha) / static_cast<float>(Vec4i16::One) };
 }
 
 } // namespace rr::softwarerasterizer

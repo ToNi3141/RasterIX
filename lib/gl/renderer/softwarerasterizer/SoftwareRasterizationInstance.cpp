@@ -320,7 +320,7 @@ bool SoftwareRasterizationInstance::handleRegister(const StencilReg& reg)
 
 bool SoftwareRasterizationInstance::handleRegister(const TexEnvColorReg& reg)
 {
-    m_texEnv[reg.getTmuFromAddr()].setEnvColor(reg.getColorf());
+    m_texEnv[reg.getTmuFromAddr()].setEnvColor(reg.getColor16());
     return true;
 }
 

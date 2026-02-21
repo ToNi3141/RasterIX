@@ -46,6 +46,11 @@ public:
         return Vec4i { getRed(), getGreen(), getBlue(), getAlpha() };
     }
 
+    Vec4i16 getColor16() const
+    {
+        return Vec4i16 { getRed(), getGreen(), getBlue(), getAlpha() };
+    }
+
     Vec4 getColorf() const
     {
         return {
