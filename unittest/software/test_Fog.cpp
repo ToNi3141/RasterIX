@@ -126,7 +126,7 @@ TEST_CASE("Fog preserves alpha channel", "[Fog]")
     {
         const Vec4 inputColor { 1.0f, 1.0f, 1.0f, 0.5f };
         const Vec4 result = fog.calculateFog(10.0f, inputColor);
-        REQUIRE(result[3] == Approx(0.5f));
+        REQUIRE(result[3] == Approx(0.5f).margin(0.005f));
     }
 
     SECTION("Alpha 0.0 preserved")

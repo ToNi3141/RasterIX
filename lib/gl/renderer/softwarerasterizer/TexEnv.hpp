@@ -264,7 +264,7 @@ private:
             result = op0;
             break;
         case Combine::MODULATE:
-            result = op0 * op1;
+            result = (static_cast<Vec3i16::Type>(op0) * op1) >> Vec3i16::Shift;
             break;
         case Combine::ADD:
             result = op0 + op1;
@@ -273,7 +273,7 @@ private:
             result = op0 + op1 - Vec3i16::Half;
             break;
         case Combine::INTERPOLATE:
-            result = op0 + (op1 - op2) * op2;
+            result = op0 + ((static_cast<Vec3i16::Type>(op1 - op2) * op2) >> Vec3i16::Shift);
             break;
         case Combine::SUBTRACT:
             result = op0 - op1;

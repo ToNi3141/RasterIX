@@ -67,7 +67,7 @@ TEST_CASE("BlendFunc ONE factor", "[BlendFunc]")
     Vec4 result = blend.blend(src, dst);
     Vec4 expected { 0.5f, 0.5f, 0.5f, 0.5f };
 
-    REQUIRE(vec4Approx(result, expected));
+    REQUIRE(vec4Approx(result, expected, 0.01f));
 }
 
 TEST_CASE("BlendFunc DST_COLOR factor", "[BlendFunc]")

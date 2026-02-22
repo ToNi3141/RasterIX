@@ -31,6 +31,7 @@ public:
     static constexpr T One = (static_cast<T>(1) << DefaultShift) - 1;
     static constexpr T Half = One >> 1;
     static constexpr T Zero = 0;
+    static constexpr std::size_t Shift = DefaultShift;
     using Type = T;
 
     Veci() { }
@@ -53,25 +54,25 @@ public:
         return *this;
     }
 
-    template <std::size_t Shift = DefaultShift>
+    template <std::size_t LocalShift = DefaultShift>
     void div(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (((static_cast<int64_t>(vec[i]) << Shift) / static_cast<int64_t>(val)));
+            vec[i] = (((static_cast<int64_t>(vec[i]) << LocalShift) / static_cast<int64_t>(val)));
     }
 
-    template <std::size_t Shift = DefaultShift>
+    template <std::size_t LocalShift = DefaultShift>
     void mul(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (static_cast<int64_t>(vec[i]) * val) >> Shift;
+            vec[i] = (static_cast<int64_t>(vec[i]) * val) >> LocalShift;
     }
 
-    template <std::size_t Shift = DefaultShift>
+    template <std::size_t LocalShift = DefaultShift>
     void mul(const Veci<T, VecSize, DefaultShift>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (static_cast<int64_t>(vec[i]) * val[i]) >> Shift;
+            vec[i] = (static_cast<int64_t>(vec[i]) * val[i]) >> LocalShift;
     }
 
     Veci<T, VecSize, DefaultShift>& operator+=(const Veci<T, VecSize, DefaultShift>& val)
@@ -102,36 +103,36 @@ public:
         return *this;
     }
 
-    template <typename TV, std::size_t Shift = DefaultShift>
+    template <typename TV, std::size_t LocalShift = DefaultShift>
     static Veci<T, VecSize, DefaultShift> createFromVec(const TV& val)
     {
         Veci<T, VecSize, DefaultShift> vec;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * static_cast<float>(1ul << Shift)) + 0.5f;
+            vec[i] = (val[i] * static_cast<float>(1ul << LocalShift)) + 0.5f;
         return vec;
     }
 
-    template <typename TV, std::size_t Shift = DefaultShift>
+    template <typename TV, std::size_t LocalShift = DefaultShift>
     void fromVec(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * static_cast<float>(1ul << Shift)) + 0.5f;
+            vec[i] = (val[i] * static_cast<float>(1ul << LocalShift)) + 0.5f;
     }
 
-    template <typename TV, std::size_t Shift = DefaultShift>
+    template <typename TV, std::size_t LocalShift = DefaultShift>
     static Veci<T, VecSize, DefaultShift> createFromVecToInt(const TV& val)
     {
         Veci<T, VecSize, DefaultShift> vec;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * (static_cast<float>(1ul << Shift) - 1.0f)) + 0.5f;
+            vec[i] = (val[i] * (static_cast<float>(1ul << LocalShift) - 1.0f)) + 0.5f;
         return vec;
     }
 
-    template <typename TV, std::size_t Shift = DefaultShift>
+    template <typename TV, std::size_t LocalShift = DefaultShift>
     void fromVecToInt(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * (static_cast<float>(1ul << Shift) - 1.0f)) + 0.5f;
+            vec[i] = (val[i] * (static_cast<float>(1ul << LocalShift) - 1.0f)) + 0.5f;
     }
 
     T& operator[](int index) { return vec[index]; }
@@ -147,13 +148,13 @@ public:
         return *this;
     }
 
-    template <std::size_t Shift = DefaultShift>
+    template <std::size_t LocalShift = DefaultShift>
     int64_t dot(const Veci<T, VecSize, DefaultShift>& val) const
     {
         int64_t retVal = 0;
         for (std::size_t i = 0; i < VecSize; i++)
             retVal += (static_cast<int64_t>(vec[i]) * val[i]);
-        return retVal >> Shift;
+        return retVal >> LocalShift;
     }
 
     void clamp(const T low, const T high)

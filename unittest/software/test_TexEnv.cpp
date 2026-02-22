@@ -25,6 +25,7 @@ using rr::Operand;
 using rr::SrcReg;
 using rr::Vec3;
 using rr::Vec4;
+using rr::Vec4i16;
 using rr::ut::vec4Approx;
 
 TEST_CASE("TexEnv disabled returns previous color unchanged", "[TexEnv]")
@@ -191,7 +192,7 @@ TEST_CASE("TexEnv SrcReg selectors", "[TexEnv]")
     {
         texEnv.setSrcRegRgb0(SrcReg::CONSTANT);
         texEnv.setSrcRegAlpha0(SrcReg::CONSTANT);
-        texEnv.setEnvColor(constantColor);
+        texEnv.setEnvColor(Vec4i16::createFromVecToInt<Vec4, 8>(constantColor));
         Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
         REQUIRE(vec4Approx(result, constantColor));
     }

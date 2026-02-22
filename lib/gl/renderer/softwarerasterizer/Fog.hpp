@@ -46,7 +46,7 @@ public:
         }
 
         // Convert input color to fixed point
-        const Vec4i16 color = Vec4i16::createFromVec(colorf);
+        const Vec4i16 color = Vec4i16::createFromVecToInt<Vec4, 8>(colorf);
 
         // Compute fog factor in fixed point (S1.8 format, matching Vec4i16)
         const Vec4i16::Type factor = computeFogFactor(w);
