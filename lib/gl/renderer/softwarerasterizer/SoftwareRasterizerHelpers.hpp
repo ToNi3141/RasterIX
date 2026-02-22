@@ -36,6 +36,19 @@ namespace rr::softwarerasterizer::softwarerasterizerhelpers
     return Vec4 { r, g, b, a };
 }
 
+[[maybe_unused]] static Vec4i16 deserializeTexelRGBA4444(const uint16_t texel)
+{
+    const int16_t r = ((texel >> 12) & 0x0F);
+    const int16_t g = ((texel >> 8) & 0x0F);
+    const int16_t b = ((texel >> 4) & 0x0F);
+    const int16_t a = ((texel >> 0) & 0x0F);
+    const int16_t r8 = (r << 4) | r;
+    const int16_t g8 = (g << 4) | g;
+    const int16_t b8 = (b << 4) | b;
+    const int16_t a8 = (a << 4) | a;
+    return Vec4i16 { r8, g8, b8, a8 };
+}
+
 [[maybe_unused]] static Vec4 deserializeTexelFloatRGBA5551(const uint16_t texel)
 {
     constexpr float inv255 = 1.0f / 255.0f;
@@ -46,6 +59,19 @@ namespace rr::softwarerasterizer::softwarerasterizerhelpers
     return Vec4 { r, g, b, a };
 }
 
+[[maybe_unused]] static Vec4i16 deserializeTexelRGBA5551(const uint16_t texel)
+{
+    const int16_t r = ((texel >> 11) & 0x1F);
+    const int16_t g = ((texel >> 6) & 0x1F);
+    const int16_t b = ((texel >> 1) & 0x1F);
+    const int16_t a = ((texel >> 0) & 0x01);
+    const int16_t r8 = (r << 3) | (r >> 2);
+    const int16_t g8 = (g << 3) | (g >> 2);
+    const int16_t b8 = (b << 3) | (b >> 2);
+    const int16_t a8 = a ? 255 : 0;
+    return Vec4i16 { r8, g8, b8, a8 };
+}
+
 [[maybe_unused]] static Vec4 deserializeTexelFloatRGB565(const uint16_t texel)
 {
     constexpr float inv255 = 1.0f / 255.0f;
@@ -53,6 +79,17 @@ namespace rr::softwarerasterizer::softwarerasterizerhelpers
     const float g = static_cast<float>(((texel >> 5) & 0x3F) << 2) * inv255;
     const float b = static_cast<float>(((texel >> 0) & 0x1F) << 3) * inv255;
     return Vec4 { r, g, b, 1.0f };
+}
+
+[[maybe_unused]] static Vec4i16 deserializeTexelRGB565(const uint16_t texel)
+{
+    const int16_t r = ((texel >> 11) & 0x1F);
+    const int16_t g = ((texel >> 5) & 0x3F);
+    const int16_t b = ((texel >> 0) & 0x1F);
+    const int16_t r8 = (r << 3) | (r >> 2);
+    const int16_t g8 = (g << 2) | (g >> 4);
+    const int16_t b8 = (b << 3) | (b >> 2);
+    return Vec4i16 { r8, g8, b8, 255 };
 }
 
 // Function pointer type for float texel deserialization
@@ -70,6 +107,22 @@ using DeserializeTexelFloatFn = Vec4 (*)(uint16_t);
         return &deserializeTexelFloatRGB565;
     default:
         return &deserializeTexelFloatRGBA4444;
+    }
+}
+
+using DeserializeTexelIntFn = Vec4i16 (*)(uint16_t);
+[[maybe_unused]] static DeserializeTexelIntFn getDeserializeTexelIntFn(const DevicePixelFormat format)
+{
+    switch (format)
+    {
+    case DevicePixelFormat::RGBA4444:
+        return &deserializeTexelRGBA4444;
+    case DevicePixelFormat::RGBA5551:
+        return &deserializeTexelRGBA5551;
+    case DevicePixelFormat::RGB565:
+        return &deserializeTexelRGB565;
+    default:
+        return &deserializeTexelRGBA4444;
     }
 }
 
@@ -123,14 +176,23 @@ using DeserializeTexelFloatFn = Vec4 (*)(uint16_t);
     return r | g | b;
 }
 
+[[maybe_unused]] static uint16_t serializeToRgb565(const Vec4i16 color)
+{
+    const uint16_t r = (static_cast<uint16_t>(color[0]) >> 3) << 11;
+    const uint16_t g = (static_cast<uint16_t>(color[1]) >> 2) << 5;
+    const uint16_t b = (static_cast<uint16_t>(color[2]) >> 3) << 0;
+    return r | g | b;
+}
+
 [[maybe_unused]] static Vec4 deserializeFromRgb565(const uint16_t color)
 {
-    constexpr float inv255 = 1.0f / 255.0f;
-    const uint8_t r = ((color >> 11) & 0x1F) << 3;
-    const uint8_t g = ((color >> 5) & 0x3F) << 2;
-    const uint8_t b = ((color >> 0) & 0x1F) << 3;
-    return Vec4 { r * inv255, g * inv255, b * inv255, 1.0f };
+    return deserializeTexelFloatRGB565(color);
 }
+
+// [[maybe_unused]] static Vec4i16 deserializeFromRgb565(const uint16_t color)
+// {
+//     return deserializeTexelRGB565(color);
+// }
 
 [[maybe_unused]] static float deserializeDepth(const uint16_t depth)
 {

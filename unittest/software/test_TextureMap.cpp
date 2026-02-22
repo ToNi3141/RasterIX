@@ -69,15 +69,15 @@ public:
     }
 
     // Convert RGBA (0.0-1.0) to expected Vec4 from RGBA4444
-    // RGBA4444 stores 4-bit values which get expanded to 8-bit by shifting left 4
+    // RGBA4444 stores 4-bit values which get expanded to 8-bit by replicating LSBs
     static Vec4 expectedColorRGBA4444(uint8_t r4, uint8_t g4, uint8_t b4, uint8_t a4)
     {
         constexpr float inv255 = 1.0f / 255.0f;
         return Vec4 {
-            (r4 << 4) * inv255,
-            (g4 << 4) * inv255,
-            (b4 << 4) * inv255,
-            (a4 << 4) * inv255
+            ((r4 << 4) | r4) * inv255,
+            ((g4 << 4) | g4) * inv255,
+            ((b4 << 4) | b4) * inv255,
+            ((a4 << 4) | a4) * inv255
         };
     }
 };
