@@ -189,10 +189,10 @@ using DeserializeTexelIntFn = Vec4i16 (*)(uint16_t);
     return deserializeTexelFloatRGB565(color);
 }
 
-// [[maybe_unused]] static Vec4i16 deserializeFromRgb565(const uint16_t color)
-// {
-//     return deserializeTexelRGB565(color);
-// }
+[[maybe_unused]] static Vec4i16 deserializeFromRgb565Int(const uint16_t color)
+{
+    return deserializeTexelRGB565(color);
+}
 
 [[maybe_unused]] static float deserializeDepth(const uint16_t depth)
 {
@@ -202,6 +202,11 @@ using DeserializeTexelIntFn = Vec4i16 (*)(uint16_t);
 [[maybe_unused]] static uint16_t serializeDepth(const float depth)
 {
     return static_cast<uint16_t>(depth * 65535.0f);
+}
+
+[[maybe_unused]] static uint16_t serializeDepthInt(const int32_t depth)
+{
+    return static_cast<uint16_t>(depth);
 }
 
 } // namespace rr::softwarerasterizer::softwarerasterizerhelpers

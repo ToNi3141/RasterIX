@@ -69,12 +69,7 @@ private:
         s = s >> 11; // Sx.26 -> Sx.15
         t = t >> 11; // Sx.26 -> Sx.15
 
-        const auto tmp = InterpolatedAttributesData::Texture {
-            static_cast<float>(s) / static_cast<float>(1 << 15),
-            static_cast<float>(t) / static_cast<float>(1 << 15),
-            static_cast<float>(q) / static_cast<float>(1 << 15)
-        };
-        return tmp;
+        return InterpolatedAttributesData::Texture { s, t, q };
     }
 
     std::array<bool, RenderConfig::TMU_COUNT> m_tmuEnable {};

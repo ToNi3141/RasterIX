@@ -38,7 +38,7 @@ public:
         m_gram = gram;
     }
 
-    Vec4 getTexel(const float s, const float t) const;
+    Vec4i16 getTexel(const int32_t s, const int32_t t) const;
 
     bool isEnabled() const
     {

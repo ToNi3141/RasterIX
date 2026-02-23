@@ -20,6 +20,7 @@
 
 #include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
+#include "math/Veci.hpp"
 #include <array>
 #include <cstdint>
 
@@ -29,15 +30,15 @@ struct InterpolatedAttributesData
 {
     struct Texture
     {
-        float s; // S16.15
-        float t; // S16.15
-        float q; // S16.15
+        int32_t s; // S16.15
+        int32_t t; // S16.15
+        int32_t q; // S16.15
     };
     std::array<Texture, RenderConfig::TMU_COUNT> tex;
     std::array<Texture, RenderConfig::TMU_COUNT> texMipmap;
     float depthW;
-    float depthZ; // Q16.16
-    Vec4 color; // Qn.0
+    int32_t depthZ;
+    Vec4i16 color;
 };
 
 } // namespace rr::softwarerasterizer

@@ -29,10 +29,10 @@ namespace rr::softwarerasterizer
 class TexEnv
 {
 public:
-    Vec4 apply(
-        const Vec4& previousColor,
-        const Vec4& texSrcColor,
-        const Vec4& primaryColor) const;
+    Vec4i16 apply(
+        const Vec4i16& previousColor,
+        const Vec4i16& texSrcColor,
+        const Vec4i16& primaryColor) const;
 
     void setEnvColor(const Vec4i16& color)
     {

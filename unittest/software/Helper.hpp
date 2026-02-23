@@ -19,6 +19,7 @@
 #define RR_UT_HELPER_HPP
 
 #include "math/Vec.hpp"
+#include "math/Veci.hpp"
 #include <cmath>
 
 namespace rr::ut
@@ -29,6 +30,13 @@ namespace rr::ut
 inline bool vec4Approx(const rr::Vec4& a, const rr::Vec4& b, float epsilon = 0.005f)
 {
     return std::abs(a[0] - b[0]) < epsilon && std::abs(a[1] - b[1]) < epsilon && std::abs(a[2] - b[2]) < epsilon && std::abs(a[3] - b[3]) < epsilon;
+}
+
+// Helper to compare Vec4i16 with tolerance
+// Default tolerance is ±2 for S8.8 fixed-point (allows for rounding errors in arithmetic)
+inline bool vec4i16Approx(const rr::Vec4i16& a, const rr::Vec4i16& b, int16_t tolerance = 2)
+{
+    return std::abs(a[0] - b[0]) <= tolerance && std::abs(a[1] - b[1]) <= tolerance && std::abs(a[2] - b[2]) <= tolerance && std::abs(a[3] - b[3]) <= tolerance;
 }
 
 } // namespace rr::ut

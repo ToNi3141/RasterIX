@@ -38,28 +38,20 @@ public:
     };
     using FogLut = std::array<FogLutEntry, 32>;
 
-    Vec4 calculateFog(const float w, const Vec4& colorf) const
+    Vec4i16 calculateFog(const float w, const Vec4i16& color) const
     {
         if (!m_enable)
         {
-            return colorf;
+            return color;
         }
 
-        // Convert input color to fixed point
-        const Vec4i16 color = Vec4i16::createFromVecToInt<Vec4, 8>(colorf);
-
-        // Compute fog factor in fixed point (S1.8 format, matching Vec4i16)
         const Vec4i16::Type factor = computeFogFactor(w);
 
         Vec4i16 foggedColor = Vec4i16::interpolate(m_fogColor, color, std::clamp(factor, Vec4i16::Zero, Vec4i16::One));
         foggedColor.clamp(Vec4i16::Zero, Vec4i16::One);
         foggedColor[3] = color[3]; // Preserve alpha
 
-        // Convert back to float
-        return Vec4 { static_cast<float>(foggedColor[0]) / static_cast<float>(Vec4i16::One),
-            static_cast<float>(foggedColor[1]) / static_cast<float>(Vec4i16::One),
-            static_cast<float>(foggedColor[2]) / static_cast<float>(Vec4i16::One),
-            static_cast<float>(foggedColor[3]) / static_cast<float>(Vec4i16::One) };
+        return foggedColor;
     }
 
     void setFogLut(const FogLut& lut, const float lowerBound, const float upperBound)
@@ -69,9 +61,9 @@ public:
         m_fogLut = lut;
     }
 
-    void setFogColor(const Vec4& color)
+    void setFogColor(const Vec4i16& color)
     {
-        m_fogColor = Vec4i16::createFromVec(color);
+        m_fogColor = color;
     }
 
     void setEnable(bool enable)

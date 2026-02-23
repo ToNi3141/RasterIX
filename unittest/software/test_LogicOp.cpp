@@ -20,23 +20,24 @@
 #include "Helper.hpp"
 #include "renderer/softwarerasterizer/LogicOp.hpp"
 
-using rr::Vec4;
-using rr::ut::vec4Approx;
+using rr::Vec4i16;
+using rr::ut::vec4i16Approx;
 
-// LogicOp converts to/from 8-bit integers, so needs larger tolerance
-constexpr float LOGIC_OP_EPSILON = 0.01f;
+// LogicOp converts to/from 8-bit integers, so needs larger tolerance for fixed-point
+// S8.8 format: tolerance of 2 accounts for rounding in bit operations
+constexpr int16_t LOGIC_OP_TOLERANCE = 2;
 
 TEST_CASE("LogicOp disabled returns source unchanged", "[LogicOp]")
 {
     rr::softwarerasterizer::LogicOp logicOp;
     logicOp.setEnable(false);
 
-    Vec4 src { 0.5f, 0.6f, 0.7f, 0.8f };
-    Vec4 dst { 0.1f, 0.2f, 0.3f, 0.4f };
+    Vec4i16 src = Vec4i16 { 127, 153, 178, 204 };
+    Vec4i16 dst = Vec4i16 { 25, 51, 76, 102 };
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
 
-    REQUIRE(vec4Approx(result, src, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, src, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp CLEAR", "[LogicOp]")
@@ -45,13 +46,13 @@ TEST_CASE("LogicOp CLEAR", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::CLEAR);
 
-    Vec4 src { 1.0f, 1.0f, 1.0f, 1.0f };
-    Vec4 dst { 0.5f, 0.5f, 0.5f, 0.5f };
+    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4i16 dst = Vec4i16 { 127, 127, 127, 127 };
 
-    Vec4 result = logicOp.op(src, dst);
-    Vec4 expected { 0.0f, 0.0f, 0.0f, 0.0f };
+    Vec4i16 result = logicOp.op(src, dst);
+    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp SET", "[LogicOp]")
@@ -60,13 +61,13 @@ TEST_CASE("LogicOp SET", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::SET);
 
-    Vec4 src { 0.0f, 0.0f, 0.0f, 0.0f };
-    Vec4 dst { 0.5f, 0.5f, 0.5f, 0.5f };
+    Vec4i16 src = Vec4i16 { 0, 0, 0, 0 };
+    Vec4i16 dst = Vec4i16 { 127, 127, 127, 127 };
 
-    Vec4 result = logicOp.op(src, dst);
-    Vec4 expected { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vec4i16 result = logicOp.op(src, dst);
+    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp COPY", "[LogicOp]")
@@ -75,12 +76,12 @@ TEST_CASE("LogicOp COPY", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::COPY);
 
-    Vec4 src { 0.5f, 0.6f, 0.7f, 0.8f };
-    Vec4 dst { 0.1f, 0.2f, 0.3f, 0.4f };
+    Vec4i16 src = Vec4i16 { 127, 153, 178, 204 };
+    Vec4i16 dst = Vec4i16 { 25, 51, 76, 102 };
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
 
-    REQUIRE(vec4Approx(result, src, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, src, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp COPY_INVERTED", "[LogicOp]")
@@ -89,13 +90,13 @@ TEST_CASE("LogicOp COPY_INVERTED", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::COPY_INVERTED);
 
-    Vec4 src { 1.0f, 1.0f, 1.0f, 1.0f };
-    Vec4 dst { 0.5f, 0.5f, 0.5f, 0.5f };
+    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4i16 dst = Vec4i16 { 127, 127, 127, 127 };
 
-    Vec4 result = logicOp.op(src, dst);
-    Vec4 expected { 0.0f, 0.0f, 0.0f, 0.0f };
+    Vec4i16 result = logicOp.op(src, dst);
+    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp NOOP", "[LogicOp]")
@@ -104,12 +105,12 @@ TEST_CASE("LogicOp NOOP", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::NOOP);
 
-    Vec4 src { 0.5f, 0.6f, 0.7f, 0.8f };
-    Vec4 dst { 0.1f, 0.2f, 0.3f, 0.4f };
+    Vec4i16 src = Vec4i16 { 127, 153, 178, 204 };
+    Vec4i16 dst = Vec4i16 { 25, 51, 76, 102 };
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
 
-    REQUIRE(vec4Approx(result, dst, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, dst, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp INVERT", "[LogicOp]")
@@ -118,13 +119,13 @@ TEST_CASE("LogicOp INVERT", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::INVERT);
 
-    Vec4 src { 0.5f, 0.5f, 0.5f, 0.5f };
-    Vec4 dst { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vec4i16 src = Vec4i16 { 127, 127, 127, 127 };
+    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
 
-    Vec4 result = logicOp.op(src, dst);
-    Vec4 expected { 0.0f, 0.0f, 0.0f, 0.0f };
+    Vec4i16 result = logicOp.op(src, dst);
+    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp AND", "[LogicOp]")
@@ -133,13 +134,13 @@ TEST_CASE("LogicOp AND", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::AND);
 
-    // 0xFF & 0x0F = 0x0F
-    Vec4 src { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
-    Vec4 dst { 60.0f / 255.0f, 60.0f / 255.0f, 60.0f / 255.0f, 60.0f / 255.0f }; // 0x3C
-
-    Vec4 result = logicOp.op(src, dst);
     // 0xFF & 0x3C = 0x3C
-    REQUIRE(vec4Approx(result, dst, LOGIC_OP_EPSILON));
+    Vec4i16 src { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4i16 dst { 0x3C, 0x3C, 0x3C, 0x3C }; // 0x3C
+
+    Vec4i16 result = logicOp.op(src, dst);
+    // 0xFF & 0x3C = 0x3C
+    REQUIRE(vec4i16Approx(result, dst, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp OR", "[LogicOp]")
@@ -148,14 +149,14 @@ TEST_CASE("LogicOp OR", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::OR);
 
-    Vec4 src { 0x55 / 255.0f, 0x55 / 255.0f, 0x55 / 255.0f, 0x55 / 255.0f }; // 0x55
-    Vec4 dst { 0xAA / 255.0f, 0xAA / 255.0f, 0xAA / 255.0f, 0xAA / 255.0f }; // 0xAA
+    Vec4i16 src = Vec4i16 { 0x55, 0x55, 0x55, 0x55 }; // 0x55
+    Vec4i16 dst = Vec4i16 { 0xAA, 0xAA, 0xAA, 0xAA }; // 0xAA
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
     // 0x55 | 0xAA = 0xFF
-    Vec4 expected { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp XOR", "[LogicOp]")
@@ -164,14 +165,14 @@ TEST_CASE("LogicOp XOR", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::XOR);
 
-    Vec4 src { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
-    Vec4 dst { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
+    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
     // 0xFF ^ 0xFF = 0x00
-    Vec4 expected { 0.0f, 0.0f, 0.0f, 0.0f };
+    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp NAND", "[LogicOp]")
@@ -180,14 +181,14 @@ TEST_CASE("LogicOp NAND", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::NAND);
 
-    Vec4 src { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
-    Vec4 dst { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
+    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
     // ~(0xFF & 0xFF) = ~0xFF = 0x00
-    Vec4 expected { 0.0f, 0.0f, 0.0f, 0.0f };
+    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp NOR", "[LogicOp]")
@@ -196,14 +197,14 @@ TEST_CASE("LogicOp NOR", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::NOR);
 
-    Vec4 src { 0.0f, 0.0f, 0.0f, 0.0f }; // 0x00
-    Vec4 dst { 0.0f, 0.0f, 0.0f, 0.0f }; // 0x00
+    Vec4i16 src { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
+    Vec4i16 dst { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
     // ~(0x00 | 0x00) = ~0x00 = 0xFF
-    Vec4 expected { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp EQUIV", "[LogicOp]")
@@ -212,14 +213,14 @@ TEST_CASE("LogicOp EQUIV", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::EQUIV);
 
-    Vec4 src { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
-    Vec4 dst { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
+    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
     // ~(0xFF ^ 0xFF) = ~0x00 = 0xFF
-    Vec4 expected { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp AND_REVERSE", "[LogicOp]")
@@ -228,14 +229,14 @@ TEST_CASE("LogicOp AND_REVERSE", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::AND_REVERSE);
 
-    Vec4 src { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
-    Vec4 dst { 0.0f, 0.0f, 0.0f, 0.0f }; // 0x00
+    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4i16 dst { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
     // 0xFF & ~0x00 = 0xFF & 0xFF = 0xFF
-    Vec4 expected { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp AND_INVERTED", "[LogicOp]")
@@ -244,14 +245,14 @@ TEST_CASE("LogicOp AND_INVERTED", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::AND_INVERTED);
 
-    Vec4 src { 0.0f, 0.0f, 0.0f, 0.0f }; // 0x00
-    Vec4 dst { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
+    Vec4i16 src { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
+    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
     // ~0x00 & 0xFF = 0xFF & 0xFF = 0xFF
-    Vec4 expected { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp OR_REVERSE", "[LogicOp]")
@@ -260,14 +261,14 @@ TEST_CASE("LogicOp OR_REVERSE", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::OR_REVERSE);
 
-    Vec4 src { 0.0f, 0.0f, 0.0f, 0.0f }; // 0x00
-    Vec4 dst { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
+    Vec4i16 src { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
+    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
     // 0x00 | ~0xFF = 0x00 | 0x00 = 0x00
-    Vec4 expected { 0.0f, 0.0f, 0.0f, 0.0f };
+    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
 
 TEST_CASE("LogicOp OR_INVERTED", "[LogicOp]")
@@ -276,12 +277,12 @@ TEST_CASE("LogicOp OR_INVERTED", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::OR_INVERTED);
 
-    Vec4 src { 1.0f, 1.0f, 1.0f, 1.0f }; // 0xFF
-    Vec4 dst { 0.0f, 0.0f, 0.0f, 0.0f }; // 0x00
+    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4i16 dst { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
 
-    Vec4 result = logicOp.op(src, dst);
+    Vec4i16 result = logicOp.op(src, dst);
     // ~0xFF | 0x00 = 0x00 | 0x00 = 0x00
-    Vec4 expected { 0.0f, 0.0f, 0.0f, 0.0f };
+    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
 
-    REQUIRE(vec4Approx(result, expected, LOGIC_OP_EPSILON));
+    REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }

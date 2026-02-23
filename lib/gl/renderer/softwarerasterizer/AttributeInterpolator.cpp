@@ -81,12 +81,17 @@ InterpolatedAttributesData AttributeInterpolator::interpolate(
         bbx,
         bby);
 
-    const float colorRfloat = static_cast<float>(colorR) / static_cast<float>(1 << 24);
-    const float colorGfloat = static_cast<float>(colorG) / static_cast<float>(1 << 24);
-    const float colorBfloat = static_cast<float>(colorB) / static_cast<float>(1 << 24);
-    const float colorAfloat = static_cast<float>(colorA) / static_cast<float>(1 << 24);
+    // Convert S1.24 to Sx.8 (shift right by 16)
+    Vec4i16 color {
+        static_cast<int16_t>(colorR >> 16),
+        static_cast<int16_t>(colorG >> 16),
+        static_cast<int16_t>(colorB >> 16),
+        static_cast<int16_t>(colorA >> 16)
+    };
+    color.clamp(Vec4i16::Zero, Vec4i16::One);
 
-    const float depthZfloat = static_cast<float>(depthZ) / static_cast<float>(1 << 30);
+    // depthZ is S1.30 -> Sx.16, clamp to valid range
+    const int32_t clampedDepthZ = std::clamp(depthZ >> 14, static_cast<int32_t>(0), static_cast<int32_t>(1u << 16) - 1);
 
     const int32_t depthW = static_cast<int32_t>(1 << 30) / (ooDepthW >> 15); // S1.30 / Sx.15 -> Sx.15
     const float depthWfloat = static_cast<float>(depthW) / static_cast<float>(1 << 15);
@@ -95,8 +100,8 @@ InterpolatedAttributesData AttributeInterpolator::interpolate(
         textures,
         textureMipmap,
         depthWfloat,
-        std::clamp(depthZfloat, 0.0f, 1.0f),
-        Vec4 { std::clamp(colorRfloat, 0.0f, 1.0f), std::clamp(colorGfloat, 0.0f, 1.0f), std::clamp(colorBfloat, 0.0f, 1.0f), std::clamp(colorAfloat, 0.0f, 1.0f) },
+        clampedDepthZ,
+        color,
     };
 }
 

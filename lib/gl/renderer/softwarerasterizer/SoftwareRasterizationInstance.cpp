@@ -121,7 +121,7 @@ bool SoftwareRasterizationInstance::handleCommand(const TriangleStreamCmd& cmd)
             const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
             const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
             m_depthFunc.setReferenceValue(depth);
-            const uint16_t depthZ16 = softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ);
+            const uint16_t depthZ16 = softwarerasterizerhelpers::serializeDepthInt(interpolatedAttributes.depthZ);
             const bool zPass = m_depthFunc.check(depthZ16);
             const bool stencilPass = m_stencilFunc.check(stencil);
             if (m_stencilOp.getEnable())
@@ -132,16 +132,16 @@ bool SoftwareRasterizationInstance::handleCommand(const TriangleStreamCmd& cmd)
 
             if (zPass && stencilPass)
             {
-                // Fragment processing
-                const Vec4 texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
-                const Vec4 texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
-                const Vec4 texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
-                const Vec4 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
+                // Fragment processing - all in fixed-point S8.8
+                const Vec4i16 texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
+                const Vec4i16 texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
+                const Vec4i16 texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
+                const Vec4i16 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
                 if (m_alphaFunc.check(texEnvTexel1[3]))
                 {
-                    const Vec4 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
-                    const Vec4 destColor = softwarerasterizerhelpers::deserializeFromRgb565(m_colorBuffer.readFragment(fmd.index));
-                    Vec4 finalColor;
+                    const Vec4i16 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
+                    const Vec4i16 destColor = softwarerasterizerhelpers::deserializeFromRgb565Int(m_colorBuffer.readFragment(fmd.index));
+                    Vec4i16 finalColor;
                     if (m_logicOp.getEnable())
                     {
                         finalColor = m_logicOp.op(foggedColor, destColor);
@@ -256,14 +256,14 @@ bool SoftwareRasterizationInstance::handleRegister(const FeatureEnableReg& reg)
 
 bool SoftwareRasterizationInstance::handleRegister(const FogColorReg& reg)
 {
-    m_fog.setFogColor(reg.getColorf());
+    m_fog.setFogColor(reg.getColor16());
     return true;
 }
 
 bool SoftwareRasterizationInstance::handleRegister(const FragmentPipelineReg& reg)
 {
     m_alphaFunc.setFunction(reg.getAlphaFunc());
-    m_alphaFunc.setReferenceValue(static_cast<float>(reg.getRefAlphaValue()) / 255.0f);
+    m_alphaFunc.setReferenceValue(static_cast<int16_t>(reg.getRefAlphaValue()));
     m_depthFunc.setFunction(reg.getDepthFunc());
     m_blendFunc.setSFactor(reg.getBlendFuncSFactor());
     m_blendFunc.setDFactor(reg.getBlendFuncDFactor());

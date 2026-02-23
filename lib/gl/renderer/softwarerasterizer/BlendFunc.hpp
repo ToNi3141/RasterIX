@@ -31,22 +31,17 @@ public:
     // Function pointer type for blend factor calculation
     using BlendFactorFn = Vec4i16 (*)(const Vec4i16&, const Vec4i16&);
 
-    Vec4 blend(const Vec4& srcf, const Vec4& dstf) const
+    Vec4i16 blend(const Vec4i16& src, const Vec4i16& dst) const
     {
         if (!m_enable)
-            return srcf;
-        const Vec4i16 src = Vec4i16::createFromVec(srcf);
-        const Vec4i16 dst = Vec4i16::createFromVec(dstf);
+            return src;
 
         const Vec4i16 srcFactor = m_sFactorFn(src, dst);
         const Vec4i16 dstFactor = m_dFactorFn(src, dst);
         Vec4i16 result = src * srcFactor + dst * dstFactor;
         result.clamp(Vec4i16::Zero, Vec4i16::One);
 
-        return Vec4 { static_cast<float>(result[0] / static_cast<float>(Vec4i16::One)),
-            static_cast<float>(result[1] / static_cast<float>(Vec4i16::One)),
-            static_cast<float>(result[2] / static_cast<float>(Vec4i16::One)),
-            static_cast<float>(result[3] / static_cast<float>(Vec4i16::One)) };
+        return result;
     }
 
     void setEnable(const bool enable)

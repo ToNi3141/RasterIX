@@ -33,13 +33,13 @@ TEST_CASE("TexEnv disabled returns previous color unchanged", "[TexEnv]")
     rr::softwarerasterizer::TexEnv texEnv;
     texEnv.setEnable(false);
 
-    Vec4 previousColor { 0.1f, 0.2f, 0.3f, 0.4f };
-    Vec4 texSrcColor { 0.5f, 0.6f, 0.7f, 0.8f };
-    Vec4 primaryColor { 0.9f, 0.8f, 0.7f, 0.6f };
+    Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.1f, 0.2f, 0.3f, 0.4f });
+    Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.6f, 0.7f, 0.8f });
+    Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.9f, 0.8f, 0.7f, 0.6f });
 
-    Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+    Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
 
-    REQUIRE(vec4Approx(result, previousColor));
+    REQUIRE(rr::ut::vec4i16Approx(result, previousColor));
 }
 
 TEST_CASE("TexEnv Combine REPLACE", "[TexEnv]")
@@ -55,13 +55,13 @@ TEST_CASE("TexEnv Combine REPLACE", "[TexEnv]")
     texEnv.setShiftRgb(0); // scale = 2^0 = 1
     texEnv.setShiftAlpha(0); // scale = 2^0 = 1
 
-    Vec4 previousColor { 0.1f, 0.2f, 0.3f, 0.4f };
-    Vec4 texSrcColor { 0.5f, 0.6f, 0.7f, 0.8f };
-    Vec4 primaryColor { 0.9f, 0.8f, 0.7f, 0.6f };
+    Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.1f, 0.2f, 0.3f, 0.4f });
+    Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.6f, 0.7f, 0.8f });
+    Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.9f, 0.8f, 0.7f, 0.6f });
 
-    Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+    Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
 
-    REQUIRE(vec4Approx(result, texSrcColor));
+    REQUIRE(rr::ut::vec4i16Approx(result, texSrcColor));
 }
 
 TEST_CASE("TexEnv Combine MODULATE", "[TexEnv]")
@@ -81,15 +81,15 @@ TEST_CASE("TexEnv Combine MODULATE", "[TexEnv]")
     texEnv.setShiftRgb(0); // scale = 2^0 = 1
     texEnv.setShiftAlpha(0); // scale = 2^0 = 1
 
-    Vec4 previousColor { 0.0f, 0.0f, 0.0f, 0.0f };
-    Vec4 texSrcColor { 0.5f, 0.5f, 0.5f, 0.5f };
-    Vec4 primaryColor { 0.8f, 0.6f, 0.4f, 0.2f };
+    Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
+    Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 0.5f });
+    Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.6f, 0.4f, 0.2f });
 
-    Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+    Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
     // texture * primary = (0.5*0.8, 0.5*0.6, 0.5*0.4, 0.5*0.2) = (0.4, 0.3, 0.2, 0.1)
-    Vec4 expected { 0.4f, 0.3f, 0.2f, 0.1f };
+    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.4f, 0.3f, 0.2f, 0.1f });
 
-    REQUIRE(vec4Approx(result, expected));
+    REQUIRE(rr::ut::vec4i16Approx(result, expected));
 }
 
 TEST_CASE("TexEnv Combine ADD", "[TexEnv]")
@@ -109,15 +109,15 @@ TEST_CASE("TexEnv Combine ADD", "[TexEnv]")
     texEnv.setShiftRgb(0); // scale = 2^0 = 1
     texEnv.setShiftAlpha(0); // scale = 2^0 = 1
 
-    Vec4 previousColor { 0.0f, 0.0f, 0.0f, 0.0f };
-    Vec4 texSrcColor { 0.3f, 0.3f, 0.3f, 0.3f };
-    Vec4 primaryColor { 0.2f, 0.4f, 0.2f, 0.2f };
+    Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
+    Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.3f, 0.3f, 0.3f });
+    Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.2f, 0.4f, 0.2f, 0.2f });
 
-    Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+    Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
     // texture + primary = (0.3+0.2, 0.3+0.4, 0.3+0.2, 0.3+0.2) = (0.5, 0.7, 0.5, 0.5)
-    Vec4 expected { 0.5f, 0.7f, 0.5f, 0.5f };
+    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.7f, 0.5f, 0.5f });
 
-    REQUIRE(vec4Approx(result, expected));
+    REQUIRE(rr::ut::vec4i16Approx(result, expected));
 }
 
 TEST_CASE("TexEnv Combine SUBTRACT", "[TexEnv]")
@@ -137,15 +137,15 @@ TEST_CASE("TexEnv Combine SUBTRACT", "[TexEnv]")
     texEnv.setShiftRgb(0); // scale = 2^0 = 1
     texEnv.setShiftAlpha(0); // scale = 2^0 = 1
 
-    Vec4 previousColor { 0.0f, 0.0f, 0.0f, 0.0f };
-    Vec4 texSrcColor { 0.8f, 0.8f, 0.8f, 0.8f };
-    Vec4 primaryColor { 0.3f, 0.2f, 0.1f, 0.4f };
+    Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
+    Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.8f, 0.8f, 0.8f });
+    Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.2f, 0.1f, 0.4f });
 
-    Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+    Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
     // texture - primary = (0.8-0.3, 0.8-0.2, 0.8-0.1, 0.8-0.4) = (0.5, 0.6, 0.7, 0.4)
-    Vec4 expected { 0.5f, 0.6f, 0.7f, 0.4f };
+    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.6f, 0.7f, 0.4f });
 
-    REQUIRE(vec4Approx(result, expected));
+    REQUIRE(rr::ut::vec4i16Approx(result, expected));
 }
 
 TEST_CASE("TexEnv SrcReg selectors", "[TexEnv]")
@@ -159,42 +159,42 @@ TEST_CASE("TexEnv SrcReg selectors", "[TexEnv]")
     texEnv.setShiftRgb(0); // scale = 2^0 = 1
     texEnv.setShiftAlpha(0); // scale = 2^0 = 1
 
-    Vec4 previousColor { 0.1f, 0.1f, 0.1f, 0.1f };
-    Vec4 texSrcColor { 0.2f, 0.2f, 0.2f, 0.2f };
-    Vec4 primaryColor { 0.3f, 0.3f, 0.3f, 0.3f };
-    Vec4 constantColor { 0.4f, 0.4f, 0.4f, 0.4f };
+    Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.1f, 0.1f, 0.1f, 0.1f });
+    Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.2f, 0.2f, 0.2f, 0.2f });
+    Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.3f, 0.3f, 0.3f });
+    Vec4i16 constantColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.4f, 0.4f, 0.4f, 0.4f });
 
     SECTION("TEXTURE source")
     {
         texEnv.setSrcRegRgb0(SrcReg::TEXTURE);
         texEnv.setSrcRegAlpha0(SrcReg::TEXTURE);
-        Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
-        REQUIRE(vec4Approx(result, texSrcColor));
+        Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+        REQUIRE(rr::ut::vec4i16Approx(result, texSrcColor));
     }
 
     SECTION("PRIMARY_COLOR source")
     {
         texEnv.setSrcRegRgb0(SrcReg::PRIMARY_COLOR);
         texEnv.setSrcRegAlpha0(SrcReg::PRIMARY_COLOR);
-        Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
-        REQUIRE(vec4Approx(result, primaryColor));
+        Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+        REQUIRE(rr::ut::vec4i16Approx(result, primaryColor));
     }
 
     SECTION("PREVIOUS source")
     {
         texEnv.setSrcRegRgb0(SrcReg::PREVIOUS);
         texEnv.setSrcRegAlpha0(SrcReg::PREVIOUS);
-        Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
-        REQUIRE(vec4Approx(result, previousColor));
+        Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+        REQUIRE(rr::ut::vec4i16Approx(result, previousColor));
     }
 
     SECTION("CONSTANT source")
     {
         texEnv.setSrcRegRgb0(SrcReg::CONSTANT);
         texEnv.setSrcRegAlpha0(SrcReg::CONSTANT);
-        texEnv.setEnvColor(Vec4i16::createFromVecToInt<Vec4, 8>(constantColor));
-        Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
-        REQUIRE(vec4Approx(result, constantColor));
+        texEnv.setEnvColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.4f, 0.4f, 0.4f, 0.4f }));
+        Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+        REQUIRE(rr::ut::vec4i16Approx(result, constantColor));
     }
 }
 
@@ -211,15 +211,15 @@ TEST_CASE("TexEnv Operand ONE_MINUS_SRC_COLOR", "[TexEnv]")
     texEnv.setShiftRgb(0); // scale = 2^0 = 1
     texEnv.setShiftAlpha(0); // scale = 2^0 = 1
 
-    Vec4 previousColor { 0.0f, 0.0f, 0.0f, 0.0f };
-    Vec4 texSrcColor { 0.3f, 0.4f, 0.5f, 0.6f };
-    Vec4 primaryColor { 0.0f, 0.0f, 0.0f, 0.0f };
+    Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
+    Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.4f, 0.5f, 0.6f });
+    Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
 
-    Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+    Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
     // 1 - texture = (0.7, 0.6, 0.5, 0.4)
-    Vec4 expected { 0.7f, 0.6f, 0.5f, 0.4f };
+    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.7f, 0.6f, 0.5f, 0.4f });
 
-    REQUIRE(vec4Approx(result, expected));
+    REQUIRE(rr::ut::vec4i16Approx(result, expected));
 }
 
 TEST_CASE("TexEnv result clamping", "[TexEnv]")
@@ -239,15 +239,15 @@ TEST_CASE("TexEnv result clamping", "[TexEnv]")
     texEnv.setShiftRgb(0); // scale = 2^0 = 1
     texEnv.setShiftAlpha(0); // scale = 2^0 = 1
 
-    Vec4 previousColor { 0.0f, 0.0f, 0.0f, 0.0f };
-    Vec4 texSrcColor { 0.8f, 0.8f, 0.8f, 0.8f };
-    Vec4 primaryColor { 0.8f, 0.8f, 0.8f, 0.8f };
+    Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
+    Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.8f, 0.8f, 0.8f });
+    Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.8f, 0.8f, 0.8f });
 
-    Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+    Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
     // 0.8 + 0.8 = 1.6 -> clamped to 1.0
-    Vec4 expected { 1.0f, 1.0f, 1.0f, 1.0f };
+    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
 
-    REQUIRE(vec4Approx(result, expected));
+    REQUIRE(rr::ut::vec4i16Approx(result, expected));
 }
 
 TEST_CASE("TexEnv scale/shift", "[TexEnv]")
@@ -263,13 +263,13 @@ TEST_CASE("TexEnv scale/shift", "[TexEnv]")
     texEnv.setShiftRgb(1); // 2^1 = 2x scale
     texEnv.setShiftAlpha(1);
 
-    Vec4 previousColor { 0.0f, 0.0f, 0.0f, 0.0f };
-    Vec4 texSrcColor { 0.25f, 0.25f, 0.25f, 0.25f };
-    Vec4 primaryColor { 0.0f, 0.0f, 0.0f, 0.0f };
+    Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
+    Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.25f, 0.25f, 0.25f, 0.25f });
+    Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
 
-    Vec4 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
+    Vec4i16 result = texEnv.apply(previousColor, texSrcColor, primaryColor);
     // 0.25 * 2 = 0.5
-    Vec4 expected { 0.5f, 0.5f, 0.5f, 0.5f };
+    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 0.5f });
 
-    REQUIRE(vec4Approx(result, expected));
+    REQUIRE(rr::ut::vec4i16Approx(result, expected));
 }

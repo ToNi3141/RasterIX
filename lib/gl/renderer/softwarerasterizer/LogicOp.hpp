@@ -28,19 +28,12 @@ namespace rr::softwarerasterizer
 class LogicOp
 {
 public:
-    Vec4 op(const Vec4& src, const Vec4& dst) const
+    Vec4i16 op(const Vec4i16& src, const Vec4i16& dst) const
     {
         if (!m_enable)
             return src;
 
-        const Vec4i16 srcInt = Vec4i16::createFromVecToInt<Vec4, 8>(src);
-        const Vec4i16 dstInt = Vec4i16::createFromVecToInt<Vec4, 8>(dst);
-        const Vec4i16 resultInt = calcOp(srcInt, dstInt);
-        const Vec4 result { static_cast<float>(resultInt[0]) / 255.0f,
-            static_cast<float>(resultInt[1]) / 255.0f,
-            static_cast<float>(resultInt[2]) / 255.0f,
-            static_cast<float>(resultInt[3]) / 255.0f };
-        return result;
+        return calcOp(src, dst);
     }
 
     void setLogicOp(const rr::LogicOp logicOp)

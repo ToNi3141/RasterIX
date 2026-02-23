@@ -20,36 +20,22 @@
 namespace rr::softwarerasterizer
 {
 
-Vec4 TextureMap::getTexel(const float sf, const float tf) const
+Vec4i16 TextureMap::getTexel(const int32_t s, const int32_t t) const
 {
     if (!m_enable)
     {
-        return Vec4::createHomogeneous();
+        // Return homogeneous vector (0, 0, 0, 1) in S8.8 format
+        return Vec4i16 { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::One };
     }
-
-    const int32_t s = static_cast<int32_t>(sf * static_cast<float>(1 << 15));
-    const int32_t t = static_cast<int32_t>(tf * static_cast<float>(1 << 15));
 
     // TODO: Mipmapping (m_enableMinFilter)
     if (m_enableMagFilter)
     {
-        const Vec4i16 texel = getFilteredTexel(s - m_halfTexelSizeW, t - m_halfTexelSizeH);
-        return Vec4 {
-            static_cast<float>(texel[0]) / 255.0f,
-            static_cast<float>(texel[1]) / 255.0f,
-            static_cast<float>(texel[2]) / 255.0f,
-            static_cast<float>(texel[3]) / 255.0f
-        };
+        return getFilteredTexel(s - m_halfTexelSizeW, t - m_halfTexelSizeH);
     }
     else
     {
-        const Vec4i16 texel = getUnfilteredTexel(s, t);
-        return Vec4 {
-            static_cast<float>(texel[0]) / 255.0f,
-            static_cast<float>(texel[1]) / 255.0f,
-            static_cast<float>(texel[2]) / 255.0f,
-            static_cast<float>(texel[3]) / 255.0f
-        };
+        return getUnfilteredTexel(s, t);
     }
 }
 

@@ -69,71 +69,71 @@ TEST_CASE("Fog disabled returns original color", "[Fog]")
 {
     Fog fog;
     fog.setEnable(false);
-    fog.setFogColor(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f }));
 
-    const Vec4 inputColor { 1.0f, 0.0f, 0.0f, 1.0f };
-    const Vec4 result = fog.calculateFog(100.0f, inputColor);
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 0.0f, 0.0f, 1.0f });
+    const Vec4i16 result = fog.calculateFog(100.0f, inputColor);
 
-    REQUIRE(rr::ut::vec4Approx(result, inputColor));
+    REQUIRE(rr::ut::vec4i16Approx(result, inputColor, 2));
 }
 
 TEST_CASE("Fog enabled with w below lower bound returns original color", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
-    fog.setFogColor(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f }));
     fog.setFogLut(createConstantFogLut(0.0f), 10.0f, 100.0f);
 
-    const Vec4 inputColor { 1.0f, 0.0f, 0.0f, 1.0f };
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 0.0f, 0.0f, 1.0f });
     // w = 5.0 is below lower bound of 10.0, so factor should be 1.0 (no fog)
-    const Vec4 result = fog.calculateFog(5.0f, inputColor);
+    const Vec4i16 result = fog.calculateFog(5.0f, inputColor);
 
-    REQUIRE(rr::ut::vec4Approx(result, inputColor));
+    REQUIRE(rr::ut::vec4i16Approx(result, inputColor, 2));
 }
 
 TEST_CASE("Fog enabled with w above upper bound returns fog color", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
-    const Vec4 fogColor { 0.5f, 0.5f, 0.5f, 1.0f };
-    fog.setFogColor(fogColor);
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f }));
     fog.setFogLut(createConstantFogLut(0.5f), 10.0f, 100.0f);
 
-    const Vec4 inputColor { 1.0f, 0.0f, 0.0f, 0.8f };
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 0.0f, 0.0f, 0.8f });
     // w = 200.0 is above upper bound of 100.0, so factor should be 0.0 (full fog)
-    const Vec4 result = fog.calculateFog(200.0f, inputColor);
+    const Vec4i16 result = fog.calculateFog(200.0f, inputColor);
 
     // Full fog means result should be fog color but with original alpha
-    const Vec4 expected { fogColor[0], fogColor[1], fogColor[2], inputColor[3] };
-    REQUIRE(rr::ut::vec4Approx(result, expected));
+    const Vec4i16 fogColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
+    const Vec4i16 expected { fogColor[0], fogColor[1], fogColor[2], inputColor[3] };
+    REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
 }
 
 TEST_CASE("Fog preserves alpha channel", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
-    fog.setFogColor(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f }));
     fog.setFogLut(createConstantFogLut(0.5f), 1.0f, 1000.0f);
 
     SECTION("Alpha 1.0 preserved")
     {
-        const Vec4 inputColor { 1.0f, 1.0f, 1.0f, 1.0f };
-        const Vec4 result = fog.calculateFog(10.0f, inputColor);
-        REQUIRE(result[3] == Approx(1.0f));
+        const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+        const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
+        REQUIRE(result[3] == Approx(inputColor[3]).margin(2));
     }
 
     SECTION("Alpha 0.5 preserved")
     {
-        const Vec4 inputColor { 1.0f, 1.0f, 1.0f, 0.5f };
-        const Vec4 result = fog.calculateFog(10.0f, inputColor);
-        REQUIRE(result[3] == Approx(0.5f).margin(0.005f));
+        const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 0.5f });
+        const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
+        REQUIRE(result[3] == Approx(inputColor[3]).margin(2));
     }
 
     SECTION("Alpha 0.0 preserved")
     {
-        const Vec4 inputColor { 1.0f, 1.0f, 1.0f, 0.0f };
-        const Vec4 result = fog.calculateFog(10.0f, inputColor);
-        REQUIRE(result[3] == Approx(0.0f));
+        const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 0.0f });
+        const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
+        REQUIRE(result[3] == Vec4i16::Zero);
     }
 }
 
@@ -141,46 +141,45 @@ TEST_CASE("Fog factor 1.0 returns original color (RGB)", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
-    fog.setFogColor(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
     fog.setFogLut(createConstantFogLut(1.0f), 1.0f, 1000.0f);
 
-    const Vec4 inputColor { 0.8f, 0.6f, 0.4f, 1.0f };
-    const Vec4 result = fog.calculateFog(10.0f, inputColor);
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.6f, 0.4f, 1.0f });
+    const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
 
     // Factor 1.0 means full original color
-    REQUIRE(rr::ut::vec4Approx(result, inputColor));
+    REQUIRE(rr::ut::vec4i16Approx(result, inputColor, 2));
 }
 
 TEST_CASE("Fog factor 0.0 returns fog color (RGB)", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
-    const Vec4 fogColor { 0.3f, 0.3f, 0.3f, 1.0f };
-    fog.setFogColor(fogColor);
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.3f, 0.3f, 1.0f }));
     fog.setFogLut(createConstantFogLut(0.0f), 1.0f, 1000.0f);
 
-    const Vec4 inputColor { 0.8f, 0.6f, 0.4f, 0.7f };
-    const Vec4 result = fog.calculateFog(10.0f, inputColor);
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.6f, 0.4f, 0.7f });
+    const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
 
     // Factor 0.0 means full fog color, but alpha preserved
-    const Vec4 expected { fogColor[0], fogColor[1], fogColor[2], inputColor[3] };
-    REQUIRE(rr::ut::vec4Approx(result, expected));
+    const Vec4i16 fogColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.3f, 0.3f, 1.0f });
+    const Vec4i16 expected { fogColor[0], fogColor[1], fogColor[2], inputColor[3] };
+    REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
 }
 
 TEST_CASE("Fog factor 0.5 blends colors equally", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
-    const Vec4 fogColor { 0.0f, 0.0f, 0.0f, 1.0f };
-    fog.setFogColor(fogColor);
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
     fog.setFogLut(createConstantFogLut(0.5f), 1.0f, 1000.0f);
 
-    const Vec4 inputColor { 1.0f, 1.0f, 1.0f, 1.0f };
-    const Vec4 result = fog.calculateFog(10.0f, inputColor);
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+    const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
 
     // Factor 0.5 means 50% blend: (0.5 * fogColor) + (0.5 * inputColor)
-    const Vec4 expected { 0.5f, 0.5f, 0.5f, 1.0f };
-    REQUIRE(rr::ut::vec4Approx(result, expected));
+    const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
+    REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
 }
 
 TEST_CASE("Fog result is clamped to [0,1]", "[Fog]")
@@ -188,26 +187,26 @@ TEST_CASE("Fog result is clamped to [0,1]", "[Fog]")
     Fog fog;
     fog.setEnable(true);
     // Use extreme fog color values
-    fog.setFogColor(Vec4 { 2.0f, -1.0f, 1.5f, 1.0f });
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 2.0f, -1.0f, 1.5f, 1.0f }));
     fog.setFogLut(createConstantFogLut(0.0f), 1.0f, 1000.0f);
 
-    const Vec4 inputColor { 0.5f, 0.5f, 0.5f, 1.0f };
-    const Vec4 result = fog.calculateFog(10.0f, inputColor);
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
+    const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
 
     // Result should be clamped
-    REQUIRE(result[0] >= 0.0f);
-    REQUIRE(result[0] <= 1.0f);
-    REQUIRE(result[1] >= 0.0f);
-    REQUIRE(result[1] <= 1.0f);
-    REQUIRE(result[2] >= 0.0f);
-    REQUIRE(result[2] <= 1.0f);
+    REQUIRE(result[0] >= Vec4i16::Zero);
+    REQUIRE(result[0] <= Vec4i16::One);
+    REQUIRE(result[1] >= Vec4i16::Zero);
+    REQUIRE(result[1] <= Vec4i16::One);
+    REQUIRE(result[2] >= Vec4i16::Zero);
+    REQUIRE(result[2] <= Vec4i16::One);
 }
 
 TEST_CASE("Fog LUT interpolation uses log2 of w", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
-    fog.setFogColor(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
 
     // Create a LUT where entry 3 (w in range 8-16) returns factor 0.75
     Fog::FogLut lut = createConstantFogLut(0.0f);
@@ -215,21 +214,21 @@ TEST_CASE("Fog LUT interpolation uses log2 of w", "[Fog]")
     lut[3].b = floatToLutB(0.75f);
     fog.setFogLut(lut, 1.0f, 10000.0f);
 
-    const Vec4 inputColor { 1.0f, 1.0f, 1.0f, 1.0f };
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
 
     // w = 8.0 -> log2(8) = 3.0 -> index 3, frac 0.0
-    const Vec4 result = fog.calculateFog(8.0f, inputColor);
+    const Vec4i16 result = fog.calculateFog(8.0f, inputColor);
 
     // Factor 0.75 means 75% original + 25% fog
-    const Vec4 expected { 0.75f, 0.75f, 0.75f, 1.0f };
-    REQUIRE(rr::ut::vec4Approx(result, expected));
+    const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.75f, 0.75f, 0.75f, 1.0f });
+    REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
 }
 
 TEST_CASE("Fog LUT with slope interpolates within entry", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
-    fog.setFogColor(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
+    fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
 
     // Create a LUT where entry 3 interpolates from 1.0 to 0.5
     Fog::FogLut lut = createConstantFogLut(0.0f);
@@ -237,14 +236,14 @@ TEST_CASE("Fog LUT with slope interpolates within entry", "[Fog]")
     lut[3].m = floatToLutM(-0.5f); // End at 0.5 (b + m*1.0 = 0.5)
     fog.setFogLut(lut, 1.0f, 10000.0f);
 
-    const Vec4 inputColor { 1.0f, 1.0f, 1.0f, 1.0f };
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
 
     SECTION("At start of range (frac=0)")
     {
         // w = 8.0 -> log2(8) = 3.0 -> index 3, frac 0.0
         // factor = 1.0 + (-0.5 * 0.0) = 1.0
-        const Vec4 result = fog.calculateFog(8.0f, inputColor);
-        REQUIRE(rr::ut::vec4Approx(result, inputColor));
+        const Vec4i16 result = fog.calculateFog(8.0f, inputColor);
+        REQUIRE(rr::ut::vec4i16Approx(result, inputColor, 2));
     }
 
     SECTION("At middle of range (frac=0.5)")
@@ -252,9 +251,9 @@ TEST_CASE("Fog LUT with slope interpolates within entry", "[Fog]")
         // w = 12.0 = 1.5 * 2^3 -> index 3, mantissa represents 0.5
         // factor = 1.0 + (-0.5 * 0.5) = 0.75
         const float w = 12.0f;
-        const Vec4 result = fog.calculateFog(w, inputColor);
-        const Vec4 expected { 0.75f, 0.75f, 0.75f, 1.0f };
-        REQUIRE(rr::ut::vec4Approx(result, expected));
+        const Vec4i16 result = fog.calculateFog(w, inputColor);
+        const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.75f, 0.75f, 0.75f, 1.0f });
+        REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
     }
 }
 
@@ -264,29 +263,29 @@ TEST_CASE("Fog with different colors", "[Fog]")
     fog.setEnable(true);
     fog.setFogLut(createConstantFogLut(0.0f), 1.0f, 1000.0f);
 
-    const Vec4 inputColor { 1.0f, 0.5f, 0.25f, 1.0f };
+    const Vec4i16 inputColor = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 0.5f, 0.25f, 1.0f });
 
     SECTION("White fog")
     {
-        fog.setFogColor(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
-        const Vec4 result = fog.calculateFog(10.0f, inputColor);
-        const Vec4 expected { 1.0f, 1.0f, 1.0f, 1.0f };
-        REQUIRE(rr::ut::vec4Approx(result, expected));
+        fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f }));
+        const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
+        const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+        REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
     }
 
     SECTION("Black fog")
     {
-        fog.setFogColor(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
-        const Vec4 result = fog.calculateFog(10.0f, inputColor);
-        const Vec4 expected { 0.0f, 0.0f, 0.0f, 1.0f };
-        REQUIRE(rr::ut::vec4Approx(result, expected));
+        fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
+        const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
+        const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
+        REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
     }
 
     SECTION("Blue fog")
     {
-        fog.setFogColor(Vec4 { 0.0f, 0.0f, 1.0f, 1.0f });
-        const Vec4 result = fog.calculateFog(10.0f, inputColor);
-        const Vec4 expected { 0.0f, 0.0f, 1.0f, 1.0f };
-        REQUIRE(rr::ut::vec4Approx(result, expected));
+        fog.setFogColor(Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 1.0f, 1.0f }));
+        const Vec4i16 result = fog.calculateFog(10.0f, inputColor);
+        const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 1.0f, 1.0f });
+        REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
     }
 }

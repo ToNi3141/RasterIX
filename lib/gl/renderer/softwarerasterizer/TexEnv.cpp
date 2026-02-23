@@ -23,23 +23,17 @@
 namespace rr::softwarerasterizer
 {
 
-Vec4 TexEnv::apply(
-    const Vec4& previousColorf,
-    const Vec4& texSrcColorf,
-    const Vec4& primaryColorf) const
+Vec4i16 TexEnv::apply(
+    const Vec4i16& previousColor,
+    const Vec4i16& texSrcColor,
+    const Vec4i16& primaryColor) const
 {
-    const Vec4i16 previousColor = Vec4i16::createFromVecToInt<Vec4, 8>(previousColorf);
-    const Vec4i16 texSrcColor = Vec4i16::createFromVecToInt<Vec4, 8>(texSrcColorf);
-    const Vec4i16 primaryColor = Vec4i16::createFromVecToInt<Vec4, 8>(primaryColorf);
     if (!m_enable)
     {
-        return Vec4 { static_cast<float>(previousColor[0]) / static_cast<float>(Vec4i16::One),
-            static_cast<float>(previousColor[1]) / static_cast<float>(Vec4i16::One),
-            static_cast<float>(previousColor[2]) / static_cast<float>(Vec4i16::One),
-            static_cast<float>(previousColor[3]) / static_cast<float>(Vec4i16::One) };
+        return previousColor;
     }
 
-    const Vec4i16 constantColor = m_envColor;
+    const Vec4i16& constantColor = m_envColor;
 
     // Select source colors
     const Vec4i16& srcColorRgb0 = selectSrc(m_srcRegRgb0, texSrcColor, constantColor, primaryColor, previousColor);
@@ -82,10 +76,7 @@ Vec4 TexEnv::apply(
         resultAlpha = resultRgb[0];
     }
 
-    return Vec4 { static_cast<float>(resultRgb[0]) / static_cast<float>(Vec4i16::One),
-        static_cast<float>(resultRgb[1]) / static_cast<float>(Vec4i16::One),
-        static_cast<float>(resultRgb[2]) / static_cast<float>(Vec4i16::One),
-        static_cast<float>(resultAlpha) / static_cast<float>(Vec4i16::One) };
+    return Vec4i16 { resultRgb[0], resultRgb[1], resultRgb[2], resultAlpha };
 }
 
 } // namespace rr::softwarerasterizer
