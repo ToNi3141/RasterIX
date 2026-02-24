@@ -63,7 +63,15 @@ private:
         t = t >> 17; // S3.28 -> Sx.11
         q = q >> 13; // S3.28 -> Sx.15
 
-        q = (static_cast<int32_t>(1) << 30) / q; // S1.30 / S3.15 -> Sx.15
+        if (q != 0)
+        {
+            q = (static_cast<int32_t>(1) << 30) / q; // S1.30 / S3.15 -> Sx.15
+        }
+        else
+        {
+            q = std::numeric_limits<int32_t>::max();
+        }
+
         s *= q; // Sx.11 * Sx.15 -> Sx.26
         t *= q; // Sx.11 * Sx.15 -> Sx.26
         s = s >> 11; // Sx.26 -> Sx.15

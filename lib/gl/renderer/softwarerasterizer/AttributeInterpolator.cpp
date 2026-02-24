@@ -93,7 +93,11 @@ InterpolatedAttributesData AttributeInterpolator::interpolate(
     // depthZ is S1.30 -> Sx.16, clamp to valid range
     const int32_t clampedDepthZ = std::clamp(depthZ >> 14, static_cast<int32_t>(0), static_cast<int32_t>(1u << 16) - 1);
 
-    const int32_t depthW = static_cast<int32_t>(1 << 30) / (ooDepthW >> 15); // S1.30 / Sx.15 -> Sx.15
+    int32_t depthW = std::numeric_limits<int32_t>::max();
+    if (ooDepthW != 0)
+    {
+        depthW = static_cast<int32_t>(1 << 30) / (ooDepthW >> 15); // S1.30 / Sx.15 -> Sx.15
+    }
     const float depthWfloat = static_cast<float>(depthW) / static_cast<float>(1 << 15);
 
     return {
