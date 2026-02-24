@@ -58,21 +58,21 @@ public:
     void div(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (((static_cast<int64_t>(vec[i]) << LocalShift) / static_cast<int64_t>(val)));
+            vec[i] = (((static_cast<T>(vec[i]) << LocalShift) / static_cast<T>(val)));
     }
 
     template <std::size_t LocalShift = DefaultShift>
     void mul(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (static_cast<int64_t>(vec[i]) * val) >> LocalShift;
+            vec[i] = (static_cast<T>(vec[i]) * val) >> LocalShift;
     }
 
     template <std::size_t LocalShift = DefaultShift>
     void mul(const Veci<T, VecSize, DefaultShift>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (static_cast<int64_t>(vec[i]) * val[i]) >> LocalShift;
+            vec[i] = (static_cast<T>(vec[i]) * val[i]) >> LocalShift;
     }
 
     Veci<T, VecSize, DefaultShift>& operator+=(const Veci<T, VecSize, DefaultShift>& val)
@@ -149,11 +149,11 @@ public:
     }
 
     template <std::size_t LocalShift = DefaultShift>
-    int64_t dot(const Veci<T, VecSize, DefaultShift>& val) const
+    T dot(const Veci<T, VecSize, DefaultShift>& val) const
     {
-        int64_t retVal = 0;
+        T retVal = 0;
         for (std::size_t i = 0; i < VecSize; i++)
-            retVal += (static_cast<int64_t>(vec[i]) * val[i]);
+            retVal += (static_cast<T>(vec[i]) * val[i]);
         return retVal >> LocalShift;
     }
 

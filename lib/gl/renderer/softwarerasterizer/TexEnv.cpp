@@ -73,7 +73,11 @@ Vec4i16 TexEnv::apply(
 
     if (m_combineRgb == Combine::DOT3_RGB || m_combineRgb == Combine::DOT3_RGBA)
     {
-        resultAlpha = resultRgb[0];
+        if (m_combineRgb == Combine::DOT3_RGB)
+        {
+            return Vec4i16 { resultRgb[0], resultRgb[0], resultRgb[0], resultAlpha };
+        }
+        return Vec4i16 { resultRgb[0], resultRgb[0], resultRgb[0], resultRgb[0] };
     }
 
     return Vec4i16 { resultRgb[0], resultRgb[1], resultRgb[2], resultAlpha };

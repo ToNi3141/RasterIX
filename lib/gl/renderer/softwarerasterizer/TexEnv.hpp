@@ -125,7 +125,7 @@ public:
     }
 
 private:
-    float selectSrcAlpha(
+    Vec4i16::Type selectSrcAlpha(
         const SrcReg& srcReg,
         const Vec4i16& texture,
         const Vec4i16& constant,
@@ -232,7 +232,7 @@ private:
             result -= Vec3i16 { Vec3i16::Half, Vec3i16::Half, Vec3i16::Half };
             break;
         case Combine::INTERPOLATE:
-            result = op0 + (op1 - op2) * op2;
+            result = op0 * op2 + op1 * (Vec3i16 { Vec3i16::One, Vec3i16::One, Vec3i16::One } - op2);
             break;
         case Combine::SUBTRACT:
             result = op0;
@@ -251,13 +251,13 @@ private:
         return result;
     }
 
-    float combineAlpha(
+    Vec4i16::Type combineAlpha(
         const Combine& combine,
         const Vec3i16::Type& op0,
         const Vec3i16::Type& op1,
         const Vec3i16::Type& op2) const
     {
-        float result {};
+        Vec4i16::Type result {};
         switch (combine)
         {
         case Combine::REPLACE:
@@ -273,7 +273,7 @@ private:
             result = op0 + op1 - Vec3i16::Half;
             break;
         case Combine::INTERPOLATE:
-            result = op0 + ((static_cast<Vec3i16::Type>(op1 - op2) * op2) >> Vec3i16::Shift);
+            result = ((static_cast<int32_t>(op0) * op2 + static_cast<int32_t>(op1) * (Vec3i16::One - op2)) >> Vec3i16::Shift);
             break;
         case Combine::SUBTRACT:
             result = op0 - op1;
@@ -303,8 +303,8 @@ private:
     Operand m_operandAlpha1 {};
     Operand m_operandAlpha2 {};
 
-    Vec3i16::Type m_scaleRgb { Vec3i16::One };
-    Vec3i16::Type m_scaleAlpha { Vec3i16::One };
+    uint8_t m_scaleRgb { 0 };
+    uint8_t m_scaleAlpha { 0 };
 
     bool m_enable { false };
 };
