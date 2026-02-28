@@ -82,6 +82,7 @@ private:
         t *= q; // Sx.13 * Sx.11 -> Sx.24
         s = s >> 9; // Sx.24 -> Sx.15
         t = t >> 9; // Sx.24 -> Sx.15
+        q <<= 4;
 
         return InterpolatedAttributesData::Texture { s, t, q };
     }
