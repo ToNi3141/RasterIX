@@ -96,7 +96,7 @@ public:
     }
 
 private:
-    static constexpr int32_t SHIFT_15 = 15; // Number of fractional bits in S16.15 fixed-point format
+    static constexpr uint32_t SHIFT_15 = 15; // Number of fractional bits in S16.15 fixed-point format
     static constexpr int32_t ONE_15 = 1 << SHIFT_15; // S16.15 fixed-point one
     static constexpr int32_t HALF_15 = ONE_15 >> 1; // S16.15 fixed-point half
     static constexpr int32_t ZERO_15 = 0; // S16.15 fixed-point zero
@@ -124,9 +124,8 @@ private:
             return coord;
         }
         // REPEAT mode
-        const int32_t cInt = coord >> SHIFT_15;
-        const int32_t cFrac = coord & (ONE_15 - 1); // Fractional part in S16.15
-        return (cFrac < ZERO_15) ? (ONE_15 + cFrac) : cFrac;
+        const int32_t cFrac = coord & ((ONE_15 - 1) | 0x80000000); // Fractional part in S16.15
+        return (coord < ZERO_15) ? (ONE_15 + cFrac) : cFrac;
     }
 
     // Convert normalized coordinates to integer texel coordinates with wrapping
@@ -137,8 +136,8 @@ private:
 
         if (m_wrapModeS == TextureWrapMode::CLAMP_TO_EDGE)
         {
-            return { static_cast<uint32_t>(std::clamp(sInt, ZERO_15, m_textureMaskW)),
-                static_cast<uint32_t>(std::clamp(tInt, ZERO_15, m_textureMaskH)) };
+            return { static_cast<uint32_t>(std::clamp(sInt, 0, m_textureMaskW)),
+                static_cast<uint32_t>(std::clamp(tInt, 0, m_textureMaskH)) };
         }
         // REPEAT - use bitmask for power-of-2 textures
         return { static_cast<uint32_t>(sInt & m_textureMaskW),

@@ -56,15 +56,15 @@ namespace TriangleStreamTypes
 
     struct TextureX
     {
-        Vec3i texStq;
-        Vec3i texStqXInc;
-        Vec3i texStqYInc;
+        Vec3iTexInterp texStq;
+        Vec3iTexInterp texStqXInc;
+        Vec3iTexInterp texStqYInc;
 
         void operator=(const Texture& t)
         {
-            texStq.fromVec<Vec3, 28>(t.texStq);
-            texStqXInc.fromVec<Vec3, 28>(t.texStqXInc);
-            texStqYInc.fromVec<Vec3, 28>(t.texStqYInc);
+            texStq.fromVec<Vec3>(t.texStq);
+            texStqXInc.fromVec<Vec3>(t.texStqXInc);
+            texStqYInc.fromVec<Vec3>(t.texStqYInc);
         }
     };
 
@@ -78,12 +78,12 @@ namespace TriangleStreamTypes
         Vec3i wInit;
         Vec3i wXInc;
         Vec3i wYInc;
-        Vec4i color;
-        Vec4i colorXInc;
-        Vec4i colorYInc;
-        Vec2i depthZw;
-        Vec2i depthZwXInc;
-        Vec2i depthZwYInc;
+        Vec4iColorInterp color;
+        Vec4iColorInterp colorXInc;
+        Vec4iColorInterp colorYInc;
+        Vec2iDepthInterp depthZw;
+        Vec2iDepthInterp depthZwXInc;
+        Vec2iDepthInterp depthZwYInc;
 
         void operator=(const StaticParams& t)
         {
@@ -94,12 +94,12 @@ namespace TriangleStreamTypes
             wInit = t.wInit;
             wXInc = t.wXInc;
             wYInc = t.wYInc;
-            color.fromVec<Vec4, 24>(t.color);
-            colorXInc.fromVec<Vec4, 24>(t.colorXInc);
-            colorYInc.fromVec<Vec4, 24>(t.colorYInc);
-            depthZw.fromVec<Vec2, 30>(t.depthZw);
-            depthZwXInc.fromVec<Vec2, 30>(t.depthZwXInc);
-            depthZwYInc.fromVec<Vec2, 30>(t.depthZwYInc);
+            color.fromVec<Vec4>(t.color);
+            colorXInc.fromVec<Vec4>(t.colorXInc);
+            colorYInc.fromVec<Vec4>(t.colorYInc);
+            depthZw.fromVec<Vec2>(t.depthZw);
+            depthZwXInc.fromVec<Vec2>(t.depthZwXInc);
+            depthZwYInc.fromVec<Vec2>(t.depthZwYInc);
         }
     };
 

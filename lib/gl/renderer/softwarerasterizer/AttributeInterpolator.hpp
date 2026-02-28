@@ -55,27 +55,33 @@ private:
         const int32_t bbx,
         const int32_t bby)
     {
+        // This interpolation has a high impact on the image quality.
+        // More precision here would result in a less distorted image.
+        // The tradeoff here is between performance and visual fidelity.
+        // We choose performance over visual fidelity.
+        // For instance, 64 bit calculations would increase the fidelity to a noticeable degree.
+
         int32_t s = interpolateAttribute(texture.texStq[0], texture.texStqXInc[0], texture.texStqYInc[0], bbx, bby); // S3.28
         int32_t t = interpolateAttribute(texture.texStq[1], texture.texStqXInc[1], texture.texStqYInc[1], bbx, bby); // S3.28
         int32_t q = interpolateAttribute(texture.texStq[2], texture.texStqXInc[2], texture.texStqYInc[2], bbx, bby); // S3.28
 
-        s = s >> 17; // S3.28 -> Sx.11
-        t = t >> 17; // S3.28 -> Sx.11
-        q = q >> 13; // S3.28 -> Sx.15
+        s = s >> 15; // S3.28 -> S3.13 Note: Hardware uses S3.20
+        t = t >> 15; // S3.28 -> S3.13 Note: Hardware uses S3.20
+        q = q >> 15; // S3.28 -> S3.13 Note: Hardware uses S3.21
 
         if (q != 0)
         {
-            q = (static_cast<int32_t>(1) << 30) / q; // S1.30 / S3.15 -> Sx.15
+            q = (static_cast<int32_t>(1) << 24) / q; // S1.24 / S3.13 -> Sx.11
         }
         else
         {
             q = std::numeric_limits<int32_t>::max();
         }
 
-        s *= q; // Sx.11 * Sx.15 -> Sx.26
-        t *= q; // Sx.11 * Sx.15 -> Sx.26
-        s = s >> 11; // Sx.26 -> Sx.15
-        t = t >> 11; // Sx.26 -> Sx.15
+        s *= q; // Sx.13 * Sx.11 -> Sx.24
+        t *= q; // Sx.13 * Sx.11 -> Sx.24
+        s = s >> 9; // Sx.24 -> Sx.15
+        t = t >> 9; // Sx.24 -> Sx.15
 
         return InterpolatedAttributesData::Texture { s, t, q };
     }

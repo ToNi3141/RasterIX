@@ -90,8 +90,8 @@ Vec4i16 TextureMap::getFilteredTexel(const int32_t s, const int32_t t) const
     const Vec4i16 c11 = m_deserialize(texel11);
 
     // Bilinear interpolation factors in S16.15
-    const int32_t factorS_15 = sTexel & (ONE_15 - 1);
-    const int32_t factorT_15 = tTexel & (ONE_15 - 1);
+    const int32_t factorS_15 = sTexel & (static_cast<uint32_t>(ONE_15 - 1) | 0x80000000); // Fractional part in S16.15
+    const int32_t factorT_15 = tTexel & (static_cast<uint32_t>(ONE_15 - 1) | 0x80000000); // Fractional part in S16.15
 
     // Convert factors from S16.15 to S8.8 for Vec4i16::interpolate
     const int16_t factorS = static_cast<int16_t>(factorS_15 >> (SHIFT_15 - Vec4i16::Shift));
