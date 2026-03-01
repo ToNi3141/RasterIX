@@ -38,7 +38,7 @@ struct InterpolatedAttributesData
     std::array<Texture, RenderConfig::TMU_COUNT> texMipmap;
     float depthW;
     int32_t depthZ;
-    Vec4i16 color;
+    Vec4iColorRGBA color;
 };
 
 } // namespace rr::softwarerasterizer

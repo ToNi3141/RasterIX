@@ -20,7 +20,7 @@
 #include "Helper.hpp"
 #include "renderer/softwarerasterizer/LogicOp.hpp"
 
-using rr::Vec4i16;
+using rr::Vec4iColorRGBA;
 using rr::ut::vec4i16Approx;
 
 // LogicOp converts to/from 8-bit integers, so needs larger tolerance for fixed-point
@@ -32,10 +32,10 @@ TEST_CASE("LogicOp disabled returns source unchanged", "[LogicOp]")
     rr::softwarerasterizer::LogicOp logicOp;
     logicOp.setEnable(false);
 
-    Vec4i16 src = Vec4i16 { 127, 153, 178, 204 };
-    Vec4i16 dst = Vec4i16 { 25, 51, 76, 102 };
+    Vec4iColorRGBA src = Vec4iColorRGBA { 127, 153, 178, 204 };
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 25, 51, 76, 102 };
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
 
     REQUIRE(vec4i16Approx(result, src, LOGIC_OP_TOLERANCE));
 }
@@ -46,11 +46,11 @@ TEST_CASE("LogicOp CLEAR", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::CLEAR);
 
-    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
-    Vec4i16 dst = Vec4i16 { 127, 127, 127, 127 };
+    Vec4iColorRGBA src = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 127, 127, 127, 127 };
 
-    Vec4i16 result = logicOp.op(src, dst);
-    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
+    Vec4iColorRGBA result = logicOp.op(src, dst);
+    Vec4iColorRGBA expected { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -61,11 +61,11 @@ TEST_CASE("LogicOp SET", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::SET);
 
-    Vec4i16 src = Vec4i16 { 0, 0, 0, 0 };
-    Vec4i16 dst = Vec4i16 { 127, 127, 127, 127 };
+    Vec4iColorRGBA src = Vec4iColorRGBA { 0, 0, 0, 0 };
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 127, 127, 127, 127 };
 
-    Vec4i16 result = logicOp.op(src, dst);
-    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4iColorRGBA result = logicOp.op(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -76,10 +76,10 @@ TEST_CASE("LogicOp COPY", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::COPY);
 
-    Vec4i16 src = Vec4i16 { 127, 153, 178, 204 };
-    Vec4i16 dst = Vec4i16 { 25, 51, 76, 102 };
+    Vec4iColorRGBA src = Vec4iColorRGBA { 127, 153, 178, 204 };
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 25, 51, 76, 102 };
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
 
     REQUIRE(vec4i16Approx(result, src, LOGIC_OP_TOLERANCE));
 }
@@ -90,11 +90,11 @@ TEST_CASE("LogicOp COPY_INVERTED", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::COPY_INVERTED);
 
-    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
-    Vec4i16 dst = Vec4i16 { 127, 127, 127, 127 };
+    Vec4iColorRGBA src = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 127, 127, 127, 127 };
 
-    Vec4i16 result = logicOp.op(src, dst);
-    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
+    Vec4iColorRGBA result = logicOp.op(src, dst);
+    Vec4iColorRGBA expected { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -105,10 +105,10 @@ TEST_CASE("LogicOp NOOP", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::NOOP);
 
-    Vec4i16 src = Vec4i16 { 127, 153, 178, 204 };
-    Vec4i16 dst = Vec4i16 { 25, 51, 76, 102 };
+    Vec4iColorRGBA src = Vec4iColorRGBA { 127, 153, 178, 204 };
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 25, 51, 76, 102 };
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
 
     REQUIRE(vec4i16Approx(result, dst, LOGIC_OP_TOLERANCE));
 }
@@ -119,11 +119,11 @@ TEST_CASE("LogicOp INVERT", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::INVERT);
 
-    Vec4i16 src = Vec4i16 { 127, 127, 127, 127 };
-    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4iColorRGBA src = Vec4iColorRGBA { 127, 127, 127, 127 };
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF };
 
-    Vec4i16 result = logicOp.op(src, dst);
-    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
+    Vec4iColorRGBA result = logicOp.op(src, dst);
+    Vec4iColorRGBA expected { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -135,10 +135,10 @@ TEST_CASE("LogicOp AND", "[LogicOp]")
     logicOp.setLogicOp(rr::LogicOp::AND);
 
     // 0xFF & 0x3C = 0x3C
-    Vec4i16 src { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
-    Vec4i16 dst { 0x3C, 0x3C, 0x3C, 0x3C }; // 0x3C
+    Vec4iColorRGBA src { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA dst { 0x3C, 0x3C, 0x3C, 0x3C }; // 0x3C
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // 0xFF & 0x3C = 0x3C
     REQUIRE(vec4i16Approx(result, dst, LOGIC_OP_TOLERANCE));
 }
@@ -149,12 +149,12 @@ TEST_CASE("LogicOp OR", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::OR);
 
-    Vec4i16 src = Vec4i16 { 0x55, 0x55, 0x55, 0x55 }; // 0x55
-    Vec4i16 dst = Vec4i16 { 0xAA, 0xAA, 0xAA, 0xAA }; // 0xAA
+    Vec4iColorRGBA src = Vec4iColorRGBA { 0x55, 0x55, 0x55, 0x55 }; // 0x55
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 0xAA, 0xAA, 0xAA, 0xAA }; // 0xAA
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // 0x55 | 0xAA = 0xFF
-    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4iColorRGBA expected = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -165,12 +165,12 @@ TEST_CASE("LogicOp XOR", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::XOR);
 
-    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
-    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA src = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // 0xFF ^ 0xFF = 0x00
-    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
+    Vec4iColorRGBA expected { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -181,12 +181,12 @@ TEST_CASE("LogicOp NAND", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::NAND);
 
-    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
-    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA src = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // ~(0xFF & 0xFF) = ~0xFF = 0x00
-    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
+    Vec4iColorRGBA expected { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -197,12 +197,12 @@ TEST_CASE("LogicOp NOR", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::NOR);
 
-    Vec4i16 src { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
-    Vec4i16 dst { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
+    Vec4iColorRGBA src { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero }; // 0x00
+    Vec4iColorRGBA dst { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero }; // 0x00
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // ~(0x00 | 0x00) = ~0x00 = 0xFF
-    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4iColorRGBA expected = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -213,12 +213,12 @@ TEST_CASE("LogicOp EQUIV", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::EQUIV);
 
-    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
-    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA src = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // ~(0xFF ^ 0xFF) = ~0x00 = 0xFF
-    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4iColorRGBA expected = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -229,12 +229,12 @@ TEST_CASE("LogicOp AND_REVERSE", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::AND_REVERSE);
 
-    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
-    Vec4i16 dst { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
+    Vec4iColorRGBA src = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA dst { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero }; // 0x00
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // 0xFF & ~0x00 = 0xFF & 0xFF = 0xFF
-    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4iColorRGBA expected = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -245,12 +245,12 @@ TEST_CASE("LogicOp AND_INVERTED", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::AND_INVERTED);
 
-    Vec4i16 src { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
-    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA src { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero }; // 0x00
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // ~0x00 & 0xFF = 0xFF & 0xFF = 0xFF
-    Vec4i16 expected = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF };
+    Vec4iColorRGBA expected = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -261,12 +261,12 @@ TEST_CASE("LogicOp OR_REVERSE", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::OR_REVERSE);
 
-    Vec4i16 src { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
-    Vec4i16 dst = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA src { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero }; // 0x00
+    Vec4iColorRGBA dst = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // 0x00 | ~0xFF = 0x00 | 0x00 = 0x00
-    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
+    Vec4iColorRGBA expected { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }
@@ -277,12 +277,12 @@ TEST_CASE("LogicOp OR_INVERTED", "[LogicOp]")
     logicOp.setEnable(true);
     logicOp.setLogicOp(rr::LogicOp::OR_INVERTED);
 
-    Vec4i16 src = Vec4i16 { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
-    Vec4i16 dst { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero }; // 0x00
+    Vec4iColorRGBA src = Vec4iColorRGBA { 0xFF, 0xFF, 0xFF, 0xFF }; // 0xFF
+    Vec4iColorRGBA dst { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero }; // 0x00
 
-    Vec4i16 result = logicOp.op(src, dst);
+    Vec4iColorRGBA result = logicOp.op(src, dst);
     // ~0xFF | 0x00 = 0x00 | 0x00 = 0x00
-    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
+    Vec4iColorRGBA expected { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
 
     REQUIRE(vec4i16Approx(result, expected, LOGIC_OP_TOLERANCE));
 }

@@ -169,24 +169,14 @@ bool Texture::setTexEnvColor(const Vec4& color)
     return m_renderer.setTexEnvColor(
         {
             m_tmu,
-            Vec4i {
-                static_cast<uint8_t>(color[0] * 255.0f),
-                static_cast<uint8_t>(color[1] * 255.0f),
-                static_cast<uint8_t>(color[2] * 255.0f),
-                static_cast<uint8_t>(color[3] * 255.0f),
-            },
+            Vec4iColorRGBA::createFromVecToInt(color),
         });
 }
 
 Vec4 Texture::getTexEnvColor() const
 {
-    const Vec4i colorInt = m_renderer.getTexEnvColor(m_tmu);
-    return Vec4 {
-        static_cast<float>(colorInt[0]) / 255.0f,
-        static_cast<float>(colorInt[1]) / 255.0f,
-        static_cast<float>(colorInt[2]) / 255.0f,
-        static_cast<float>(colorInt[3]) / 255.0f,
-    };
+    const Vec4iColorRGBA colorInt = m_renderer.getTexEnvColor(m_tmu);
+    return Vec4 { colorInt.toFloat() };
 }
 
 void Texture::setBoundTexture(const uint16_t val)

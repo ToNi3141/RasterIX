@@ -38,7 +38,7 @@ public:
         m_gram = gram;
     }
 
-    Vec4i16 getTexel(const int32_t s, const int32_t t) const;
+    Vec4iColorRGBA getTexel(const int32_t s, const int32_t t) const;
 
     bool isEnabled() const
     {
@@ -87,7 +87,7 @@ public:
     {
         m_pixelFormat = format;
         // Set function pointer based on pixel format using shared helper
-        m_deserialize = softwarerasterizerhelpers::getDeserializeTexelIntFn(format);
+        m_deserialize = softwarerasterizerhelpers::getDeserializeTexelFn(format);
     }
 
     void setEnable(const bool enable)
@@ -101,8 +101,8 @@ private:
     static constexpr int32_t HALF_15 = ONE_15 >> 1; // S16.15 fixed-point half
     static constexpr int32_t ZERO_15 = 0; // S16.15 fixed-point zero
 
-    Vec4i16 getUnfilteredTexel(const int32_t s, const int32_t t) const;
-    Vec4i16 getFilteredTexel(const int32_t s, const int32_t t) const;
+    Vec4iColorRGBA getUnfilteredTexel(const int32_t s, const int32_t t) const;
+    Vec4iColorRGBA getFilteredTexel(const int32_t s, const int32_t t) const;
 
     uint16_t readTexelAtAddr(const uint32_t texelAddress) const
     {
@@ -201,7 +201,7 @@ private:
     bool m_enableMinFilter { false };
 
     DevicePixelFormat m_pixelFormat { DevicePixelFormat::RGBA4444 };
-    softwarerasterizerhelpers::DeserializeTexelIntFn m_deserialize {
+    softwarerasterizerhelpers::DeserializeTexelFn m_deserialize {
         &softwarerasterizerhelpers::deserializeTexelRGBA4444
     };
 

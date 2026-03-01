@@ -279,7 +279,7 @@ public:
     /// @brief Gets the texture environment color for a given TMU
     /// @param tmu The TMU to get the color from
     /// @return The texture environment color
-    Vec4i getTexEnvColor(const std::size_t tmu) const { return m_texEnvColors[tmu]; }
+    Vec4iColorRGBA getTexEnvColor(const std::size_t tmu) const { return m_texEnvColors[tmu]; }
 
     /// @brief Sets the fog color
     /// @param color the fog color
@@ -423,7 +423,7 @@ private:
     std::array<DisplayListAssemblerType, 2> m_displayListAssembler {};
     DisplayListDoubleBufferType m_displayListBuffer { m_displayListAssembler[0], m_displayListAssembler[1] };
 
-    std::array<Vec4i, RenderConfig::TMU_COUNT> m_texEnvColors {};
+    std::array<Vec4iColorRGBA, RenderConfig::TMU_COUNT> m_texEnvColors {};
 
     ColorBufferClearColorReg m_clearColorReg {};
     DepthBufferClearDepthReg m_clearDepthReg {};

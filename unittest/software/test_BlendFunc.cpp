@@ -21,7 +21,7 @@
 #include "renderer/softwarerasterizer/BlendFunc.hpp"
 
 using rr::Vec4;
-using rr::Vec4i16;
+using rr::Vec4iColorRGBA;
 using rr::ut::vec4i16Approx;
 // Note: We use softwarerasterizer::BlendFunc explicitly to avoid
 // ambiguity with rr::BlendFunc (the enum)
@@ -31,10 +31,10 @@ TEST_CASE("BlendFunc disabled returns source unchanged", "[BlendFunc]")
     rr::softwarerasterizer::BlendFunc blend;
     blend.setEnable(false);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.6f, 0.7f, 0.8f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.1f, 0.2f, 0.3f, 0.4f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.6f, 0.7f, 0.8f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.1f, 0.2f, 0.3f, 0.4f });
 
-    Vec4i16 result = blend.blend(src, dst);
+    Vec4iColorRGBA result = blend.blend(src, dst);
 
     REQUIRE(vec4i16Approx(result, src));
 }
@@ -46,11 +46,11 @@ TEST_CASE("BlendFunc ZERO factor", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::ZERO);
     blend.setDFactor(rr::BlendFunc::ZERO);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.6f, 0.7f, 0.8f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.1f, 0.2f, 0.3f, 0.4f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.6f, 0.7f, 0.8f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.1f, 0.2f, 0.3f, 0.4f });
 
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -62,11 +62,11 @@ TEST_CASE("BlendFunc ONE factor", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::ONE);
     blend.setDFactor(rr::BlendFunc::ONE);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.3f, 0.3f, 0.3f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.2f, 0.2f, 0.2f, 0.2f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.3f, 0.3f, 0.3f, 0.3f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.2f, 0.2f, 0.2f, 0.2f });
 
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 0.5f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 0.5f });
 
     REQUIRE(vec4i16Approx(result, expected, 2));
 }
@@ -78,12 +78,12 @@ TEST_CASE("BlendFunc DST_COLOR factor", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::DST_COLOR);
     blend.setDFactor(rr::BlendFunc::ZERO);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.4f, 0.3f, 0.2f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.4f, 0.3f, 0.2f });
 
     // result = src * dst + dst * 0 = dst
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.4f, 0.3f, 0.2f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.4f, 0.3f, 0.2f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -95,12 +95,12 @@ TEST_CASE("BlendFunc ONE_MINUS_SRC_COLOR factor", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::ZERO);
     blend.setDFactor(rr::BlendFunc::ONE_MINUS_SRC_COLOR);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.2f, 0.3f, 0.4f, 0.5f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.2f, 0.3f, 0.4f, 0.5f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
 
     // result = src * 0 + dst * (1 - src) = (0.8, 0.7, 0.6, 0.5)
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.7f, 0.6f, 0.5f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.8f, 0.7f, 0.6f, 0.5f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -112,12 +112,12 @@ TEST_CASE("BlendFunc ONE_MINUS_DST_COLOR factor", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::ONE_MINUS_DST_COLOR);
     blend.setDFactor(rr::BlendFunc::ZERO);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.2f, 0.3f, 0.4f, 0.5f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.2f, 0.3f, 0.4f, 0.5f });
 
     // result = src * (1 - dst) = (0.8, 0.7, 0.6, 0.5)
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.7f, 0.6f, 0.5f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.8f, 0.7f, 0.6f, 0.5f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -129,12 +129,12 @@ TEST_CASE("BlendFunc SRC_ALPHA factor", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::SRC_ALPHA);
     blend.setDFactor(rr::BlendFunc::ZERO);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 0.5f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 0.5f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f });
 
     // result = src * src.a = (0.5, 0.5, 0.5, 0.25)
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 0.25f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 0.25f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -146,12 +146,12 @@ TEST_CASE("BlendFunc DST_ALPHA factor", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::DST_ALPHA);
     blend.setDFactor(rr::BlendFunc::ZERO);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.4f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 0.4f });
 
     // result = src * dst.a = (0.4, 0.4, 0.4, 0.4)
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.4f, 0.4f, 0.4f, 0.4f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.4f, 0.4f, 0.4f, 0.4f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -163,12 +163,12 @@ TEST_CASE("BlendFunc ONE_MINUS_SRC_ALPHA factor", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::ZERO);
     blend.setDFactor(rr::BlendFunc::ONE_MINUS_SRC_ALPHA);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.3f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 0.3f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
 
     // result = dst * (1 - src.a) = (0.7, 0.7, 0.7, 0.7)
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.7f, 0.7f, 0.7f, 0.7f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.7f, 0.7f, 0.7f, 0.7f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -180,12 +180,12 @@ TEST_CASE("BlendFunc ONE_MINUS_DST_ALPHA factor", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::ONE_MINUS_DST_ALPHA);
     blend.setDFactor(rr::BlendFunc::ZERO);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.6f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 0.6f });
 
     // result = src * (1 - dst.a) = (0.4, 0.4, 0.4, 0.4)
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.4f, 0.4f, 0.4f, 0.4f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.4f, 0.4f, 0.4f, 0.4f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -199,26 +199,26 @@ TEST_CASE("BlendFunc SRC_ALPHA_SATURATE factor", "[BlendFunc]")
 
     SECTION("src.alpha < (1 - dst.alpha)")
     {
-        Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 0.3f });
-        Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.5f });
+        Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 0.3f });
+        Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 0.5f });
 
         // f = min(0.3, 0.5) = 0.3
         // result = src * (0.3, 0.3, 0.3, 1.0) = (0.3, 0.3, 0.3, 0.3)
-        Vec4i16 result = blend.blend(src, dst);
-        Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.3f, 0.3f, 0.3f });
+        Vec4iColorRGBA result = blend.blend(src, dst);
+        Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.3f, 0.3f, 0.3f, 0.3f });
 
         REQUIRE(vec4i16Approx(result, expected));
     }
 
     SECTION("src.alpha >= (1 - dst.alpha)")
     {
-        Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 0.8f });
-        Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 0.7f });
+        Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 0.8f });
+        Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 0.7f });
 
         // f = min(0.8, 0.3) = 0.3
         // result = src * (0.3, 0.3, 0.3, 1.0) = (0.3, 0.3, 0.3, 0.8)
-        Vec4i16 result = blend.blend(src, dst);
-        Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.3f, 0.3f, 0.8f });
+        Vec4iColorRGBA result = blend.blend(src, dst);
+        Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.3f, 0.3f, 0.3f, 0.8f });
 
         REQUIRE(vec4i16Approx(result, expected));
     }
@@ -231,14 +231,14 @@ TEST_CASE("BlendFunc classic alpha blending (SRC_ALPHA, ONE_MINUS_SRC_ALPHA)", "
     blend.setSFactor(rr::BlendFunc::SRC_ALPHA);
     blend.setDFactor(rr::BlendFunc::ONE_MINUS_SRC_ALPHA);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 0.0f, 0.0f, 0.5f }); // Red, 50% opacity
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 1.0f, 1.0f }); // Blue, fully opaque
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 0.0f, 0.0f, 0.5f }); // Red, 50% opacity
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 1.0f, 1.0f }); // Blue, fully opaque
 
     // result = src * src.a + dst * (1 - src.a)
     // result = (1,0,0,0.5) * 0.5 + (0,0,1,1) * 0.5
     // result = (0.5, 0, 0, 0.25) + (0, 0, 0.5, 0.5) = (0.5, 0, 0.5, 0.75)
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.0f, 0.5f, 0.75f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.0f, 0.5f, 0.75f });
 
     REQUIRE(vec4i16Approx(result, expected, 2));
 }
@@ -250,12 +250,12 @@ TEST_CASE("BlendFunc additive blending (ONE, ONE)", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::ONE);
     blend.setDFactor(rr::BlendFunc::ONE);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.0f, 0.0f, 1.0f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.3f, 0.0f, 1.0f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.3f, 0.0f, 0.0f, 1.0f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.3f, 0.0f, 1.0f });
 
     // result = src + dst (clamped)
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.3f, 0.3f, 0.0f, 1.0f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.3f, 0.3f, 0.0f, 1.0f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -267,12 +267,12 @@ TEST_CASE("BlendFunc result clamping", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::ONE);
     blend.setDFactor(rr::BlendFunc::ONE);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.8f, 0.8f, 0.8f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.8f, 0.8f, 0.8f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.8f, 0.8f, 0.8f, 0.8f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.8f, 0.8f, 0.8f, 0.8f });
 
     // result = src + dst = 1.6 -> clamped to 1.0
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }
@@ -284,12 +284,12 @@ TEST_CASE("BlendFunc multiplicative blending (DST_COLOR, ZERO)", "[BlendFunc]")
     blend.setSFactor(rr::BlendFunc::DST_COLOR);
     blend.setDFactor(rr::BlendFunc::ZERO);
 
-    Vec4i16 src = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
-    Vec4i16 dst = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.8f, 0.6f, 0.4f, 1.0f });
+    Vec4iColorRGBA src = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
+    Vec4iColorRGBA dst = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.8f, 0.6f, 0.4f, 1.0f });
 
     // result = src * dst = (0.4, 0.3, 0.2, 1.0)
-    Vec4i16 result = blend.blend(src, dst);
-    Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.4f, 0.3f, 0.2f, 1.0f });
+    Vec4iColorRGBA result = blend.blend(src, dst);
+    Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.4f, 0.3f, 0.2f, 1.0f });
 
     REQUIRE(vec4i16Approx(result, expected));
 }

@@ -82,13 +82,13 @@ InterpolatedAttributesData AttributeInterpolator::interpolate(
         bby);
 
     // Convert S1.24 to Sx.8 (shift right by 16)
-    Vec4i16 color {
+    Vec4iColorRGBA color {
         static_cast<int16_t>(colorR >> 16),
         static_cast<int16_t>(colorG >> 16),
         static_cast<int16_t>(colorB >> 16),
         static_cast<int16_t>(colorA >> 16)
     };
-    color.clamp(Vec4i16::Zero, Vec4i16::One);
+    color.clamp(Vec4iColorRGBA::Zero, Vec4iColorRGBA::FracMax);
 
     // depthZ is S1.30 -> Sx.16, clamp to valid range
     const int32_t clampedDepthZ = std::clamp(depthZ >> 14, static_cast<int32_t>(0), static_cast<int32_t>(1u << 16) - 1);

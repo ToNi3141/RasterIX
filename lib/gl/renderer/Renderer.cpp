@@ -32,10 +32,10 @@ Renderer::Renderer(IDevice& device)
 
     // Set initial values
     writeReg(RenderResolutionReg { RenderConfig::MAX_DISPLAY_WIDTH, RenderConfig::MAX_DISPLAY_HEIGHT });
-    setTexEnvColor({ 0, Vec4i { 0, 0, 0, 0 } });
-    setClearColor({ Vec4i { 0, 0, 0, 0 } });
+    setTexEnvColor({ 0, Vec4iColorRGBA { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero } });
+    setClearColor({ Vec4iColorRGBA { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero } });
     setClearDepth({ 65535 });
-    setFogColor({ Vec4i { 255, 255, 255, 255 } });
+    setFogColor({ Vec4iColorRGBA { Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax } });
     std::array<float, 33> fogLut {};
     std::fill(fogLut.begin(), fogLut.end(), 1.0f);
     setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.

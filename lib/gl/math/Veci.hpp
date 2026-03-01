@@ -28,9 +28,10 @@ template <typename T, std::size_t VecSize, std::size_t DefaultShift = 0>
 class Veci
 {
 public:
-    static constexpr T One = (static_cast<T>(1) << DefaultShift) - 1;
+    static constexpr T One = (static_cast<T>(1) << DefaultShift);
     static constexpr T Half = One >> 1;
     static constexpr T Zero = 0;
+    static constexpr T FracMax = One - 1;
     static constexpr std::size_t Shift = DefaultShift;
     using Type = T;
 
@@ -108,7 +109,7 @@ public:
     {
         Veci<T, VecSize, DefaultShift> vec;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * static_cast<float>(1ul << LocalShift)) + 0.5f;
+            vec[i] = static_cast<T>((val[i] * static_cast<float>(1ul << LocalShift)) + 0.5f);
         return vec;
     }
 
@@ -116,7 +117,7 @@ public:
     void fromVec(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * static_cast<float>(1ul << LocalShift)) + 0.5f;
+            vec[i] = static_cast<T>((val[i] * static_cast<float>(1ul << LocalShift)) + 0.5f);
     }
 
     template <typename TV, std::size_t LocalShift = DefaultShift>
@@ -124,7 +125,7 @@ public:
     {
         Veci<T, VecSize, DefaultShift> vec;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * (static_cast<float>(1ul << LocalShift) - 1.0f)) + 0.5f;
+            vec[i] = static_cast<T>((val[i] * (static_cast<float>(1ul << LocalShift) - 1.0f)) + 0.5f);
         return vec;
     }
 
@@ -132,7 +133,15 @@ public:
     void fromVecToInt(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * (static_cast<float>(1ul << LocalShift) - 1.0f)) + 0.5f;
+            vec[i] = static_cast<T>((val[i] * (static_cast<float>(1ul << LocalShift) - 1.0f)) + 0.5f);
+    }
+
+    std::array<float, VecSize> toFloat() const
+    {
+        std::array<float, VecSize> result;
+        for (std::size_t i = 0; i < VecSize; i++)
+            result[i] = static_cast<float>(vec[i]) / static_cast<float>(FracMax);
+        return result;
     }
 
     T& operator[](int index) { return vec[index]; }
@@ -274,8 +283,9 @@ using Vec2i = Veci<VecInt, 2, 0>;
 using Vec3i = Veci<VecInt, 3, 0>;
 using Vec4i = Veci<VecInt, 4, 0>;
 
-using Vec4i16 = Veci<int16_t, 4, 8>;
-using Vec3i16 = Veci<int16_t, 3, 8>;
+using Vec4iColorRGBA = Veci<int16_t, 4, 8>;
+using Vec3iColorRGB = Veci<int16_t, 3, 8>;
+using Vec1iColorR = Veci<int16_t, 1, 8>;
 
 // Interpolation presets here have a direct impact on the image fidelity
 // They try to get the maximum, but higher precision will increase the quality.

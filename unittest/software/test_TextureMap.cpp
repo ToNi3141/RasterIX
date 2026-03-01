@@ -68,11 +68,11 @@ public:
         return ((r & 0xF) << 12) | ((g & 0xF) << 8) | ((b & 0xF) << 4) | (a & 0xF);
     }
 
-    // Convert RGBA (0-15) to expected Vec4i16 from RGBA4444
+    // Convert RGBA (0-15) to expected Vec4iColorRGBA from RGBA4444
     // RGBA4444 stores 4-bit values which get expanded to 8-bit by replicating LSBs
-    static Vec4i16 expectedColorRGBA4444(uint8_t r4, uint8_t g4, uint8_t b4, uint8_t a4)
+    static Vec4iColorRGBA expectedColorRGBA4444(uint8_t r4, uint8_t g4, uint8_t b4, uint8_t a4)
     {
-        return Vec4i16 {
+        return Vec4iColorRGBA {
             static_cast<int16_t>((r4 << 4) | r4),
             static_cast<int16_t>((g4 << 4) | g4),
             static_cast<int16_t>((b4 << 4) | b4),
@@ -104,10 +104,10 @@ inline int32_t floatToTexCoord(float f)
     return static_cast<int32_t>(f * static_cast<float>(1 << 15));
 }
 
-// Helper to convert Vec4i16 to Vec4 for comparison
-inline Vec4 vec4i16ToVec4(const Vec4i16& v)
+// Helper to convert Vec4iColorRGBA to Vec4 for comparison
+inline Vec4 vec4i16ToVec4(const Vec4iColorRGBA& v)
 {
-    const float scale = 1.0f / static_cast<float>(Vec4i16::One);
+    const float scale = 1.0f / static_cast<float>(Vec4iColorRGBA::FracMax);
     return Vec4 { static_cast<float>(v[0]) * scale,
         static_cast<float>(v[1]) * scale,
         static_cast<float>(v[2]) * scale,
@@ -125,10 +125,10 @@ TEST_CASE("TextureMap disabled returns homogeneous vector", "[TextureMap]")
     TextureMap texMap = createTestTextureMap(tcb::span<const uint8_t>(textureData), 2.0f, 2.0f);
     texMap.setEnable(false);
 
-    Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
+    Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
 
     // Homogeneous vector is (0, 0, 0, 1) -> (0, 0, 0, 255) in S8.8
-    REQUIRE(rr::ut::vec4i16Approx(result, Vec4i16 { 0, 0, 0, Vec4i16::One }));
+    REQUIRE(rr::ut::vec4i16Approx(result, Vec4iColorRGBA { 0, 0, 0, Vec4iColorRGBA::FracMax }));
 }
 
 TEST_CASE("TextureMap unfiltered sampling at texel centers", "[TextureMap]")
@@ -146,29 +146,29 @@ TEST_CASE("TextureMap unfiltered sampling at texel centers", "[TextureMap]")
 
     SECTION("Sample texel (0,0) - Red")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("Sample texel (1,0) - Green")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.75f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.75f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("Sample texel (0,1) - Blue")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.75f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.75f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("Sample texel (1,1) - White")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.75f), floatToTexCoord(0.75f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 15, 15, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.75f), floatToTexCoord(0.75f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 15, 15, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 }
@@ -188,32 +188,32 @@ TEST_CASE("TextureMap wrap mode REPEAT", "[TextureMap]")
     SECTION("s > 1.0 wraps")
     {
         // s=1.25 should wrap to s=0.25 -> texel (0,0)
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(1.25f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(1.25f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("t > 1.0 wraps")
     {
         // t=1.75 should wrap to t=0.75 -> texel (0,1)
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(1.75f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(1.75f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("s < 0.0 wraps")
     {
         // s=-0.25 should wrap to s=0.75 -> texel (1,0)
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(-0.25f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(-0.25f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("t < 0.0 wraps")
     {
         // t=-0.25 should wrap to t=0.75 -> texel (0,1)
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(-0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(-0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 }
@@ -238,8 +238,8 @@ TEST_CASE("TextureMap wrap mode REPEAT edge cases", "[TextureMap]")
 
     SECTION("s=1.0 wraps to s=0.0 -> texel (0,0) Red")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(1.0f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(1.0f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
         INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
@@ -247,8 +247,8 @@ TEST_CASE("TextureMap wrap mode REPEAT edge cases", "[TextureMap]")
 
     SECTION("t=1.0 wraps to t=0.0 -> texel (0,0) Red")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(1.0f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(1.0f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
         INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
@@ -256,8 +256,8 @@ TEST_CASE("TextureMap wrap mode REPEAT edge cases", "[TextureMap]")
 
     SECTION("s=2.0 wraps to s=0.0 -> texel (0,0) Red")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(2.0f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(2.0f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
         INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
@@ -265,8 +265,8 @@ TEST_CASE("TextureMap wrap mode REPEAT edge cases", "[TextureMap]")
 
     SECTION("s=1.75 wraps to s=0.75 -> texel (1,0) Green")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(1.75f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(1.75f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
         INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
         INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
@@ -274,8 +274,8 @@ TEST_CASE("TextureMap wrap mode REPEAT edge cases", "[TextureMap]")
 
     SECTION("s=0.0, t=0.0 -> texel (0,0) Red")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.0f), floatToTexCoord(0.0f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.0f), floatToTexCoord(0.0f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
         INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
@@ -283,8 +283,8 @@ TEST_CASE("TextureMap wrap mode REPEAT edge cases", "[TextureMap]")
 
     SECTION("s=1.0, t=1.0 wraps to (0,0) Red")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(1.0f), floatToTexCoord(1.0f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(1.0f), floatToTexCoord(1.0f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         INFO("result: " << result[0] << ", " << result[1] << ", " << result[2] << ", " << result[3]);
         INFO("expected: " << expected[0] << ", " << expected[1] << ", " << expected[2] << ", " << expected[3]);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
@@ -308,40 +308,40 @@ TEST_CASE("TextureMap wrap mode CLAMP_TO_EDGE", "[TextureMap]")
     SECTION("s > 1.0 clamps to right edge texel")
     {
         // s=1.5 clamps to edge -> texel (1,0) Green
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(1.5f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(1.5f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("t > 1.0 clamps to bottom edge texel")
     {
         // t=1.5 clamps to edge -> texel (0,1) Blue
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(1.5f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(1.5f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("s < 0.0 clamps to left edge")
     {
         // s=-0.5 clamps to s=0.0 -> texel (0,0) Red
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(-0.5f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(-0.5f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("t < 0.0 clamps to top edge")
     {
         // t=-0.5 clamps to t=0.0 -> texel (0,0) Red
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(-0.5f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(-0.5f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("s and t > 1.0 clamps to bottom-right corner")
     {
         // Both clamp to edge -> texel (1,1) White
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(1.5f), floatToTexCoord(1.5f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 15, 15, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(1.5f), floatToTexCoord(1.5f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 15, 15, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 }
@@ -366,8 +366,8 @@ TEST_CASE("TextureMap bilinear filtering", "[TextureMap]")
         // So to sample at texel (0,0), we need to account for that
         // For a 2x2 texture, half texel = 0.25
         // Sample point 0.25 becomes 0.0 after subtraction
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected, 0.1f));
     }
 
@@ -375,7 +375,7 @@ TEST_CASE("TextureMap bilinear filtering", "[TextureMap]")
     {
         // Sample between texel (0,0) black and texel (1,0) white
         // At s=0.5, we expect 50% blend
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.5f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.5f), floatToTexCoord(0.25f));
         // Should be approximately gray (0.3 to 0.7 range in S8.8 is 77 to 179)
         REQUIRE(result[0] > static_cast<int16_t>(0.3f * 255));
         REQUIRE(result[0] < static_cast<int16_t>(0.7f * 255));
@@ -402,13 +402,13 @@ TEST_CASE("TextureMap different pixel formats", "[TextureMap]")
         texMap.setPixelFormat(DevicePixelFormat::RGB565);
         texMap.setEnableMagFilter(false);
 
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
 
         // RGB565 white has alpha = 1.0 always (255 in S8.8)
         REQUIRE(result[0] > static_cast<int16_t>(0.9f * 255)); // R
         REQUIRE(result[1] > static_cast<int16_t>(0.9f * 255)); // G
         REQUIRE(result[2] > static_cast<int16_t>(0.9f * 255)); // B
-        REQUIRE(result[3] == Vec4i16::One); // A always 1.0 for RGB565
+        REQUIRE(result[3] == Vec4iColorRGBA::FracMax); // A always 1.0 for RGB565
     }
 
     SECTION("RGBA5551 format")
@@ -429,12 +429,12 @@ TEST_CASE("TextureMap different pixel formats", "[TextureMap]")
         texMap.setPixelFormat(DevicePixelFormat::RGBA5551);
         texMap.setEnableMagFilter(false);
 
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.25f), floatToTexCoord(0.25f));
 
         REQUIRE(result[0] > static_cast<int16_t>(0.9f * 255)); // R
         REQUIRE(result[1] > static_cast<int16_t>(0.9f * 255)); // G
         REQUIRE(result[2] > static_cast<int16_t>(0.9f * 255)); // B
-        REQUIRE(result[3] == Vec4i16::One); // A = 1 bit set
+        REQUIRE(result[3] == Vec4iColorRGBA::FracMax); // A = 1 bit set
     }
 }
 
@@ -455,29 +455,29 @@ TEST_CASE("TextureMap 4x4 texture sampling", "[TextureMap]")
 
     SECTION("Sample texel (0,0)")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.125f), floatToTexCoord(0.125f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.125f), floatToTexCoord(0.125f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("Sample texel (3,0)")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.875f), floatToTexCoord(0.125f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(3, 3, 3, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.875f), floatToTexCoord(0.125f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(3, 3, 3, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("Sample texel (0,3)")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.125f), floatToTexCoord(0.875f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(12, 12, 12, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.125f), floatToTexCoord(0.875f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(12, 12, 12, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("Sample texel (3,3)")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.875f), floatToTexCoord(0.875f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 15, 15, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.875f), floatToTexCoord(0.875f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 15, 15, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 }
@@ -496,22 +496,22 @@ TEST_CASE("TextureMap exact boundary sampling", "[TextureMap]")
 
     SECTION("Sample at s=0.0, t=0.0")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.0f), floatToTexCoord(0.0f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.0f), floatToTexCoord(0.0f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(15, 0, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("Sample at s=0.5, t=0.0")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.5f), floatToTexCoord(0.0f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.5f), floatToTexCoord(0.0f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 15, 0, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 
     SECTION("Sample at s=0.0, t=0.5")
     {
-        Vec4i16 result = texMap.getTexel(floatToTexCoord(0.0f), floatToTexCoord(0.5f));
-        Vec4i16 expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
+        Vec4iColorRGBA result = texMap.getTexel(floatToTexCoord(0.0f), floatToTexCoord(0.5f));
+        Vec4iColorRGBA expected = TestTextureHelper::expectedColorRGBA4444(0, 0, 15, 15);
         REQUIRE(rr::ut::vec4i16Approx(result, expected));
     }
 }

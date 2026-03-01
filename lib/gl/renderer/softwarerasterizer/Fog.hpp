@@ -38,17 +38,17 @@ public:
     };
     using FogLut = std::array<FogLutEntry, 32>;
 
-    Vec4i16 calculateFog(const float w, const Vec4i16& color) const
+    Vec4iColorRGBA calculateFog(const float w, const Vec4iColorRGBA& color) const
     {
         if (!m_enable)
         {
             return color;
         }
 
-        const Vec4i16::Type factor = computeFogFactor(w);
+        const Vec4iColorRGBA::Type factor = computeFogFactor(w);
 
-        Vec4i16 foggedColor = Vec4i16::interpolate(m_fogColor, color, std::clamp(factor, Vec4i16::Zero, Vec4i16::One));
-        foggedColor.clamp(Vec4i16::Zero, Vec4i16::One);
+        Vec4iColorRGBA foggedColor = Vec4iColorRGBA::interpolate(m_fogColor, color, std::clamp(factor, Vec4iColorRGBA::Zero, Vec4iColorRGBA::FracMax));
+        foggedColor.clamp(Vec4iColorRGBA::Zero, Vec4iColorRGBA::FracMax);
         foggedColor[3] = color[3]; // Preserve alpha
 
         return foggedColor;
@@ -61,7 +61,7 @@ public:
         m_fogLut = lut;
     }
 
-    void setFogColor(const Vec4i16& color)
+    void setFogColor(const Vec4iColorRGBA& color)
     {
         m_fogColor = color;
     }
@@ -84,17 +84,17 @@ private:
         return { exponent, mantissa };
     }
 
-    Vec4i16::Type computeFogFactor(const float w) const
+    Vec4iColorRGBA::Type computeFogFactor(const float w) const
     {
         uint32_t wBits;
         std::memcpy(&wBits, &w, sizeof(wBits));
         if (wBits <= m_lowerBound)
         {
-            return Vec4i16::One;
+            return Vec4iColorRGBA::FracMax;
         }
         if (wBits >= m_upperBound)
         {
-            return Vec4i16::Zero;
+            return Vec4iColorRGBA::Zero;
         }
 
         const auto [exponent, mantissa] = getExpAndMantissa(w);
@@ -108,13 +108,13 @@ private:
         const int32_t fx = entry.m * xs + entry.b; // Sx.22
         const int32_t fx_scaled = fx >> 14; // S1.8
 
-        return static_cast<Vec4i16::Type>(fx_scaled);
+        return static_cast<Vec4iColorRGBA::Type>(fx_scaled);
     }
 
     FogLut m_fogLut {};
     uint32_t m_lowerBound { 0x3F800000 }; // 1.0f
     uint32_t m_upperBound { 0x447A0000 }; // 1000.0f
-    Vec4i16 m_fogColor {};
+    Vec4iColorRGBA m_fogColor {};
     bool m_enable { false };
 };
 

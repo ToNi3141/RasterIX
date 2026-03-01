@@ -26,7 +26,7 @@ class TexEnvColorReg : public BaseColorReg
 {
 public:
     TexEnvColorReg() = default;
-    TexEnvColorReg(const std::size_t tmu, const Vec4i& color)
+    TexEnvColorReg(const std::size_t tmu, const Vec4iColorRGBA& color)
         : BaseColorReg { color }
     {
         setTmu(tmu);

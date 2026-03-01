@@ -28,7 +28,7 @@ namespace rr::softwarerasterizer
 class LogicOp
 {
 public:
-    Vec4i16 op(const Vec4i16& src, const Vec4i16& dst) const
+    Vec4iColorRGBA op(const Vec4iColorRGBA& src, const Vec4iColorRGBA& dst) const
     {
         if (!m_enable)
             return src;
@@ -52,21 +52,21 @@ public:
     }
 
 private:
-    static Vec4i16 invertColor(const Vec4i16& color)
+    static Vec4iColorRGBA invertColor(const Vec4iColorRGBA& color)
     {
-        return Vec4i16 { Vec4i16::One, Vec4i16::One, Vec4i16::One, Vec4i16::One } - color;
+        return Vec4iColorRGBA { Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax } - color;
     }
 
-    Vec4i16 calcOp(const Vec4i16& src, const Vec4i16& dst) const
+    Vec4iColorRGBA calcOp(const Vec4iColorRGBA& src, const Vec4iColorRGBA& dst) const
     {
-        Vec4i16 result;
+        Vec4iColorRGBA result;
         switch (m_logicOp)
         {
         case rr::LogicOp::CLEAR:
-            result = Vec4i16 { Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero, Vec4i16::Zero };
+            result = Vec4iColorRGBA { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
             break;
         case rr::LogicOp::SET:
-            result = Vec4i16 { Vec4i16::One, Vec4i16::One, Vec4i16::One, Vec4i16::One };
+            result = Vec4iColorRGBA { Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax };
             break;
         case rr::LogicOp::COPY:
             result = src;

@@ -132,16 +132,15 @@ bool SoftwareRasterizationInstance::handleCommand(const TriangleStreamCmd& cmd)
 
             if (zPass && stencilPass)
             {
-                // Fragment processing - all in fixed-point S8.8
-                const Vec4i16 texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
-                const Vec4i16 texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
-                const Vec4i16 texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
-                const Vec4i16 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
+                const Vec4iColorRGBA texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
+                const Vec4iColorRGBA texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
+                const Vec4iColorRGBA texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
+                const Vec4iColorRGBA texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
                 if (m_alphaFunc.check(texEnvTexel1[3]))
                 {
-                    const Vec4i16 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
-                    const Vec4i16 destColor = softwarerasterizerhelpers::deserializeFromRgb565Int(m_colorBuffer.readFragment(fmd.index));
-                    Vec4i16 finalColor;
+                    const Vec4iColorRGBA foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
+                    const Vec4iColorRGBA destColor = softwarerasterizerhelpers::deserializeFromRgb565(m_colorBuffer.readFragment(fmd.index));
+                    Vec4iColorRGBA finalColor;
                     if (m_logicOp.getEnable())
                     {
                         finalColor = m_logicOp.op(foggedColor, destColor);
@@ -219,7 +218,7 @@ bool SoftwareRasterizationInstance::handleRegister(const ColorBufferAddrReg& reg
 
 bool SoftwareRasterizationInstance::handleRegister(const ColorBufferClearColorReg& reg)
 {
-    m_colorBuffer.setClearColor(softwarerasterizerhelpers::serializeToRgb565(reg.getColorf()));
+    m_colorBuffer.setClearColor(softwarerasterizerhelpers::serializeToRgb565(reg.getColor()));
     return true;
 }
 
@@ -256,7 +255,7 @@ bool SoftwareRasterizationInstance::handleRegister(const FeatureEnableReg& reg)
 
 bool SoftwareRasterizationInstance::handleRegister(const FogColorReg& reg)
 {
-    m_fog.setFogColor(reg.getColor16());
+    m_fog.setFogColor(reg.getColor());
     return true;
 }
 
@@ -320,7 +319,7 @@ bool SoftwareRasterizationInstance::handleRegister(const StencilReg& reg)
 
 bool SoftwareRasterizationInstance::handleRegister(const TexEnvColorReg& reg)
 {
-    m_texEnv[reg.getTmuFromAddr()].setEnvColor(reg.getColor16());
+    m_texEnv[reg.getTmuFromAddr()].setEnvColor(reg.getColor());
     return true;
 }
 

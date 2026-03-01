@@ -28,12 +28,12 @@ class BaseColorReg
 public:
     BaseColorReg() = default;
 
-    BaseColorReg(const Vec4i& val)
+    BaseColorReg(const Vec4iColorRGBA& val)
     {
         setColor(val);
     }
 
-    void setColor(const Vec4i& val)
+    void setColor(const Vec4iColorRGBA& val)
     {
         setRed(val[0]);
         setGreen(val[1]);
@@ -41,24 +41,9 @@ public:
         setAlpha(val[3]);
     }
 
-    Vec4i getColor() const
+    Vec4iColorRGBA getColor() const
     {
-        return Vec4i { getRed(), getGreen(), getBlue(), getAlpha() };
-    }
-
-    Vec4i16 getColor16() const
-    {
-        return Vec4i16 { getRed(), getGreen(), getBlue(), getAlpha() };
-    }
-
-    Vec4 getColorf() const
-    {
-        return {
-            static_cast<float>(getRed()) / 255.0f,
-            static_cast<float>(getGreen()) / 255.0f,
-            static_cast<float>(getBlue()) / 255.0f,
-            static_cast<float>(getAlpha()) / 255.0f,
-        };
+        return Vec4iColorRGBA { getRed(), getGreen(), getBlue(), getAlpha() };
     }
 
     void setRed(const uint8_t val) { m_regVal.fields.red = val; }

@@ -23,7 +23,7 @@
 using rr::Vec2;
 using rr::Vec3;
 using rr::Vec4;
-using rr::Vec4i16;
+using rr::Vec4iColorRGBA;
 using rr::softwarerasterizer::AttributeInterpolator;
 using rr::softwarerasterizer::InterpolatedAttributesData;
 using rr::TriangleStreamTypes::TriangleDesc;
@@ -85,7 +85,7 @@ TEST_CASE("AttributeInterpolator color interpolation at origin", "[AttributeInte
     InterpolatedAttributesData result = interpolator.interpolate(desc, 0, 0);
 
     // At origin, color should be the start value (0.5, 0.5, 0.5, 1.0)
-    const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
+    const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
     REQUIRE(vec4i16Approx(result.color, expected));
 }
 
@@ -100,7 +100,7 @@ TEST_CASE("AttributeInterpolator color interpolation in X direction", "[Attribut
     InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 0);
 
     // Color should be start + 10 * colorXInc = 0.5 + 10 * 0.01 = 0.6
-    const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.6f, 0.6f, 0.6f, 1.0f });
+    const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.6f, 0.6f, 0.6f, 1.0f });
     REQUIRE(vec4i16Approx(result.color, expected));
 }
 
@@ -115,7 +115,7 @@ TEST_CASE("AttributeInterpolator color interpolation in Y direction", "[Attribut
     InterpolatedAttributesData result = interpolator.interpolate(desc, 0, 10);
 
     // Color should be start + 10 * colorYInc = 0.5 + 10 * 0.005 = 0.55
-    const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.55f, 0.55f, 0.55f, 1.0f });
+    const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.55f, 0.55f, 0.55f, 1.0f });
     REQUIRE(vec4i16Approx(result.color, expected));
 }
 
@@ -130,7 +130,7 @@ TEST_CASE("AttributeInterpolator combined X and Y color interpolation", "[Attrib
     InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 10);
 
     // Color should be start + 10*xInc + 10*yInc = 0.5 + 0.1 + 0.05 = 0.65
-    const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.65f, 0.65f, 0.65f, 1.0f });
+    const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.65f, 0.65f, 0.65f, 1.0f });
     REQUIRE(vec4i16Approx(result.color, expected));
 }
 
@@ -207,7 +207,7 @@ TEST_CASE("AttributeInterpolator TMU enable/disable", "[AttributeInterpolator]")
         // Should not crash, texture values will be uninitialized/zero
         InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 10);
         // Color should still be interpolated
-        const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.65f, 0.65f, 0.65f, 1.0f });
+        const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.65f, 0.65f, 0.65f, 1.0f });
         REQUIRE(vec4i16Approx(result.color, expected));
     }
 
@@ -238,7 +238,7 @@ TEST_CASE("AttributeInterpolator color clamping", "[AttributeInterpolator]")
         InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 0);
 
         // 0.9 + 10*0.1 = 1.9 -> clamped to 1.0
-        const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+        const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
         REQUIRE(vec4i16Approx(result.color, expected));
     }
 
@@ -251,7 +251,7 @@ TEST_CASE("AttributeInterpolator color clamping", "[AttributeInterpolator]")
         InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 0);
 
         // 0.1 + 10*(-0.1) = -0.9 -> clamped to 0.0
-        const Vec4i16 expected = Vec4i16::createFromVecToInt<Vec4, 8>(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
+        const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
         REQUIRE(vec4i16Approx(result.color, expected));
     }
 }
