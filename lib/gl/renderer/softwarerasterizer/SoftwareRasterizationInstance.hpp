@@ -108,7 +108,7 @@ private:
     Framebuffer<uint8_t> m_stencilBuffer { m_scissorData, m_resolutionData };
     TestFunc<uint16_t> m_depthFunc {};
     TestFunc<uint8_t> m_stencilFunc {};
-    TestFunc<int16_t> m_alphaFunc {};
+    TestFunc<Vec1iColorR::Type> m_alphaFunc {};
     AttributeInterpolator m_attributeInterpolator {};
     Rasterizer m_rasterizer { m_resolutionData };
     std::array<TextureMap, 2> m_textureMapper {};
