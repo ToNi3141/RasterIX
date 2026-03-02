@@ -99,7 +99,7 @@ private:
         const auto [exponent, mantissa] = getExpAndMantissa(w);
 
         // Use exponent as LUT index (clamped to valid range)
-        const std::size_t index = static_cast<std::size_t>(std::clamp(exponent, 0, static_cast<int32_t>(m_fogLut.size() - 1)));
+        const std::size_t index = static_cast<std::size_t>(std::clamp(exponent, static_cast<int32_t>(0), static_cast<int32_t>(m_fogLut.size() - 1)));
         const FogLutEntry& entry = m_fogLut[index];
 
         // xs: upper 8 bits of mantissa as interpolation factor (0 - 255, representing 0.0 - 1.0)

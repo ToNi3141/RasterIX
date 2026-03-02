@@ -136,8 +136,8 @@ private:
 
         if (m_wrapModeS == TextureWrapMode::CLAMP_TO_EDGE)
         {
-            return { static_cast<uint32_t>(std::clamp(sInt, 0, m_textureMaskW)),
-                static_cast<uint32_t>(std::clamp(tInt, 0, m_textureMaskH)) };
+            return { static_cast<uint32_t>(std::clamp(sInt, static_cast<int32_t>(0), m_textureMaskW)),
+                static_cast<uint32_t>(std::clamp(tInt, static_cast<int32_t>(0), m_textureMaskH)) };
         }
         // REPEAT - use bitmask for power-of-2 textures
         return { static_cast<uint32_t>(sInt & m_textureMaskW),
