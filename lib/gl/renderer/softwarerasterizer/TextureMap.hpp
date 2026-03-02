@@ -21,7 +21,7 @@
 #include "Enums.hpp"
 #include "RenderConfigs.hpp"
 #include "SoftwareRasterizerHelpers.hpp"
-#include "math/Veci.hpp"
+#include "math/ColorTypes.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>

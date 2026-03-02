@@ -18,8 +18,8 @@
 #ifndef RR_UT_HELPER_HPP
 #define RR_UT_HELPER_HPP
 
+#include "math/ColorTypes.hpp"
 #include "math/Vec.hpp"
-#include "math/Veci.hpp"
 #include <cmath>
 
 namespace rr::ut

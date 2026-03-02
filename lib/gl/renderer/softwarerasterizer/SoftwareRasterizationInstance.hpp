@@ -44,6 +44,7 @@
 #include "TestFunc.hpp"
 #include "TexEnv.hpp"
 #include "TextureMap.hpp"
+#include "math/ColorTypes.hpp"
 
 #include <spdlog/spdlog.h>
 

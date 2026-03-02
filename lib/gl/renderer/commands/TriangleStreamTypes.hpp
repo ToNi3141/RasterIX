@@ -26,6 +26,12 @@
 namespace rr
 {
 
+// Interpolation presets here have a direct impact on the image fidelity
+// They try to get the maximum, but higher precision will increase the quality.
+using Vec3iTexInterp = Veci<int32_t, 3, 28>;
+using Vec4iColorInterp = Veci<int32_t, 4, 24>;
+using Vec2iDepthInterp = Veci<int32_t, 2, 30>;
+
 namespace TriangleStreamTypes
 {
 

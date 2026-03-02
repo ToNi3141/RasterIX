@@ -19,8 +19,7 @@
 #define _BLENDFUNC_HPP_
 
 #include "Enums.hpp"
-#include "math/Vec.hpp"
-#include "math/Veci.hpp"
+#include "math/ColorTypes.hpp"
 #include <cstdint>
 
 namespace rr::softwarerasterizer

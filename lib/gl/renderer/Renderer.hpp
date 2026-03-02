@@ -26,9 +26,11 @@
 #include "displaylist/DisplayListAssembler.hpp"
 #include "displaylist/DisplayListDispatcher.hpp"
 #include "displaylist/DisplayListDoubleBuffer.hpp"
+#include "math/ColorTypes.hpp"
 #include "math/Vec.hpp"
 #include "maxVariantAlternativeSize.hpp"
 #include "renderer/IDevice.hpp"
+#include "renderer/commands/TriangleStreamTypes.hpp"
 #include <algorithm>
 #include <array>
 #include <limits>
@@ -48,6 +50,7 @@
 #include "commands/SetLightingCtxCmd.hpp"
 #include "commands/TextureStreamCmd.hpp"
 #include "commands/TriangleStreamCmd.hpp"
+#include "commands/TriangleStreamTypes.hpp"
 #include "commands/WriteRegisterCmd.hpp"
 #include "registers/BaseColorReg.hpp"
 #include "registers/ColorBufferAddrReg.hpp"

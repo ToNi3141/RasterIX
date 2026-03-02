@@ -18,7 +18,7 @@
 #ifndef _BASE_COLOR_REG_
 #define _BASE_COLOR_REG_
 
-#include "math/Veci.hpp"
+#include "math/ColorTypes.hpp"
 #include <cstdint>
 
 namespace rr

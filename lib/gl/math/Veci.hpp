@@ -283,14 +283,5 @@ using Vec2i = Veci<VecInt, 2, 0>;
 using Vec3i = Veci<VecInt, 3, 0>;
 using Vec4i = Veci<VecInt, 4, 0>;
 
-using Vec4iColorRGBA = Veci<int16_t, 4, 8>;
-using Vec3iColorRGB = Veci<int16_t, 3, 8>;
-using Vec1iColorR = Veci<int16_t, 1, 8>;
-
-// Interpolation presets here have a direct impact on the image fidelity
-// They try to get the maximum, but higher precision will increase the quality.
-using Vec3iTexInterp = Veci<int32_t, 3, 28>;
-using Vec4iColorInterp = Veci<int32_t, 4, 24>;
-using Vec2iDepthInterp = Veci<int32_t, 2, 30>;
 } // namespace rr
 #endif // VECI_HPP

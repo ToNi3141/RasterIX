@@ -20,6 +20,7 @@
 
 #include "FragmentData.hpp"
 #include "InterpolatedAttributesData.hpp"
+#include "math/ColorTypes.hpp"
 #include "renderer/commands/TriangleStreamTypes.hpp"
 #include <algorithm>
 #include <cstdint>

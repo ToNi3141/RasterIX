@@ -19,8 +19,7 @@
 #define _FOG_HPP_
 
 #include "Enums.hpp"
-#include "math/Vec.hpp"
-#include "math/Veci.hpp"
+#include "math/ColorTypes.hpp"
 #include <array>
 #include <cstdint>
 #include <cstring>
