@@ -23,10 +23,25 @@
 using rr::Vec2;
 using rr::Vec3;
 using rr::Vec4;
+using rr::Vec4iColorRGBA;
 using rr::softwarerasterizer::AttributeInterpolator;
 using rr::softwarerasterizer::InterpolatedAttributesData;
 using rr::TriangleStreamTypes::TriangleDesc;
 using rr::ut::vec4Approx;
+using rr::ut::vec4i16Approx;
+
+// Helper functions to convert fixed-point to float for comparison
+inline float depthZToFloat(int32_t depthZ)
+{
+    // depthZ is Sx.16 format
+    return static_cast<float>(depthZ) / static_cast<float>(1u << 16);
+}
+
+inline float texCoordToFloat(int32_t coord)
+{
+    // Texture coordinates are S16.15 format
+    return static_cast<float>(coord) / static_cast<float>(1 << 15);
+}
 
 // Helper to create a simple triangle description for testing
 TriangleDesc createTestTriangleDesc()
@@ -70,7 +85,8 @@ TEST_CASE("AttributeInterpolator color interpolation at origin", "[AttributeInte
     InterpolatedAttributesData result = interpolator.interpolate(desc, 0, 0);
 
     // At origin, color should be the start value (0.5, 0.5, 0.5, 1.0)
-    REQUIRE(vec4Approx(result.color, Vec4 { 0.5f, 0.5f, 0.5f, 1.0f }));
+    const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
+    REQUIRE(vec4i16Approx(result.color, expected));
 }
 
 TEST_CASE("AttributeInterpolator color interpolation in X direction", "[AttributeInterpolator]")
@@ -84,7 +100,8 @@ TEST_CASE("AttributeInterpolator color interpolation in X direction", "[Attribut
     InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 0);
 
     // Color should be start + 10 * colorXInc = 0.5 + 10 * 0.01 = 0.6
-    REQUIRE(vec4Approx(result.color, Vec4 { 0.6f, 0.6f, 0.6f, 1.0f }));
+    const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.6f, 0.6f, 0.6f, 1.0f });
+    REQUIRE(vec4i16Approx(result.color, expected));
 }
 
 TEST_CASE("AttributeInterpolator color interpolation in Y direction", "[AttributeInterpolator]")
@@ -98,7 +115,8 @@ TEST_CASE("AttributeInterpolator color interpolation in Y direction", "[Attribut
     InterpolatedAttributesData result = interpolator.interpolate(desc, 0, 10);
 
     // Color should be start + 10 * colorYInc = 0.5 + 10 * 0.005 = 0.55
-    REQUIRE(vec4Approx(result.color, Vec4 { 0.55f, 0.55f, 0.55f, 1.0f }));
+    const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.55f, 0.55f, 0.55f, 1.0f });
+    REQUIRE(vec4i16Approx(result.color, expected));
 }
 
 TEST_CASE("AttributeInterpolator combined X and Y color interpolation", "[AttributeInterpolator]")
@@ -112,7 +130,8 @@ TEST_CASE("AttributeInterpolator combined X and Y color interpolation", "[Attrib
     InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 10);
 
     // Color should be start + 10*xInc + 10*yInc = 0.5 + 0.1 + 0.05 = 0.65
-    REQUIRE(vec4Approx(result.color, Vec4 { 0.65f, 0.65f, 0.65f, 1.0f }));
+    const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.65f, 0.65f, 0.65f, 1.0f });
+    REQUIRE(vec4i16Approx(result.color, expected));
 }
 
 TEST_CASE("AttributeInterpolator depth interpolation", "[AttributeInterpolator]")
@@ -127,7 +146,7 @@ TEST_CASE("AttributeInterpolator depth interpolation", "[AttributeInterpolator]"
         InterpolatedAttributesData result = interpolator.interpolate(desc, 0, 0);
 
         // depthZ should be 0.5, depthW should be 1/1.0 = 1.0
-        REQUIRE(result.depthZ == Approx(0.5f));
+        REQUIRE(depthZToFloat(result.depthZ) == Approx(0.5f));
         REQUIRE(result.depthW == Approx(1.0f));
     }
 
@@ -136,7 +155,7 @@ TEST_CASE("AttributeInterpolator depth interpolation", "[AttributeInterpolator]"
         InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 10);
 
         // depthZ = 0.5 + 10*0.001 + 10*0.001 = 0.52
-        REQUIRE(result.depthZ == Approx(0.52f));
+        REQUIRE(depthZToFloat(result.depthZ) == Approx(0.52f).margin(0.001f));
     }
 }
 
@@ -152,9 +171,9 @@ TEST_CASE("AttributeInterpolator texture interpolation", "[AttributeInterpolator
         InterpolatedAttributesData result = interpolator.interpolate(desc, 0, 0);
 
         // S=0, T=0 at origin (perspective corrected with Q=1)
-        REQUIRE(result.tex[0].s == Approx(0.0f).margin(0.001f));
-        REQUIRE(result.tex[0].t == Approx(0.0f).margin(0.001f));
-        REQUIRE(result.tex[0].q == Approx(1.0f).margin(0.001f));
+        REQUIRE(texCoordToFloat(result.tex[0].s) == Approx(0.0f).margin(0.001f));
+        REQUIRE(texCoordToFloat(result.tex[0].t) == Approx(0.0f).margin(0.001f));
+        REQUIRE(texCoordToFloat(result.tex[0].q) == Approx(1.0f).margin(0.001f));
     }
 
     SECTION("At (10, 0)")
@@ -162,8 +181,8 @@ TEST_CASE("AttributeInterpolator texture interpolation", "[AttributeInterpolator
         InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 0);
 
         // S = (0 + 10*0.01) * (1/Q) = 0.1 (Q=1)
-        REQUIRE(result.tex[0].s == Approx(0.1f).margin(0.001f));
-        REQUIRE(result.tex[0].t == Approx(0.0f).margin(0.001f));
+        REQUIRE(texCoordToFloat(result.tex[0].s) == Approx(0.1f).margin(0.001f));
+        REQUIRE(texCoordToFloat(result.tex[0].t) == Approx(0.0f).margin(0.001f));
     }
 
     SECTION("At (0, 10)")
@@ -171,8 +190,8 @@ TEST_CASE("AttributeInterpolator texture interpolation", "[AttributeInterpolator
         InterpolatedAttributesData result = interpolator.interpolate(desc, 0, 10);
 
         // T = (0 + 10*0.01) * (1/Q) = 0.1 (Q=1)
-        REQUIRE(result.tex[0].s == Approx(0.0f).margin(0.001f));
-        REQUIRE(result.tex[0].t == Approx(0.1f).margin(0.001f));
+        REQUIRE(texCoordToFloat(result.tex[0].s) == Approx(0.0f).margin(0.001f));
+        REQUIRE(texCoordToFloat(result.tex[0].t) == Approx(0.1f).margin(0.001f));
     }
 }
 
@@ -188,7 +207,8 @@ TEST_CASE("AttributeInterpolator TMU enable/disable", "[AttributeInterpolator]")
         // Should not crash, texture values will be uninitialized/zero
         InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 10);
         // Color should still be interpolated
-        REQUIRE(vec4Approx(result.color, Vec4 { 0.65f, 0.65f, 0.65f, 1.0f }));
+        const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.65f, 0.65f, 0.65f, 1.0f });
+        REQUIRE(vec4i16Approx(result.color, expected));
     }
 
     SECTION("TMU 0 enabled interpolates texture")
@@ -197,8 +217,8 @@ TEST_CASE("AttributeInterpolator TMU enable/disable", "[AttributeInterpolator]")
         InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 10);
 
         // Both S and T should be 0.1
-        REQUIRE(result.tex[0].s == Approx(0.1f).margin(0.001f));
-        REQUIRE(result.tex[0].t == Approx(0.1f).margin(0.001f));
+        REQUIRE(texCoordToFloat(result.tex[0].s) == Approx(0.1f).margin(0.001f));
+        REQUIRE(texCoordToFloat(result.tex[0].t) == Approx(0.1f).margin(0.001f));
     }
 }
 
@@ -218,9 +238,8 @@ TEST_CASE("AttributeInterpolator color clamping", "[AttributeInterpolator]")
         InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 0);
 
         // 0.9 + 10*0.1 = 1.9 -> clamped to 1.0
-        REQUIRE(result.color[0] == Approx(1.0f));
-        REQUIRE(result.color[1] == Approx(1.0f));
-        REQUIRE(result.color[2] == Approx(1.0f));
+        const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
+        REQUIRE(vec4i16Approx(result.color, expected));
     }
 
     SECTION("Color clamped to 0.0")
@@ -232,9 +251,8 @@ TEST_CASE("AttributeInterpolator color clamping", "[AttributeInterpolator]")
         InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 0);
 
         // 0.1 + 10*(-0.1) = -0.9 -> clamped to 0.0
-        REQUIRE(result.color[0] == Approx(0.0f));
-        REQUIRE(result.color[1] == Approx(0.0f));
-        REQUIRE(result.color[2] == Approx(0.0f));
+        const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
+        REQUIRE(vec4i16Approx(result.color, expected));
     }
 }
 
@@ -258,7 +276,7 @@ TEST_CASE("AttributeInterpolator perspective correct texture", "[AttributeInterp
     // At origin: S_raw=0, T_raw=0, Q_raw=2
     // After perspective divide: s = S_raw * (1/Q_raw) = 0 * 0.5 = 0
     // q = 1/Q_raw = 0.5
-    REQUIRE(result.tex[0].s == Approx(0.0f).margin(0.001f));
-    REQUIRE(result.tex[0].t == Approx(0.0f).margin(0.001f));
-    REQUIRE(result.tex[0].q == Approx(0.5f).margin(0.001f));
+    REQUIRE(texCoordToFloat(result.tex[0].s) == Approx(0.0f).margin(0.001f));
+    REQUIRE(texCoordToFloat(result.tex[0].t) == Approx(0.0f).margin(0.001f));
+    REQUIRE(texCoordToFloat(result.tex[0].q) == Approx(0.5f).margin(0.001f));
 }

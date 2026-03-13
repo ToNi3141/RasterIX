@@ -19,7 +19,7 @@
 #define _TEXENV_HPP_
 
 #include "Enums.hpp"
-#include "math/Vec.hpp"
+#include "math/ColorTypes.hpp"
 #include <cstdint>
 
 namespace rr::softwarerasterizer
@@ -28,12 +28,12 @@ namespace rr::softwarerasterizer
 class TexEnv
 {
 public:
-    Vec4 apply(
-        const Vec4& previousColor,
-        const Vec4& texSrcColor,
-        const Vec4& primaryColor) const;
+    Vec4iColorRGBA apply(
+        const Vec4iColorRGBA& previousColor,
+        const Vec4iColorRGBA& texSrcColor,
+        const Vec4iColorRGBA& primaryColor) const;
 
-    void setEnvColor(const Vec4& color)
+    void setEnvColor(const Vec4iColorRGBA& color)
     {
         m_envColor = color;
     }
@@ -110,12 +110,12 @@ public:
 
     void setShiftRgb(const uint8_t val)
     {
-        m_scaleRgb = static_cast<float>(1 << val);
+        m_scaleRgb = val;
     }
 
     void setShiftAlpha(const uint8_t val)
     {
-        m_scaleAlpha = static_cast<float>(1 << val);
+        m_scaleAlpha = val;
     }
 
     void setEnable(bool enable)
@@ -124,12 +124,12 @@ public:
     }
 
 private:
-    float selectSrcAlpha(
+    Vec4iColorRGBA::Type selectSrcAlpha(
         const SrcReg& srcReg,
-        const Vec4& texture,
-        const Vec4& constant,
-        const Vec4& primaryColor,
-        const Vec4& previous) const
+        const Vec4iColorRGBA& texture,
+        const Vec4iColorRGBA& constant,
+        const Vec4iColorRGBA& primaryColor,
+        const Vec4iColorRGBA& previous) const
     {
         switch (srcReg)
         {
@@ -142,16 +142,16 @@ private:
         case SrcReg::PREVIOUS:
             return previous[3];
         default:
-            return 0.0f;
+            return Vec4iColorRGBA::Zero;
         }
     }
 
-    const Vec4& selectSrc(
+    const Vec4iColorRGBA& selectSrc(
         const SrcReg& srcReg,
-        const Vec4& texture,
-        const Vec4& constant,
-        const Vec4& primaryColor,
-        const Vec4& previous) const
+        const Vec4iColorRGBA& texture,
+        const Vec4iColorRGBA& constant,
+        const Vec4iColorRGBA& primaryColor,
+        const Vec4iColorRGBA& previous) const
     {
         switch (srcReg)
         {
@@ -167,80 +167,51 @@ private:
         }
     }
 
-    Vec3 selectRgbOperand(const Operand& operand, const Vec4& color) const
+    Vec3iColorRGB selectRgbOperand(const Operand& operand, const Vec4iColorRGBA& color) const
     {
         switch (operand)
         {
         case Operand::SRC_ALPHA:
-            return Vec3 { color[3], color[3], color[3] };
+            return Vec3iColorRGB { color[3], color[3], color[3] };
         case Operand::ONE_MINUS_SRC_ALPHA:
-            return Vec3 { 1.0f - color[3], 1.0f - color[3], 1.0f - color[3] };
+            return Vec3iColorRGB {
+                static_cast<Vec3iColorRGB::Type>(Vec4iColorRGBA::FracMax - color[3]),
+                static_cast<Vec3iColorRGB::Type>(Vec4iColorRGBA::FracMax - color[3]),
+                static_cast<Vec3iColorRGB::Type>(Vec4iColorRGBA::FracMax - color[3])
+            };
         case Operand::SRC_COLOR:
-            return Vec3 { color[0], color[1], color[2] };
+            return Vec3iColorRGB { color[0], color[1], color[2] };
         case Operand::ONE_MINUS_SRC_COLOR:
-            return Vec3 { 1.0f - color[0], 1.0f - color[1], 1.0f - color[2] };
+            return Vec3iColorRGB {
+                static_cast<Vec3iColorRGB::Type>(Vec4iColorRGBA::FracMax - color[0]),
+                static_cast<Vec3iColorRGB::Type>(Vec4iColorRGBA::FracMax - color[1]),
+                static_cast<Vec3iColorRGB::Type>(Vec4iColorRGBA::FracMax - color[2])
+            };
         default:
-            return Vec3 { 0.0f, 0.0f, 0.0f };
+            return Vec3iColorRGB { Vec3iColorRGB::Zero, Vec3iColorRGB::Zero, Vec3iColorRGB::Zero };
         }
     }
 
-    float selectAlphaOperand(const Operand& operand, const float& color) const
+    Vec3iColorRGB::Type selectAlphaOperand(const Operand& operand, const Vec3iColorRGB::Type& color) const
     {
         switch (operand)
         {
         case Operand::SRC_ALPHA:
             return color;
         case Operand::ONE_MINUS_SRC_ALPHA:
-            return 1.0f - color;
+            return Vec3iColorRGB::FracMax - color;
         default:
-            return 0.0f;
+            return Vec3iColorRGB::Zero;
         }
     }
 
-    Vec3 combineRgb(const Combine& combine, const Vec3& op0, const Vec3& op1, const Vec3& op2) const
+    Vec3iColorRGB combineRgb(
+        const Combine& combine,
+        const Vec3iColorRGB& op0,
+        const Vec3iColorRGB& op1,
+        const Vec3iColorRGB& op2) const
     {
-        Vec3 result {};
-        switch (combine)
-        {
-        case Combine::REPLACE:
-            result = op0;
-            break;
-        case Combine::MODULATE:
-            result = op0;
-            result *= op1;
-            break;
-        case Combine::ADD:
-            result = op0;
-            result += op1;
-            break;
-        case Combine::ADD_SIGNED:
-            result = op0;
-            result += op1;
-            result -= Vec3 { 0.5f, 0.5f, 0.5f };
-            break;
-        case Combine::INTERPOLATE:
-            result = op0 + (op1 - op2) * op2;
-            break;
-        case Combine::SUBTRACT:
-            result = op0;
-            result -= op1;
-            break;
-        case Combine::DOT3_RGB:
-        case Combine::DOT3_RGBA:
-        {
-            const float dot = (op0 - Vec3 { 0.5f, 0.5f, 0.5f }).dot(op1 - Vec3 { 0.5f, 0.5f, 0.5f }) * 4.0f;
-            result = Vec3 { dot, dot, dot };
-        }
-        break;
-        default:
-            break;
-        }
-        return result;
-    }
-
-    float combineAlpha(const Combine& combine, const float& op0, const float& op1, const float& op2) const
-    {
-        float result {};
+        Vec3iColorRGB result {};
         switch (combine)
         {
         case Combine::REPLACE:
@@ -253,21 +224,64 @@ private:
             result = op0 + op1;
             break;
         case Combine::ADD_SIGNED:
-            result = op0 + op1 - 0.5f;
+            result = op0 + op1 - Vec3iColorRGB { Vec3iColorRGB::Half, Vec3iColorRGB::Half, Vec3iColorRGB::Half };
             break;
         case Combine::INTERPOLATE:
-            result = op0 + (op1 - op2) * op2;
+            result = op0 * op2 + op1 * (Vec3iColorRGB { Vec3iColorRGB::FracMax, Vec3iColorRGB::FracMax, Vec3iColorRGB::FracMax } - op2);
             break;
         case Combine::SUBTRACT:
             result = op0 - op1;
             break;
+        case Combine::DOT3_RGB:
+        case Combine::DOT3_RGBA:
+        {
+            const Vec3iColorRGB::Type dot = (op0 - Vec3iColorRGB { Vec3iColorRGB::Half, Vec3iColorRGB::Half, Vec3iColorRGB::Half })
+                                                .dot(op1 - Vec3iColorRGB { Vec3iColorRGB::Half, Vec3iColorRGB::Half, Vec3iColorRGB::Half })
+                << 2;
+            result = Vec3iColorRGB { dot, dot, dot };
+        }
+        break;
         default:
             break;
         }
         return result;
     }
 
-    Vec4 m_envColor {};
+    Vec1iColorR combineAlpha(
+        const Combine& combine,
+        const Vec1iColorR& op0,
+        const Vec1iColorR& op1,
+        const Vec1iColorR& op2) const
+    {
+        Vec1iColorR result;
+        switch (combine)
+        {
+        case Combine::REPLACE:
+            result = op0;
+            break;
+        case Combine::MODULATE:
+            result = op0 * op1;
+            break;
+        case Combine::ADD:
+            result = op0 + op1;
+            break;
+        case Combine::ADD_SIGNED:
+            result = op0 + op1 - Vec1iColorR { Vec1iColorR::Half };
+            break;
+        case Combine::INTERPOLATE:
+            result = (op0 * op2) + (op1 * (Vec1iColorR { Vec1iColorR::FracMax } - op2));
+            break;
+        case Combine::SUBTRACT:
+            result = op0 - op1;
+            break;
+        default:
+            result = Vec1iColorR { Vec1iColorR::Zero };
+            break;
+        }
+        return result;
+    }
+
+    Vec4iColorRGBA m_envColor {};
 
     Combine m_combineRgb {};
     Combine m_combineAlpha {};
@@ -286,8 +300,8 @@ private:
     Operand m_operandAlpha1 {};
     Operand m_operandAlpha2 {};
 
-    float m_scaleRgb { 1.0f };
-    float m_scaleAlpha { 1.0f };
+    uint8_t m_scaleRgb { 0 };
+    uint8_t m_scaleAlpha { 0 };
 
     bool m_enable { false };
 };

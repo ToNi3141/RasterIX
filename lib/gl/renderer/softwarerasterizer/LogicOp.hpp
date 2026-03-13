@@ -19,8 +19,7 @@
 #define _LOGICOP_HPP_
 
 #include "Enums.hpp"
-#include "math/Vec.hpp"
-#include "math/Veci.hpp"
+#include "math/ColorTypes.hpp"
 #include <cstdint>
 
 namespace rr::softwarerasterizer
@@ -28,19 +27,12 @@ namespace rr::softwarerasterizer
 class LogicOp
 {
 public:
-    Vec4 op(const Vec4& src, const Vec4& dst) const
+    Vec4iColorRGBA op(const Vec4iColorRGBA& src, const Vec4iColorRGBA& dst) const
     {
         if (!m_enable)
             return src;
 
-        const Vec4ui8 srcInt = Vec4ui8::createFromVecToInt<Vec4, 8>(src);
-        const Vec4ui8 dstInt = Vec4ui8::createFromVecToInt<Vec4, 8>(dst);
-        const Vec4ui8 resultInt = calcOp(srcInt, dstInt);
-        const Vec4 result { static_cast<float>(resultInt[0]) / 255.0f,
-            static_cast<float>(resultInt[1]) / 255.0f,
-            static_cast<float>(resultInt[2]) / 255.0f,
-            static_cast<float>(resultInt[3]) / 255.0f };
-        return result;
+        return calcOp(src, dst);
     }
 
     void setLogicOp(const rr::LogicOp logicOp)
@@ -59,21 +51,21 @@ public:
     }
 
 private:
-    static Vec4ui8 invertColor(const Vec4ui8& color)
+    static Vec4iColorRGBA invertColor(const Vec4iColorRGBA& color)
     {
-        return Vec4ui8 { 255, 255, 255, 255 } - color;
+        return Vec4iColorRGBA { Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax } - color;
     }
 
-    Vec4ui8 calcOp(const Vec4ui8& src, const Vec4ui8& dst) const
+    Vec4iColorRGBA calcOp(const Vec4iColorRGBA& src, const Vec4iColorRGBA& dst) const
     {
-        Vec4ui8 result;
+        Vec4iColorRGBA result;
         switch (m_logicOp)
         {
         case rr::LogicOp::CLEAR:
-            result = Vec4ui8 { 0, 0, 0, 0 };
+            result = Vec4iColorRGBA { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
             break;
         case rr::LogicOp::SET:
-            result = Vec4ui8 { 255, 255, 255, 255 };
+            result = Vec4iColorRGBA { Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax };
             break;
         case rr::LogicOp::COPY:
             result = src;

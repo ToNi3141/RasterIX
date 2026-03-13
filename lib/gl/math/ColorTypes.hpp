@@ -15,31 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef _INTERPOLATED_ATTRIBUTES_DATA_HPP_
-#define _INTERPOLATED_ATTRIBUTES_DATA_HPP_
+#ifndef _COLOR_TYPES_HPP_
+#define _COLOR_TYPES_HPP_
 
-#include "RenderConfigs.hpp"
-#include "math/ColorTypes.hpp"
-#include <array>
-#include <cstdint>
+#include "math/Veci.hpp"
 
-namespace rr::softwarerasterizer
+namespace rr
 {
-struct InterpolatedAttributesData
-{
-    struct Texture
-    {
-        int32_t s; // S16.15
-        int32_t t; // S16.15
-        int32_t q; // S16.15
-    };
-    std::array<Texture, RenderConfig::TMU_COUNT> tex;
-    std::array<Texture, RenderConfig::TMU_COUNT> texMipmap;
-    float depthW;
-    int32_t depthZ;
-    Vec4iColorRGBA color;
-};
 
-} // namespace rr::softwarerasterizer
+using Vec4iColorRGBA = Veci<int_fast16_t, 4, 8>;
+using Vec3iColorRGB = Veci<int_fast16_t, 3, 8>;
+using Vec1iColorR = Veci<int_fast16_t, 1, 8>;
 
-#endif // _INTERPOLATED_ATTRIBUTES_DATA_HPP_
+} // namespace rr
+
+#endif // _COLOR_TYPES_HPP_

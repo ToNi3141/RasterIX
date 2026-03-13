@@ -43,14 +43,7 @@ bool PixelPipeline::updatePipeline()
 
 bool PixelPipeline::setClearColor(const Vec4& color)
 {
-    return m_renderer.setClearColor({
-        Vec4i {
-            static_cast<uint8_t>(color[0] * 255.0f),
-            static_cast<uint8_t>(color[1] * 255.0f),
-            static_cast<uint8_t>(color[2] * 255.0f),
-            static_cast<uint8_t>(color[3] * 255.0f),
-        },
-    });
+    return m_renderer.setClearColor({ Vec4iColorRGBA::createFromVecToInt(color) });
 }
 
 bool PixelPipeline::setClearDepth(const float depth)
@@ -63,12 +56,7 @@ bool PixelPipeline::setClearDepth(const float depth)
 Vec4 PixelPipeline::getClearColor() const
 {
     ColorBufferClearColorReg clearColorReg = m_renderer.getClearColor();
-    return Vec4 {
-        static_cast<float>(clearColorReg.getColor()[0]) / 255.0f,
-        static_cast<float>(clearColorReg.getColor()[1]) / 255.0f,
-        static_cast<float>(clearColorReg.getColor()[2]) / 255.0f,
-        static_cast<float>(clearColorReg.getColor()[3]) / 255.0f,
-    };
+    return Vec4 { clearColorReg.getColor().toFloat() };
 }
 
 float PixelPipeline::getClearDepth() const

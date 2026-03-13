@@ -20,11 +20,12 @@
 namespace rr::softwarerasterizer
 {
 
-Vec4 TextureMap::getTexel(const float s, const float t) const
+Vec4iColorRGBA TextureMap::getTexel(const int32_t s, const int32_t t) const
 {
     if (!m_enable)
     {
-        return Vec4::createHomogeneous();
+        // Return homogeneous vector (0, 0, 0, 1) in S8.8 format
+        return Vec4iColorRGBA { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::FracMax };
     }
 
     // TODO: Mipmapping (m_enableMinFilter)
@@ -38,35 +39,35 @@ Vec4 TextureMap::getTexel(const float s, const float t) const
     }
 }
 
-Vec4 TextureMap::getUnfilteredTexel(const float s, const float t) const
+Vec4iColorRGBA TextureMap::getUnfilteredTexel(const int32_t s, const int32_t t) const
 {
-    const float cS = clampTexCoord(s, m_wrapModeS);
-    const float cT = clampTexCoord(t, m_wrapModeT);
+    const int32_t cS = clampTexCoord(s, m_wrapModeS);
+    const int32_t cT = clampTexCoord(t, m_wrapModeT);
 
     const auto [uS, uT] = texCoordToTexel(cS, cT);
     const uint32_t addr = getTexelAddrFromInt(uS, uT);
     return m_deserialize(readTexelAtAddr(addr));
 }
 
-Vec4 TextureMap::getFilteredTexel(const float s, const float t) const
+Vec4iColorRGBA TextureMap::getFilteredTexel(const int32_t s, const int32_t t) const
 {
-    const float cS = clampTexCoord(s, m_wrapModeS);
-    const float cT = clampTexCoord(t, m_wrapModeT);
+    const int32_t cS = clampTexCoord(s, m_wrapModeS);
+    const int32_t cT = clampTexCoord(t, m_wrapModeT);
 
     // Convert to texel coordinates once
-    const float sTexel = cS * m_textureSizeW;
-    const float tTexel = cT * m_textureSizeH;
-    const int32_t sInt = static_cast<int32_t>(sTexel);
-    const int32_t tInt = static_cast<int32_t>(tTexel);
+    const int32_t sTexel = cS * m_textureSizeW;
+    const int32_t tTexel = cT * m_textureSizeH;
+    const int32_t sInt = sTexel >> SHIFT_15; // Integer part in S16.15
+    const int32_t tInt = tTexel >> SHIFT_15; // Integer part in S16.15
 
     // Calculate texel coordinates for all 4 corners
     uint32_t uS0, uT0, uS1, uT1;
     if (m_wrapModeS == TextureWrapMode::CLAMP_TO_EDGE)
     {
-        uS0 = static_cast<uint32_t>(std::clamp(sInt, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskW)));
-        uT0 = static_cast<uint32_t>(std::clamp(tInt, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskH)));
-        uS1 = static_cast<uint32_t>(std::clamp(sInt + 1, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskW)));
-        uT1 = static_cast<uint32_t>(std::clamp(tInt + 1, static_cast<int32_t>(0), static_cast<int32_t>(m_textureMaskH)));
+        uS0 = static_cast<uint32_t>(std::clamp(sInt, ZERO_15, m_textureMaskW));
+        uT0 = static_cast<uint32_t>(std::clamp(tInt, ZERO_15, m_textureMaskH));
+        uS1 = static_cast<uint32_t>(std::clamp(sInt + 1, ZERO_15, m_textureMaskW));
+        uT1 = static_cast<uint32_t>(std::clamp(tInt + 1, ZERO_15, m_textureMaskH));
     }
     else // REPEAT - use bitmask
     {
@@ -83,18 +84,22 @@ Vec4 TextureMap::getFilteredTexel(const float s, const float t) const
     const uint16_t texel11 = readTexelAtAddr(getTexelAddrFromInt(uS1, uT1));
 
     // Deserialize using function pointer (no switch in hot path)
-    const Vec4 c00 = m_deserialize(texel00);
-    const Vec4 c01 = m_deserialize(texel01);
-    const Vec4 c10 = m_deserialize(texel10);
-    const Vec4 c11 = m_deserialize(texel11);
+    const Vec4iColorRGBA c00 = m_deserialize(texel00);
+    const Vec4iColorRGBA c01 = m_deserialize(texel01);
+    const Vec4iColorRGBA c10 = m_deserialize(texel10);
+    const Vec4iColorRGBA c11 = m_deserialize(texel11);
 
-    // Bilinear interpolation factors
-    const float factorS = sTexel - static_cast<float>(sInt);
-    const float factorT = tTexel - static_cast<float>(tInt);
+    // Bilinear interpolation factors in S16.15
+    const int32_t factorS_15 = sTexel & (static_cast<uint32_t>(ONE_15 - 1) | 0x80000000); // Fractional part in S16.15
+    const int32_t factorT_15 = tTexel & (static_cast<uint32_t>(ONE_15 - 1) | 0x80000000); // Fractional part in S16.15
 
-    const Vec4 c0 = rr::interpolate(c00, c01, factorT);
-    const Vec4 c1 = rr::interpolate(c10, c11, factorT);
-    return rr::interpolate(c0, c1, factorS);
+    // Convert factors from S16.15 to S8.8 for Vec4iColorRGBA::interpolate
+    const int16_t factorS = static_cast<int16_t>(factorS_15 >> (SHIFT_15 - Vec4iColorRGBA::Shift));
+    const int16_t factorT = static_cast<int16_t>(factorT_15 >> (SHIFT_15 - Vec4iColorRGBA::Shift));
+
+    const Vec4iColorRGBA c0 = Vec4iColorRGBA::interpolate(c00, c01, factorT);
+    const Vec4iColorRGBA c1 = Vec4iColorRGBA::interpolate(c10, c11, factorT);
+    return Vec4iColorRGBA::interpolate(c0, c1, factorS);
 }
 
 } // namespace rr::softwarerasterizer

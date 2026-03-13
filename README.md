@@ -189,7 +189,8 @@ Both variants can operate in either fixed-point or floating-point arithmetic. Th
 
 # Software Rasterization
 ## Windows Build
-WGL supports a software rendering build with 16 threads and 32MB VRAM. To build it, use the following commands to create a 32bit Visual Studio Project:
+WGL supports a software rendering build with 16 threads and 32MB VRAM. It is a 32 bit fixed point renderer, similar to the `rixif` variant. 32 bit is used as a tradeoff to performance. Wider calculations would increase the image quality but decrease the performance on 32 bit systems.
+To build it, use the following commands to create a 32bit Visual Studio Project:
 ```sh
 cd <rasterix_directory>
 cmake --preset win32_sw

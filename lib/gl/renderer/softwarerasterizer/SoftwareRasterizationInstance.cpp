@@ -101,8 +101,8 @@ bool SoftwareRasterizationInstance::handleCommand(const FogLutStreamCmd& cmd)
     Fog::FogLut lut {};
     for (std::size_t i = 0; i < lut.size(); i++)
     {
-        lut[i].m = cmd.getLutM(i);
-        lut[i].b = cmd.getLutB(i);
+        lut[i].m = cmd.getLutM(i) >> 8; // Qx.22 -> Sx.14
+        lut[i].b = cmd.getLutB(i) >> 8; // S1.30 -> S1.22
     }
     m_fog.setFogLut(lut, cmd.getLowerBound(), cmd.getUpperBound());
     return true;
@@ -110,7 +110,7 @@ bool SoftwareRasterizationInstance::handleCommand(const FogLutStreamCmd& cmd)
 
 bool SoftwareRasterizationInstance::handleCommand(const TriangleStreamCmd& cmd)
 {
-    const TriangleStreamTypes::TriangleDesc attributesData = cmd.payload()[0];
+    const TriangleStreamTypes::TriangleDescX attributesData = cmd.payload()[0];
     m_rasterizer.init(attributesData);
     while (!m_rasterizer.isDone())
     {
@@ -121,7 +121,7 @@ bool SoftwareRasterizationInstance::handleCommand(const TriangleStreamCmd& cmd)
             const uint16_t depth = m_depthBuffer.readFragment(fmd.index);
             const uint8_t stencil = m_stencilBuffer.readFragment(fmd.index);
             m_depthFunc.setReferenceValue(depth);
-            const uint16_t depthZ16 = softwarerasterizerhelpers::serializeDepth(interpolatedAttributes.depthZ);
+            const uint16_t depthZ16 = softwarerasterizerhelpers::serializeDepthInt(interpolatedAttributes.depthZ);
             const bool zPass = m_depthFunc.check(depthZ16);
             const bool stencilPass = m_stencilFunc.check(stencil);
             if (m_stencilOp.getEnable())
@@ -132,16 +132,15 @@ bool SoftwareRasterizationInstance::handleCommand(const TriangleStreamCmd& cmd)
 
             if (zPass && stencilPass)
             {
-                // Fragment processing
-                const Vec4 texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
-                const Vec4 texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
-                const Vec4 texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
-                const Vec4 texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
+                const Vec4iColorRGBA texel0 = m_textureMapper[0].getTexel(interpolatedAttributes.tex[0].s, interpolatedAttributes.tex[0].t);
+                const Vec4iColorRGBA texel1 = m_textureMapper[1].getTexel(interpolatedAttributes.tex[1].s, interpolatedAttributes.tex[1].t);
+                const Vec4iColorRGBA texEnvTexel0 = m_texEnv[0].apply(interpolatedAttributes.color, texel0, interpolatedAttributes.color);
+                const Vec4iColorRGBA texEnvTexel1 = m_texEnv[1].apply(texEnvTexel0, texel1, interpolatedAttributes.color);
                 if (m_alphaFunc.check(texEnvTexel1[3]))
                 {
-                    const Vec4 foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
-                    const Vec4 destColor = softwarerasterizerhelpers::deserializeFromRgb565(m_colorBuffer.readFragment(fmd.index));
-                    Vec4 finalColor;
+                    const Vec4iColorRGBA foggedColor = m_fog.calculateFog(interpolatedAttributes.depthW, texEnvTexel1);
+                    const Vec4iColorRGBA destColor = softwarerasterizerhelpers::deserializeFromRgb565(m_colorBuffer.readFragment(fmd.index));
+                    Vec4iColorRGBA finalColor;
                     if (m_logicOp.getEnable())
                     {
                         finalColor = m_logicOp.op(foggedColor, destColor);
@@ -219,7 +218,7 @@ bool SoftwareRasterizationInstance::handleRegister(const ColorBufferAddrReg& reg
 
 bool SoftwareRasterizationInstance::handleRegister(const ColorBufferClearColorReg& reg)
 {
-    m_colorBuffer.setClearColor(softwarerasterizerhelpers::serializeToRgb565(reg.getColorf()));
+    m_colorBuffer.setClearColor(softwarerasterizerhelpers::serializeToRgb565(reg.getColor()));
     return true;
 }
 
@@ -256,14 +255,14 @@ bool SoftwareRasterizationInstance::handleRegister(const FeatureEnableReg& reg)
 
 bool SoftwareRasterizationInstance::handleRegister(const FogColorReg& reg)
 {
-    m_fog.setFogColor(reg.getColorf());
+    m_fog.setFogColor(reg.getColor());
     return true;
 }
 
 bool SoftwareRasterizationInstance::handleRegister(const FragmentPipelineReg& reg)
 {
     m_alphaFunc.setFunction(reg.getAlphaFunc());
-    m_alphaFunc.setReferenceValue(static_cast<float>(reg.getRefAlphaValue()) / 255.0f);
+    m_alphaFunc.setReferenceValue(static_cast<int16_t>(reg.getRefAlphaValue()));
     m_depthFunc.setFunction(reg.getDepthFunc());
     m_blendFunc.setSFactor(reg.getBlendFuncSFactor());
     m_blendFunc.setDFactor(reg.getBlendFuncDFactor());
@@ -320,7 +319,7 @@ bool SoftwareRasterizationInstance::handleRegister(const StencilReg& reg)
 
 bool SoftwareRasterizationInstance::handleRegister(const TexEnvColorReg& reg)
 {
-    m_texEnv[reg.getTmuFromAddr()].setEnvColor(reg.getColorf());
+    m_texEnv[reg.getTmuFromAddr()].setEnvColor(reg.getColor());
     return true;
 }
 

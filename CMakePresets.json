@@ -163,7 +163,7 @@
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "1024",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "1024",
                 "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "15",
-                "RIX_CORE_USE_FLOAT_INTERPOLATION": "true",
+                "RIX_CORE_USE_FLOAT_INTERPOLATION": "false",
                 "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "12288",
                 "RIX_CORE_NUMBER_OF_TEXTURES": "12288",
                 "RIX_CORE_TEXTURE_PAGE_SIZE": "2048",

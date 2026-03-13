@@ -24,131 +24,146 @@
 namespace rr
 {
 // This is a configurable fixed point vector class
-template <typename T, std::size_t VecSize>
+template <typename T, std::size_t VecSize, std::size_t DefaultShift = 0>
 class Veci
 {
 public:
+    static constexpr T One = (static_cast<T>(1) << DefaultShift);
+    static constexpr T Half = One >> 1;
+    static constexpr T Zero = 0;
+    static constexpr T FracMax = One - 1;
+    static constexpr std::size_t Shift = DefaultShift;
+    using Type = T;
+
     Veci() { }
-    Veci(const Veci<T, VecSize>& val) { operator=(val.vec); }
+    Veci(const Veci<T, VecSize, DefaultShift>& val) { operator=(val.vec); }
     Veci(const std::array<T, VecSize>& val) { operator=(val); }
     Veci(const std::initializer_list<T> val) { std::copy(val.begin(), val.end(), vec.begin()); }
     ~Veci() { }
 
-    Veci<T, VecSize>& operator*=(T val)
+    Veci<T, VecSize, DefaultShift>& operator*=(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = vec[i] * val;
+            vec[i] = (vec[i] * val) >> DefaultShift;
         return *this;
     }
 
-    Veci<T, VecSize>& operator*=(const Veci<T, VecSize>& val)
+    Veci<T, VecSize, DefaultShift>& operator*=(const Veci<T, VecSize, DefaultShift>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = vec[i] * val[i];
+            vec[i] = (vec[i] * val[i]) >> DefaultShift;
         return *this;
     }
 
-    template <std::size_t shift>
+    template <std::size_t LocalShift = DefaultShift>
     void div(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (((static_cast<int64_t>(vec[i]) << shift) / static_cast<int64_t>(val)));
+            vec[i] = (((static_cast<T>(vec[i]) << LocalShift) / static_cast<T>(val)));
     }
 
-    template <std::size_t shift>
+    template <std::size_t LocalShift = DefaultShift>
     void mul(T val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (static_cast<int64_t>(vec[i]) * val) >> shift;
+            vec[i] = (static_cast<T>(vec[i]) * val) >> LocalShift;
     }
 
-    template <std::size_t shift>
-    void mul(const Veci<T, VecSize>& val)
+    template <std::size_t LocalShift = DefaultShift>
+    void mul(const Veci<T, VecSize, DefaultShift>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (static_cast<int64_t>(vec[i]) * val[i]) >> shift;
+            vec[i] = (static_cast<T>(vec[i]) * val[i]) >> LocalShift;
     }
 
-    Veci<T, VecSize>& operator+=(const Veci<T, VecSize>& val)
+    Veci<T, VecSize, DefaultShift>& operator+=(const Veci<T, VecSize, DefaultShift>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] += val[i];
         return *this;
     }
 
-    Veci<T, VecSize>& operator-=(const Veci<T, VecSize>& val)
+    Veci<T, VecSize, DefaultShift>& operator-=(const Veci<T, VecSize, DefaultShift>& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] -= val[i];
         return *this;
     }
 
-    Veci<T, VecSize> operator<<=(std::size_t val)
+    Veci<T, VecSize, DefaultShift> operator<<=(std::size_t val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] <<= val;
         return *this;
     }
 
-    Veci<T, VecSize> operator>>=(std::size_t val)
+    Veci<T, VecSize, DefaultShift> operator>>=(std::size_t val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
             vec[i] >>= val;
         return *this;
     }
 
-    template <typename TV, std::size_t shift = 0>
-    static Veci<T, VecSize> createFromVec(const TV& val)
+    template <typename TV, std::size_t LocalShift = DefaultShift>
+    static Veci<T, VecSize, DefaultShift> createFromVec(const TV& val)
     {
-        Veci<T, VecSize> vec;
+        Veci<T, VecSize, DefaultShift> vec;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * static_cast<float>(1ul << shift)) + 0.5f;
+            vec[i] = static_cast<T>((val[i] * static_cast<float>(1ul << LocalShift)) + 0.5f);
         return vec;
     }
 
-    template <typename TV, std::size_t shift = 0>
+    template <typename TV, std::size_t LocalShift = DefaultShift>
     void fromVec(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * static_cast<float>(1ul << shift)) + 0.5f;
+            vec[i] = static_cast<T>((val[i] * static_cast<float>(1ul << LocalShift)) + 0.5f);
     }
 
-    template <typename TV, std::size_t shift = 0>
-    static Veci<T, VecSize> createFromVecToInt(const TV& val)
+    template <typename TV, std::size_t LocalShift = DefaultShift>
+    static Veci<T, VecSize, DefaultShift> createFromVecToInt(const TV& val)
     {
-        Veci<T, VecSize> vec;
+        Veci<T, VecSize, DefaultShift> vec;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * (static_cast<float>(1ul << shift) - 1.0f)) + 0.5f;
+            vec[i] = static_cast<T>((val[i] * (static_cast<float>(1ul << LocalShift) - 1.0f)) + 0.5f);
         return vec;
     }
 
-    template <typename TV, std::size_t shift = 0>
+    template <typename TV, std::size_t LocalShift = DefaultShift>
     void fromVecToInt(const TV& val)
     {
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = (val[i] * (static_cast<float>(1ul << shift) - 1.0f)) + 0.5f;
+            vec[i] = static_cast<T>((val[i] * (static_cast<float>(1ul << LocalShift) - 1.0f)) + 0.5f);
+    }
+
+    std::array<float, VecSize> toFloat() const
+    {
+        std::array<float, VecSize> result;
+        for (std::size_t i = 0; i < VecSize; i++)
+            result[i] = static_cast<float>(vec[i]) / static_cast<float>(FracMax);
+        return result;
     }
 
     T& operator[](int index) { return vec[index]; }
     T operator[](int index) const { return vec[index]; }
-    Veci<T, VecSize>& operator=(const Veci<T, VecSize>& val)
+    Veci<T, VecSize, DefaultShift>& operator=(const Veci<T, VecSize, DefaultShift>& val)
     {
         vec = val.vec;
         return *this;
     }
-    Veci<T, VecSize>& operator=(const std::array<T, VecSize>& val)
+    Veci<T, VecSize, DefaultShift>& operator=(const std::array<T, VecSize>& val)
     {
         vec = val;
         return *this;
     }
 
-    template <std::size_t shift = 0>
-    int64_t dot(const Veci<T, VecSize>& val) const
+    template <std::size_t LocalShift = DefaultShift>
+    T dot(const Veci<T, VecSize, DefaultShift>& val) const
     {
-        int64_t retVal = 0;
+        T retVal = 0;
         for (std::size_t i = 0; i < VecSize; i++)
-            retVal += (static_cast<int64_t>(vec[i]) * val[i]);
-        return retVal >> shift;
+            retVal += (static_cast<T>(vec[i]) * val[i]);
+        return retVal >> LocalShift;
     }
 
     void clamp(const T low, const T high)
@@ -157,6 +172,17 @@ public:
         {
             vec[i] = std::clamp(vec[i], low, high);
         }
+    }
+
+    static Veci<T, VecSize, DefaultShift> interpolate(
+        const Veci<T, VecSize, DefaultShift>& a,
+        const Veci<T, VecSize, DefaultShift>& b,
+        const T factor)
+    {
+        Veci<T, VecSize, DefaultShift> t;
+        for (std::size_t i = 0; i < VecSize; i++)
+            t[i] = a[i] + (((b[i] - a[i]) * factor) >> DefaultShift);
+        return t;
     }
 
     const T* data() const
@@ -168,56 +194,94 @@ private:
     std::array<T, VecSize> vec {};
 };
 
-template <typename T, std::size_t VecSize>
-inline Veci<T, VecSize> operator&(const Veci<T, VecSize> lhs, const Veci<T, VecSize>& rhs)
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline Veci<T, VecSize, DefaultShift> operator*(const Veci<T, VecSize, DefaultShift>& lhs, const Veci<T, VecSize, DefaultShift>& rhs)
 {
-    Veci<T, VecSize> t;
+    Veci<T, VecSize, DefaultShift> t;
     for (std::size_t i = 0; i < VecSize; i++)
-        t[i] = lhs[i] & rhs[i];
+        t[i] = (lhs[i] * rhs[i]) >> DefaultShift;
     return t;
 }
 
-template <typename T, std::size_t VecSize>
-inline Veci<T, VecSize> operator-(const Veci<T, VecSize>& lhs, const Veci<T, VecSize>& rhs)
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline Veci<T, VecSize, DefaultShift> operator*(const T lhs, const Veci<T, VecSize, DefaultShift>& rhs)
 {
-    Veci<T, VecSize> t;
+    Veci<T, VecSize, DefaultShift> t;
+    for (std::size_t i = 0; i < VecSize; i++)
+        t[i] = (lhs * rhs[i]) >> DefaultShift;
+    return t;
+}
+
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline Veci<T, VecSize, DefaultShift> operator*(const Veci<T, VecSize, DefaultShift>& lhs, const T rhs)
+{
+    Veci<T, VecSize, DefaultShift> t;
+    for (std::size_t i = 0; i < VecSize; i++)
+        t[i] = (lhs[i] * rhs) >> DefaultShift;
+    return t;
+}
+
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline Veci<T, VecSize, DefaultShift> operator-(const Veci<T, VecSize, DefaultShift>& lhs, const Veci<T, VecSize, DefaultShift>& rhs)
+{
+    Veci<T, VecSize, DefaultShift> t;
     for (std::size_t i = 0; i < VecSize; i++)
         t[i] = lhs[i] - rhs[i];
     return t;
 }
 
-template <typename T, std::size_t VecSize>
-inline Veci<T, VecSize> operator+(const Veci<T, VecSize>& lhs, const Veci<T, VecSize>& rhs)
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline Veci<T, VecSize, DefaultShift> operator+(const Veci<T, VecSize, DefaultShift>& lhs, const Veci<T, VecSize, DefaultShift>& rhs)
 {
-    Veci<T, VecSize> t;
+    Veci<T, VecSize, DefaultShift> t;
     for (std::size_t i = 0; i < VecSize; i++)
         t[i] = lhs[i] + rhs[i];
     return t;
 }
 
-template <typename T, std::size_t VecSize>
-inline Veci<T, VecSize> operator|(const Veci<T, VecSize>& lhs, const Veci<T, VecSize>& rhs)
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline bool operator==(const rr::Veci<T, VecSize, DefaultShift>& lhs, const rr::Veci<T, VecSize, DefaultShift>& rhs)
 {
-    Veci<T, VecSize> t;
+    return std::equal(lhs.vec.begin(), lhs.vec.end(), rhs.vec.begin());
+}
+
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline bool operator!=(const rr::Veci<T, VecSize, DefaultShift>& lhs, const rr::Veci<T, VecSize, DefaultShift>& rhs)
+{
+    return !(lhs == rhs);
+}
+
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline Veci<T, VecSize, DefaultShift> operator&(const Veci<T, VecSize, DefaultShift> lhs, const Veci<T, VecSize, DefaultShift>& rhs)
+{
+    Veci<T, VecSize, DefaultShift> t;
+    for (std::size_t i = 0; i < VecSize; i++)
+        t[i] = lhs[i] & rhs[i];
+    return t;
+}
+
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline Veci<T, VecSize, DefaultShift> operator|(const Veci<T, VecSize, DefaultShift>& lhs, const Veci<T, VecSize, DefaultShift>& rhs)
+{
+    Veci<T, VecSize, DefaultShift> t;
     for (std::size_t i = 0; i < VecSize; i++)
         t[i] = lhs[i] | rhs[i];
     return t;
 }
 
-template <typename T, std::size_t VecSize>
-inline Veci<T, VecSize> operator^(const Veci<T, VecSize>& lhs, const Veci<T, VecSize>& rhs)
+template <typename T, std::size_t VecSize, std::size_t DefaultShift>
+inline Veci<T, VecSize, DefaultShift> operator^(const Veci<T, VecSize, DefaultShift>& lhs, const Veci<T, VecSize, DefaultShift>& rhs)
 {
-    Veci<T, VecSize> t;
+    Veci<T, VecSize, DefaultShift> t;
     for (std::size_t i = 0; i < VecSize; i++)
         t[i] = lhs[i] ^ rhs[i];
     return t;
 }
 
 using VecInt = int32_t;
-using Vec2i = Veci<VecInt, 2>;
-using Vec3i = Veci<VecInt, 3>;
-using Vec4i = Veci<VecInt, 4>;
+using Vec2i = Veci<VecInt, 2, 0>;
+using Vec3i = Veci<VecInt, 3, 0>;
+using Vec4i = Veci<VecInt, 4, 0>;
 
-using Vec4ui8 = Veci<uint8_t, 4>;
 } // namespace rr
 #endif // VECI_HPP

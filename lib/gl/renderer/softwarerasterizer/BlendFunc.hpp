@@ -19,7 +19,7 @@
 #define _BLENDFUNC_HPP_
 
 #include "Enums.hpp"
-#include "math/Vec.hpp"
+#include "math/ColorTypes.hpp"
 #include <cstdint>
 
 namespace rr::softwarerasterizer
@@ -28,17 +28,18 @@ class BlendFunc
 {
 public:
     // Function pointer type for blend factor calculation
-    using BlendFactorFn = Vec4 (*)(const Vec4&, const Vec4&);
+    using BlendFactorFn = Vec4iColorRGBA (*)(const Vec4iColorRGBA&, const Vec4iColorRGBA&);
 
-    Vec4 blend(const Vec4& src, const Vec4& dst) const
+    Vec4iColorRGBA blend(const Vec4iColorRGBA& src, const Vec4iColorRGBA& dst) const
     {
         if (!m_enable)
             return src;
 
-        const Vec4 srcFactor = m_sFactorFn(src, dst);
-        const Vec4 dstFactor = m_dFactorFn(src, dst);
-        Vec4 result = src * srcFactor + dst * dstFactor;
-        result.clamp(0.0f, 1.0f);
+        const Vec4iColorRGBA srcFactor = m_sFactorFn(src, dst);
+        const Vec4iColorRGBA dstFactor = m_dFactorFn(src, dst);
+        Vec4iColorRGBA result = src * srcFactor + dst * dstFactor;
+        result.clamp(Vec4iColorRGBA::Zero, Vec4iColorRGBA::FracMax);
+
         return result;
     }
 
@@ -59,62 +60,68 @@ public:
 
 private:
     // Static blend factor functions; no switch in hot path
-    static Vec4 blendZero(const Vec4&, const Vec4&)
+    static Vec4iColorRGBA blendZero(const Vec4iColorRGBA&, const Vec4iColorRGBA&)
     {
-        return Vec4 { 0.0f, 0.0f, 0.0f, 0.0f };
+        return Vec4iColorRGBA { Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero, Vec4iColorRGBA::Zero };
     }
 
-    static Vec4 blendOne(const Vec4&, const Vec4&)
+    static Vec4iColorRGBA blendOne(const Vec4iColorRGBA&, const Vec4iColorRGBA&)
     {
-        return Vec4 { 1.0f, 1.0f, 1.0f, 1.0f };
+        return Vec4iColorRGBA { Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax };
     }
 
-    static Vec4 blendSrcColor(const Vec4& src, const Vec4&)
+    static Vec4iColorRGBA blendSrcColor(const Vec4iColorRGBA& src, const Vec4iColorRGBA&)
     {
         return src;
     }
 
-    static Vec4 blendDstColor(const Vec4&, const Vec4& dst)
+    static Vec4iColorRGBA blendDstColor(const Vec4iColorRGBA&, const Vec4iColorRGBA& dst)
     {
         return dst;
     }
 
-    static Vec4 blendOneMinusSrcColor(const Vec4& src, const Vec4&)
+    static Vec4iColorRGBA blendOneMinusSrcColor(const Vec4iColorRGBA& src, const Vec4iColorRGBA&)
     {
-        return Vec4 { 1.0f - src[0], 1.0f - src[1], 1.0f - src[2], 1.0f - src[3] };
+        return Vec4iColorRGBA { static_cast<Vec4iColorRGBA::Type>(Vec4iColorRGBA::FracMax - src[0]),
+            static_cast<Vec4iColorRGBA::Type>(Vec4iColorRGBA::FracMax - src[1]),
+            static_cast<Vec4iColorRGBA::Type>(Vec4iColorRGBA::FracMax - src[2]),
+            static_cast<Vec4iColorRGBA::Type>(Vec4iColorRGBA::FracMax - src[3]) };
     }
 
-    static Vec4 blendOneMinusDstColor(const Vec4&, const Vec4& dst)
+    static Vec4iColorRGBA blendOneMinusDstColor(const Vec4iColorRGBA&, const Vec4iColorRGBA& dst)
     {
-        return Vec4 { 1.0f - dst[0], 1.0f - dst[1], 1.0f - dst[2], 1.0f - dst[3] };
+        return Vec4iColorRGBA { static_cast<Vec4iColorRGBA::Type>(Vec4iColorRGBA::FracMax - dst[0]),
+            static_cast<Vec4iColorRGBA::Type>(Vec4iColorRGBA::FracMax - dst[1]),
+            static_cast<Vec4iColorRGBA::Type>(Vec4iColorRGBA::FracMax - dst[2]),
+            static_cast<Vec4iColorRGBA::Type>(Vec4iColorRGBA::FracMax - dst[3]) };
     }
 
-    static Vec4 blendSrcAlpha(const Vec4& src, const Vec4&)
+    static Vec4iColorRGBA blendSrcAlpha(const Vec4iColorRGBA& src, const Vec4iColorRGBA&)
     {
-        return Vec4 { src[3], src[3], src[3], src[3] };
+        return Vec4iColorRGBA { src[3], src[3], src[3], src[3] };
     }
 
-    static Vec4 blendDstAlpha(const Vec4&, const Vec4& dst)
+    static Vec4iColorRGBA blendDstAlpha(const Vec4iColorRGBA&, const Vec4iColorRGBA& dst)
     {
-        return Vec4 { dst[3], dst[3], dst[3], dst[3] };
+        return Vec4iColorRGBA { dst[3], dst[3], dst[3], dst[3] };
     }
 
-    static Vec4 blendOneMinusSrcAlpha(const Vec4& src, const Vec4&)
+    static Vec4iColorRGBA blendOneMinusSrcAlpha(const Vec4iColorRGBA& src, const Vec4iColorRGBA&)
     {
-        const float a = 1.0f - src[3];
-        return Vec4 { a, a, a, a };
+        Vec4iColorRGBA::Type a = Vec4iColorRGBA::FracMax - src[3];
+        return Vec4iColorRGBA { a, a, a, a };
     }
 
-    static Vec4 blendOneMinusDstAlpha(const Vec4&, const Vec4& dst)
+    static Vec4iColorRGBA blendOneMinusDstAlpha(const Vec4iColorRGBA&, const Vec4iColorRGBA& dst)
     {
-        const float a = 1.0f - dst[3];
-        return Vec4 { a, a, a, a };
+        Vec4iColorRGBA::Type a = Vec4iColorRGBA::FracMax - dst[3];
+        return Vec4iColorRGBA { a, a, a, a };
     }
 
-    static Vec4 blendSrcAlphaSaturate(const Vec4& src, const Vec4& dst)
+    static Vec4iColorRGBA blendSrcAlphaSaturate(const Vec4iColorRGBA& src, const Vec4iColorRGBA& dst)
     {
-        const float f = std::min(src[3], 1.0f - dst[3]);
-        return Vec4 { f, f, f, 1.0f };
+        Vec4iColorRGBA::Type f = std::min(src[3], static_cast<Vec4iColorRGBA::Type>(Vec4iColorRGBA::FracMax - dst[3]));
+        return Vec4iColorRGBA { f, f, f, Vec4iColorRGBA::FracMax };
     }
 
     static BlendFactorFn getBlendFactorFn(const rr::BlendFunc factor)

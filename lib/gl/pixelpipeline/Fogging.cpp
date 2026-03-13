@@ -63,20 +63,15 @@ void Fogging::setFogDensity(const float val)
 
 bool Fogging::setFogColor(const Vec4& val)
 {
-    Vec4i color = Vec4i::createFromVec<Vec4, 8>(val);
-    color.clamp(0, 255);
+    Vec4iColorRGBA color = Vec4iColorRGBA::createFromVecToInt(val);
+    color.clamp(Vec4iColorRGBA::Zero, Vec4iColorRGBA::FracMax);
     return m_renderer.setFogColor({ color });
 }
 
 Vec4 Fogging::getFogColor() const
 {
     FogColorReg fogColorReg = m_renderer.getFogColor();
-    return Vec4 {
-        static_cast<float>(fogColorReg.getColor()[0]) / 255.0f,
-        static_cast<float>(fogColorReg.getColor()[1]) / 255.0f,
-        static_cast<float>(fogColorReg.getColor()[2]) / 255.0f,
-        static_cast<float>(fogColorReg.getColor()[3]) / 255.0f,
-    };
+    return Vec4 { fogColorReg.getColor().toFloat() };
 }
 
 bool Fogging::updateFogLut()
