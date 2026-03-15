@@ -47,7 +47,16 @@ public:
         return m_hit;
     }
 
-    void walk();
+    void walk()
+    {
+        if ((m_x >= m_bbEndX) || (m_x < m_bbStartX))
+        {
+            yInc();
+        }
+        m_hit = isInTriangle() && isInBounds();
+        calcFragmentData();
+        xInc();
+    }
 
     bool isDone() const
     {
@@ -60,22 +69,6 @@ public:
     }
 
 private:
-    enum class EdgeWalkerDirection
-    {
-        LEFT,
-        RIGHT,
-    };
-
-    enum class EdgeWalkerState
-    {
-        INIT,
-        SEARCH_EDGE,
-        WALKING,
-        WALK_OUT,
-        CHECK_DIRECTION,
-        DONE,
-    };
-
     void calcFragmentData()
     {
         int32_t bby = 0;
@@ -97,7 +90,6 @@ private:
         }
         m_fragmentData.index = (((m_yLineResolution - 1) - m_y) * m_resolutionData.x) + m_x;
         m_fragmentData.bbx = m_x - m_bbStartX;
-        ;
         m_fragmentData.bby = bby;
         m_fragmentData.spx = m_x;
         m_fragmentData.spy = m_yScreen;
@@ -108,44 +100,23 @@ private:
         return (m_w[0] >= 0) && (m_w[1] >= 0) && (m_w[2] >= 0);
     }
 
-    bool isInTriangleAndInBounds() const
+    bool isInBounds() const
     {
-        return isInTriangle() && (m_x < m_bbEndX) && (m_x >= m_bbStartX);
+        return (m_x < m_bbEndX) && (m_x >= m_bbStartX);
     }
-
-    void switchEdgeWalkDirection()
-    {
-        if (m_dir == EdgeWalkerDirection::RIGHT)
-        {
-            m_dir = EdgeWalkerDirection::LEFT;
-        }
-        else
-        {
-            m_dir = EdgeWalkerDirection::RIGHT;
-        }
-    }
-
-    bool searchEdge();
 
     void yInc()
     {
         m_y++;
         m_yScreen++;
         m_w += m_wYInc;
+        m_x = m_bbStartX;
     }
 
     void xInc()
     {
-        if (m_dir == EdgeWalkerDirection::LEFT)
-        {
-            m_x--;
-            m_w -= m_wXInc;
-        }
-        else
-        {
-            m_x++;
-            m_w += m_wXInc;
-        }
+        m_x++;
+        m_w += m_wXInc;
     }
 
     const ResolutionData& m_resolutionData;
@@ -167,10 +138,6 @@ private:
     int32_t m_bbStartY {};
     int32_t m_yLineResolution {};
 
-    EdgeWalkerDirection m_dir {};
-    EdgeWalkerState m_state {};
-
-    bool m_tryOtherSide { false };
     bool m_hit { false };
     FragmentData m_fragmentData {};
 };

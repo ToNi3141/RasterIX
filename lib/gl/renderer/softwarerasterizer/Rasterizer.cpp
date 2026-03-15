@@ -24,8 +24,6 @@ void Rasterizer::init(const TriangleStreamTypes::TriangleDescX& triangle)
 {
     m_yLineResolution = m_resolutionData.y;
 
-    m_wXInc = triangle.param.wXInc;
-    m_wYInc = triangle.param.wYInc;
     if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
     {
         if (m_yOffset <= triangle.param.bbStartY)
@@ -35,7 +33,7 @@ void Rasterizer::init(const TriangleStreamTypes::TriangleDescX& triangle)
         else
         {
             const int32_t lineBBStartY = m_yOffset - static_cast<int32_t>(triangle.param.bbStartY);
-            m_w = m_wYInc;
+            m_w = triangle.param.wYInc;
             m_w *= lineBBStartY;
             m_w += triangle.param.wInit;
         }
@@ -65,128 +63,14 @@ void Rasterizer::init(const TriangleStreamTypes::TriangleDescX& triangle)
         m_yScreenEnd = triangle.param.bbEndY;
     }
 
+    m_wXInc = triangle.param.wXInc;
+    m_wYInc = triangle.param.wYInc - (triangle.param.wXInc * (triangle.param.bbEndX - triangle.param.bbStartX));
     m_bbStartX = triangle.param.bbStartX;
     m_bbEndX = triangle.param.bbEndX;
     m_bbStartY = triangle.param.bbStartY;
-    m_dir = EdgeWalkerDirection::RIGHT;
-    m_state = EdgeWalkerState::INIT;
-    m_x = m_bbStartX;
-    m_tryOtherSide = false;
+    m_x = triangle.param.bbStartX;
     m_yi = m_y;
     m_hit = false;
-}
-
-void Rasterizer::walk()
-{
-    if (!isDone())
-    {
-        switch (m_state)
-        {
-        case EdgeWalkerState::INIT:
-            if (isInTriangle())
-            {
-                m_state = EdgeWalkerState::WALKING;
-            }
-            else
-            {
-                m_state = EdgeWalkerState::SEARCH_EDGE;
-            }
-            break;
-
-        case EdgeWalkerState::SEARCH_EDGE:
-            if (searchEdge())
-            {
-                m_state = EdgeWalkerState::WALKING;
-            }
-            else
-            {
-                xInc();
-            }
-            break;
-
-        case EdgeWalkerState::WALK_OUT:
-            if (!isInTriangle() || (m_x <= m_bbStartX) || (m_x >= m_bbEndX))
-            {
-                switchEdgeWalkDirection();
-                m_state = EdgeWalkerState::SEARCH_EDGE;
-            }
-            else
-            {
-                xInc();
-            }
-            break;
-
-        case EdgeWalkerState::CHECK_DIRECTION:
-            if (isInTriangle())
-            {
-                m_state = EdgeWalkerState::WALK_OUT;
-            }
-            else
-            {
-                switchEdgeWalkDirection();
-                m_state = EdgeWalkerState::SEARCH_EDGE;
-            }
-            break;
-
-        case EdgeWalkerState::WALKING:
-            if (!isInTriangleAndInBounds())
-            {
-                yInc();
-                m_state = EdgeWalkerState::CHECK_DIRECTION;
-                m_hit = false;
-            }
-            else
-            {
-                m_hit = true;
-                calcFragmentData();
-                xInc();
-            }
-            break;
-
-        default:
-            break;
-        };
-    }
-    else
-    {
-        m_hit = false;
-    }
-}
-
-bool Rasterizer::searchEdge()
-{
-    if (isInTriangleAndInBounds())
-    {
-        m_tryOtherSide = false;
-        return true;
-    }
-    else if (m_x >= m_bbEndX)
-    {
-        if (m_dir == EdgeWalkerDirection::RIGHT && m_tryOtherSide)
-        {
-            m_tryOtherSide = false;
-            return true;
-        }
-        else
-        {
-            m_tryOtherSide = true;
-            m_dir = EdgeWalkerDirection::LEFT;
-        }
-    }
-    else if (m_x <= m_bbStartX)
-    {
-        if ((m_dir == EdgeWalkerDirection::LEFT) && m_tryOtherSide)
-        {
-            m_tryOtherSide = false;
-            return true;
-        }
-        else
-        {
-            m_tryOtherSide = true;
-            m_dir = EdgeWalkerDirection::RIGHT;
-        }
-    }
-    return false;
 }
 
 } // namespace rr::softwarerasterizer
