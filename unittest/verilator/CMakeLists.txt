@@ -82,3 +82,4 @@ add_verilator_test(internalFramebufferCommandHandler InternalFramebufferCommandH
 add_verilator_test(axisToAxiAdapter AxisToAxiAdapter ${RTL_RASTERIX}/AxisToAxiAdapter.v)
 add_verilator_test(axisToAxiCrossbar AxisToAxiCrossbar ${RTL_RASTERIX}/AxisToAxiCrossbar.v)
 add_verilator_test(logicOp LogicOp ${RTL_RASTERIX}/LogicOp.v)
+add_verilator_test(coalesceFiFo CoalesceFiFo ${RTL_RASTERIX}/CoalesceFiFo.v)
