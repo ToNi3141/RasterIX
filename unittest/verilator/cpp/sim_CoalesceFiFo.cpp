@@ -27,7 +27,6 @@ TEST_CASE("Push transaction", "[VCoalesceFiFo]")
 {
     VCoalesceFiFo* t = new VCoalesceFiFo();
 
-    // Run it two times to make sure, that the last handling works
     rr::ut::reset(t);
 
     REQUIRE(t->s_mem_axi_awready == 1);
@@ -105,7 +104,6 @@ TEST_CASE("Test Skid Buffer", "[VCoalesceFiFo]")
 {
     VCoalesceFiFo* t = new VCoalesceFiFo();
 
-    // Run it two times to make sure, that the last handling works
     rr::ut::reset(t);
 
     REQUIRE(t->s_mem_axi_awready == 1);
@@ -251,7 +249,6 @@ TEST_CASE("Test Burst", "[VCoalesceFiFo]")
 {
     VCoalesceFiFo* t = new VCoalesceFiFo();
 
-    // Run it two times to make sure, that the last handling works
     rr::ut::reset(t);
 
     REQUIRE(t->s_mem_axi_awready == 1);
@@ -358,7 +355,6 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
 
     VCoalesceFiFo* t = new VCoalesceFiFo();
 
-    // Run it two times to make sure, that the last handling works
     rr::ut::reset(t);
 
     REQUIRE(t->s_mem_axi_awready == 1);

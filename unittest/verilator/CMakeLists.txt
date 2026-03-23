@@ -83,3 +83,4 @@ add_verilator_test(axisToAxiAdapter AxisToAxiAdapter ${RTL_RASTERIX}/AxisToAxiAd
 add_verilator_test(axisToAxiCrossbar AxisToAxiCrossbar ${RTL_RASTERIX}/AxisToAxiCrossbar.v)
 add_verilator_test(logicOp LogicOp ${RTL_RASTERIX}/LogicOp.v)
 add_verilator_test(coalesceFiFo CoalesceFiFo ${RTL_RASTERIX}/CoalesceFiFo.v)
+add_verilator_test(coalesceAddrGen CoalesceAddrGen ${RTL_RASTERIX}/CoalesceAddrGen.v)
