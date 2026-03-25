@@ -61,6 +61,12 @@ module CoalesceAddrGen #(
     reg [ADDR_WIDTH - 1 : 0]    skid_addr;
     reg                         skid_valid;
 
+    assign m_mem_axi_axburst = 1; // INCR burst
+    assign m_mem_axi_axsize = AXSIZE[0 +: 3];
+    assign m_mem_axi_axlock = 0;
+    assign m_mem_axi_axcache = 0;
+    assign m_mem_axi_axprot = 0;
+
     always @(posedge aclk) 
     begin
         if (!resetn) 
@@ -89,8 +95,9 @@ module CoalesceAddrGen #(
             timeout_occurred = (timeout >= TIMEOUT_MAX) && coalescing_running;
             max_beats_reached = (axlen >= (MAX_BEATS_TO_COALESCE - 1)) && coalescing_running;
 
-            // New address
-            if (s_mem_axi_axvalid && s_mem_axi_axready && coalescing_running)
+            // New address (don't coalesce when a flush is already pending)
+            if (s_mem_axi_axvalid && s_mem_axi_axready && coalescing_running
+                && !timeout_occurred && !max_beats_reached && !skid_valid)
             begin
                 timeout <= 0;
                 // Check boundary
@@ -114,12 +121,16 @@ module CoalesceAddrGen #(
 
             if (boundary_check_failed || timeout_occurred || max_beats_reached || addr_order_failed || !coalescing_running || skid_valid)
             begin
-                if (m_mem_axi_axvalid && !m_mem_axi_axready && coalescing_running && !skid_valid)
+                if (m_mem_axi_axvalid && !m_mem_axi_axready && coalescing_running)
                 begin
-                    // Skid
-                    skid_addr <= s_mem_axi_axaddr;
-                    skid_valid <= s_mem_axi_axvalid;
-                    s_mem_axi_axready <= !s_mem_axi_axvalid;
+                    if (!skid_valid)
+                    begin
+                        // Skid: save incoming beat, stall input
+                        skid_addr <= s_mem_axi_axaddr;
+                        skid_valid <= s_mem_axi_axvalid;
+                        s_mem_axi_axready <= !s_mem_axi_axvalid;
+                    end
+                    // else: output busy and skid full, stall until downstream accepts
                 end
                 else
                 begin
@@ -147,11 +158,6 @@ module CoalesceAddrGen #(
                     s_mem_axi_axready <= 1;
                     timeout <= 0;
 
-                    if (s_mem_axi_axvalid && (s_mem_axi_axburst != 1)) // INCR
-                    begin
-                        $error("Only INCR burst type is supported for coalescing!");
-                        $finish;
-                    end
                     if (s_mem_axi_axvalid && (s_mem_axi_axlen != 0))
                     begin
                         $error("Only single beat transactions are supported for coalescing!");

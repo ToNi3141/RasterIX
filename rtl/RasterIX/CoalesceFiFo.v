@@ -120,12 +120,13 @@ module CoalesceFiFo #(
     assign m_mem_axi_awlock = 0;
     assign m_mem_axi_awcache = 0;
     assign m_mem_axi_awprot = 0;
+
     always @(posedge aclk)
     begin
         if (!resetn)
         begin
             fifo_read <= 0;
-            s_mem_axi_awready <= 1;
+            s_mem_axi_awready <= 0;
             m_mem_axi_awvalid <= 0;
             m_mem_axi_wvalid <= 0;
             m_mem_axi_awid <= 0;
@@ -134,9 +135,9 @@ module CoalesceFiFo #(
         end
         else
         begin
-            if (s_mem_axi_awvalid && s_mem_axi_awready)
+            if (s_mem_axi_awvalid && !s_mem_axi_awready && !m_mem_axi_awvalid && !skid_valid && (awcount == 0))
             begin
-                s_mem_axi_awready <= 0;
+                s_mem_axi_awready <= 1;
                 m_mem_axi_awaddr <= s_mem_axi_awaddr;
                 m_mem_axi_awlen <= s_mem_axi_awlen;
                 m_mem_axi_awid <= m_mem_axi_awid + 1;
@@ -150,10 +151,12 @@ module CoalesceFiFo #(
                     $finish;
                 end
 
-                if (!m_mem_axi_wvalid)
-                begin
-                    fifo_read <= 1;
-                end
+                fifo_read <= 1;
+            end
+
+            if (s_mem_axi_awready)
+            begin
+                s_mem_axi_awready <= 0;
             end
 
             if (m_mem_axi_awvalid && m_mem_axi_awready)
@@ -172,6 +175,7 @@ module CoalesceFiFo #(
                         m_mem_axi_wlast <= skid_last;
                         m_mem_axi_wvalid <= 1;
                         skid_valid <= 0;
+                        fifo_read <= (awcount > 0);
                     end
                     else
                     begin
@@ -183,8 +187,8 @@ module CoalesceFiFo #(
                         begin
                             awcount <= awcount - 1;
                         end
+                        fifo_read <= (awcount > 1);
                     end
-                    fifo_read <= (awcount > 1);
                 end
                 else if (m_mem_axi_wvalid && !m_mem_axi_wready && fifo_ready && !skid_valid)
                 begin
@@ -201,7 +205,6 @@ module CoalesceFiFo #(
                 if (m_mem_axi_wready && m_mem_axi_wvalid)
                 begin
                     m_mem_axi_wvalid <= 0;
-                    s_mem_axi_awready <= 1;
                 end
             end
         end
