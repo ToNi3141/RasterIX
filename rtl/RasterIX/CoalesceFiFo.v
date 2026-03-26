@@ -58,7 +58,7 @@ module CoalesceFiFo #(
     output wire [ 3 : 0]                        m_mem_axi_awcache,
     output wire [ 2 : 0]                        m_mem_axi_awprot, 
     output reg                                  m_mem_axi_awvalid,
-    input  reg                                  m_mem_axi_awready,
+    input  wire                                 m_mem_axi_awready,
 
     output reg  [DATA_WIDTH - 1 : 0]            m_mem_axi_wdata,
     output reg  [STRB_WIDTH - 1 : 0]            m_mem_axi_wstrb,

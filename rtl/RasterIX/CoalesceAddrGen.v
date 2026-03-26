@@ -46,7 +46,7 @@ module CoalesceAddrGen #(
     output wire [ 3 : 0]                        m_mem_axi_axcache,
     output wire [ 2 : 0]                        m_mem_axi_axprot, 
     output reg                                  m_mem_axi_axvalid,
-    input  reg                                  m_mem_axi_axready
+    input  wire                                 m_mem_axi_axready
 );
     localparam TIMEOUT_MAX = (DATA_WIDTH / 8) + 1; // In cycles
     localparam ADDR_BOUNDARY_MASK = ~(4096 - 1); // AXI requires a 4KB boundary
@@ -80,10 +80,15 @@ module CoalesceAddrGen #(
         end 
         else 
         begin : coalescing_logic
-            reg boundary_check_failed = 0;
-            reg timeout_occurred = 0;
-            reg max_beats_reached = 0;
-            reg addr_order_failed = 0;
+            reg boundary_check_failed;
+            reg timeout_occurred;
+            reg max_beats_reached;
+            reg addr_order_failed;
+
+            boundary_check_failed = 0;
+            timeout_occurred = 0;
+            max_beats_reached = 0;
+            addr_order_failed = 0;
 
             timeout <= timeout + 1;
 
