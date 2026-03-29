@@ -15,26 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Rasterizes a triangle by using increments and a edge walking algorithm
-// shown in the following picture:
-//
-//                      +Bounding Box----------------+
-//                      |   Triangle to rasterize    |
-//                      |   +------+                 |
-//                      |   |      |                 |
-//   Arrow to show  +-------> +----> +->+            |  Walk right
-//   walking direction  |   |      |    |            |
-//                      |   +-----------v-+          |
-//                      |   |      |    +----v       |  Check if inside of the triangle (in this case yes, so walk out (or till we get to the limit of the bounding box))
-//                      | + <----+ <----+ <--+       |  Walk left
-//                      | | |      |      |          |
-//                      | | +--------------------+   |
-//                      | | |      |      |      |   |  Check if inside of the triangle (in this case not)
-//                      | +-> +----> +----> +---->   |  Walk right
-//                      |   |      |      |      |   |
-//                      |   +--------------------+   |
-//                      |                            |
-//                      +----------------------------+
+// Rasterizes a triangle by using increments and an edge walking algorithm.
+// The edge walker searches for the left edge. When it is found, the position of the left edge is stored (push).
+// Then the edge walker walks to the right edge.
+// When the right edge is found, the increments are reset (pop) to the start of the edge.
+// Then the y increment is applied.
+// Then the left edge is searched again.
+// When it starts from the beginning again, the edge walker searches for the right edge and so on...
+// Note: Normally we can assume that after the y increment, we are inside or left of the triangle.
+//      When inside: We walk to the left till the left edge is found
+//      When outside: We walk to the right till the left edge is found
+// But sometimes: We are after a y increment on the right side of the triangle. Therefore, when no edge is found when walking,
+// the edge walker tries the other direction from the stored position, just to make sure we find
+// the triangle. If still no triangle is found, a additional y increment is applied.
+
 // The output is a stream of pixels and commands.
 // m_rr_tlast: Is true when the algorithm terminates.
 // m_rr_tready: Stalls the rasterizer when it is false.
@@ -110,7 +104,7 @@ module Rasterizer
     output reg  [Y_BIT_WIDTH - 1 : 0]       m_rr_tspy,
     output reg  [INDEX_WIDTH - 1 : 0]       m_rr_tindex,
     output reg  [KEEP_WIDTH - 1 : 0]        m_rr_tkeep,
-    output reg  [ 1 : 0]                    m_rr_tcmd
+    output reg  [RR_CMD_SIZE - 1 : 0]       m_rr_tcmd
 );
     localparam BB_X_POS = 0;
     localparam BB_Y_POS = 16;
@@ -121,11 +115,12 @@ module Rasterizer
     localparam RASTERIZER_TEST = 2;
 
     // Rasterizer edge walker state machine
-    localparam RASTERIZER_EDGEWALKER_SEARCH_EDGE = 0;
+    localparam RASTERIZER_EDGEWALKER_SEARCH_LEFT_EDGE = 0;
     localparam RASTERIZER_EDGEWALKER_WALK_OUT = 1;
     localparam RASTERIZER_EDGEWALKER_WALK = 2;
-    localparam RASTERIZER_EDGEWALKER_INIT = 3;
-    localparam RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR = 4;
+    localparam RASTERIZER_EDGEWALKER_YINC = 3;
+    localparam RASTERIZER_EDGEWALKER_INIT = 4;
+    localparam RASTERIZER_EDGEWALKER_SEARCH_RIGHT_EDGE = 5;
 
     // Rasterizer variables
     wire [Y_BIT_WIDTH - 1 : 0]      yLineResolution = yResolution;
@@ -135,19 +130,19 @@ module Rasterizer
     reg  [Y_BIT_WIDTH - 1 : 0]      yScreenEnd;
     reg  [Y_BIT_WIDTH - 1 : 0]      lineBBStart;
     reg  [X_BIT_WIDTH - 1 : 0]      x;
+    reg  [X_BIT_WIDTH - 1 : 0]      xStack;
     reg  [ATTRIBUTE_SIZE - 1 : 0]   regW0;
     reg  [ATTRIBUTE_SIZE - 1 : 0]   regW1;
     reg  [ATTRIBUTE_SIZE - 1 : 0]   regW2;
+    reg  [ATTRIBUTE_SIZE - 1 : 0]   regW0Stack;
+    reg  [ATTRIBUTE_SIZE - 1 : 0]   regW1Stack;
+    reg  [ATTRIBUTE_SIZE - 1 : 0]   regW2Stack;
 
     wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
     wire isInTriangleAndInBounds = isInTriangle && (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) && (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
     
     // Edge walker variables
-    reg  [ 5 : 0]   edgeWalkingState;
-    reg             edgeWalkTryOtherside;
-    reg             edgeWalkingDirection; 
-    localparam EDGE_WALKING_DIRECTION_LEFT = 1'b0;
-    localparam EDGE_WALKING_DIRECTION_RIGHT = 1'b1;
+    reg  [ 5 : 0] edgeWalkingState;
 
     always @(posedge clk)
     begin
@@ -236,189 +231,102 @@ module Rasterizer
                     yScreenEnd <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH];
                 end
 
-                // Initialize the edge walker
-                edgeWalkingDirection <= EDGE_WALKING_DIRECTION_RIGHT;
-                edgeWalkTryOtherside <= 0;
-
                 // Start rasterization
                 m_rr_tvalid <= 1;
+                m_rr_tcmd <= RR_CMD_INIT;
                 edgeWalkingState <= RASTERIZER_EDGEWALKER_INIT;
                 rasterizerState <= RASTERIZER_TEST;
             end
             RASTERIZER_TEST:
-            begin
+            begin : rasterization
+                reg [RR_CMD_SIZE - 1 : 0] rrCmd;
+                rrCmd = RR_CMD_NOP;
                 // A rasterization cycle is only executed if the shader is free. Otherwise the rasterizer will stall
                 if (m_rr_tready)
                 begin
-                    // Triangle increments
-                    if (edgeWalkingState == RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR)
-                    begin
-                        // Do nothing here, just avoid an increment.
-                        // It is convenient to do that when we are checking the new direction,
-                        // because in 50% of the cases, we are walking in the wrong direction
-                        // anyway, so this gives us no advantage, but when we just keep walking
-                        // we risk an over or underflow of x.
-                        m_rr_tvalid <= 0;
-                    end 
-                    else if ((edgeWalkingState == RASTERIZER_EDGEWALKER_WALK) & !isInTriangleAndInBounds)
-                    begin
-                        // Line Increment
-                        y <= y + 1;
-                        yScreen <= yScreen + 1;
-
-                        regW0 <= regW0 + $signed(w0IncY);
-                        regW1 <= regW1 + $signed(w1IncY);
-                        regW2 <= regW2 + $signed(w2IncY);
-
-                        m_rr_tcmd <= RR_CMD_Y_INC;
-                        m_rr_tvalid <= 1;
-                    end
-                    else 
-                    begin
-                        if (edgeWalkingDirection == EDGE_WALKING_DIRECTION_RIGHT)
-                        begin
-                            // Pixel Increment
-                            x <= x + 1;
-
-                            regW0 <= regW0 + $signed(w0IncX);
-                            regW1 <= regW1 + $signed(w1IncX);
-                            regW2 <= regW2 + $signed(w2IncX);
-
-                            m_rr_tcmd <= RR_CMD_X_INC;
-                            m_rr_tvalid <= 1;
-                        end
-                        else
-                        begin
-                            // Pixel Decrement
-                            x <= x - 1;
-
-                            regW0 <= regW0 - $signed(w0IncX);
-                            regW1 <= regW1 - $signed(w1IncX);
-                            regW2 <= regW2 - $signed(w2IncX);
-
-                            m_rr_tcmd <= RR_CMD_X_DEC;
-                            m_rr_tvalid <= 1;
-                        end
-                    end
-
                     if (yScreen < yScreenEnd)
                     begin
                         case (edgeWalkingState)
                         RASTERIZER_EDGEWALKER_INIT:
                         begin
-                            // Check if the first pixel is already in the triangle
-                            if (isInTriangle)
-                            begin
-                                // If yes, then there is nothing to do. We are already at position (0, 0)
-                                m_rr_tpixel <= 1;
-                                edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK;
-                            end
-                            else
-                            begin
-                                // If not, search the edge
-                                m_rr_tpixel <= 0;
-                                edgeWalkingState <= RASTERIZER_EDGEWALKER_SEARCH_EDGE;
-                            end
+                            // Just initialize the edge walker. No increments or so. This state is only used, when the edge walker is aborted and needs to be reinitialized for the next line.
+                            rrCmd = RR_CMD_PUSH;
+                            edgeWalkingState <= RASTERIZER_EDGEWALKER_SEARCH_LEFT_EDGE;
                         end
-                        RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR:
-                        begin
-                            // Check if after a line increment the pixel is inside the triangle
-                            if (isInTriangle)
-                            begin
-                                // If yes, walk out. It will continue walking in the old direction, this should be closest to the edge
-                                // Improvement: Save this position inside in the triangle. Also during walk out it is possible to render this pixel.
-                                //      currently we are wasting just clock cycles. Normaly, the pixel are really not far away from the edge.
-                                edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK_OUT;
-                            end
-                            else
-                            begin
-                                // The current pixel is outside of the triangle. We assume, that the triangle is always on the opposite direction.
-                                // This assumption is most of the time true, but there are edge cases, where this is wrong. This edge cases are handled 
-                                // in the RASTERIZER_EDGEWALKER_SEARCH_EDGE state.
-                                edgeWalkingDirection <= !edgeWalkingDirection; // Change walking direction
-                                edgeWalkingState <= RASTERIZER_EDGEWALKER_SEARCH_EDGE;
-                            end
-                        end
-                        RASTERIZER_EDGEWALKER_SEARCH_EDGE:
+                        RASTERIZER_EDGEWALKER_SEARCH_LEFT_EDGE:
                         begin
                             if (isInTriangleAndInBounds)
                             begin
-                                // The triangle is withing it bounds and everything is fine. So, just shade the pixel
-                                edgeWalkTryOtherside <= 0;
+                                rrCmd = RR_CMD_PUSH | RR_CMD_X_INC;
                                 m_rr_tpixel <= 1; // To prevent, that the first pixel of the triangle is skipped
                                 edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK;
                             end
                             else if (x == bbEnd[BB_X_POS +: X_BIT_WIDTH])
                             begin
-                                // The rasterizer reaches the end of the bounding box and has to handle this now. There are now to possible cases:
-                                //      Easiest case: Rasterizer was iterating from the left to the right, and there was no triangle on the way.
-                                //          In this case, we could just do a line increment.
-                                //      Edge Case: Normally we assume, that after a line increment, the current position is near the triangle or in the 
-                                //          triangel and  when we change direction, that we hit the triangle. That is for most of the triangles true. But 
-                                //          in some cases it is wrong. For instance, walking from left to right. After we run out of the triangle, we 
-                                //          make our line increment. We assume now, that after the line increment, the triangle should be on the left side.
-                                //          But this is not always true. In some cases when we are on the edge points of the triangle, it can happen, that
-                                //          the triangle is even after a line increment on the right side. That is something we have to cover, otherwise
-                                //          some triangles are not completely rendered.
-                                //          To cover this, the variable edgeWalkTryOtherside is introduced. If we reach the end of the bounding box without
-                                //          rendering a triangle, then we switch the walking direction and try again to find the triangle until we reaching
-                                //          the beginning of the bounding box. If the triangle would be on the wrong side, we would find it now. Otherwise
-                                //          we are sure, that there is no triangle on this line and we can trigger a line increment.
-                                //      Imrpovement: Similar to RASTERIZER_EDGEWALKER_WALK_OUT we could save our starting point and could reset to this point
-                                //          if we don't find a triangle. This would save cycles because we a don't check pixel twice. Currenlty, (in an extrem
-                                //          case) we would travers from left to right and back. That means, we check all pixels in a line twice.
-                                if ((edgeWalkingDirection == EDGE_WALKING_DIRECTION_RIGHT) & edgeWalkTryOtherside)
-                                begin
-                                    // No triangle in the line found, so trigger a line increment
-                                    edgeWalkTryOtherside <= 0;
-                                    edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK;
-                                end
-                                else 
-                                begin
-                                    // No line in the triangle found. But here the rasterizers assumes, that it does not start from the beginning, so 
-                                    // it tries to walk also into the other direction
-                                    edgeWalkTryOtherside <= 1;
-                                    edgeWalkingDirection <= EDGE_WALKING_DIRECTION_LEFT;
-                                end
-                            end 
+                                // Maybe the bounding box was not fitting perfectly and we are still above the triangle.
+                                rrCmd = RR_CMD_X_DEC;
+                                // Reuse the walking state. This will to a y increment and the other stuff required.
+                                edgeWalkingState <= RASTERIZER_EDGEWALKER_SEARCH_RIGHT_EDGE;
+                            end
+                            else
+                            begin
+                                // Keep searching
+                                rrCmd = RR_CMD_X_INC;
+                            end
+                        end
+                        RASTERIZER_EDGEWALKER_SEARCH_RIGHT_EDGE:
+                        begin
+                            if (isInTriangleAndInBounds)
+                            begin
+                                rrCmd = RR_CMD_X_DEC;
+                                edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK_OUT;
+                            end
                             else if (x == bbStart[BB_X_POS +: X_BIT_WIDTH])
                             begin
-                                // This case is similar to the case above. It handles just the other direction
-                                if ((edgeWalkingDirection == EDGE_WALKING_DIRECTION_LEFT) & edgeWalkTryOtherside)
-                                begin
-                                    // No triangle in the line found, so trigger a line increment
-                                    edgeWalkTryOtherside <= 0;
-                                    edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK;
-                                end
-                                else 
-                                begin
-                                    // No line in the triangle found. But here the rasterizers assumes, that it does not start from the beginning, so 
-                                    // it tries to walk also into the other direction
-                                    edgeWalkTryOtherside <= 1;
-                                    edgeWalkingDirection <= EDGE_WALKING_DIRECTION_RIGHT;
-                                end
+                                // No edge found. Now skip this line.
+                                rrCmd = RR_CMD_PUSH;
+                                edgeWalkingState <= RASTERIZER_EDGEWALKER_YINC;
+                            end
+                            else
+                            begin
+                                // Keep searching
+                                rrCmd = RR_CMD_X_DEC;
                             end
                         end
                         RASTERIZER_EDGEWALKER_WALK_OUT:
                         begin
-                            // Walk out of the triangle. To improve the performance: If the rasterizer could save the starting point,
-                            // it could also shade pixel while walking out, and if it is out reset to this point, switch direction
-                            // and shade the left pixels. But this would again occupy arround 400 luts.
-                            if (!isInTriangle | (x == bbStart[BB_X_POS +: X_BIT_WIDTH]) | (x >= bbEnd[BB_X_POS +: X_BIT_WIDTH]))
-                            begin                             
-                                // Change the walking direction and shade
-                                edgeWalkingDirection <= !edgeWalkingDirection;
-                                edgeWalkingState <= RASTERIZER_EDGEWALKER_SEARCH_EDGE;
+                            if (isInTriangleAndInBounds)
+                            begin
+                                // Pixel Decrement
+                                rrCmd = RR_CMD_X_DEC;
                             end
+                            else
+                            begin
+                                // Pixel Increment
+                                // Do it directly. Because we are already outside and only. With a increment we have the 
+                                // chance to save one clock cycle. Otherwise we would lose it in the SEARCH_EDGE state.
+                                rrCmd = RR_CMD_X_INC;
+                                edgeWalkingState <= RASTERIZER_EDGEWALKER_SEARCH_LEFT_EDGE;
+                            end
+                        end
+                        RASTERIZER_EDGEWALKER_YINC:
+                        begin
+                            // Line Increment
+                            rrCmd = RR_CMD_Y_INC;
+                            edgeWalkingState <= RASTERIZER_EDGEWALKER_WALK_OUT;
                         end
                         RASTERIZER_EDGEWALKER_WALK:
                         begin
                             // Render pixels
                             if (!isInTriangleAndInBounds)
                             begin
-                                // Now we are outside on the left side of the triangle.
-                                // The edge walker will now search again the left edge
-                                edgeWalkingState <= RASTERIZER_EDGEWALKER_CHECK_WALKING_DIR;
+                                rrCmd = RR_CMD_POP;
+                                edgeWalkingState <= RASTERIZER_EDGEWALKER_YINC;
+                            end
+                            else
+                            begin
+                                // Pixel Increment
+                                rrCmd = RR_CMD_X_INC;
                             end
                             m_rr_tpixel <= isInTriangleAndInBounds;
                         end
@@ -437,6 +345,64 @@ module Rasterizer
                         m_rr_tbby <= (yScreen - bbStart[BB_Y_POS +: Y_BIT_WIDTH]);
                         m_rr_tspx <= x;
                         m_rr_tspy <= yScreen;
+
+                        m_rr_tcmd <= RR_CMD_NOP;
+                        if (rrCmd & RR_CMD_X_INC)
+                        begin
+                            x <= x + 1;
+
+                            regW0 <= regW0 + $signed(w0IncX);
+                            regW1 <= regW1 + $signed(w1IncX);
+                            regW2 <= regW2 + $signed(w2IncX);
+
+                            m_rr_tcmd <= rrCmd;
+                            m_rr_tvalid <= 1;
+                        end
+                        if (rrCmd & RR_CMD_X_DEC)
+                        begin
+                            x <= x - 1;
+
+                            regW0 <= regW0 - $signed(w0IncX);
+                            regW1 <= regW1 - $signed(w1IncX);
+                            regW2 <= regW2 - $signed(w2IncX);
+
+                            m_rr_tcmd <= rrCmd;
+                            m_rr_tvalid <= 1;
+                        end
+                        if (rrCmd & RR_CMD_Y_INC)
+                        begin
+                            y <= y + 1;
+                            yScreen <= yScreen + 1;
+
+                            regW0 <= regW0 + $signed(w0IncY);
+                            regW1 <= regW1 + $signed(w1IncY);
+                            regW2 <= regW2 + $signed(w2IncY);
+
+                            m_rr_tcmd <= rrCmd;
+                            m_rr_tvalid <= 1;
+                        end
+                        if (rrCmd & RR_CMD_PUSH)
+                        begin
+                            xStack <= x;
+
+                            regW0Stack <= regW0;
+                            regW1Stack <= regW1;
+                            regW2Stack <= regW2;
+
+                            m_rr_tcmd <= rrCmd;
+                            m_rr_tvalid <= 1;
+                        end
+                        if (rrCmd & RR_CMD_POP)
+                        begin
+                            x <= xStack;
+
+                            regW0 <= regW0Stack;
+                            regW1 <= regW1Stack;
+                            regW2 <= regW2Stack;
+
+                            m_rr_tcmd <= rrCmd;
+                            m_rr_tvalid <= 1;
+                        end
                     end
                     else
                     begin
@@ -446,6 +412,7 @@ module Rasterizer
                         m_rr_tkeep <= 0;
                         m_rr_tlast <= 1;
                         m_rr_tvalid <= 1;
+                        m_rr_tcmd <= RR_CMD_NOP;
                         rasterizerState <= RASTERIZER_WAITFORCOMMAND;
                     end
                 end
