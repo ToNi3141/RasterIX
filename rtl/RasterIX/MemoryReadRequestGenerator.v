@@ -161,7 +161,7 @@ module MemoryReadRequestGenerator #(
             m_mem_axi_arsize <= DATA_WIDTH_LG[0 +: 3];
             m_mem_axi_arburst <= 1;
             m_mem_axi_arlock <= 0;
-            m_mem_axi_arcache <= 0;
+            m_mem_axi_arcache <= 4'b0011;
             m_mem_axi_arprot <= 0;
             m_mem_axi_arvalid <= 0;
         end

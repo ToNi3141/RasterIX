@@ -282,7 +282,7 @@ module FramebufferWriter #(
             m_mem_axi_awsize <= DATA_WIDTH_LG[0 +: 3];
             m_mem_axi_awburst <= 1;
             m_mem_axi_awlock <= 0;
-            m_mem_axi_awcache <= 0;
+            m_mem_axi_awcache <= 4'b0011;
             m_mem_axi_awprot <= 0;
             m_mem_axi_awvalid <= 0;
 

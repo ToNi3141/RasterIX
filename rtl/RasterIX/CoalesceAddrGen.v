@@ -64,7 +64,7 @@ module CoalesceAddrGen #(
     assign m_mem_axi_axburst = 1; // INCR burst
     assign m_mem_axi_axsize = AXSIZE[0 +: 3];
     assign m_mem_axi_axlock = 0;
-    assign m_mem_axi_axcache = 0;
+    assign m_mem_axi_axcache = 4'b0011;
     assign m_mem_axi_axprot = 0;
 
     always @(posedge aclk) 
