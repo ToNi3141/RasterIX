@@ -29,14 +29,14 @@ TEST_CASE("Push transaction", "[VCoalesceFiFo]")
 
     rr::ut::reset(t);
 
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->m_mem_axi_wvalid == 0);
 
     // Check that it stays idle when no transaction is pushed
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -47,7 +47,7 @@ TEST_CASE("Push transaction", "[VCoalesceFiFo]")
     t->s_mem_axi_wstrb = 0xF;
     t->s_mem_axi_wlast = 1;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -58,7 +58,7 @@ TEST_CASE("Push transaction", "[VCoalesceFiFo]")
     // beat if a single transaction or the first beat of a burst transaction.
     t->s_mem_axi_wvalid = 0;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -69,7 +69,7 @@ TEST_CASE("Push transaction", "[VCoalesceFiFo]")
     t->s_mem_axi_awaddr = 0x1000;
     t->s_mem_axi_awlen = 0;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 0);
+    REQUIRE(t->s_mem_axi_awready == 1);
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x1000);
     REQUIRE(t->m_mem_axi_awlen == 0);
@@ -78,6 +78,7 @@ TEST_CASE("Push transaction", "[VCoalesceFiFo]")
     REQUIRE(t->m_mem_axi_wvalid == 0); // The data is one cycle delayed. Simplifies the implementation
 
     // Acknowledge address
+    t->s_mem_axi_awvalid = 0;
     t->m_mem_axi_awready = 1;
     rr::ut::clk(t);
     REQUIRE(t->s_mem_axi_awready == 0);
@@ -91,7 +92,7 @@ TEST_CASE("Push transaction", "[VCoalesceFiFo]")
     // Acknowledge data
     t->m_mem_axi_wready = 1;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -106,14 +107,14 @@ TEST_CASE("Test Skid Buffer", "[VCoalesceFiFo]")
 
     rr::ut::reset(t);
 
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->m_mem_axi_wvalid == 0);
 
     // Check that it stays idle when no transaction is pushed
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -124,7 +125,7 @@ TEST_CASE("Test Skid Buffer", "[VCoalesceFiFo]")
     t->s_mem_axi_awaddr = 0x1000;
     t->s_mem_axi_awlen = 2;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 0);
+    REQUIRE(t->s_mem_axi_awready == 1);
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x1000);
     REQUIRE(t->m_mem_axi_awlen == 2);
@@ -133,6 +134,7 @@ TEST_CASE("Test Skid Buffer", "[VCoalesceFiFo]")
     REQUIRE(t->m_mem_axi_wvalid == 0);
 
     // Acknowledge address
+    t->s_mem_axi_awvalid = 0;
     t->m_mem_axi_awready = 1;
     rr::ut::clk(t);
     REQUIRE(t->s_mem_axi_awready == 0);
@@ -236,7 +238,7 @@ TEST_CASE("Test Skid Buffer", "[VCoalesceFiFo]")
     t->s_mem_axi_wvalid = 0;
     t->m_mem_axi_wready = 1;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -251,14 +253,14 @@ TEST_CASE("Test Burst", "[VCoalesceFiFo]")
 
     rr::ut::reset(t);
 
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->m_mem_axi_wvalid == 0);
 
     // Check that it stays idle when no transaction is pushed
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -269,7 +271,7 @@ TEST_CASE("Test Burst", "[VCoalesceFiFo]")
     t->s_mem_axi_awaddr = 0x1000;
     t->s_mem_axi_awlen = 2;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 0);
+    REQUIRE(t->s_mem_axi_awready == 1);
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x1000);
     REQUIRE(t->m_mem_axi_awlen == 2);
@@ -278,6 +280,7 @@ TEST_CASE("Test Burst", "[VCoalesceFiFo]")
     REQUIRE(t->m_mem_axi_wvalid == 0);
 
     // Acknowledge address
+    t->s_mem_axi_awvalid = 0;
     t->m_mem_axi_awready = 1;
     rr::ut::clk(t);
     REQUIRE(t->s_mem_axi_awready == 0);
@@ -340,7 +343,7 @@ TEST_CASE("Test Burst", "[VCoalesceFiFo]")
     t->m_mem_axi_wready = 1;
     t->s_mem_axi_wvalid = 0;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -357,7 +360,7 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
 
     rr::ut::reset(t);
 
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -365,7 +368,7 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
     // Check that it stays idle when no transaction is pushed
     t->m_mem_axi_wready = 1;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -378,7 +381,7 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
         t->s_mem_axi_wstrb = 0xF;
         t->s_mem_axi_wlast = 1;
         rr::ut::clk(t);
-        REQUIRE(t->s_mem_axi_awready == 1);
+        REQUIRE(t->s_mem_axi_awready == 0);
         REQUIRE(t->m_mem_axi_awvalid == 0);
         REQUIRE(t->s_mem_axi_wready == (i < MAX_BEATS_TO_COALESCE - 1));
         REQUIRE(t->m_mem_axi_wvalid == 0);
@@ -392,7 +395,7 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
     t->s_mem_axi_awlen = (MAX_BEATS_TO_COALESCE / 2) - 1;
     t->m_mem_axi_awready = 1;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 0);
+    REQUIRE(t->s_mem_axi_awready == 1);
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x1000);
     REQUIRE(t->m_mem_axi_awlen == 3);
@@ -414,12 +417,9 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
         REQUIRE(t->m_mem_axi_wlast == (i == ((MAX_BEATS_TO_COALESCE / 2) - 1)));
     }
 
-    // Wait one cycle till the address channel is ready
+    // Wait one cycle till the last data beat is consumed (keep awvalid low to avoid premature address accept)
     t->s_mem_axi_wvalid = 0;
-    t->s_mem_axi_awburst = 1; // INCR
-    t->s_mem_axi_awvalid = 1;
-    t->s_mem_axi_awaddr = 0x1000;
-    t->s_mem_axi_awlen = (MAX_BEATS_TO_COALESCE / 2) - 1;
+    t->s_mem_axi_awvalid = 0;
     t->m_mem_axi_awready = 1;
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_awvalid == 0);
@@ -433,7 +433,7 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
     t->s_mem_axi_awlen = (MAX_BEATS_TO_COALESCE / 2) - 1;
     t->m_mem_axi_awready = 1;
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 0);
+    REQUIRE(t->s_mem_axi_awready == 1);
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x2000);
     REQUIRE(t->m_mem_axi_awlen == 3);
@@ -457,7 +457,7 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
 
     // End
     rr::ut::clk(t);
-    REQUIRE(t->s_mem_axi_awready == 1);
+    REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);

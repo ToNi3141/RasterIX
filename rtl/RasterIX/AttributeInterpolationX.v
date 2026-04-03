@@ -137,6 +137,7 @@ module AttributeInterpolationX #(
 
     always @(posedge aclk)
     if (ce) begin
+        /* verilator lint_off WIDTHTRUNC */
         if (valid)
         begin
             if (cmd & RR_CMD_INIT)
@@ -329,6 +330,7 @@ module AttributeInterpolationX #(
                 reg_color_a <= reg_color_a_queue;
             end
         end
+        /* verilator lint_on WIDTHTRUNC */
     end
 
     assign curr_tex0_s = reg_tex0_s;

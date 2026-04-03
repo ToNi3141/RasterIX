@@ -252,7 +252,7 @@ TEST_CASE("Stall", "[VCoalesceAddrGen]")
     VCoalesceAddrGen* t = new VCoalesceAddrGen();
 
     rr::ut::reset(t);
-    
+
     t->s_mem_axi_axburst = 1; // INCR
     t->s_mem_axi_axvalid = 1;
     t->s_mem_axi_axaddr = 0x1000;

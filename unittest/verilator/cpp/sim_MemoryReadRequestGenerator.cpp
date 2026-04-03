@@ -57,7 +57,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         REQUIRE(t->m_mem_axi_arsize == 2);
         REQUIRE(t->m_mem_axi_arburst == 1);
         REQUIRE(t->m_mem_axi_arlock == 0);
-        REQUIRE(t->m_mem_axi_arcache == 0);
+        REQUIRE(t->m_mem_axi_arcache == 3);
         REQUIRE(t->m_mem_axi_arprot == 0);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
