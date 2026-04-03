@@ -15,50 +15,47 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-// #include "../Unittests/3rdParty/catch.hpp"
-
 #include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
-#include "VFramebufferWriterStrobeGen.h"
+#include "VFramebufferMMU.h"
 
-TEST_CASE("Check mask gating", "[FramebufferWriterStrobeGen]")
+TEST_CASE("Address translation", "[FramebufferMMU]")
 {
-    VFramebufferWriterStrobeGen* t = new VFramebufferWriterStrobeGen();
+    VFramebufferMMU* t = new VFramebufferMMU();
 
     t->s_frag_tvalid = 1;
     t->s_frag_tlast = 0;
     t->m_frag_tready = 1;
-    t->s_frag_tdata = 0xABCD;
-    t->s_frag_taddr = 0x100;
+    t->s_frag_tdata = 0x5678;
+    t->s_frag_tstrb = 0x3;
 
-    // tstrb=1 passes confMask through
-    t->confMask = 0x3;
-    t->s_frag_tstrb = 1;
+    // Zero base address: pixel index 0x42 -> byte addr 0x84
+    t->confAddr = 0x0000'0000;
+    t->s_frag_taddr = 0x0000'0042;
     t->eval();
-    CHECK(t->m_frag_tstrb == 0x3);
+    CHECK(t->m_frag_taddr == 0x0000'0084);
     CHECK(t->m_frag_tvalid == 1);
     CHECK(t->m_frag_tlast == 0);
     CHECK(t->s_frag_tready == 1);
-    CHECK(t->m_frag_tdata == 0xABCD);
-    CHECK(t->m_frag_taddr == 0x100);
+    CHECK(t->m_frag_tdata == 0x5678);
+    CHECK(t->m_frag_tstrb == 0x3);
 
-    t->confMask = 0xA;
-    t->s_frag_tstrb = 1;
+    // Non-zero base address: output = (pixel_index << 1) + confAddr
+    t->confAddr = 0x1000'0000;
+    t->s_frag_taddr = 0x0000'0000;
     t->eval();
-    CHECK(t->m_frag_tstrb == 0xA);
+    CHECK(t->m_frag_taddr == 0x1000'0000);
 
-    // tstrb=0 zeroes the mask
-    t->confMask = 0xF;
-    t->s_frag_tstrb = 0;
+    t->confAddr = 0x1000'0000;
+    t->s_frag_taddr = 0x0000'0002;
     t->eval();
-    CHECK(t->m_frag_tstrb == 0x0);
+    CHECK(t->m_frag_taddr == 0x1000'0004);
 
-    t->confMask = 0x3;
-    t->s_frag_tstrb = 0;
+    t->confAddr = 0x2000'0000;
+    t->s_frag_taddr = 0x0000'0006;
     t->eval();
-    CHECK(t->m_frag_tstrb == 0x0);
+    CHECK(t->m_frag_taddr == 0x2000'000C);
 
     delete t;
 }

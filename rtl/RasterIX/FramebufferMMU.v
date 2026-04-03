@@ -15,16 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Helper module to create a write mask for a pixel.
-// Gates confMask with the pixel strobe signal.
-// Widens the 1-bit tstrb into a MASK_WIDTH-bit mask.
+// Combinational module that adds a base address (confAddr) to the
+// fragment address.
 // All other fragment stream signals pass through unchanged.
-module FramebufferWriterStrobeGen #(
-    parameter MASK_WIDTH = 4,
+module FramebufferMMU #(
+    // Width of address bus in bits
+    parameter ADDR_WIDTH = 32,
     parameter PIXEL_WIDTH = 16,
-    parameter ADDR_WIDTH = 32
+    localparam PIXEL_MASK_WIDTH = PIXEL_WIDTH / 8,
+    localparam PIXEL_WIDTH_LG = $clog2(PIXEL_WIDTH / 8)
 ) (
-    input  wire [MASK_WIDTH - 1 : 0]    confMask,
+    /////////////////////////
+    // Configs
+    /////////////////////////
+    input  wire [ADDR_WIDTH - 1 : 0]        confAddr,
 
     /////////////////////////
     // Slave fragment interface
@@ -33,7 +37,7 @@ module FramebufferWriterStrobeGen #(
     input  wire                             s_frag_tlast,
     output wire                             s_frag_tready,
     input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_tdata,
-    input  wire                             s_frag_tstrb,
+    input  wire [PIXEL_MASK_WIDTH - 1 : 0]  s_frag_tstrb,
     input  wire [ADDR_WIDTH - 1 : 0]        s_frag_taddr,
 
     /////////////////////////
@@ -43,7 +47,7 @@ module FramebufferWriterStrobeGen #(
     output wire                             m_frag_tlast,
     input  wire                             m_frag_tready,
     output wire [PIXEL_WIDTH - 1 : 0]       m_frag_tdata,
-    output wire [MASK_WIDTH - 1 : 0]        m_frag_tstrb,
+    output wire [PIXEL_MASK_WIDTH - 1 : 0]  m_frag_tstrb,
     output wire [ADDR_WIDTH - 1 : 0]        m_frag_taddr
 );
 
@@ -52,9 +56,9 @@ module FramebufferWriterStrobeGen #(
     assign m_frag_tlast  = s_frag_tlast;
     assign s_frag_tready = m_frag_tready;
     assign m_frag_tdata  = s_frag_tdata;
-    assign m_frag_taddr  = s_frag_taddr;
+    assign m_frag_tstrb  = s_frag_tstrb;
 
-    // Strobe generation
-    assign m_frag_tstrb = s_frag_tstrb ? confMask : { MASK_WIDTH { 1'b0 } };
+    // Address translation: convert pixel index to byte address and add base
+    assign m_frag_taddr = (s_frag_taddr << PIXEL_WIDTH_LG) + confAddr;
 
 endmodule

@@ -25,6 +25,9 @@ read_verilog ./../../../../RasterIX/AttributePerspectiveCorrectionX.v
 read_verilog ./../../../../RasterIX/AxisFramebufferReader.v
 read_verilog ./../../../../RasterIX/AxisToAxiAdapter.v
 read_verilog ./../../../../RasterIX/AxisToAxiCrossbar.v
+read_verilog ./../../../../RasterIX/CoalesceAddrGen.v
+read_verilog ./../../../../RasterIX/CoalesceFiFo.v
+read_verilog ./../../../../RasterIX/Coalescer.v
 read_verilog ./../../../../RasterIX/ColorBlender.v
 read_verilog ./../../../../RasterIX/ColorInterpolator.v
 read_verilog ./../../../../RasterIX/ColorMixerSigned.v
@@ -43,7 +46,9 @@ read_verilog ./../../../../RasterIX/InternalFramebufferScissorFunc.vh
 read_verilog ./../../../../RasterIX/InternalFramebufferWriter.v
 read_verilog ./../../../../RasterIX/FramebufferWriterClear.v
 read_verilog ./../../../../RasterIX/FramebufferWriterStrobeGen.v
-read_verilog ./../../../../RasterIX/FramebufferWriter.v
+read_verilog ./../../../../RasterIX/FramebufferScissor.v
+read_verilog ./../../../../RasterIX/FramebufferMMU.v
+read_verilog ./../../../../RasterIX/FramebufferPacker.v
 read_verilog ./../../../../RasterIX/FunctionInterpolator.v
 read_verilog ./../../../../RasterIX/LinearAddressGenerator.v
 read_verilog ./../../../../RasterIX/LodCalculator.v

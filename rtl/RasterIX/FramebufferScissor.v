@@ -15,16 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Helper module to create a write mask for a pixel.
-// Gates confMask with the pixel strobe signal.
-// Widens the 1-bit tstrb into a MASK_WIDTH-bit mask.
+// Combinational module that checks the pixel position against the scissor
+// rectangle. If the pixel is outside the scissor rectangle, tstrb is zeroed.
 // All other fragment stream signals pass through unchanged.
-module FramebufferWriterStrobeGen #(
-    parameter MASK_WIDTH = 4,
+// txpos and typos are consumed by this module and not forwarded.
+module FramebufferScissor #(
+    // The maximum size of the screen in power of two
+    parameter X_BIT_WIDTH = 11,
+    parameter Y_BIT_WIDTH = 11,
+
     parameter PIXEL_WIDTH = 16,
     parameter ADDR_WIDTH = 32
 ) (
-    input  wire [MASK_WIDTH - 1 : 0]    confMask,
+    /////////////////////////
+    // Configs
+    /////////////////////////
+    input  wire                             confEnableScissor,
+    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorStartY,
+    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorEndX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorEndY,
 
     /////////////////////////
     // Slave fragment interface
@@ -35,6 +45,8 @@ module FramebufferWriterStrobeGen #(
     input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_tdata,
     input  wire                             s_frag_tstrb,
     input  wire [ADDR_WIDTH - 1 : 0]        s_frag_taddr,
+    input  wire [X_BIT_WIDTH - 1 : 0]       s_frag_txpos,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       s_frag_typos,
 
     /////////////////////////
     // Master fragment interface
@@ -43,7 +55,7 @@ module FramebufferWriterStrobeGen #(
     output wire                             m_frag_tlast,
     input  wire                             m_frag_tready,
     output wire [PIXEL_WIDTH - 1 : 0]       m_frag_tdata,
-    output wire [MASK_WIDTH - 1 : 0]        m_frag_tstrb,
+    output wire                             m_frag_tstrb,
     output wire [ADDR_WIDTH - 1 : 0]        m_frag_taddr
 );
 
@@ -54,7 +66,8 @@ module FramebufferWriterStrobeGen #(
     assign m_frag_tdata  = s_frag_tdata;
     assign m_frag_taddr  = s_frag_taddr;
 
-    // Strobe generation
-    assign m_frag_tstrb = s_frag_tstrb ? confMask : { MASK_WIDTH { 1'b0 } };
+    // Scissor logic
+    wire scissorPass = !confEnableScissor || ((s_frag_txpos >= confScissorStartX) && (s_frag_txpos < confScissorEndX) && (s_frag_typos >= confScissorStartY) && (s_frag_typos < confScissorEndY));
+    assign m_frag_tstrb = scissorPass && s_frag_tstrb;
 
 endmodule
