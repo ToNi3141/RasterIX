@@ -28,6 +28,7 @@ TEST_CASE("Timeout", "[VCoalesceAddrGen]")
     VCoalesceAddrGen* t = new VCoalesceAddrGen();
 
     rr::ut::reset(t);
+    REQUIRE(t->s_mem_axi_axready == 1);
 
     t->s_mem_axi_axburst = 1; // INCR
     t->s_mem_axi_axvalid = 1;
@@ -67,6 +68,7 @@ TEST_CASE("Boundary check", "[VCoalesceAddrGen]")
     VCoalesceAddrGen* t = new VCoalesceAddrGen();
 
     rr::ut::reset(t);
+    REQUIRE(t->s_mem_axi_axready == 1);
 
     t->s_mem_axi_axburst = 1; // INCR
     t->s_mem_axi_axvalid = 1;
@@ -118,6 +120,7 @@ TEST_CASE("Address Order", "[VCoalesceAddrGen]")
     VCoalesceAddrGen* t = new VCoalesceAddrGen();
 
     rr::ut::reset(t);
+    REQUIRE(t->s_mem_axi_axready == 1);
 
     t->s_mem_axi_axburst = 1; // INCR
     t->s_mem_axi_axvalid = 1;
@@ -169,6 +172,7 @@ TEST_CASE("Max Beats", "[VCoalesceAddrGen]")
     VCoalesceAddrGen* t = new VCoalesceAddrGen();
 
     rr::ut::reset(t);
+    REQUIRE(t->s_mem_axi_axready == 1);
 
     for (std::size_t i = 0; i < 8; i++)
     {
@@ -203,6 +207,7 @@ TEST_CASE("Create two transaction", "[VCoalesceAddrGen]")
     VCoalesceAddrGen* t = new VCoalesceAddrGen();
 
     rr::ut::reset(t);
+    REQUIRE(t->s_mem_axi_axready == 1);
 
     t->s_mem_axi_axburst = 1; // INCR
     t->s_mem_axi_axvalid = 1;
@@ -252,6 +257,7 @@ TEST_CASE("Stall", "[VCoalesceAddrGen]")
     VCoalesceAddrGen* t = new VCoalesceAddrGen();
 
     rr::ut::reset(t);
+    REQUIRE(t->s_mem_axi_axready == 1);
 
     t->s_mem_axi_axburst = 1; // INCR
     t->s_mem_axi_axvalid = 1;
