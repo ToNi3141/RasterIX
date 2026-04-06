@@ -676,7 +676,7 @@ module RasterIXCoreEF #(
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ENABLE_WRITE_FIFO(0),
         .ENABLE_READ_FIFO(1),
-        .READ_FIFO_SIZE(5), // Decouples the read channel from the internal pipeline
+        .READ_FIFO_SIZE(6), // Decouples the read channel from the internal pipeline
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),

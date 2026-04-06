@@ -83,7 +83,7 @@ module FramebufferReader #(
     input  wire                             m_mem_axi_rvalid,
     output wire                             m_mem_axi_rready
 );
-    localparam FETCH_FIFO_LEN = $clog2(128);
+    localparam FETCH_FIFO_LEN = $clog2(64);
 
     wire [ 1 : 0]                   bc_fetch_tvalid;
     wire [ 1 : 0]                   bc_fetch_tlast;

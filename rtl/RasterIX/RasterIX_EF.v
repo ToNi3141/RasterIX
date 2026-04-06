@@ -753,7 +753,7 @@ module RasterIX_EF #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .DATA_WIDTH(DATA_WIDTH),
         .STRB_WIDTH(STRB_WIDTH),
-        .MAX_BEATS_TO_COALESCE(4)
+        .MAX_BEATS_TO_COALESCE(2)
     ) stencil_coalescer (
         .aclk(aclk),
         .resetn(resetn),

@@ -711,7 +711,7 @@ module RasterIXRenderCore #(
     wire [INDEX_WIDTH - 1 : 0]      rasterizer_tindex;
     wire [RR_CMD_SIZE - 1 : 0]      rasterizer_tcmd;
 
-    Rasterizer rop (
+    Rasterizer rasterizer (
         .clk(aclk), 
         .reset(!resetn), 
 
@@ -746,17 +746,23 @@ module RasterIXRenderCore #(
         .m_rr_tindex(rasterizer_tindex),
         .m_rr_tcmd(rasterizer_tcmd)
     );
-    defparam rop.X_BIT_WIDTH = SCREEN_POS_WIDTH;
-    defparam rop.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
-    defparam rop.INDEX_WIDTH = INDEX_WIDTH;
-    defparam rop.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_FLOAT_INTERPOLATION;
+    defparam rasterizer.X_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam rasterizer.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam rasterizer.INDEX_WIDTH = INDEX_WIDTH;
+    defparam rasterizer.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_FLOAT_INTERPOLATION;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Counting of the pixels which are send from the rasterizer and which leave
     // the pipeline. Used to determine if there are pixel on the fly or not.
     ////////////////////////////////////////////////////////////////////////////
+    localparam RASTERIZER_CONCAT_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
     wire fragmentProcessed;
+    wire [RASTERIZER_CONCAT_WIDTH - 1 : 0] semaphoreRasterizerData;
+    wire                                   semaphoreRasterizerValid;
+    wire                                   semaphoreRasterizerReady;
+    wire                                   semaphoreRasterizerKeep;
+    wire                                   semaphoreRasterizerLast;
 
     ValueTrack vt (
         .aclk(aclk),
@@ -775,7 +781,45 @@ module RasterIXRenderCore #(
         .sigOutgoingValue(alrp_tpixel & alrp_tvalid & alrp_tready),
         .valueInPipeline(dataInTriangleInterpolator)
     );
+
+    // This semaphore is used to prevent an overrun of the StreamConcat.
+    // An overrun can cause a deadlock in crossbars when reading fragments from the framebuffers.
+    // The StreamConcat can carry READ_FIFO_SIZE fragments. In the case (coalescing worsens the problem),
+    // where only one framebuffer requests more than READ_FIFO_SIZE fragments, the StreamConcat
+    // blocks, which blocks the crossbar and prevents other fragments from reaching the StreamConcat,
+    // deadlocking the pipeline. The semaphore ensures that a maximum of READ_FIFO_SIZE fragments are read,
+    // so that the StreamConcat will never block.
+    StreamSemaphore concatSem (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .m_axis_tvalid(semaphoreRasterizerValid),
+        .m_axis_tlast(semaphoreRasterizerLast),
+        .m_axis_tdata(semaphoreRasterizerData),
+        .m_axis_tkeep(semaphoreRasterizerKeep),
+        .m_axis_tready(semaphoreRasterizerReady),
     
+        .s_axis_tdata({
+            rasterizer_tbbx,
+            rasterizer_tbby,
+            rasterizer_tspx,
+            rasterizer_tspy,
+            rasterizer_tindex,
+            rasterizer_tpixel,
+            rasterizer_tcmd
+        }),
+        .s_axis_tlast(rasterizer_tlast),
+        .s_axis_tvalid(rasterizer_tvalid),
+        .s_axis_tready(rasterizer_tready),
+        .s_axis_tkeep(rasterizer_tkeep),
+    
+        .sigLock(rasterizer_tpixel & rasterizer_tvalid & rasterizer_tready),
+        .sigRelease(fragment_stream_out_tvalid & fragment_stream_out_tready),
+        .released()
+    );
+    defparam concatSem.STREAM_WIDTH = RASTERIZER_CONCAT_WIDTH;
+    defparam concatSem.MAX_NUMBER_OF_ELEMENTS = 2 ** READ_FIFO_SIZE;
+
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
     // Broadcaster to broadcast the stream from the rasterizer to the attribute
@@ -810,19 +854,11 @@ module RasterIXRenderCore #(
         .clk(aclk),
         .rst(!resetn),
 
-        .s_axis_tdata({
-            rasterizer_tbbx,
-            rasterizer_tbby,
-            rasterizer_tspx,
-            rasterizer_tspy,
-            rasterizer_tindex,
-            rasterizer_tpixel,
-            rasterizer_tcmd
-        }),
-        .s_axis_tlast(rasterizer_tlast),
-        .s_axis_tvalid(rasterizer_tvalid),
-        .s_axis_tready(rasterizer_tready),
-        .s_axis_tkeep(rasterizer_tkeep),
+        .s_axis_tdata(semaphoreRasterizerData),
+        .s_axis_tlast(semaphoreRasterizerLast),
+        .s_axis_tvalid(semaphoreRasterizerValid),
+        .s_axis_tready(semaphoreRasterizerReady),
+        .s_axis_tkeep(semaphoreRasterizerKeep),
         .s_axis_tid(),
         .s_axis_tdest(),
         .s_axis_tuser(),
@@ -866,7 +902,7 @@ module RasterIXRenderCore #(
         .m_axis_tuser()
     );
     defparam rasterizerBroadcast.M_COUNT = 4;
-    defparam rasterizerBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
+    defparam rasterizerBroadcast.DATA_WIDTH = RASTERIZER_CONCAT_WIDTH;
     defparam rasterizerBroadcast.KEEP_ENABLE = 1;
     defparam rasterizerBroadcast.KEEP_WIDTH = 1;
     defparam rasterizerBroadcast.LAST_ENABLE = 1;

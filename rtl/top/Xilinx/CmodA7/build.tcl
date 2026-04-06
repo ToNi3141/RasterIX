@@ -69,6 +69,7 @@ read_verilog ./../../../../RasterIX/RegisterBank.v
 read_verilog ./../../../../RasterIX/RasterIX_EF.v
 read_verilog ./../../../../RasterIX/RasterIX_IF.v
 read_verilog ./../../../../RasterIX/RasterIX.v
+read_verilog ./../../../../RasterIX/StreamSemaphore.v
 read_verilog ./../../../../RasterIX/StencilOp.v
 read_verilog ./../../../../RasterIX/StreamConcatFifo.v
 read_verilog ./../../../../RasterIX/StreamFramebuffer.v
