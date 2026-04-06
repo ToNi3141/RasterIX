@@ -45,6 +45,8 @@ module RasterIX_EF #(
     parameter DATA_WIDTH = 32,
     // Memory strobe width
     parameter STRB_WIDTH = DATA_WIDTH / 8,
+    // Enable coalescing of the memory beats. This can significantly improve the throughput.
+    parameter ENABLE_MEMORY_COALESCING = 1,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
@@ -174,61 +176,6 @@ module RasterIX_EF #(
     wire [NRS - 1 : 0]                      xbar_axi_rlast;
     wire [NRS - 1 : 0]                      xbar_axi_rvalid;
     wire [NRS - 1 : 0]                      xbar_axi_rready;
-
-    // Internal wires for Coalescer instances (color, depth, stencil)
-    // Color channel
-    wire [ID_WIDTH_LOC - 1 : 0]             color_coal_awid, color_coal_bid, color_coal_arid, color_coal_rid;
-    wire [ADDR_WIDTH - 1 : 0]               color_coal_awaddr, color_coal_araddr;
-    wire [7 : 0]                            color_coal_awlen, color_coal_arlen;
-    wire [2 : 0]                            color_coal_awsize, color_coal_arsize;
-    wire [1 : 0]                            color_coal_awburst, color_coal_arburst;
-    wire                                    color_coal_awlock, color_coal_arlock;
-    wire [3 : 0]                            color_coal_awcache, color_coal_arcache;
-    wire [2 : 0]                            color_coal_awprot, color_coal_arprot;
-    wire                                    color_coal_awvalid, color_coal_awready;
-    wire [DATA_WIDTH - 1 : 0]               color_coal_wdata, color_coal_rdata;
-    wire [STRB_WIDTH - 1 : 0]               color_coal_wstrb;
-    wire                                    color_coal_wlast, color_coal_wvalid, color_coal_wready;
-    wire [1 : 0]                            color_coal_bresp, color_coal_rresp;
-    wire                                    color_coal_bvalid, color_coal_bready;
-    wire                                    color_coal_arvalid, color_coal_arready;
-    wire                                    color_coal_rvalid, color_coal_rready, color_coal_rlast;
-
-    // Depth channel
-    wire [ID_WIDTH_LOC - 1 : 0]             depth_coal_awid, depth_coal_bid, depth_coal_arid, depth_coal_rid;
-    wire [ADDR_WIDTH - 1 : 0]               depth_coal_awaddr, depth_coal_araddr;
-    wire [7 : 0]                            depth_coal_awlen, depth_coal_arlen;
-    wire [2 : 0]                            depth_coal_awsize, depth_coal_arsize;
-    wire [1 : 0]                            depth_coal_awburst, depth_coal_arburst;
-    wire                                    depth_coal_awlock, depth_coal_arlock;
-    wire [3 : 0]                            depth_coal_awcache, depth_coal_arcache;
-    wire [2 : 0]                            depth_coal_awprot, depth_coal_arprot;
-    wire                                    depth_coal_awvalid, depth_coal_awready;
-    wire [DATA_WIDTH - 1 : 0]               depth_coal_wdata, depth_coal_rdata;
-    wire [STRB_WIDTH - 1 : 0]               depth_coal_wstrb;
-    wire                                    depth_coal_wlast, depth_coal_wvalid, depth_coal_wready;
-    wire [1 : 0]                            depth_coal_bresp, depth_coal_rresp;
-    wire                                    depth_coal_bvalid, depth_coal_bready;
-    wire                                    depth_coal_arvalid, depth_coal_arready;
-    wire                                    depth_coal_rvalid, depth_coal_rready, depth_coal_rlast;
-
-    // Stencil channel
-    wire [ID_WIDTH_LOC - 1 : 0]             stencil_coal_awid, stencil_coal_bid, stencil_coal_arid, stencil_coal_rid;
-    wire [ADDR_WIDTH - 1 : 0]               stencil_coal_awaddr, stencil_coal_araddr;
-    wire [7 : 0]                            stencil_coal_awlen, stencil_coal_arlen;
-    wire [2 : 0]                            stencil_coal_awsize, stencil_coal_arsize;
-    wire [1 : 0]                            stencil_coal_awburst, stencil_coal_arburst;
-    wire                                    stencil_coal_awlock, stencil_coal_arlock;
-    wire [3 : 0]                            stencil_coal_awcache, stencil_coal_arcache;
-    wire [2 : 0]                            stencil_coal_awprot, stencil_coal_arprot;
-    wire                                    stencil_coal_awvalid, stencil_coal_awready;
-    wire [DATA_WIDTH - 1 : 0]               stencil_coal_wdata, stencil_coal_rdata;
-    wire [STRB_WIDTH - 1 : 0]               stencil_coal_wstrb;
-    wire                                    stencil_coal_wlast, stencil_coal_wvalid, stencil_coal_wready;
-    wire [1 : 0]                            stencil_coal_bresp, stencil_coal_rresp;
-    wire                                    stencil_coal_bvalid, stencil_coal_bready;
-    wire                                    stencil_coal_arvalid, stencil_coal_arready;
-    wire                                    stencil_coal_rvalid, stencil_coal_rready, stencil_coal_rlast;
 
     // Benchmarks:            
     // S_THREADS:   16     8     4       4       8       4
@@ -566,279 +513,6 @@ module RasterIX_EF #(
         .m_mem_axi_rready(common_axi_rready)
     );
 
-    Coalescer #(
-        .ID_WIDTH(ID_WIDTH_LOC),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(DATA_WIDTH),
-        .STRB_WIDTH(STRB_WIDTH),
-        .MAX_BEATS_TO_COALESCE(4)
-    ) color_coalescer (
-        .aclk(aclk),
-        .resetn(resetn),
-        
-        .s_mem_axi_awid(color_coal_awid),
-        .s_mem_axi_awaddr(color_coal_awaddr),
-        .s_mem_axi_awlen(color_coal_awlen),
-        .s_mem_axi_awsize(color_coal_awsize),
-        .s_mem_axi_awburst(color_coal_awburst),
-        .s_mem_axi_awlock(color_coal_awlock),
-        .s_mem_axi_awcache(color_coal_awcache),
-        .s_mem_axi_awprot(color_coal_awprot),
-        .s_mem_axi_awvalid(color_coal_awvalid),
-        .s_mem_axi_awready(color_coal_awready),
-
-        .s_mem_axi_wdata(color_coal_wdata),
-        .s_mem_axi_wstrb(color_coal_wstrb),
-        .s_mem_axi_wlast(color_coal_wlast),
-        .s_mem_axi_wvalid(color_coal_wvalid),
-        .s_mem_axi_wready(color_coal_wready),
-
-        .s_mem_axi_bid(color_coal_bid),
-        .s_mem_axi_bresp(color_coal_bresp),
-        .s_mem_axi_bvalid(color_coal_bvalid),
-        .s_mem_axi_bready(color_coal_bready),
-
-        .s_mem_axi_arid(color_coal_arid),
-        .s_mem_axi_araddr(color_coal_araddr),
-        .s_mem_axi_arlen(color_coal_arlen),
-        .s_mem_axi_arsize(color_coal_arsize),
-        .s_mem_axi_arburst(color_coal_arburst),
-        .s_mem_axi_arlock(color_coal_arlock),
-        .s_mem_axi_arcache(color_coal_arcache),
-        .s_mem_axi_arprot(color_coal_arprot),
-        .s_mem_axi_arvalid(color_coal_arvalid),
-        .s_mem_axi_arready(color_coal_arready),
-
-        .s_mem_axi_rid(color_coal_rid),
-        .s_mem_axi_rdata(color_coal_rdata),
-        .s_mem_axi_rresp(color_coal_rresp),
-        .s_mem_axi_rlast(color_coal_rlast),
-        .s_mem_axi_rvalid(color_coal_rvalid),
-        .s_mem_axi_rready(color_coal_rready),
-
-        .m_mem_axi_awid(xbar_axi_awid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_awaddr(xbar_axi_awaddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_mem_axi_awlen(xbar_axi_awlen[1 * 8 +: 8]),
-        .m_mem_axi_awsize(xbar_axi_awsize[1 * 3 +: 3]),
-        .m_mem_axi_awburst(xbar_axi_awburst[1 * 2 +: 2]),
-        .m_mem_axi_awlock(xbar_axi_awlock[1 * 1 +: 1]),
-        .m_mem_axi_awcache(xbar_axi_awcache[1 * 4 +: 4]),
-        .m_mem_axi_awprot(xbar_axi_awprot[1 * 3 +: 3]),
-        .m_mem_axi_awvalid(xbar_axi_awvalid[1 * 1 +: 1]),
-        .m_mem_axi_awready(xbar_axi_awready[1 * 1 +: 1]),
-
-        .m_mem_axi_wdata(xbar_axi_wdata[1 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_mem_axi_wstrb(xbar_axi_wstrb[1 * STRB_WIDTH +: STRB_WIDTH]),
-        .m_mem_axi_wlast(xbar_axi_wlast[1 * 1 +: 1]),
-        .m_mem_axi_wvalid(xbar_axi_wvalid[1 * 1 +: 1]),
-        .m_mem_axi_wready(xbar_axi_wready[1 * 1 +: 1]),
-
-        .m_mem_axi_bid(xbar_axi_bid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_bresp(xbar_axi_bresp[1 * 2 +: 2]),
-        .m_mem_axi_bvalid(xbar_axi_bvalid[1 * 1 +: 1]),
-        .m_mem_axi_bready(xbar_axi_bready[1 * 1 +: 1]),
-
-        .m_mem_axi_arid(xbar_axi_arid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_araddr(xbar_axi_araddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_mem_axi_arlen(xbar_axi_arlen[1 * 8 +: 8]),
-        .m_mem_axi_arsize(xbar_axi_arsize[1 * 3 +: 3]),
-        .m_mem_axi_arburst(xbar_axi_arburst[1 * 2 +: 2]),
-        .m_mem_axi_arlock(xbar_axi_arlock[1 * 1 +: 1]),
-        .m_mem_axi_arcache(xbar_axi_arcache[1 * 4 +: 4]),
-        .m_mem_axi_arprot(xbar_axi_arprot[1 * 3 +: 3]),
-        .m_mem_axi_arvalid(xbar_axi_arvalid[1 * 1 +: 1]),
-        .m_mem_axi_arready(xbar_axi_arready[1 * 1 +: 1]),
-
-        .m_mem_axi_rid(xbar_axi_rid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_rdata(xbar_axi_rdata[1 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_mem_axi_rresp(xbar_axi_rresp[1 * 2 +: 2]),
-        .m_mem_axi_rlast(xbar_axi_rlast[1 * 1 +: 1]),
-        .m_mem_axi_rvalid(xbar_axi_rvalid[1 * 1 +: 1]),
-        .m_mem_axi_rready(xbar_axi_rready[1 * 1 +: 1])
-    );
-
-    Coalescer #(
-        .ID_WIDTH(ID_WIDTH_LOC),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(DATA_WIDTH),
-        .STRB_WIDTH(STRB_WIDTH),
-        .MAX_BEATS_TO_COALESCE(4)
-    ) depth_coalescer (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .s_mem_axi_awid(depth_coal_awid),
-        .s_mem_axi_awaddr(depth_coal_awaddr),
-        .s_mem_axi_awlen(depth_coal_awlen),
-        .s_mem_axi_awsize(depth_coal_awsize),
-        .s_mem_axi_awburst(depth_coal_awburst),
-        .s_mem_axi_awlock(depth_coal_awlock),
-        .s_mem_axi_awcache(depth_coal_awcache),
-        .s_mem_axi_awprot(depth_coal_awprot),
-        .s_mem_axi_awvalid(depth_coal_awvalid),
-        .s_mem_axi_awready(depth_coal_awready),
-
-        .s_mem_axi_wdata(depth_coal_wdata),
-        .s_mem_axi_wstrb(depth_coal_wstrb),
-        .s_mem_axi_wlast(depth_coal_wlast),
-        .s_mem_axi_wvalid(depth_coal_wvalid),
-        .s_mem_axi_wready(depth_coal_wready),
-
-        .s_mem_axi_bid(depth_coal_bid),
-        .s_mem_axi_bresp(depth_coal_bresp),
-        .s_mem_axi_bvalid(depth_coal_bvalid),
-        .s_mem_axi_bready(depth_coal_bready),
-
-        .s_mem_axi_arid(depth_coal_arid),
-        .s_mem_axi_araddr(depth_coal_araddr),
-        .s_mem_axi_arlen(depth_coal_arlen),
-        .s_mem_axi_arsize(depth_coal_arsize),
-        .s_mem_axi_arburst(depth_coal_arburst),
-        .s_mem_axi_arlock(depth_coal_arlock),
-        .s_mem_axi_arcache(depth_coal_arcache),
-        .s_mem_axi_arprot(depth_coal_arprot),
-        .s_mem_axi_arvalid(depth_coal_arvalid),
-        .s_mem_axi_arready(depth_coal_arready),
-
-        .s_mem_axi_rid(depth_coal_rid),
-        .s_mem_axi_rdata(depth_coal_rdata),
-        .s_mem_axi_rresp(depth_coal_rresp),
-        .s_mem_axi_rlast(depth_coal_rlast),
-        .s_mem_axi_rvalid(depth_coal_rvalid),
-        .s_mem_axi_rready(depth_coal_rready),
-
-        .m_mem_axi_awid(xbar_axi_awid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_awaddr(xbar_axi_awaddr[2 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_mem_axi_awlen(xbar_axi_awlen[2 * 8 +: 8]),
-        .m_mem_axi_awsize(xbar_axi_awsize[2 * 3 +: 3]),
-        .m_mem_axi_awburst(xbar_axi_awburst[2 * 2 +: 2]),
-        .m_mem_axi_awlock(xbar_axi_awlock[2 * 1 +: 1]),
-        .m_mem_axi_awcache(xbar_axi_awcache[2 * 4 +: 4]),
-        .m_mem_axi_awprot(xbar_axi_awprot[2 * 3 +: 3]),
-        .m_mem_axi_awvalid(xbar_axi_awvalid[2 * 1 +: 1]),
-        .m_mem_axi_awready(xbar_axi_awready[2 * 1 +: 1]),
-
-        .m_mem_axi_wdata(xbar_axi_wdata[2 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_mem_axi_wstrb(xbar_axi_wstrb[2 * STRB_WIDTH +: STRB_WIDTH]),
-        .m_mem_axi_wlast(xbar_axi_wlast[2 * 1 +: 1]),
-        .m_mem_axi_wvalid(xbar_axi_wvalid[2 * 1 +: 1]),
-        .m_mem_axi_wready(xbar_axi_wready[2 * 1 +: 1]),
-
-        .m_mem_axi_bid(xbar_axi_bid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_bresp(xbar_axi_bresp[2 * 2 +: 2]),
-        .m_mem_axi_bvalid(xbar_axi_bvalid[2 * 1 +: 1]),
-        .m_mem_axi_bready(xbar_axi_bready[2 * 1 +: 1]),
-
-        .m_mem_axi_arid(xbar_axi_arid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_araddr(xbar_axi_araddr[2 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_mem_axi_arlen(xbar_axi_arlen[2 * 8 +: 8]),
-        .m_mem_axi_arsize(xbar_axi_arsize[2 * 3 +: 3]),
-        .m_mem_axi_arburst(xbar_axi_arburst[2 * 2 +: 2]),
-        .m_mem_axi_arlock(xbar_axi_arlock[2 * 1 +: 1]),
-        .m_mem_axi_arcache(xbar_axi_arcache[2 * 4 +: 4]),
-        .m_mem_axi_arprot(xbar_axi_arprot[2 * 3 +: 3]),
-        .m_mem_axi_arvalid(xbar_axi_arvalid[2 * 1 +: 1]),
-        .m_mem_axi_arready(xbar_axi_arready[2 * 1 +: 1]),
-
-        .m_mem_axi_rid(xbar_axi_rid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_rdata(xbar_axi_rdata[2 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_mem_axi_rresp(xbar_axi_rresp[2 * 2 +: 2]),
-        .m_mem_axi_rlast(xbar_axi_rlast[2 * 1 +: 1]),
-        .m_mem_axi_rvalid(xbar_axi_rvalid[2 * 1 +: 1]),
-        .m_mem_axi_rready(xbar_axi_rready[2 * 1 +: 1])
-    );
-
-    Coalescer #(
-        .ID_WIDTH(ID_WIDTH_LOC),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(DATA_WIDTH),
-        .STRB_WIDTH(STRB_WIDTH),
-        .MAX_BEATS_TO_COALESCE(2)
-    ) stencil_coalescer (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .s_mem_axi_awid(stencil_coal_awid),
-        .s_mem_axi_awaddr(stencil_coal_awaddr),
-        .s_mem_axi_awlen(stencil_coal_awlen),
-        .s_mem_axi_awsize(stencil_coal_awsize),
-        .s_mem_axi_awburst(stencil_coal_awburst),
-        .s_mem_axi_awlock(stencil_coal_awlock),
-        .s_mem_axi_awcache(stencil_coal_awcache),
-        .s_mem_axi_awprot(stencil_coal_awprot),
-        .s_mem_axi_awvalid(stencil_coal_awvalid),
-        .s_mem_axi_awready(stencil_coal_awready),
-
-        .s_mem_axi_wdata(stencil_coal_wdata),
-        .s_mem_axi_wstrb(stencil_coal_wstrb),
-        .s_mem_axi_wlast(stencil_coal_wlast),
-        .s_mem_axi_wvalid(stencil_coal_wvalid),
-        .s_mem_axi_wready(stencil_coal_wready),
-
-        .s_mem_axi_bid(stencil_coal_bid),
-        .s_mem_axi_bresp(stencil_coal_bresp),
-        .s_mem_axi_bvalid(stencil_coal_bvalid),
-        .s_mem_axi_bready(stencil_coal_bready),
-
-        .s_mem_axi_arid(stencil_coal_arid),
-        .s_mem_axi_araddr(stencil_coal_araddr),
-        .s_mem_axi_arlen(stencil_coal_arlen),
-        .s_mem_axi_arsize(stencil_coal_arsize),
-        .s_mem_axi_arburst(stencil_coal_arburst),
-        .s_mem_axi_arlock(stencil_coal_arlock),
-        .s_mem_axi_arcache(stencil_coal_arcache),
-        .s_mem_axi_arprot(stencil_coal_arprot),
-        .s_mem_axi_arvalid(stencil_coal_arvalid),
-        .s_mem_axi_arready(stencil_coal_arready),
-
-        .s_mem_axi_rid(stencil_coal_rid),
-        .s_mem_axi_rdata(stencil_coal_rdata),
-        .s_mem_axi_rresp(stencil_coal_rresp),
-        .s_mem_axi_rlast(stencil_coal_rlast),
-        .s_mem_axi_rvalid(stencil_coal_rvalid),
-        .s_mem_axi_rready(stencil_coal_rready),
-
-        .m_mem_axi_awid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_awaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_mem_axi_awlen(xbar_axi_awlen[3 * 8 +: 8]),
-        .m_mem_axi_awsize(xbar_axi_awsize[3 * 3 +: 3]),
-        .m_mem_axi_awburst(xbar_axi_awburst[3 * 2 +: 2]),
-        .m_mem_axi_awlock(xbar_axi_awlock[3 * 1 +: 1]),
-        .m_mem_axi_awcache(xbar_axi_awcache[3 * 4 +: 4]),
-        .m_mem_axi_awprot(xbar_axi_awprot[3 * 3 +: 3]),
-        .m_mem_axi_awvalid(xbar_axi_awvalid[3 * 1 +: 1]),
-        .m_mem_axi_awready(xbar_axi_awready[3 * 1 +: 1]),
-
-        .m_mem_axi_wdata(xbar_axi_wdata[3 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_mem_axi_wstrb(xbar_axi_wstrb[3 * STRB_WIDTH +: STRB_WIDTH]),
-        .m_mem_axi_wlast(xbar_axi_wlast[3 * 1 +: 1]),
-        .m_mem_axi_wvalid(xbar_axi_wvalid[3 * 1 +: 1]),
-        .m_mem_axi_wready(xbar_axi_wready[3 * 1 +: 1]),
-
-        .m_mem_axi_bid(xbar_axi_bid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_bresp(xbar_axi_bresp[3 * 2 +: 2]),
-        .m_mem_axi_bvalid(xbar_axi_bvalid[3 * 1 +: 1]),
-        .m_mem_axi_bready(xbar_axi_bready[3 * 1 +: 1]),
-
-        .m_mem_axi_arid(xbar_axi_arid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_araddr(xbar_axi_araddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
-        .m_mem_axi_arlen(xbar_axi_arlen[3 * 8 +: 8]),
-        .m_mem_axi_arsize(xbar_axi_arsize[3 * 3 +: 3]),
-        .m_mem_axi_arburst(xbar_axi_arburst[3 * 2 +: 2]),
-        .m_mem_axi_arlock(xbar_axi_arlock[3 * 1 +: 1]),
-        .m_mem_axi_arcache(xbar_axi_arcache[3 * 4 +: 4]),
-        .m_mem_axi_arprot(xbar_axi_arprot[3 * 3 +: 3]),
-        .m_mem_axi_arvalid(xbar_axi_arvalid[3 * 1 +: 1]),
-        .m_mem_axi_arready(xbar_axi_arready[3 * 1 +: 1]),
-
-        .m_mem_axi_rid(xbar_axi_rid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
-        .m_mem_axi_rdata(xbar_axi_rdata[3 * DATA_WIDTH +: DATA_WIDTH]),
-        .m_mem_axi_rresp(xbar_axi_rresp[3 * 2 +: 2]),
-        .m_mem_axi_rlast(xbar_axi_rlast[3 * 1 +: 1]),
-        .m_mem_axi_rvalid(xbar_axi_rvalid[3 * 1 +: 1]),
-        .m_mem_axi_rready(xbar_axi_rready[3 * 1 +: 1])
-    );
-
     RasterIXCoreEF #(
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
@@ -854,7 +528,8 @@ module RasterIX_EF #(
         .TMU_COUNT(TMU_COUNT),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
-        .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION)
+        .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
+        .ENABLE_MEMORY_COALESCING(ENABLE_MEMORY_COALESCING)
     ) rixef (
         .aclk(aclk),
         .resetn(resetn),
@@ -870,125 +545,125 @@ module RasterIX_EF #(
         .fb_size(fb_size),
         .fb_swapped(fb_swapped),
 
-        .m_color_axi_awid(color_coal_awid),
-        .m_color_axi_awaddr(color_coal_awaddr),
-        .m_color_axi_awlen(color_coal_awlen),
-        .m_color_axi_awsize(color_coal_awsize),
-        .m_color_axi_awburst(color_coal_awburst),
-        .m_color_axi_awlock(color_coal_awlock),
-        .m_color_axi_awcache(color_coal_awcache),
-        .m_color_axi_awprot(color_coal_awprot), 
-        .m_color_axi_awvalid(color_coal_awvalid),
-        .m_color_axi_awready(color_coal_awready),
+        .m_color_axi_awid(xbar_axi_awid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_color_axi_awaddr(xbar_axi_awaddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_color_axi_awlen(xbar_axi_awlen[1 * 8 +: 8]),
+        .m_color_axi_awsize(xbar_axi_awsize[1 * 3 +: 3]),
+        .m_color_axi_awburst(xbar_axi_awburst[1 * 2 +: 2]),
+        .m_color_axi_awlock(xbar_axi_awlock[1 * 1 +: 1]),
+        .m_color_axi_awcache(xbar_axi_awcache[1 * 4 +: 4]),
+        .m_color_axi_awprot(xbar_axi_awprot[1 * 3 +: 3]),
+        .m_color_axi_awvalid(xbar_axi_awvalid[1 * 1 +: 1]),
+        .m_color_axi_awready(xbar_axi_awready[1 * 1 +: 1]),
 
-        .m_color_axi_wdata(color_coal_wdata),
-        .m_color_axi_wstrb(color_coal_wstrb),
-        .m_color_axi_wlast(color_coal_wlast),
-        .m_color_axi_wvalid(color_coal_wvalid),
-        .m_color_axi_wready(color_coal_wready),
+        .m_color_axi_wdata(xbar_axi_wdata[1 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_color_axi_wstrb(xbar_axi_wstrb[1 * STRB_WIDTH +: STRB_WIDTH]),
+        .m_color_axi_wlast(xbar_axi_wlast[1 * 1 +: 1]),
+        .m_color_axi_wvalid(xbar_axi_wvalid[1 * 1 +: 1]),
+        .m_color_axi_wready(xbar_axi_wready[1 * 1 +: 1]),
 
-        .m_color_axi_bid(color_coal_bid),
-        .m_color_axi_bresp(color_coal_bresp),
-        .m_color_axi_bvalid(color_coal_bvalid),
-        .m_color_axi_bready(color_coal_bready),
+        .m_color_axi_bid(xbar_axi_bid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_color_axi_bresp(xbar_axi_bresp[1 * 2 +: 2]),
+        .m_color_axi_bvalid(xbar_axi_bvalid[1 * 1 +: 1]),
+        .m_color_axi_bready(xbar_axi_bready[1 * 1 +: 1]),
 
-        .m_color_axi_arid(color_coal_arid),
-        .m_color_axi_araddr(color_coal_araddr),
-        .m_color_axi_arlen(color_coal_arlen),
-        .m_color_axi_arsize(color_coal_arsize),
-        .m_color_axi_arburst(color_coal_arburst),
-        .m_color_axi_arlock(color_coal_arlock),
-        .m_color_axi_arcache(color_coal_arcache),
-        .m_color_axi_arprot(color_coal_arprot),
-        .m_color_axi_arvalid(color_coal_arvalid),
-        .m_color_axi_arready(color_coal_arready),
+        .m_color_axi_arid(xbar_axi_arid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_color_axi_araddr(xbar_axi_araddr[1 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_color_axi_arlen(xbar_axi_arlen[1 * 8 +: 8]),
+        .m_color_axi_arsize(xbar_axi_arsize[1 * 3 +: 3]),
+        .m_color_axi_arburst(xbar_axi_arburst[1 * 2 +: 2]),
+        .m_color_axi_arlock(xbar_axi_arlock[1 * 1 +: 1]),
+        .m_color_axi_arcache(xbar_axi_arcache[1 * 4 +: 4]),
+        .m_color_axi_arprot(xbar_axi_arprot[1 * 3 +: 3]),
+        .m_color_axi_arvalid(xbar_axi_arvalid[1 * 1 +: 1]),
+        .m_color_axi_arready(xbar_axi_arready[1 * 1 +: 1]),
 
-        .m_color_axi_rid(color_coal_rid),
-        .m_color_axi_rdata(color_coal_rdata),
-        .m_color_axi_rresp(color_coal_rresp),
-        .m_color_axi_rlast(color_coal_rlast),
-        .m_color_axi_rvalid(color_coal_rvalid),
-        .m_color_axi_rready(color_coal_rready),
+        .m_color_axi_rid(xbar_axi_rid[1 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_color_axi_rdata(xbar_axi_rdata[1 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_color_axi_rresp(xbar_axi_rresp[1 * 2 +: 2]),
+        .m_color_axi_rlast(xbar_axi_rlast[1 * 1 +: 1]),
+        .m_color_axi_rvalid(xbar_axi_rvalid[1 * 1 +: 1]),
+        .m_color_axi_rready(xbar_axi_rready[1 * 1 +: 1]),
 
-        .m_depth_axi_awid(depth_coal_awid),
-        .m_depth_axi_awaddr(depth_coal_awaddr),
-        .m_depth_axi_awlen(depth_coal_awlen),
-        .m_depth_axi_awsize(depth_coal_awsize),
-        .m_depth_axi_awburst(depth_coal_awburst),
-        .m_depth_axi_awlock(depth_coal_awlock),
-        .m_depth_axi_awcache(depth_coal_awcache),
-        .m_depth_axi_awprot(depth_coal_awprot), 
-        .m_depth_axi_awvalid(depth_coal_awvalid),
-        .m_depth_axi_awready(depth_coal_awready),
+        .m_depth_axi_awid(xbar_axi_awid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_depth_axi_awaddr(xbar_axi_awaddr[2 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_depth_axi_awlen(xbar_axi_awlen[2 * 8 +: 8]),
+        .m_depth_axi_awsize(xbar_axi_awsize[2 * 3 +: 3]),
+        .m_depth_axi_awburst(xbar_axi_awburst[2 * 2 +: 2]),
+        .m_depth_axi_awlock(xbar_axi_awlock[2 * 1 +: 1]),
+        .m_depth_axi_awcache(xbar_axi_awcache[2 * 4 +: 4]),
+        .m_depth_axi_awprot(xbar_axi_awprot[2 * 3 +: 3]),
+        .m_depth_axi_awvalid(xbar_axi_awvalid[2 * 1 +: 1]),
+        .m_depth_axi_awready(xbar_axi_awready[2 * 1 +: 1]),
 
-        .m_depth_axi_wdata(depth_coal_wdata),
-        .m_depth_axi_wstrb(depth_coal_wstrb),
-        .m_depth_axi_wlast(depth_coal_wlast),
-        .m_depth_axi_wvalid(depth_coal_wvalid),
-        .m_depth_axi_wready(depth_coal_wready),
+        .m_depth_axi_wdata(xbar_axi_wdata[2 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_depth_axi_wstrb(xbar_axi_wstrb[2 * STRB_WIDTH +: STRB_WIDTH]),
+        .m_depth_axi_wlast(xbar_axi_wlast[2 * 1 +: 1]),
+        .m_depth_axi_wvalid(xbar_axi_wvalid[2 * 1 +: 1]),
+        .m_depth_axi_wready(xbar_axi_wready[2 * 1 +: 1]),
 
-        .m_depth_axi_bid(depth_coal_bid),
-        .m_depth_axi_bresp(depth_coal_bresp),
-        .m_depth_axi_bvalid(depth_coal_bvalid),
-        .m_depth_axi_bready(depth_coal_bready),
+        .m_depth_axi_bid(xbar_axi_bid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_depth_axi_bresp(xbar_axi_bresp[2 * 2 +: 2]),
+        .m_depth_axi_bvalid(xbar_axi_bvalid[2 * 1 +: 1]),
+        .m_depth_axi_bready(xbar_axi_bready[2 * 1 +: 1]),
 
-        .m_depth_axi_arid(depth_coal_arid),
-        .m_depth_axi_araddr(depth_coal_araddr),
-        .m_depth_axi_arlen(depth_coal_arlen),
-        .m_depth_axi_arsize(depth_coal_arsize),
-        .m_depth_axi_arburst(depth_coal_arburst),
-        .m_depth_axi_arlock(depth_coal_arlock),
-        .m_depth_axi_arcache(depth_coal_arcache),
-        .m_depth_axi_arprot(depth_coal_arprot),
-        .m_depth_axi_arvalid(depth_coal_arvalid),
-        .m_depth_axi_arready(depth_coal_arready),
+        .m_depth_axi_arid(xbar_axi_arid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_depth_axi_araddr(xbar_axi_araddr[2 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_depth_axi_arlen(xbar_axi_arlen[2 * 8 +: 8]),
+        .m_depth_axi_arsize(xbar_axi_arsize[2 * 3 +: 3]),
+        .m_depth_axi_arburst(xbar_axi_arburst[2 * 2 +: 2]),
+        .m_depth_axi_arlock(xbar_axi_arlock[2 * 1 +: 1]),
+        .m_depth_axi_arcache(xbar_axi_arcache[2 * 4 +: 4]),
+        .m_depth_axi_arprot(xbar_axi_arprot[2 * 3 +: 3]),
+        .m_depth_axi_arvalid(xbar_axi_arvalid[2 * 1 +: 1]),
+        .m_depth_axi_arready(xbar_axi_arready[2 * 1 +: 1]),
 
-        .m_depth_axi_rid(depth_coal_rid),
-        .m_depth_axi_rdata(depth_coal_rdata),
-        .m_depth_axi_rresp(depth_coal_rresp),
-        .m_depth_axi_rlast(depth_coal_rlast),
-        .m_depth_axi_rvalid(depth_coal_rvalid),
-        .m_depth_axi_rready(depth_coal_rready),
+        .m_depth_axi_rid(xbar_axi_rid[2 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_depth_axi_rdata(xbar_axi_rdata[2 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_depth_axi_rresp(xbar_axi_rresp[2 * 2 +: 2]),
+        .m_depth_axi_rlast(xbar_axi_rlast[2 * 1 +: 1]),
+        .m_depth_axi_rvalid(xbar_axi_rvalid[2 * 1 +: 1]),
+        .m_depth_axi_rready(xbar_axi_rready[2 * 1 +: 1]),
 
-        .m_stencil_axi_awid(stencil_coal_awid),
-        .m_stencil_axi_awaddr(stencil_coal_awaddr),
-        .m_stencil_axi_awlen(stencil_coal_awlen),
-        .m_stencil_axi_awsize(stencil_coal_awsize),
-        .m_stencil_axi_awburst(stencil_coal_awburst),
-        .m_stencil_axi_awlock(stencil_coal_awlock),
-        .m_stencil_axi_awcache(stencil_coal_awcache),
-        .m_stencil_axi_awprot(stencil_coal_awprot), 
-        .m_stencil_axi_awvalid(stencil_coal_awvalid),
-        .m_stencil_axi_awready(stencil_coal_awready),
+        .m_stencil_axi_awid(xbar_axi_awid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_stencil_axi_awaddr(xbar_axi_awaddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_stencil_axi_awlen(xbar_axi_awlen[3 * 8 +: 8]),
+        .m_stencil_axi_awsize(xbar_axi_awsize[3 * 3 +: 3]),
+        .m_stencil_axi_awburst(xbar_axi_awburst[3 * 2 +: 2]),
+        .m_stencil_axi_awlock(xbar_axi_awlock[3 * 1 +: 1]),
+        .m_stencil_axi_awcache(xbar_axi_awcache[3 * 4 +: 4]),
+        .m_stencil_axi_awprot(xbar_axi_awprot[3 * 3 +: 3]),
+        .m_stencil_axi_awvalid(xbar_axi_awvalid[3 * 1 +: 1]),
+        .m_stencil_axi_awready(xbar_axi_awready[3 * 1 +: 1]),
 
-        .m_stencil_axi_wdata(stencil_coal_wdata),
-        .m_stencil_axi_wstrb(stencil_coal_wstrb),
-        .m_stencil_axi_wlast(stencil_coal_wlast),
-        .m_stencil_axi_wvalid(stencil_coal_wvalid),
-        .m_stencil_axi_wready(stencil_coal_wready),
+        .m_stencil_axi_wdata(xbar_axi_wdata[3 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_stencil_axi_wstrb(xbar_axi_wstrb[3 * STRB_WIDTH +: STRB_WIDTH]),
+        .m_stencil_axi_wlast(xbar_axi_wlast[3 * 1 +: 1]),
+        .m_stencil_axi_wvalid(xbar_axi_wvalid[3 * 1 +: 1]),
+        .m_stencil_axi_wready(xbar_axi_wready[3 * 1 +: 1]),
 
-        .m_stencil_axi_bid(stencil_coal_bid),
-        .m_stencil_axi_bresp(stencil_coal_bresp),
-        .m_stencil_axi_bvalid(stencil_coal_bvalid),
-        .m_stencil_axi_bready(stencil_coal_bready),
+        .m_stencil_axi_bid(xbar_axi_bid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_stencil_axi_bresp(xbar_axi_bresp[3 * 2 +: 2]),
+        .m_stencil_axi_bvalid(xbar_axi_bvalid[3 * 1 +: 1]),
+        .m_stencil_axi_bready(xbar_axi_bready[3 * 1 +: 1]),
 
-        .m_stencil_axi_arid(stencil_coal_arid),
-        .m_stencil_axi_araddr(stencil_coal_araddr),
-        .m_stencil_axi_arlen(stencil_coal_arlen),
-        .m_stencil_axi_arsize(stencil_coal_arsize),
-        .m_stencil_axi_arburst(stencil_coal_arburst),
-        .m_stencil_axi_arlock(stencil_coal_arlock),
-        .m_stencil_axi_arcache(stencil_coal_arcache),
-        .m_stencil_axi_arprot(stencil_coal_arprot),
-        .m_stencil_axi_arvalid(stencil_coal_arvalid),
-        .m_stencil_axi_arready(stencil_coal_arready),
+        .m_stencil_axi_arid(xbar_axi_arid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_stencil_axi_araddr(xbar_axi_araddr[3 * ADDR_WIDTH +: ADDR_WIDTH]),
+        .m_stencil_axi_arlen(xbar_axi_arlen[3 * 8 +: 8]),
+        .m_stencil_axi_arsize(xbar_axi_arsize[3 * 3 +: 3]),
+        .m_stencil_axi_arburst(xbar_axi_arburst[3 * 2 +: 2]),
+        .m_stencil_axi_arlock(xbar_axi_arlock[3 * 1 +: 1]),
+        .m_stencil_axi_arcache(xbar_axi_arcache[3 * 4 +: 4]),
+        .m_stencil_axi_arprot(xbar_axi_arprot[3 * 3 +: 3]),
+        .m_stencil_axi_arvalid(xbar_axi_arvalid[3 * 1 +: 1]),
+        .m_stencil_axi_arready(xbar_axi_arready[3 * 1 +: 1]),
 
-        .m_stencil_axi_rid(stencil_coal_rid),
-        .m_stencil_axi_rdata(stencil_coal_rdata),
-        .m_stencil_axi_rresp(stencil_coal_rresp),
-        .m_stencil_axi_rlast(stencil_coal_rlast),
-        .m_stencil_axi_rvalid(stencil_coal_rvalid),
-        .m_stencil_axi_rready(stencil_coal_rready),
+        .m_stencil_axi_rid(xbar_axi_rid[3 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
+        .m_stencil_axi_rdata(xbar_axi_rdata[3 * DATA_WIDTH +: DATA_WIDTH]),
+        .m_stencil_axi_rresp(xbar_axi_rresp[3 * 2 +: 2]),
+        .m_stencil_axi_rlast(xbar_axi_rlast[3 * 1 +: 1]),
+        .m_stencil_axi_rvalid(xbar_axi_rvalid[3 * 1 +: 1]),
+        .m_stencil_axi_rready(xbar_axi_rready[3 * 1 +: 1]),
 
         .m_tmu0_axi_arid(xbar_axi_arid[4 * ID_WIDTH_LOC +: ID_WIDTH_LOC]),
         .m_tmu0_axi_araddr(xbar_axi_araddr[4 * ADDR_WIDTH +: ADDR_WIDTH]),
