@@ -139,14 +139,14 @@ module StreamFramebuffer
     input  wire                             m_mem_axi_rvalid,
     output wire                             m_mem_axi_rready
 );
-    wire                         frag_tvalid;
-    wire                         frag_tlast;
-    wire                         frag_tready;
-    wire [PIXEL_WIDTH - 1 : 0]   frag_tdata;
-    wire                         frag_tstrb;
-    wire [ADDR_WIDTH - 1 : 0]    frag_taddr;
-    wire [X_BIT_WIDTH - 1 : 0]   frag_txpos;
-    wire [X_BIT_WIDTH - 1 : 0]   frag_typos;
+    wire                             frag_tvalid;
+    wire                             frag_tlast;
+    wire                             frag_tready;
+    wire [PIXEL_WIDTH - 1 : 0]       frag_tdata;
+    wire                             frag_tstrb;
+    wire [ADDR_WIDTH - 1 : 0]        frag_taddr;
+    wire [X_BIT_WIDTH - 1 : 0]       frag_txpos;
+    wire [X_BIT_WIDTH - 1 : 0]       frag_typos;
 
     wire                             scissor_tvalid;
     wire                             scissor_tlast;
@@ -162,35 +162,65 @@ module StreamFramebuffer
     wire [PIXEL_MASK_WIDTH - 1 : 0]  strobegen_tstrb;
     wire [ADDR_WIDTH - 1 : 0]        strobegen_taddr;
 
-    wire                             mmu_tvalid;
-    wire                             mmu_tlast;
-    wire                             mmu_tready;
-    wire [PIXEL_WIDTH - 1 : 0]       mmu_tdata;
-    wire [PIXEL_MASK_WIDTH - 1 : 0]  mmu_tstrb;
-    wire [ADDR_WIDTH - 1 : 0]        mmu_taddr;
+    wire                             write_mmu_tvalid;
+    wire                             write_mmu_tlast;
+    wire                             write_mmu_tready;
+    wire [PIXEL_WIDTH - 1 : 0]       write_mmu_tdata;
+    wire [PIXEL_MASK_WIDTH - 1 : 0]  write_mmu_tstrb;
+    wire [ADDR_WIDTH - 1 : 0]        write_mmu_taddr;
 
-    FramebufferReader #(
+    wire                             fetch_mmu_tvalid;
+    wire                             fetch_mmu_tlast;
+    wire                             fetch_mmu_tready;
+    wire [ADDR_WIDTH - 1 : 0]        fetch_mmu_taddr;
+
+    FramebufferMMU #(
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .PIXEL_WIDTH(PIXEL_WIDTH)
+    ) fbmmu_fetch (
+        .confAddr(confAddr),
+
+        .s_frag_tvalid(s_fetch_arvalid),
+        .s_frag_tlast(s_fetch_arlast),
+        .s_frag_tready(s_fetch_arready),
+        .s_frag_tdata(0), // Unused for read address path
+        .s_frag_tstrb(0), // Unused for read address path
+        .s_frag_taddr(s_fetch_araddr),
+
+        .m_frag_tvalid(fetch_mmu_tvalid),
+        .m_frag_tlast(fetch_mmu_tlast),
+        .m_frag_tready(fetch_mmu_tready),
+        .m_frag_tdata(), // Unused for read address path
+        .m_frag_tstrb(), // Unused for read address path
+        .m_frag_taddr(fetch_mmu_taddr)
+    );
+
+    FramebufferAdapter #(
         .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .STRB_WIDTH(STRB_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .PIXEL_WIDTH(PIXEL_WIDTH)
-    ) fbr (
+    ) fba (
         .aclk(aclk),
         .resetn(resetn),
 
-        .confAddr(confAddr),
+        .s_fetch_arvalid(fetch_mmu_tvalid),
+        .s_fetch_arlast(fetch_mmu_tlast),
+        .s_fetch_arready(fetch_mmu_tready),
+        .s_fetch_araddr(fetch_mmu_taddr),
 
-        .s_fetch_tvalid(s_fetch_arvalid),
-        .s_fetch_tlast(s_fetch_arlast),
-        .s_fetch_tready(s_fetch_arready),
-        .s_fetch_taddr(s_fetch_araddr),
+        .s_frag_rvalid(s_frag_rvalid),
+        .s_frag_rready(s_frag_rready),
+        .s_frag_rdata(s_frag_rdata),
+        .s_frag_rlast(s_frag_rlast),
 
-        .m_frag_tvalid(s_frag_rvalid),
-        .m_frag_tready(s_frag_rready),
-        .m_frag_tdata(s_frag_rdata),
-        .m_frag_taddr(),
-        .m_frag_tlast(s_frag_rlast),
+        .s_frag_wvalid(write_mmu_tvalid),
+        .s_frag_wlast(write_mmu_tlast),
+        .s_frag_wready(write_mmu_tready),
+        .s_frag_wdata(write_mmu_tdata),
+        .s_frag_wstrb(write_mmu_tstrb),
+        .s_frag_waddr(write_mmu_taddr),
 
         .m_mem_axi_arid(m_mem_axi_arid),
         .m_mem_axi_araddr(m_mem_axi_araddr),
@@ -208,7 +238,29 @@ module StreamFramebuffer
         .m_mem_axi_rresp(m_mem_axi_rresp),
         .m_mem_axi_rlast(m_mem_axi_rlast),
         .m_mem_axi_rvalid(m_mem_axi_rvalid),
-        .m_mem_axi_rready(m_mem_axi_rready)
+        .m_mem_axi_rready(m_mem_axi_rready),
+
+        .m_mem_axi_awid(m_mem_axi_awid),
+        .m_mem_axi_awaddr(m_mem_axi_awaddr),
+        .m_mem_axi_awlen(m_mem_axi_awlen),
+        .m_mem_axi_awsize(m_mem_axi_awsize),
+        .m_mem_axi_awburst(m_mem_axi_awburst),
+        .m_mem_axi_awlock(m_mem_axi_awlock),
+        .m_mem_axi_awcache(m_mem_axi_awcache),
+        .m_mem_axi_awprot(m_mem_axi_awprot),
+        .m_mem_axi_awvalid(m_mem_axi_awvalid),
+        .m_mem_axi_awready(m_mem_axi_awready),
+
+        .m_mem_axi_wdata(m_mem_axi_wdata),
+        .m_mem_axi_wstrb(m_mem_axi_wstrb),
+        .m_mem_axi_wlast(m_mem_axi_wlast),
+        .m_mem_axi_wvalid(m_mem_axi_wvalid),
+        .m_mem_axi_wready(m_mem_axi_wready),
+
+        .m_mem_axi_bid(m_mem_axi_bid),
+        .m_mem_axi_bresp(m_mem_axi_bresp),
+        .m_mem_axi_bvalid(m_mem_axi_bvalid),
+        .m_mem_axi_bready(m_mem_axi_bready)
     );
 
     FramebufferWriterClear #(
@@ -300,7 +352,7 @@ module StreamFramebuffer
     FramebufferMMU #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .PIXEL_WIDTH(PIXEL_WIDTH)
-    ) fbmmu (
+    ) fbmmu_write (
         .confAddr(confAddr),
 
         .s_frag_tvalid(strobegen_tvalid),
@@ -310,52 +362,12 @@ module StreamFramebuffer
         .s_frag_tstrb(strobegen_tstrb),
         .s_frag_taddr(strobegen_taddr),
 
-        .m_frag_tvalid(mmu_tvalid),
-        .m_frag_tlast(mmu_tlast),
-        .m_frag_tready(mmu_tready),
-        .m_frag_tdata(mmu_tdata),
-        .m_frag_tstrb(mmu_tstrb),
-        .m_frag_taddr(mmu_taddr)
-    );
-
-    FramebufferPacker #(
-        .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .STRB_WIDTH(STRB_WIDTH),
-        .ID_WIDTH(ID_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH)
-    ) fbw (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .s_frag_tvalid(mmu_tvalid),
-        .s_frag_tlast(mmu_tlast),
-        .s_frag_tready(mmu_tready),
-        .s_frag_tdata(mmu_tdata),
-        .s_frag_tstrb(mmu_tstrb),
-        .s_frag_taddr(mmu_taddr),
-
-        .m_mem_axi_awid(m_mem_axi_awid),
-        .m_mem_axi_awaddr(m_mem_axi_awaddr),
-        .m_mem_axi_awlen(m_mem_axi_awlen),
-        .m_mem_axi_awsize(m_mem_axi_awsize),
-        .m_mem_axi_awburst(m_mem_axi_awburst),
-        .m_mem_axi_awlock(m_mem_axi_awlock),
-        .m_mem_axi_awcache(m_mem_axi_awcache),
-        .m_mem_axi_awprot(m_mem_axi_awprot),
-        .m_mem_axi_awvalid(m_mem_axi_awvalid),
-        .m_mem_axi_awready(m_mem_axi_awready),
-
-        .m_mem_axi_wdata(m_mem_axi_wdata),
-        .m_mem_axi_wstrb(m_mem_axi_wstrb),
-        .m_mem_axi_wlast(m_mem_axi_wlast),
-        .m_mem_axi_wvalid(m_mem_axi_wvalid),
-        .m_mem_axi_wready(m_mem_axi_wready),
-
-        .m_mem_axi_bid(m_mem_axi_bid),
-        .m_mem_axi_bresp(m_mem_axi_bresp),
-        .m_mem_axi_bvalid(m_mem_axi_bvalid),
-        .m_mem_axi_bready(m_mem_axi_bready)
+        .m_frag_tvalid(write_mmu_tvalid),
+        .m_frag_tlast(write_mmu_tlast),
+        .m_frag_tready(write_mmu_tready),
+        .m_frag_tdata(write_mmu_tdata),
+        .m_frag_tstrb(write_mmu_tstrb),
+        .m_frag_taddr(write_mmu_taddr)
     );
 
 endmodule

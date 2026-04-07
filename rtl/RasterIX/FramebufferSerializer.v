@@ -62,9 +62,9 @@ module FramebufferSerializer #(
     input  wire                             m_mem_axi_rvalid,
     output reg                              m_mem_axi_rready
 );
-    localparam ADDR_BYTE_POS_POS = 0;
+    localparam ADDR_BYTE_POS_POS = $clog2(PIXEL_WIDTH / 8);
     localparam ADDR_BYTE_POS_WIDTH = $clog2(DATA_WIDTH / PIXEL_WIDTH);
-    localparam ADDR_TAG_POS = ADDR_BYTE_POS_POS + ADDR_BYTE_POS_WIDTH;
+    localparam ADDR_TAG_POS = $clog2(DATA_WIDTH / 8);
     localparam ADDR_TAG_WIDTH = ADDR_WIDTH - ADDR_TAG_POS;
 
     reg [ADDR_TAG_WIDTH - 1 : 0]    addrTag;

@@ -28,19 +28,10 @@ module MemoryReadRequestGenerator #(
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,
     // Width of ID signal
-    parameter ID_WIDTH = 8,
-
-    // Sets the width of a pixel to fix the memory alignment
-    parameter PIXEL_WIDTH = 16,
-    localparam PIXEL_WIDTH_LG = $clog2(PIXEL_WIDTH / 8)
+    parameter ID_WIDTH = 8
 ) (
     input  wire                             aclk,
     input  wire                             resetn,
-
-    /////////////////////////
-    // Configs
-    /////////////////////////
-    input  wire [ADDR_WIDTH - 1 : 0]        confAddr,
 
     /////////////////////////
     // Fragment Interface
@@ -68,22 +59,17 @@ module MemoryReadRequestGenerator #(
     output reg                              m_mem_axi_arvalid,
     input  wire                             m_mem_axi_arready
 );
-    localparam INDEX_TAG_POS = $clog2((DATA_WIDTH) / PIXEL_WIDTH);
-    localparam INDEX_TAG_WIDTH = ADDR_WIDTH - INDEX_TAG_POS;
-
-    localparam ADDR_BYTE_POS = $clog2(PIXEL_WIDTH / 8);
     localparam DATA_WIDTH_LG = $clog2(DATA_WIDTH / 8);
-    localparam ADDR_BYTE_WIDTH = DATA_WIDTH_LG - ADDR_BYTE_POS;
-    localparam ADDR_TAG_POS = ADDR_BYTE_WIDTH;
+    localparam ADDR_TAG_POS = DATA_WIDTH_LG;
     localparam ADDR_TAG_WIDTH = ADDR_WIDTH - ADDR_TAG_POS;
 
-    reg [INDEX_TAG_WIDTH - 1 : 0]   lastAddrTag;
-    reg [INDEX_TAG_WIDTH - 1 : 0]   newAddrTagSkid;
+    reg [ADDR_TAG_WIDTH - 1 : 0]    lastAddrTag;
+    reg [ADDR_TAG_WIDTH - 1 : 0]    newAddrTagSkid;
     reg                             lastSkid;
     reg                             lastFetch;
     reg                             memRequest;
     reg [ADDR_WIDTH - 1 : 0]        memRequestAddr;
-    wire newMemRequest = (((lastAddrTag != s_fetch_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH])));
+    wire newMemRequest = (((lastAddrTag != s_fetch_taddr[ADDR_TAG_POS +: ADDR_TAG_WIDTH])));
 
 
     // Fetch handling
@@ -108,7 +94,7 @@ module MemoryReadRequestGenerator #(
                     if (newMemRequest && memRequest)
                     begin
                         s_fetch_tready <= 0;
-                        newAddrTagSkid <= s_fetch_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
+                        newAddrTagSkid <= s_fetch_taddr[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
                         lastSkid <= s_fetch_tlast;
                     end
                     else
@@ -116,7 +102,7 @@ module MemoryReadRequestGenerator #(
                         // If the boundaries of the tag are exceeded, trigger a new write request
                         if (newMemRequest)
                         begin
-                            memRequestAddr <= { s_fetch_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH] << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
+                            memRequestAddr <= { s_fetch_taddr[ADDR_TAG_POS +: ADDR_TAG_WIDTH], { (ADDR_TAG_POS){ 1'b0 } } };
                             memRequest <= 1;
                         end
                         
@@ -127,7 +113,7 @@ module MemoryReadRequestGenerator #(
                         end
                         else
                         begin
-                            lastAddrTag <= s_fetch_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
+                            lastAddrTag <= s_fetch_taddr[ADDR_TAG_POS +: ADDR_TAG_WIDTH];
                         end
                     end
                 end
@@ -136,7 +122,7 @@ module MemoryReadRequestGenerator #(
             begin
                 if (!memRequest)
                 begin
-                    memRequestAddr <= { newAddrTagSkid << PIXEL_WIDTH_LG, { (ADDR_TAG_POS){ 1'b0 } } };
+                    memRequestAddr <= { newAddrTagSkid, { (ADDR_TAG_POS){ 1'b0 } } };
                     memRequest <= 1;
                     s_fetch_tready <= 1;
                     if (lastSkid)
@@ -173,7 +159,7 @@ module MemoryReadRequestGenerator #(
                 // If no pending memory request is available, then check if a new request has to be issued
                 if (memRequest)
                 begin
-                    m_mem_axi_araddr <= confAddr + memRequestAddr;
+                    m_mem_axi_araddr <= memRequestAddr;
                     m_mem_axi_arvalid <= 1;
                     m_mem_axi_arid <= m_mem_axi_arid + 1;
                     memRequest <= 0;

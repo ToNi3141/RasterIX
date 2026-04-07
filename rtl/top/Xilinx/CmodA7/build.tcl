@@ -36,6 +36,7 @@ read_verilog ./../../../../RasterIX/CommandParser.v
 read_verilog ./../../../../RasterIX/FrameStreamingCore.v
 read_verilog ./../../../../RasterIX/DualPortRam.v
 read_verilog ./../../../../RasterIX/Fog.v
+read_verilog ./../../../../RasterIX/FramebufferAdapter.v
 read_verilog ./../../../../RasterIX/FramebufferReader.v
 read_verilog ./../../../../RasterIX/FramebufferSerializer.v
 read_verilog ./../../../../RasterIX/InternalFramebuffer.v

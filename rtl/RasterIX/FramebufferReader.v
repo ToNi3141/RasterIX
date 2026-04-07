@@ -38,11 +38,6 @@ module FramebufferReader #(
     input  wire                             resetn,
 
     /////////////////////////
-    // Configs
-    /////////////////////////
-    input  wire [ADDR_WIDTH - 1 : 0]        confAddr,
-
-    /////////////////////////
     // Fragment Interface
     /////////////////////////
 
@@ -154,13 +149,10 @@ module FramebufferReader #(
     MemoryReadRequestGenerator #(
         .DATA_WIDTH(DATA_WIDTH), 
         .ADDR_WIDTH(ADDR_WIDTH), 
-        .ID_WIDTH(ID_WIDTH), 
-        .PIXEL_WIDTH(PIXEL_WIDTH)
+        .ID_WIDTH(ID_WIDTH)
     ) mrrg (
         .aclk(aclk),
         .resetn(resetn),
-
-        .confAddr(confAddr),
         
         .s_fetch_tvalid(bc_fetch_tvalid[0]),
         .s_fetch_tlast(bc_fetch_tlast[0]),

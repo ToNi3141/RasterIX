@@ -16,9 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "general.hpp"
-#include <math.h>
-#include <array>
 #include <algorithm>
+#include <array>
+#include <math.h>
 
 // Include model header, generated from Verilating "top.v"
 #include "VStreamSemaphore.h"
@@ -26,7 +26,7 @@
 TEST_CASE("Test Forwarding", "[VStreamSemaphore]")
 {
     VStreamSemaphore* t = new VStreamSemaphore();
-    
+
     t->sigRelease = 0;
     t->m_axis_tready = 1;
     rr::ut::reset(t);
@@ -62,7 +62,7 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
     static constexpr uint32_t SEMAPHORE_COUNT { 128 };
     static constexpr uint32_t MAX_ITERATIONS { SEMAPHORE_COUNT + 1 };
     VStreamSemaphore* t = new VStreamSemaphore();
-    
+
     t->sigRelease = 0;
     t->m_axis_tready = 1;
     rr::ut::reset(t);
@@ -102,7 +102,7 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
             CHECK(t->m_axis_tvalid == true); // Current value hidden by the lock signal
         else if (i == 2)
             CHECK(t->m_axis_tvalid == true); // Skid value
-        else 
+        else
             CHECK(t->m_axis_tvalid == false);
         CHECK(t->released == !(i < SEMAPHORE_COUNT)); // Includes an additional value in the skid buffer
     }
@@ -114,7 +114,7 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
 TEST_CASE("Test flow control", "[VStreamSemaphore]")
 {
     VStreamSemaphore* t = new VStreamSemaphore();
-    
+
     t->sigRelease = 0;
     t->m_axis_tready = 0;
     rr::ut::reset(t);

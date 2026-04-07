@@ -39,12 +39,10 @@ TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
     CHECK(t->m_mem_axi_arvalid == 0);
     CHECK(t->m_mem_axi_rready == 0);
 
-    t->confAddr = 0x2000'0000;
-
     // Request one byte
     t->s_fetch_tvalid = 1;
     t->s_fetch_tlast = 1;
-    t->s_fetch_taddr = 0x100;
+    t->s_fetch_taddr = 0x200;
     rr::ut::clk(t);
     CHECK(t->m_frag_tvalid == 0);
     t->s_fetch_tvalid = 0;
@@ -56,7 +54,7 @@ TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
     // Check for addr request
     CHECK(t->s_fetch_tready == 1);
     CHECK(t->m_mem_axi_arvalid == 1);
-    CHECK(t->m_mem_axi_araddr == 0x2000'0200);
+    CHECK(t->m_mem_axi_araddr == 0x200);
 
     // Read Data
     t->m_mem_axi_rdata = 0x12345678;
@@ -90,10 +88,8 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
     CHECK(t->m_mem_axi_arvalid == 0);
     CHECK(t->m_mem_axi_rready == 0);
 
-    t->confAddr = 0x2000'0000;
-
-    // Create 128 + 2 (skid) read requests to fill the fifo
-    for (uint32_t i = 0; i <= 129; i++)
+    // Create 64 + 2 (skid) read requests to fill the fifo
+    for (uint32_t i = 0; i <= 65; i++)
     {
         t->s_fetch_tvalid = 1;
         t->s_fetch_tlast = 0;
@@ -116,7 +112,7 @@ TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper test
     t->m_mem_axi_rdata = 0;
 
     // Readout the data from the fifo
-    for (uint32_t i = 0; i <= 129; i++)
+    for (uint32_t i = 0; i <= 65; i++)
     {
         rr::ut::clk(t);
         CHECK(t->m_frag_tvalid == 1);

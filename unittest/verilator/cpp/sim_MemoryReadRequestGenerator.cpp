@@ -31,8 +31,6 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
     t->m_mem_axi_arready = 1;
     rr::ut::reset(t);
 
-    t->confAddr = 0x1000'0000;
-
     // Do this twice, to see, if also a second cycle is possible
     uint32_t id = 1;
     for (uint32_t i = 0; i < 2; i++)
@@ -42,14 +40,14 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
 
         // Send 1. fetch (start memory request)
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 0;
+        t->s_fetch_taddr = 0x0;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 2. fetch (do memory request)
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 1;
+        t->s_fetch_taddr = 0x2;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arid == id++);
@@ -60,22 +58,22 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         REQUIRE(t->m_mem_axi_arcache == 3);
         REQUIRE(t->m_mem_axi_arprot == 0);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
 
         // Send 3. fetch (start memory request)
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 2;
+        t->s_fetch_taddr = 0x4;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 4. fetch (do memory request)
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 3;
+        t->s_fetch_taddr = 0x6;
         rr::ut::clk(t);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
+        REQUIRE(t->m_mem_axi_araddr == 0x4);
         REQUIRE(t->m_mem_axi_arid == id++);
 
         // Send 5. fetch
@@ -83,7 +81,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         // Only important for the next cycle, to request again 0. Otherwise it wouldn't
         // request zero again, because it seems that the same address was already requested
         t->s_fetch_tlast = true;
-        t->s_fetch_taddr = 0;
+        t->s_fetch_taddr = 0x0;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
@@ -94,7 +92,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
         REQUIRE(t->m_mem_axi_arid == id++);
 
         // Execute more clock cycles, no additional requests should be executed
@@ -118,44 +116,42 @@ TEST_CASE("Interrupted fetch stream", "[MemoryReadRequestGenerator]")
     t->m_mem_axi_arready = 1;
     rr::ut::reset(t);
 
-    t->confAddr = 0x1000'0000;
-
     // Do this twice, to see, if also a second cycle is possible
     for (uint32_t i = 0; i < 2; i++)
     {
         // Send 1. fetch
         t->s_fetch_tlast = false;
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 0;
+        t->s_fetch_taddr = 0x0;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 2.1 fetch
         t->s_fetch_tvalid = false;
-        t->s_fetch_taddr = 1;
+        t->s_fetch_taddr = 0x2;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
 
         // Send 2.2 fetch
         t->s_fetch_tvalid = false;
-        t->s_fetch_taddr = 1;
+        t->s_fetch_taddr = 0x2;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 2.3 fetch
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 1;
+        t->s_fetch_taddr = 0x2;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 3. fetch.
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 2;
+        t->s_fetch_taddr = 0x4;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
@@ -163,11 +159,11 @@ TEST_CASE("Interrupted fetch stream", "[MemoryReadRequestGenerator]")
         // Send 4.1 fetch.
         t->s_fetch_tvalid = false;
         t->s_fetch_tlast = true;
-        t->s_fetch_taddr = 3;
+        t->s_fetch_taddr = 0x6;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
+        REQUIRE(t->m_mem_axi_araddr == 0x4);
     }
 
     // Destroy model
@@ -182,8 +178,6 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
     t->m_mem_axi_arready = 0;
     rr::ut::reset(t);
 
-    t->confAddr = 0x1000'0000;
-
     // Do this twice, to see, if also a second cycle is possible
     for (uint32_t i = 0; i < 2; i++)
     {
@@ -191,57 +185,57 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
 
         // Send 1. fetch
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 0;
+        t->s_fetch_taddr = 0x0;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == false);
 
         // Send 2. fetch
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 1;
+        t->s_fetch_taddr = 0x2;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
 
         // Send 3. fetch
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 2;
+        t->s_fetch_taddr = 0x4;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
 
         // Send 4. fetch
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 3;
+        t->s_fetch_taddr = 0x6;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
 
         // Send 5. fetch
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 4;
+        t->s_fetch_taddr = 0x8;
         t->s_fetch_tlast = true;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
 
         // Mem requests
         t->s_fetch_tvalid = false;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
 
         // Mem requests
         t->s_fetch_tvalid = false;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
 
         // Mem requests
         t->s_fetch_tvalid = false;
@@ -256,7 +250,7 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == false);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0004);
+        REQUIRE(t->m_mem_axi_araddr == 0x4);
 
         // Mem requests
         t->s_fetch_tvalid = false;
@@ -272,7 +266,7 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0008);
+        REQUIRE(t->m_mem_axi_araddr == 0x8);
 
         // Last mem request
         t->s_fetch_tvalid = false;
@@ -280,7 +274,7 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0008);
+        REQUIRE(t->m_mem_axi_araddr == 0x8);
 
         // Last mem request
         t->s_fetch_tvalid = false;
@@ -302,14 +296,12 @@ TEST_CASE("tlast after one clock", "[MemoryReadRequestGenerator]")
     t->m_mem_axi_arready = 1;
     rr::ut::reset(t);
 
-    t->confAddr = 0x1000'0000;
-
     // Do this twice, to see, if also a second cycle is possible
     for (uint32_t i = 0; i < 2; i++)
     {
         // Send 1. fetch
         t->s_fetch_tvalid = true;
-        t->s_fetch_taddr = 0;
+        t->s_fetch_taddr = 0x0;
         t->s_fetch_tlast = true;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
@@ -320,7 +312,7 @@ TEST_CASE("tlast after one clock", "[MemoryReadRequestGenerator]")
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
-        REQUIRE(t->m_mem_axi_araddr == 0x1000'0000);
+        REQUIRE(t->m_mem_axi_araddr == 0x0);
 
         // End
         rr::ut::clk(t);
