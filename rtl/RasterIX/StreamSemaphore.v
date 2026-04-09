@@ -1,6 +1,6 @@
-// Float
-// https://github.com/ToNi3141/Float
-// Copyright (c) 2021 ToNi3141
+// RasterIX
+// https://github.com/ToNi3141/RasterIX
+// Copyright (c) 2026 ToNi3141
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
