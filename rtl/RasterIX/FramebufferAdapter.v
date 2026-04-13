@@ -135,21 +135,69 @@ module FramebufferAdapter
             assign m_mem_axi_arvalid = s_fetch_arvalid;
             assign s_fetch_arready = m_mem_axi_arready;
 
+            // Broadcast the fragment write signals to both AW and W channels
+            localparam USER_WIDTH_FRAG = ADDR_WIDTH + (PIXEL_WIDTH / 2);
+            wire [ 1 : 0] bcast_m_axis_tvalid;
+            wire [ 1 : 0] bcast_m_axis_tready;
+            wire [2 * PIXEL_WIDTH - 1 : 0] bcast_m_axis_tdata;
+            wire [2 * USER_WIDTH_FRAG - 1 : 0] bcast_m_axis_tuser;
+            
+            axis_broadcast #(
+                .M_COUNT(2),
+                .DATA_WIDTH(PIXEL_WIDTH),
+                .KEEP_ENABLE(0),
+                .LAST_ENABLE(1),
+                .ID_ENABLE(0),
+                .DEST_ENABLE(0),
+                .USER_ENABLE(1),
+                .USER_WIDTH(USER_WIDTH_FRAG)
+            ) frag_write_broadcaster (
+                .clk(aclk),
+                .rst(~resetn),
+                
+                .s_axis_tdata(s_frag_wdata),
+                .s_axis_tkeep(1'b1),
+                .s_axis_tvalid(s_frag_wvalid),
+                .s_axis_tready(s_frag_wready),
+                .s_axis_tlast(s_frag_wlast),
+                .s_axis_tid(8'b0),
+                .s_axis_tdest(8'b0),
+                .s_axis_tuser({s_frag_wstrb, s_frag_waddr}),
+                
+                .m_axis_tdata(bcast_m_axis_tdata),
+                .m_axis_tkeep(),
+                .m_axis_tvalid(bcast_m_axis_tvalid),
+                .m_axis_tready(bcast_m_axis_tready),
+                .m_axis_tlast(),
+                .m_axis_tid(),
+                .m_axis_tdest(),
+                .m_axis_tuser(bcast_m_axis_tuser)
+            );
+
+            assign bcast_m_axis_tready[0] = m_mem_axi_awready;  // AW channel
+            assign bcast_m_axis_tready[1] = m_mem_axi_wready;   // W channel
+
+            wire [ADDR_WIDTH - 1 : 0]        bcast_awaddr_0 = bcast_m_axis_tuser[ADDR_WIDTH - 1 : 0];
+            wire [(PIXEL_WIDTH / 2) - 1 : 0] bcast_wstrb_0 = bcast_m_axis_tuser[ADDR_WIDTH + (PIXEL_WIDTH / 2) - 1 : ADDR_WIDTH];
+            
+            wire [PIXEL_WIDTH - 1 : 0]       bcast_wdata_1 = bcast_m_axis_tdata[2 * PIXEL_WIDTH - 1 : PIXEL_WIDTH];
+            wire [ADDR_WIDTH - 1 : 0 ]       bcast_awaddr_1 = bcast_m_axis_tuser[ADDR_WIDTH + USER_WIDTH_FRAG - 1 : USER_WIDTH_FRAG];
+            wire [(PIXEL_WIDTH / 2) -1  : 0] bcast_wstrb_1 = bcast_m_axis_tuser[ADDR_WIDTH + (PIXEL_WIDTH / 2) + USER_WIDTH_FRAG - 1 : ADDR_WIDTH + USER_WIDTH_FRAG];
+
             assign m_mem_axi_awid = 8'b0;
-            assign m_mem_axi_awaddr = s_frag_waddr;
+            assign m_mem_axi_awaddr = bcast_awaddr_0;
             assign m_mem_axi_awlen = 8'b0;
             assign m_mem_axi_awsize = $clog2(STRB_WIDTH);
             assign m_mem_axi_awburst = 2'b01;  // INCR
             assign m_mem_axi_awlock = 1'b0;
             assign m_mem_axi_awcache = 4'b0;
             assign m_mem_axi_awprot = 3'b0;
-            assign m_mem_axi_awvalid = s_frag_wvalid;
-            assign s_frag_wready = m_mem_axi_awready;
-
-            assign m_mem_axi_wdata = s_frag_wdata;
-            assign m_mem_axi_wstrb = s_frag_wstrb;
-            assign m_mem_axi_wlast = s_frag_wlast;
-            assign m_mem_axi_wvalid = s_frag_wvalid;
+            assign m_mem_axi_awvalid = bcast_m_axis_tvalid[0];
+            
+            assign m_mem_axi_wdata = bcast_wdata_1;
+            assign m_mem_axi_wstrb = bcast_wstrb_1;
+            assign m_mem_axi_wlast = 1'b1;
+            assign m_mem_axi_wvalid = bcast_m_axis_tvalid[1];
 
             assign m_mem_axi_bready = 1'b1;
 
