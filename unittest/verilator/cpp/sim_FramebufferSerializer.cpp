@@ -25,7 +25,7 @@
 
 TEST_CASE("Check normal burst transfer with interrupted memory stream", "[FramebufferSerializer]")
 {
-    VFramebufferSerializer* t = new VFramebufferSerializer();
+    VFramebufferSerializer* t = rr::ut::makeTop<VFramebufferSerializer>();
 
     t->m_frag_tready = 0;
 
@@ -135,7 +135,7 @@ TEST_CASE("Check normal burst transfer with interrupted memory stream", "[Frameb
 
 TEST_CASE("Check slow memory port", "[FramebufferSerializer]")
 {
-    VFramebufferSerializer* t = new VFramebufferSerializer();
+    VFramebufferSerializer* t = rr::ut::makeTop<VFramebufferSerializer>();
 
     t->m_frag_tready = 0;
 
@@ -208,7 +208,7 @@ TEST_CASE("Check slow memory port", "[FramebufferSerializer]")
 
 TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
 {
-    VFramebufferSerializer* t = new VFramebufferSerializer();
+    VFramebufferSerializer* t = rr::ut::makeTop<VFramebufferSerializer>();
 
     t->m_frag_tready = 0;
 
@@ -325,7 +325,7 @@ TEST_CASE("Check slow fragment port", "[FramebufferSerializer]")
 
 TEST_CASE("Check slow fetch port", "[FramebufferSerializer]")
 {
-    VFramebufferSerializer* t = new VFramebufferSerializer();
+    VFramebufferSerializer* t = rr::ut::makeTop<VFramebufferSerializer>();
 
     t->m_frag_tready = 0;
 

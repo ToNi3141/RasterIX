@@ -22,7 +22,7 @@
 
 TEST_CASE("Address translation", "[FramebufferMMU]")
 {
-    VFramebufferMMU* t = new VFramebufferMMU();
+    VFramebufferMMU* t = rr::ut::makeTop<VFramebufferMMU>();
 
     t->s_frag_tvalid = 1;
     t->s_frag_tlast = 0;

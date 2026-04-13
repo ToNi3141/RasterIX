@@ -25,7 +25,7 @@
 
 TEST_CASE("Push transaction", "[VCoalesceFiFo]")
 {
-    VCoalesceFiFo* t = new VCoalesceFiFo();
+    VCoalesceFiFo* t = rr::ut::makeTop<VCoalesceFiFo>();
 
     rr::ut::reset(t);
 
@@ -103,7 +103,7 @@ TEST_CASE("Push transaction", "[VCoalesceFiFo]")
 
 TEST_CASE("Test Skid Buffer", "[VCoalesceFiFo]")
 {
-    VCoalesceFiFo* t = new VCoalesceFiFo();
+    VCoalesceFiFo* t = rr::ut::makeTop<VCoalesceFiFo>();
 
     rr::ut::reset(t);
 
@@ -249,7 +249,7 @@ TEST_CASE("Test Skid Buffer", "[VCoalesceFiFo]")
 
 TEST_CASE("Test Burst", "[VCoalesceFiFo]")
 {
-    VCoalesceFiFo* t = new VCoalesceFiFo();
+    VCoalesceFiFo* t = rr::ut::makeTop<VCoalesceFiFo>();
 
     rr::ut::reset(t);
 
@@ -356,7 +356,7 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
 {
     static constexpr std::size_t MAX_BEATS_TO_COALESCE = 8;
 
-    VCoalesceFiFo* t = new VCoalesceFiFo();
+    VCoalesceFiFo* t = rr::ut::makeTop<VCoalesceFiFo>();
 
     rr::ut::reset(t);
 

@@ -77,7 +77,7 @@ static uint8_t getScissorMask(
 
 TEST_CASE("memset", "[VInternalFramebufferCommandHandler]")
 {
-    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+    VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
 
     rr::ut::reset(t);
 
@@ -120,7 +120,7 @@ TEST_CASE("memset", "[VInternalFramebufferCommandHandler]")
 
 TEST_CASE("memset with scissor and offset", "[VInternalFramebufferCommandHandler]")
 {
-    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+    VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
 
     rr::ut::reset(t);
 
@@ -168,7 +168,7 @@ TEST_CASE("memset with scissor and offset", "[VInternalFramebufferCommandHandler
 
 TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
 {
-    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+    VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
 
     rr::ut::reset(t);
 
@@ -249,7 +249,7 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
 
 TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler]")
 {
-    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+    VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
 
     rr::ut::reset(t);
 
@@ -321,7 +321,7 @@ TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler
 
 TEST_CASE("read", "[VInternalFramebufferCommandHandler]")
 {
-    VInternalFramebufferCommandHandler* t = new VInternalFramebufferCommandHandler();
+    VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
 
     rr::ut::reset(t);
 

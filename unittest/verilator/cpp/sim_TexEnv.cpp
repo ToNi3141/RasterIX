@@ -99,7 +99,7 @@ void initConf(Conf& conf)
 
 TEST_CASE("Check TexEnv SRC_RGB TEXTURE", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -126,7 +126,7 @@ TEST_CASE("Check TexEnv SRC_RGB TEXTURE", "[TexEnv]")
 
 TEST_CASE("Check TexEnv SRC_RGB PREVIOUS", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -153,7 +153,7 @@ TEST_CASE("Check TexEnv SRC_RGB PREVIOUS", "[TexEnv]")
 
 TEST_CASE("Check TexEnv SRC_RGB CONSTANT", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -180,7 +180,7 @@ TEST_CASE("Check TexEnv SRC_RGB CONSTANT", "[TexEnv]")
 
 TEST_CASE("Check TexEnv SRC_RGB PRIMARY_COLOR", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -207,7 +207,7 @@ TEST_CASE("Check TexEnv SRC_RGB PRIMARY_COLOR", "[TexEnv]")
 
 TEST_CASE("Check TexEnv SRC_ALPHA TEXTURE", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -234,7 +234,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA TEXTURE", "[TexEnv]")
 
 TEST_CASE("Check TexEnv SRC_ALPHA PREVIOUS", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -261,7 +261,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA PREVIOUS", "[TexEnv]")
 
 TEST_CASE("Check TexEnv SRC_ALPHA CONSTANT", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -288,7 +288,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA CONSTANT", "[TexEnv]")
 
 TEST_CASE("Check TexEnv SRC_ALPHA PRIMARY_COLOR", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -315,7 +315,7 @@ TEST_CASE("Check TexEnv SRC_ALPHA PRIMARY_COLOR", "[TexEnv]")
 
 TEST_CASE("Check TexEnv OP ONE_MINUS_SRC_COLOR (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -338,7 +338,7 @@ TEST_CASE("Check TexEnv OP ONE_MINUS_SRC_COLOR (RGB)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv OP SRC_ALPHA (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -361,7 +361,7 @@ TEST_CASE("Check TexEnv OP SRC_ALPHA (RGB)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv OP ONE_MINUS_SRC_ALPHA (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -384,7 +384,7 @@ TEST_CASE("Check TexEnv OP ONE_MINUS_SRC_ALPHA (RGB)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv OP ONE_MINUS_SRC_ALPHA (ALPHA)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -407,7 +407,7 @@ TEST_CASE("Check TexEnv OP ONE_MINUS_SRC_ALPHA (ALPHA)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv REPLACE (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -430,7 +430,7 @@ TEST_CASE("Check TexEnv REPLACE (RGB)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv MODULATE (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -456,7 +456,7 @@ TEST_CASE("Check TexEnv MODULATE (RGB)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv ADD (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -482,7 +482,7 @@ TEST_CASE("Check TexEnv ADD (RGB)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv ADD_SIGNED (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -508,7 +508,7 @@ TEST_CASE("Check TexEnv ADD_SIGNED (RGB)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv INTERPOLATE (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -541,7 +541,7 @@ TEST_CASE("Check TexEnv INTERPOLATE (RGB)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv SUBTRACT (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -567,7 +567,7 @@ TEST_CASE("Check TexEnv SUBTRACT (RGB)", "[TexEnv]")
 
 TEST_CASE("Check DOT3_RGB", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -601,7 +601,7 @@ TEST_CASE("Check DOT3_RGB", "[TexEnv]")
 
 TEST_CASE("Check DOT3_RGBA", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -635,7 +635,7 @@ TEST_CASE("Check DOT3_RGBA", "[TexEnv]")
 
 TEST_CASE("Check TexEnv MODULATE (ALPHA)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -661,7 +661,7 @@ TEST_CASE("Check TexEnv MODULATE (ALPHA)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv ADD (ALPHA)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -687,7 +687,7 @@ TEST_CASE("Check TexEnv ADD (ALPHA)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv ADD_SIGNED (ALPHA)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -713,7 +713,7 @@ TEST_CASE("Check TexEnv ADD_SIGNED (ALPHA)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv INTERPOLATE (ALPHA)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -745,7 +745,7 @@ TEST_CASE("Check TexEnv INTERPOLATE (ALPHA)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv SUBTRACT (ALPHA)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -771,7 +771,7 @@ TEST_CASE("Check TexEnv SUBTRACT (ALPHA)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv REPLACE Pipeline", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -803,7 +803,7 @@ TEST_CASE("Check TexEnv REPLACE Pipeline", "[TexEnv]")
 
 TEST_CASE("Check TexEnv REPLACE SCALE (RGB)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -837,7 +837,7 @@ TEST_CASE("Check TexEnv REPLACE SCALE (RGB)", "[TexEnv]")
 
 TEST_CASE("Check TexEnv REPLACE SCALE (ALPHA)", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -871,7 +871,7 @@ TEST_CASE("Check TexEnv REPLACE SCALE (ALPHA)", "[TexEnv]")
 
 TEST_CASE("Check DOT3_RGB SCALE", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -916,7 +916,7 @@ TEST_CASE("Check DOT3_RGB SCALE", "[TexEnv]")
 
 TEST_CASE("Check stall", "[TexEnv]")
 {
-    VTexEnv* top = new VTexEnv();
+    VTexEnv* top = rr::ut::makeTop<VTexEnv>();
     rr::ut::reset(top);
     top->m_ready = 1;
 

@@ -25,7 +25,7 @@
 
 TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
 {
-    VStreamConcatFifo* t = new VStreamConcatFifo();
+    VStreamConcatFifo* t = rr::ut::makeTop<VStreamConcatFifo>();
 
     t->s_stream0_tenable = 1;
     t->s_stream1_tenable = 1;
@@ -93,7 +93,7 @@ TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
 
 TEST_CASE("Check stream interruption", "[StreamConcatFifo]")
 {
-    VStreamConcatFifo* t = new VStreamConcatFifo();
+    VStreamConcatFifo* t = rr::ut::makeTop<VStreamConcatFifo>();
 
     t->s_stream0_tenable = 1;
     t->s_stream1_tenable = 1;
@@ -143,7 +143,7 @@ TEST_CASE("Check stream interruption", "[StreamConcatFifo]")
 
 TEST_CASE("Check full", "[StreamConcatFifo]")
 {
-    VStreamConcatFifo* t = new VStreamConcatFifo();
+    VStreamConcatFifo* t = rr::ut::makeTop<VStreamConcatFifo>();
 
     t->s_stream0_tenable = 1;
     t->s_stream1_tenable = 1;
@@ -199,7 +199,7 @@ TEST_CASE("Check full", "[StreamConcatFifo]")
 
 TEST_CASE("Check read while channels are disabled", "[StreamConcatFifo]")
 {
-    VStreamConcatFifo* t = new VStreamConcatFifo();
+    VStreamConcatFifo* t = rr::ut::makeTop<VStreamConcatFifo>();
 
     t->s_stream0_tenable = 1;
     t->s_stream1_tenable = 1;

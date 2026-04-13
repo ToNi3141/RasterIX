@@ -25,7 +25,7 @@
 
 TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
 {
-    VFramebufferReader* t = new VFramebufferReader();
+    VFramebufferReader* t = rr::ut::makeTop<VFramebufferReader>();
 
     t->s_fetch_tvalid = 0;
     t->m_frag_tready = 0;
@@ -74,7 +74,7 @@ TEST_CASE("Integration test of the framebuffer reader", "[FramebufferReader]")
 
 TEST_CASE("Check stalling. Only check that the fifo content is fine. Deeper tests are already done in the module specific tests.", "[FramebufferReader]")
 {
-    VFramebufferReader* t = new VFramebufferReader();
+    VFramebufferReader* t = rr::ut::makeTop<VFramebufferReader>();
 
     t->s_fetch_tvalid = 0;
     t->m_frag_tready = 1;

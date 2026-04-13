@@ -25,7 +25,7 @@
 
 TEST_CASE("Timeout", "[VCoalesceAddrGen]")
 {
-    VCoalesceAddrGen* t = new VCoalesceAddrGen();
+    VCoalesceAddrGen* t = rr::ut::makeTop<VCoalesceAddrGen>();
 
     rr::ut::reset(t);
     REQUIRE(t->s_mem_axi_axready == 1);
@@ -65,7 +65,7 @@ TEST_CASE("Timeout", "[VCoalesceAddrGen]")
 
 TEST_CASE("Boundary check", "[VCoalesceAddrGen]")
 {
-    VCoalesceAddrGen* t = new VCoalesceAddrGen();
+    VCoalesceAddrGen* t = rr::ut::makeTop<VCoalesceAddrGen>();
 
     rr::ut::reset(t);
     REQUIRE(t->s_mem_axi_axready == 1);
@@ -117,7 +117,7 @@ TEST_CASE("Boundary check", "[VCoalesceAddrGen]")
 
 TEST_CASE("Address Order", "[VCoalesceAddrGen]")
 {
-    VCoalesceAddrGen* t = new VCoalesceAddrGen();
+    VCoalesceAddrGen* t = rr::ut::makeTop<VCoalesceAddrGen>();
 
     rr::ut::reset(t);
     REQUIRE(t->s_mem_axi_axready == 1);
@@ -169,7 +169,7 @@ TEST_CASE("Address Order", "[VCoalesceAddrGen]")
 
 TEST_CASE("Max Beats", "[VCoalesceAddrGen]")
 {
-    VCoalesceAddrGen* t = new VCoalesceAddrGen();
+    VCoalesceAddrGen* t = rr::ut::makeTop<VCoalesceAddrGen>();
 
     rr::ut::reset(t);
     REQUIRE(t->s_mem_axi_axready == 1);
@@ -204,7 +204,7 @@ TEST_CASE("Max Beats", "[VCoalesceAddrGen]")
 
 TEST_CASE("Create two transaction", "[VCoalesceAddrGen]")
 {
-    VCoalesceAddrGen* t = new VCoalesceAddrGen();
+    VCoalesceAddrGen* t = rr::ut::makeTop<VCoalesceAddrGen>();
 
     rr::ut::reset(t);
     REQUIRE(t->s_mem_axi_axready == 1);
@@ -254,7 +254,7 @@ TEST_CASE("Create two transaction", "[VCoalesceAddrGen]")
 
 TEST_CASE("Stall", "[VCoalesceAddrGen]")
 {
-    VCoalesceAddrGen* t = new VCoalesceAddrGen();
+    VCoalesceAddrGen* t = rr::ut::makeTop<VCoalesceAddrGen>();
 
     rr::ut::reset(t);
     REQUIRE(t->s_mem_axi_axready == 1);

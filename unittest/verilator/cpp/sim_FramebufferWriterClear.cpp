@@ -25,7 +25,7 @@
 
 TEST_CASE("Check forwarding", "[FramebufferWriterClear]")
 {
-    VFramebufferWriterClear* t = new VFramebufferWriterClear();
+    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
 
     t->apply = 0;
 
@@ -64,7 +64,7 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
 {
     static constexpr uint32_t X_RES { 10 };
     static constexpr uint32_t Y_RES { 8 };
-    VFramebufferWriterClear* t = new VFramebufferWriterClear();
+    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
 
     t->apply = 0;
 
@@ -104,7 +104,7 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
 {
     static constexpr uint32_t X_RES { 10 };
     static constexpr uint32_t Y_RES { 8 };
-    VFramebufferWriterClear* t = new VFramebufferWriterClear();
+    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
 
     t->apply = 0;
 

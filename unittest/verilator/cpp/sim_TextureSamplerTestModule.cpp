@@ -50,7 +50,7 @@ void uploadTexture(VTextureSamplerTestModule* top)
 
 TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -153,7 +153,7 @@ TEST_CASE("Get various values from the texture buffer", "[TextureBuffer]")
 
 TEST_CASE("Get various values from the texture buffer with pipeline test", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -213,7 +213,7 @@ TEST_CASE("Get various values from the texture buffer with pipeline test", "[Tex
 
 TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -295,7 +295,7 @@ TEST_CASE("Check sub coordinates", "[TextureBuffer]")
 
 TEST_CASE("clamp to border with s", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -349,7 +349,7 @@ TEST_CASE("clamp to border with s", "[TextureBuffer]")
 
 TEST_CASE("clamp to border with t", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -403,7 +403,7 @@ TEST_CASE("clamp to border with t", "[TextureBuffer]")
 
 TEST_CASE("clamp to border with s and t", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -554,7 +554,7 @@ void uploadMipMap4x8Texture(VTextureSamplerTestModule* top)
 
 TEST_CASE("Get various values from the mipmap 4x8 texture", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -674,7 +674,7 @@ void uploadMipMap4x4Texture(VTextureSamplerTestModule* top)
 
 TEST_CASE("Get various values from the mipmap 4x4 texture", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -874,7 +874,7 @@ void uploadMipMap4x16Texture(VTextureSamplerTestModule* top)
 
 TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 
@@ -956,7 +956,7 @@ TEST_CASE("Get various values from the mipmap 4x16 texture", "[TextureBuffer]")
 
 TEST_CASE("Check stall", "[TextureBuffer]")
 {
-    VTextureSamplerTestModule* top = new VTextureSamplerTestModule();
+    VTextureSamplerTestModule* top = rr::ut::makeTop<VTextureSamplerTestModule>();
     rr::ut::reset(top);
     top->m_ready = 1;
 

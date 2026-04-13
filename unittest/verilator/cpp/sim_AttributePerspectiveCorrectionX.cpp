@@ -22,7 +22,7 @@
 
 TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
 {
-    VAttributePerspectiveCorrectionX* top = new VAttributePerspectiveCorrectionX();
+    VAttributePerspectiveCorrectionX* top = rr::ut::makeTop<VAttributePerspectiveCorrectionX>();
     rr::ut::reset(top);
     top->ce = 1;
 

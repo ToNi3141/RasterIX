@@ -75,7 +75,7 @@ void init(VAttributeInterpolationX* top)
 
 TEST_CASE("Check init", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -111,7 +111,7 @@ TEST_CASE("Check init", "[AttributeInterpolationX]")
 
 TEST_CASE("Check x inc", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -150,7 +150,7 @@ TEST_CASE("Check x inc", "[AttributeInterpolationX]")
 
 TEST_CASE("Check x dec", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -189,7 +189,7 @@ TEST_CASE("Check x dec", "[AttributeInterpolationX]")
 
 TEST_CASE("Check y inc", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -228,7 +228,7 @@ TEST_CASE("Check y inc", "[AttributeInterpolationX]")
 
 TEST_CASE("Check stall", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -295,7 +295,7 @@ TEST_CASE("Check stall", "[AttributeInterpolationX]")
 }
 TEST_CASE("Check push", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -334,7 +334,7 @@ TEST_CASE("Check push", "[AttributeInterpolationX]")
 
 TEST_CASE("Check pop", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);

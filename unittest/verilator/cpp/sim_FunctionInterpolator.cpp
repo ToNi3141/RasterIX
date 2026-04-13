@@ -83,7 +83,7 @@ TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
 {
     const float start = 0;
     const float end = 100000;
-    VFunctionInterpolator* top = new VFunctionInterpolator();
+    VFunctionInterpolator* top = rr::ut::makeTop<VFunctionInterpolator>();
     rr::ut::reset(top);
     top->ce = 1;
     generateLinearTable(top, start, end);
@@ -117,7 +117,7 @@ TEST_CASE("Check stall", "[FunctionInterpolator]")
 {
     const float start = 0;
     const float end = 100000;
-    VFunctionInterpolator* top = new VFunctionInterpolator();
+    VFunctionInterpolator* top = rr::ut::makeTop<VFunctionInterpolator>();
     rr::ut::reset(top);
     top->ce = 1;
     generateLinearTable(top, start, end);

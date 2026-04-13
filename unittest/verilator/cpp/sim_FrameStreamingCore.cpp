@@ -82,7 +82,7 @@ void configPhase(VFrameStreamingCore& t, uint32_t command, uint32_t addr)
 
 TEST_CASE("Mux data simple (st0 -> st0)", "[Stream]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -165,7 +165,7 @@ TEST_CASE("Mux data simple (st0 -> st0)", "[Stream]")
 
 TEST_CASE("Mux data simple (st0 -> st1)", "[Stream]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -248,7 +248,7 @@ TEST_CASE("Mux data simple (st0 -> st1)", "[Stream]")
 
 TEST_CASE("Mux data simple (st1 -> st1)", "[Stream]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -331,7 +331,7 @@ TEST_CASE("Mux data simple (st1 -> st1)", "[Stream]")
 
 TEST_CASE("Mux data simple (st1 -> st0)", "[Stream]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -414,7 +414,7 @@ TEST_CASE("Mux data simple (st1 -> st0)", "[Stream]")
 
 TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -524,7 +524,7 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
 
 TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -636,7 +636,7 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
 
 TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -830,7 +830,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
 
 TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -1024,7 +1024,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
 
 TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -1178,7 +1178,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
 
 TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);
@@ -1332,7 +1332,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
 
 TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]")
 {
-    VFrameStreamingCore* top = new VFrameStreamingCore();
+    VFrameStreamingCore* top = rr::ut::makeTop<VFrameStreamingCore>();
     VFrameStreamingCore& t = *top;
 
     reset(t);

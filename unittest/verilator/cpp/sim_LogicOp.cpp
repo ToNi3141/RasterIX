@@ -42,7 +42,7 @@ static constexpr uint8_t OR_INVERTED { 15 };
 
 TEST_CASE("Chip Enable", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -69,7 +69,7 @@ TEST_CASE("Chip Enable", "[LogicOp]")
 
 TEST_CASE("Not Enabled", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -87,7 +87,7 @@ TEST_CASE("Not Enabled", "[LogicOp]")
 
 TEST_CASE("OR_INVERTED", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -105,7 +105,7 @@ TEST_CASE("OR_INVERTED", "[LogicOp]")
 
 TEST_CASE("OR_REVERSE", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -123,7 +123,7 @@ TEST_CASE("OR_REVERSE", "[LogicOp]")
 
 TEST_CASE("AND_INVERTED", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -141,7 +141,7 @@ TEST_CASE("AND_INVERTED", "[LogicOp]")
 
 TEST_CASE("AND_REVERSE", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -159,7 +159,7 @@ TEST_CASE("AND_REVERSE", "[LogicOp]")
 
 TEST_CASE("EQUIV", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -177,7 +177,7 @@ TEST_CASE("EQUIV", "[LogicOp]")
 
 TEST_CASE("XOR", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -195,7 +195,7 @@ TEST_CASE("XOR", "[LogicOp]")
 
 TEST_CASE("NOR", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -213,7 +213,7 @@ TEST_CASE("NOR", "[LogicOp]")
 
 TEST_CASE("OR", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -231,7 +231,7 @@ TEST_CASE("OR", "[LogicOp]")
 
 TEST_CASE("NAND", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -249,7 +249,7 @@ TEST_CASE("NAND", "[LogicOp]")
 
 TEST_CASE("AND", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -267,7 +267,7 @@ TEST_CASE("AND", "[LogicOp]")
 
 TEST_CASE("INVERT", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -285,7 +285,7 @@ TEST_CASE("INVERT", "[LogicOp]")
 
 TEST_CASE("NOOP", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -303,7 +303,7 @@ TEST_CASE("NOOP", "[LogicOp]")
 
 TEST_CASE("COPY_INVERTED", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -321,7 +321,7 @@ TEST_CASE("COPY_INVERTED", "[LogicOp]")
 
 TEST_CASE("COPY", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -339,7 +339,7 @@ TEST_CASE("COPY", "[LogicOp]")
 
 TEST_CASE("SET", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 
@@ -357,7 +357,7 @@ TEST_CASE("SET", "[LogicOp]")
 
 TEST_CASE("CLEAR", "[LogicOp]")
 {
-    VLogicOp* t = new VLogicOp();
+    VLogicOp* t = rr::ut::makeTop<VLogicOp>();
 
     rr::ut::reset(t);
 

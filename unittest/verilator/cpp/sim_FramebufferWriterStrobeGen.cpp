@@ -25,7 +25,7 @@
 
 TEST_CASE("Check mask gating", "[FramebufferWriterStrobeGen]")
 {
-    VFramebufferWriterStrobeGen* t = new VFramebufferWriterStrobeGen();
+    VFramebufferWriterStrobeGen* t = rr::ut::makeTop<VFramebufferWriterStrobeGen>();
 
     t->s_frag_tvalid = 1;
     t->s_frag_tlast = 0;

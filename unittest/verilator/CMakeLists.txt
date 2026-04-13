@@ -45,6 +45,7 @@ function(add_verilator_test TEST_NAME TOP_MODULE VERILOG_FILE)
             ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
         COMMAND make -C ${OBJ_DIR} -f V${TOP_MODULE}.mk
         DEPENDS ${VERILOG_FILE} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/cpp/general.hpp
         COMMENT "Verilating and building ${TOP_MODULE}..."
         VERBATIM
     )

@@ -25,7 +25,7 @@
 
 TEST_CASE("Write one pixel into framebuffer", "[FramebufferPacker]")
 {
-    VFramebufferPacker* t = new VFramebufferPacker();
+    VFramebufferPacker* t = rr::ut::makeTop<VFramebufferPacker>();
 
     t->s_frag_tvalid = 0;
     t->s_frag_tlast = 0;
@@ -87,7 +87,7 @@ TEST_CASE("Write one pixel into framebuffer", "[FramebufferPacker]")
 
 TEST_CASE("Write stream of pixels into framebuffer", "[FramebufferPacker]")
 {
-    VFramebufferPacker* t = new VFramebufferPacker();
+    VFramebufferPacker* t = rr::ut::makeTop<VFramebufferPacker>();
 
     t->s_frag_tvalid = 0;
     t->s_frag_tlast = 0;
@@ -203,7 +203,7 @@ TEST_CASE("Write stream of pixels into framebuffer", "[FramebufferPacker]")
 
 TEST_CASE("Write stream of pixels with interruptions", "[FramebufferPacker]")
 {
-    VFramebufferPacker* t = new VFramebufferPacker();
+    VFramebufferPacker* t = rr::ut::makeTop<VFramebufferPacker>();
 
     t->s_frag_tvalid = 0;
     t->s_frag_tlast = 0;
@@ -330,7 +330,7 @@ TEST_CASE("Write stream of pixels with interruptions", "[FramebufferPacker]")
 
 TEST_CASE("Write stream of pixels with slow memory", "[FramebufferPacker]")
 {
-    VFramebufferPacker* t = new VFramebufferPacker();
+    VFramebufferPacker* t = rr::ut::makeTop<VFramebufferPacker>();
 
     t->s_frag_tvalid = 0;
     t->s_frag_tlast = 0;
@@ -529,7 +529,7 @@ TEST_CASE("Write stream of pixels with slow memory", "[FramebufferPacker]")
 
 TEST_CASE("Write pixels with selective strobe", "[FramebufferPacker]")
 {
-    VFramebufferPacker* t = new VFramebufferPacker();
+    VFramebufferPacker* t = rr::ut::makeTop<VFramebufferPacker>();
 
     t->s_frag_tvalid = 0;
     t->s_frag_tlast = 0;

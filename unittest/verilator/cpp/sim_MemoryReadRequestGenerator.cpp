@@ -25,7 +25,7 @@
 
 TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryReadRequestGenerator]")
 {
-    VMemoryReadRequestGenerator* t = new VMemoryReadRequestGenerator();
+    VMemoryReadRequestGenerator* t = rr::ut::makeTop<VMemoryReadRequestGenerator>();
     t->s_fetch_tlast = 0;
     t->s_fetch_tvalid = 0;
     t->m_mem_axi_arready = 1;
@@ -110,7 +110,7 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
 
 TEST_CASE("Interrupted fetch stream", "[MemoryReadRequestGenerator]")
 {
-    VMemoryReadRequestGenerator* t = new VMemoryReadRequestGenerator();
+    VMemoryReadRequestGenerator* t = rr::ut::makeTop<VMemoryReadRequestGenerator>();
     t->s_fetch_tlast = 0;
     t->s_fetch_tvalid = 0;
     t->m_mem_axi_arready = 1;
@@ -172,7 +172,7 @@ TEST_CASE("Interrupted fetch stream", "[MemoryReadRequestGenerator]")
 
 TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadRequestGenerator]")
 {
-    VMemoryReadRequestGenerator* t = new VMemoryReadRequestGenerator();
+    VMemoryReadRequestGenerator* t = rr::ut::makeTop<VMemoryReadRequestGenerator>();
     t->s_fetch_tlast = 0;
     t->s_fetch_tvalid = 0;
     t->m_mem_axi_arready = 0;
@@ -290,7 +290,7 @@ TEST_CASE("Interrupted memory stream with tlast in skid buffer", "[MemoryReadReq
 
 TEST_CASE("tlast after one clock", "[MemoryReadRequestGenerator]")
 {
-    VMemoryReadRequestGenerator* t = new VMemoryReadRequestGenerator();
+    VMemoryReadRequestGenerator* t = rr::ut::makeTop<VMemoryReadRequestGenerator>();
     t->s_fetch_tlast = 0;
     t->s_fetch_tvalid = 0;
     t->m_mem_axi_arready = 1;

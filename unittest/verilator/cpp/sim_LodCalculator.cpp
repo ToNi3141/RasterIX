@@ -25,7 +25,7 @@
 
 TEST_CASE("Check max lod", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = true;
@@ -44,7 +44,7 @@ TEST_CASE("Check max lod", "[LodCalculator]")
 
 TEST_CASE("Check lod xy", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = true;
@@ -67,7 +67,7 @@ TEST_CASE("Check lod xy", "[LodCalculator]")
 
 TEST_CASE("Check lod x", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = true;
@@ -91,7 +91,7 @@ TEST_CASE("Check lod x", "[LodCalculator]")
 
 TEST_CASE("Check lod y", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = true;
@@ -115,7 +115,7 @@ TEST_CASE("Check lod y", "[LodCalculator]")
 
 TEST_CASE("Check lod xy negative", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = true;
@@ -139,7 +139,7 @@ TEST_CASE("Check lod xy negative", "[LodCalculator]")
 
 TEST_CASE("Check lod xy max with varying texture size", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = true;
@@ -163,7 +163,7 @@ TEST_CASE("Check lod xy max with varying texture size", "[LodCalculator]")
 
 TEST_CASE("Check lod xy 0 with varying texture size", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = true;
@@ -187,7 +187,7 @@ TEST_CASE("Check lod xy 0 with varying texture size", "[LodCalculator]")
 
 TEST_CASE("Check lod xy 0 with varying values", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = true;
@@ -215,7 +215,7 @@ TEST_CASE("Check lod xy 0 with varying values", "[LodCalculator]")
 
 TEST_CASE("Check lod xy when calculation is disabled", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = false;
@@ -239,7 +239,7 @@ TEST_CASE("Check lod xy when calculation is disabled", "[LodCalculator]")
 
 TEST_CASE("Check stall", "[LodCalculator]")
 {
-    VLodCalculator* t = new VLodCalculator();
+    VLodCalculator* t = rr::ut::makeTop<VLodCalculator>();
     t->m_ready = 1;
 
     t->confEnable = true;

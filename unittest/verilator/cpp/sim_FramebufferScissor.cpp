@@ -22,7 +22,7 @@
 
 TEST_CASE("Scissor disabled passes strobe through", "[FramebufferScissor]")
 {
-    VFramebufferScissor* t = new VFramebufferScissor();
+    VFramebufferScissor* t = rr::ut::makeTop<VFramebufferScissor>();
 
     t->confEnableScissor = 0;
     t->confScissorStartX = 0;
@@ -57,7 +57,7 @@ TEST_CASE("Scissor disabled passes strobe through", "[FramebufferScissor]")
 
 TEST_CASE("Scissor enabled clips pixels outside rect", "[FramebufferScissor]")
 {
-    VFramebufferScissor* t = new VFramebufferScissor();
+    VFramebufferScissor* t = rr::ut::makeTop<VFramebufferScissor>();
 
     t->confEnableScissor = 1;
     t->confScissorStartX = 2;

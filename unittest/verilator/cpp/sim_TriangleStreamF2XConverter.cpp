@@ -25,7 +25,7 @@
 
 TEST_CASE("Convert triangle stream", "[VTriangleStreamF2XConverter]")
 {
-    VTriangleStreamF2XConverter* t = new VTriangleStreamF2XConverter();
+    VTriangleStreamF2XConverter* t = rr::ut::makeTop<VTriangleStreamF2XConverter>();
 
     struct StreamData
     {

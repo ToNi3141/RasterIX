@@ -28,7 +28,7 @@ static constexpr std::size_t DATA_WIDTH = 32; // 32 bit data width
 
 TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
 {
-    VAxisToAxiCrossbar* t = new VAxisToAxiCrossbar();
+    VAxisToAxiCrossbar* t = rr::ut::makeTop<VAxisToAxiCrossbar>();
 
     rr::ut::reset(t);
     CHECK(t->s_aready == 0b0'0);
@@ -90,7 +90,7 @@ TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
 
 TEST_CASE("check write channel 1", "[VAxisToAxiCrossbar]")
 {
-    VAxisToAxiCrossbar* t = new VAxisToAxiCrossbar();
+    VAxisToAxiCrossbar* t = rr::ut::makeTop<VAxisToAxiCrossbar>();
 
     rr::ut::reset(t);
     CHECK(t->s_aready == 0b0'0);
@@ -151,7 +151,7 @@ TEST_CASE("check write channel 1", "[VAxisToAxiCrossbar]")
 
 TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
 {
-    VAxisToAxiCrossbar* t = new VAxisToAxiCrossbar();
+    VAxisToAxiCrossbar* t = rr::ut::makeTop<VAxisToAxiCrossbar>();
 
     rr::ut::reset(t);
     CHECK(t->s_aready == 0b0'0);
@@ -261,7 +261,7 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
 
 TEST_CASE("check read channel 0", "[VAxisToAxiCrossbar]")
 {
-    VAxisToAxiCrossbar* t = new VAxisToAxiCrossbar();
+    VAxisToAxiCrossbar* t = rr::ut::makeTop<VAxisToAxiCrossbar>();
 
     rr::ut::reset(t);
     CHECK(t->s_aready == 0b0'0);
@@ -321,7 +321,7 @@ TEST_CASE("check read channel 0", "[VAxisToAxiCrossbar]")
 
 TEST_CASE("check read channel 1", "[VAxisToAxiCrossbar]")
 {
-    VAxisToAxiCrossbar* t = new VAxisToAxiCrossbar();
+    VAxisToAxiCrossbar* t = rr::ut::makeTop<VAxisToAxiCrossbar>();
 
     rr::ut::reset(t);
     CHECK(t->s_aready == 0b0'0);
@@ -380,7 +380,7 @@ TEST_CASE("check read channel 1", "[VAxisToAxiCrossbar]")
 
 TEST_CASE("check both read channels", "[VAxisToAxiCrossbar]")
 {
-    VAxisToAxiCrossbar* t = new VAxisToAxiCrossbar();
+    VAxisToAxiCrossbar* t = rr::ut::makeTop<VAxisToAxiCrossbar>();
 
     rr::ut::reset(t);
     CHECK(t->s_aready == 0b0'0);

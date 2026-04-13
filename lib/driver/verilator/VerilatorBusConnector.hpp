@@ -123,7 +123,7 @@ private:
     const uint16_t m_resolutionH = 128;
     tcb::span<uint8_t> m_framebuffer;
     uint32_t m_streamAddr = 0;
-    Vtop m_top;
+    Vtop m_top { new VerilatedContext };
 };
 
 } // namespace rr

@@ -25,7 +25,7 @@
 
 TEST_CASE("Test Forwarding", "[VStreamSemaphore]")
 {
-    VStreamSemaphore* t = new VStreamSemaphore();
+    VStreamSemaphore* t = rr::ut::makeTop<VStreamSemaphore>();
 
     t->sigRelease = 0;
     t->m_axis_tready = 1;
@@ -61,7 +61,7 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
 {
     static constexpr uint32_t SEMAPHORE_COUNT { 128 };
     static constexpr uint32_t MAX_ITERATIONS { SEMAPHORE_COUNT + 1 };
-    VStreamSemaphore* t = new VStreamSemaphore();
+    VStreamSemaphore* t = rr::ut::makeTop<VStreamSemaphore>();
 
     t->sigRelease = 0;
     t->m_axis_tready = 1;
@@ -113,7 +113,7 @@ TEST_CASE("Test Stall", "[VStreamSemaphore]")
 
 TEST_CASE("Test flow control", "[VStreamSemaphore]")
 {
-    VStreamSemaphore* t = new VStreamSemaphore();
+    VStreamSemaphore* t = rr::ut::makeTop<VStreamSemaphore>();
 
     t->sigRelease = 0;
     t->m_axis_tready = 0;
