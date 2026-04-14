@@ -16,28 +16,37 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // This module acts as a framebuffer reader for the displays.
-// It takes from the fb_addr the address where to read the framebuffer.
+// It takes from fb_addr the address where to read the framebuffer.
 // A read is started when swap_fb is set to high and is acknowledged
-// by a transition from fb_swapped from 0 to 1. 
-// Node: An acknowledged framebuffer does not mean that it is fully
-// transferred. It just means, that this module starts to transfer
-// it to the display.
+// by a transition from fb_swapped from 0 to 1.
+// Note: An acknowledged framebuffer does not mean that it is fully
+// transferred. It just means that this module starts to transfer
+// it to the display (BLOCKING=0) or that the transfer is fully
+// complete (BLOCKING=1).
+//
+// The display stream is always 16-bit (RGB565). The AXI memory port width
+// is set by DATA_WIDTH. An internal axi_adapter_rd upsizes the 16-bit
+// AxisMemoryReader read channel to DATA_WIDTH.
+// An internal FIFO (depth 2^FIFO_DEPTH_LG) decouples the memory read path
+// from the display stream. Bursts are issued one at a time; a new burst is
+// only started after the FIFO fill drops below its threshold.
 module AxisFramebufferReader #(
-    // Width of the display stream
-    parameter DISPLAY_STREAM_WIDTH = 16,
-
-    // Width of the axi interfaces
-    parameter DATA_WIDTH = 32,
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,
-    // Width of wstrb (width of data bus in words)
-    parameter STRB_WIDTH = 4,
-    // Width of ID signal
+    // Width of the AXI memory data bus (the internal reader is always 16-bit;
+    // an adapter upsizes to this width for the external port)
+    parameter DATA_WIDTH = 32,
+    // Width of AXI ID signal
     parameter ID_WIDTH = 8,
-    // When this parameter is set, the swap is acknowledged when the 
-    // framebuffer is completely streamed
+    // When 1: fb_swapped is asserted only after the full transfer is complete.
+    // When 0: fb_swapped is asserted immediately after the transfer starts.
     parameter BLOCKING = 1,
+    // log2 of the internal FIFO depth
+    parameter FIFO_DEPTH_LG = 8,
+    // Beats per AXI read burst (must be <= 2^FIFO_DEPTH_LG)
+    parameter BEATS_PER_BURST = 16,
 
+    localparam INTERNAL_DATA_WIDTH = 16,
     localparam FB_SIZE_IN_PIXEL_LG = 20
 ) (
     input  wire                                 aclk,
@@ -48,13 +57,13 @@ module AxisFramebufferReader #(
     input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   fb_size,
     output reg                                  fb_swapped,
 
-    // Display port
-    output wire                                 m_disp_axis_tvalid,
-    input  wire                                 m_disp_axis_tready,
-    output wire                                 m_disp_axis_tlast,
-    output wire [DISPLAY_STREAM_WIDTH - 1 : 0]  m_disp_axis_tdata,
+    // Display AXI-Stream master (always 16-bit RGB565 pixels)
+    output wire                                     m_disp_axis_tvalid,
+    input  wire                                     m_disp_axis_tready,
+    output wire                                     m_disp_axis_tlast,
+    output wire [INTERNAL_DATA_WIDTH - 1 : 0]       m_disp_axis_tdata,
 
-    // Memory port
+    // AXI4 read-only memory master (DATA_WIDTH wide)
     output wire [ID_WIDTH - 1 : 0]              m_mem_axi_arid,
     output wire [ADDR_WIDTH - 1 : 0]            m_mem_axi_araddr,
     output wire [ 7 : 0]                        m_mem_axi_arlen,
@@ -73,183 +82,170 @@ module AxisFramebufferReader #(
     input  wire                                 m_mem_axi_rvalid,
     output wire                                 m_mem_axi_rready
 );
-    reg                         st0_axis_tvalid;
-    wire                        st0_axis_tready;
-    reg                         st0_axis_tlast;
-    reg [DATA_WIDTH - 1 : 0]    st0_axis_tdata;
+    wire cmd_done;
+    reg  cmd_start;
 
-    wire                        disp_axis_tvalid;
-    wire                        disp_axis_tready;
-    wire                        disp_axis_tlast;
-    wire [DATA_WIDTH - 1 : 0]   disp_axis_tdata;
+    // Internal 16-bit AXI wires between AxisMemoryReader and axi_adapter_rd
+    wire [ID_WIDTH - 1 : 0]                 mem16_axi_arid;
+    wire [ADDR_WIDTH - 1 : 0]               mem16_axi_araddr;
+    wire [ 7 : 0]                           mem16_axi_arlen;
+    wire [ 2 : 0]                           mem16_axi_arsize;
+    wire [ 1 : 0]                           mem16_axi_arburst;
+    wire                                    mem16_axi_arlock;
+    wire [ 3 : 0]                           mem16_axi_arcache;
+    wire [ 2 : 0]                           mem16_axi_arprot;
+    wire                                    mem16_axi_arvalid;
+    wire                                    mem16_axi_arready;
+    wire [ID_WIDTH - 1 : 0]                 mem16_axi_rid;
+    wire [INTERNAL_DATA_WIDTH - 1 : 0]      mem16_axi_rdata;
+    wire [ 1 : 0]                           mem16_axi_rresp;
+    wire                                    mem16_axi_rlast;
+    wire                                    mem16_axi_rvalid;
+    wire                                    mem16_axi_rready;
 
-    localparam STATE_CMD = 0;
-    localparam STATE_ADDR = 1;
-    localparam STATE_WAIT_DSE = 2;
-    localparam STATE_NOP = 3;
-    reg [ 1 : 0] state;
-
-    FrameStreamingCore #(
-        .STREAM_WIDTH(DATA_WIDTH),
+    AxisMemoryReader #(
         .ADDR_WIDTH(ADDR_WIDTH),
-        .STRB_WIDTH(STRB_WIDTH),
-        .ID_WIDTH(ID_WIDTH)
-    ) fte (
+        .ID_WIDTH(ID_WIDTH),
+        .FIFO_DEPTH_LG(FIFO_DEPTH_LG),
+        .BEATS_PER_BURST(BEATS_PER_BURST)
+    ) memReader (
         .aclk(aclk),
         .resetn(resetn),
-        
-        .m_st0_axis_tvalid(disp_axis_tvalid),
-        .m_st0_axis_tready(disp_axis_tready),
-        .m_st0_axis_tlast(disp_axis_tlast),
-        .m_st0_axis_tdata(disp_axis_tdata),
-        .s_st0_axis_tvalid(st0_axis_tvalid),
-        .s_st0_axis_tready(st0_axis_tready),
-        .s_st0_axis_tlast(st0_axis_tlast),
-        .s_st0_axis_tdata(st0_axis_tdata),
 
-        .m_st1_axis_tvalid(),
-        .m_st1_axis_tready(0),
-        .m_st1_axis_tlast(),
-        .m_st1_axis_tdata(),
-        .s_st1_axis_tvalid(0),
-        .s_st1_axis_tready(),
-        .s_st1_axis_tlast(0),
-        .s_st1_axis_tdata(0),
+        .cmd_start(cmd_start),
+        .cmd_addr(fb_addr),
+        .cmd_size(fb_size),
+        .cmd_done(cmd_done),
 
-        .m_mem_axi_awid(),
-        .m_mem_axi_awaddr(),
-        .m_mem_axi_awlen(), 
-        .m_mem_axi_awsize(),
-        .m_mem_axi_awburst(),
-        .m_mem_axi_awlock(),
-        .m_mem_axi_awcache(),
-        .m_mem_axi_awprot(), 
-        .m_mem_axi_awvalid(),
-        .m_mem_axi_awready(0),
+        .m_axis_tvalid(m_disp_axis_tvalid),
+        .m_axis_tready(m_disp_axis_tready),
+        .m_axis_tlast(m_disp_axis_tlast),
+        .m_axis_tdata(m_disp_axis_tdata),
 
-        .m_mem_axi_wdata(),
-        .m_mem_axi_wstrb(),
-        .m_mem_axi_wlast(),
-        .m_mem_axi_wvalid(),
-        .m_mem_axi_wready(0),
+        .m_mem_axi_arid(mem16_axi_arid),
+        .m_mem_axi_araddr(mem16_axi_araddr),
+        .m_mem_axi_arlen(mem16_axi_arlen),
+        .m_mem_axi_arsize(mem16_axi_arsize),
+        .m_mem_axi_arburst(mem16_axi_arburst),
+        .m_mem_axi_arlock(mem16_axi_arlock),
+        .m_mem_axi_arcache(mem16_axi_arcache),
+        .m_mem_axi_arprot(mem16_axi_arprot),
+        .m_mem_axi_arvalid(mem16_axi_arvalid),
+        .m_mem_axi_arready(mem16_axi_arready),
 
-        .m_mem_axi_bid(0),
-        .m_mem_axi_bresp(0),
-        .m_mem_axi_bvalid(0),
-        .m_mem_axi_bready(),
-
-        .m_mem_axi_arid(m_mem_axi_arid),
-        .m_mem_axi_araddr(m_mem_axi_araddr),
-        .m_mem_axi_arlen(m_mem_axi_arlen),
-        .m_mem_axi_arsize(m_mem_axi_arsize),
-        .m_mem_axi_arburst(m_mem_axi_arburst),
-        .m_mem_axi_arlock(m_mem_axi_arlock),
-        .m_mem_axi_arcache(m_mem_axi_arcache),
-        .m_mem_axi_arprot(m_mem_axi_arprot),
-        .m_mem_axi_arvalid(m_mem_axi_arvalid),
-        .m_mem_axi_arready(m_mem_axi_arready),
-
-        .m_mem_axi_rid(m_mem_axi_rid),
-        .m_mem_axi_rdata(m_mem_axi_rdata),
-        .m_mem_axi_rresp(m_mem_axi_rresp),
-        .m_mem_axi_rlast(m_mem_axi_rlast),
-        .m_mem_axi_rvalid(m_mem_axi_rvalid),
-        .m_mem_axi_rready(m_mem_axi_rready)
+        .m_mem_axi_rid(mem16_axi_rid),
+        .m_mem_axi_rdata(mem16_axi_rdata),
+        .m_mem_axi_rresp(mem16_axi_rresp),
+        .m_mem_axi_rlast(mem16_axi_rlast),
+        .m_mem_axi_rvalid(mem16_axi_rvalid),
+        .m_mem_axi_rready(mem16_axi_rready)
     );
 
-    axis_adapter #(
-        .S_DATA_WIDTH(DATA_WIDTH), 
-        .S_KEEP_ENABLE(1), 
-        .S_KEEP_WIDTH(DATA_WIDTH / 16),
-        .M_DATA_WIDTH(DISPLAY_STREAM_WIDTH), 
-        .M_KEEP_ENABLE(1),
-        .M_KEEP_WIDTH(DISPLAY_STREAM_WIDTH / 16),
-        .ID_ENABLE(0), 
-        .DEST_ENABLE(0),
-        .USER_ENABLE(0)
-    ) adapter (
+    // Upsize the 16-bit AxisMemoryReader AXI port to DATA_WIDTH
+    axi_adapter_rd #(
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .S_DATA_WIDTH(INTERNAL_DATA_WIDTH),
+        .M_DATA_WIDTH(DATA_WIDTH),
+        .ID_WIDTH(ID_WIDTH),
+        .CONVERT_BURST(1),
+        .CONVERT_NARROW_BURST(0)
+    ) memAxiAdapter (
         .clk(aclk),
         .rst(!resetn),
 
-        .s_axis_tdata(disp_axis_tdata),
-        .s_axis_tkeep(~0),
-        .s_axis_tvalid(disp_axis_tvalid),
-        .s_axis_tready(disp_axis_tready),
-        .s_axis_tlast(disp_axis_tlast),
+        .s_axi_arid(mem16_axi_arid),
+        .s_axi_araddr(mem16_axi_araddr),
+        .s_axi_arlen(mem16_axi_arlen),
+        .s_axi_arsize(mem16_axi_arsize),
+        .s_axi_arburst(mem16_axi_arburst),
+        .s_axi_arlock(mem16_axi_arlock),
+        .s_axi_arcache(mem16_axi_arcache),
+        .s_axi_arprot(mem16_axi_arprot),
+        .s_axi_arqos(0),
+        .s_axi_arregion(0),
+        .s_axi_aruser(0),
+        .s_axi_arvalid(mem16_axi_arvalid),
+        .s_axi_arready(mem16_axi_arready),
 
-        .m_axis_tdata(m_disp_axis_tdata),
-        .m_axis_tkeep(),
-        .m_axis_tvalid(m_disp_axis_tvalid),
-        .m_axis_tready(m_disp_axis_tready),
-        .m_axis_tlast(m_disp_axis_tlast)
+        .s_axi_rid(mem16_axi_rid),
+        .s_axi_rdata(mem16_axi_rdata),
+        .s_axi_rresp(mem16_axi_rresp),
+        .s_axi_rlast(mem16_axi_rlast),
+        .s_axi_ruser(),
+        .s_axi_rvalid(mem16_axi_rvalid),
+        .s_axi_rready(mem16_axi_rready),
+
+        .m_axi_arid(m_mem_axi_arid),
+        .m_axi_araddr(m_mem_axi_araddr),
+        .m_axi_arlen(m_mem_axi_arlen),
+        .m_axi_arsize(m_mem_axi_arsize),
+        .m_axi_arburst(m_mem_axi_arburst),
+        .m_axi_arlock(m_mem_axi_arlock),
+        .m_axi_arcache(m_mem_axi_arcache),
+        .m_axi_arprot(m_mem_axi_arprot),
+        .m_axi_arqos(),
+        .m_axi_arregion(),
+        .m_axi_aruser(),
+        .m_axi_arvalid(m_mem_axi_arvalid),
+        .m_axi_arready(m_mem_axi_arready),
+
+        .m_axi_rid(m_mem_axi_rid),
+        .m_axi_rdata(m_mem_axi_rdata),
+        .m_axi_rresp(m_mem_axi_rresp),
+        .m_axi_rlast(m_mem_axi_rlast),
+        .m_axi_ruser(0),
+        .m_axi_rvalid(m_mem_axi_rvalid),
+        .m_axi_rready(m_mem_axi_rready)
     );
+
+    // -----------------------------------------------------------------------
+    // Swap-buffer handshake FSM
+    // -----------------------------------------------------------------------
+    localparam STATE_IDLE   = 1'b0;
+    localparam STATE_ACTIVE = 1'b1;
+    reg state;
 
     always @(posedge aclk)
     begin
         if (!resetn)
         begin
-            state <= STATE_CMD;
+            state      <= STATE_IDLE;
             fb_swapped <= 1;
-            st0_axis_tvalid <= 0;
-            st0_axis_tlast <= 0;
+            cmd_start  <= 0;
         end
         else
         begin
+            cmd_start <= 0; // default: one-shot pulse
+
             case (state)
-                STATE_CMD:
+                STATE_IDLE:
                 begin
                     if (swap_fb)
                     begin
-                        st0_axis_tdata <= { 2'h1, 2'h3, 7'h0, fb_size, 1'h0 }; // fb_size is the size of the FB in 16 bit pixel
-                        st0_axis_tvalid <= 1;
-                        st0_axis_tlast <= 0;
                         fb_swapped <= 0;
-                        state <= STATE_ADDR;
+                        cmd_start  <= 1;
+                        state      <= STATE_ACTIVE;
                     end
                 end
-                STATE_ADDR: 
-                begin
-                    if (st0_axis_tready)
-                    begin
-                        st0_axis_tdata <= fb_addr;
-                        st0_axis_tlast <= 1;
-                        if (BLOCKING == 0)
-                        begin
-                            fb_swapped <= 1; // Early acknowledge to the framebuffer
-                        end
-                        state <= STATE_WAIT_DSE;
-                    end
-                end
-                STATE_WAIT_DSE:
-                begin
-                    if ((BLOCKING == 1) && st0_axis_tready)
-                    begin
-                        // Use a NOP as fence
-                        st0_axis_tdata <= 0; // NOP
-                        st0_axis_tlast <= 1;
-                        state <= STATE_NOP;
-                    end
 
-                    if ((BLOCKING == 0) && st0_axis_tready)
-                    begin
-                        st0_axis_tvalid <= 0;
-                        st0_axis_tlast <= 0;
+                STATE_ACTIVE:
+                begin
+                    // Non-blocking: acknowledge in the first cycle after start
+                    if (BLOCKING == 0)
                         fb_swapped <= 1;
-                        state <= STATE_CMD;
+
+                    if (cmd_done)
+                    begin
+                        // Blocking: acknowledge only when transfer is fully done
+                        if (BLOCKING == 1)
+                            fb_swapped <= 1;
+                        state <= STATE_IDLE;
                     end
                 end
-                STATE_NOP:
+
+                default:
                 begin
-                    if (st0_axis_tready)
-                    begin
-                        st0_axis_tvalid <= 0;
-                        st0_axis_tlast <= 0;
-                        fb_swapped <= 1;
-                        state <= STATE_CMD;
-                    end
-                end
-                default: 
-                begin
+                    state <= STATE_IDLE;
                 end
             endcase
         end

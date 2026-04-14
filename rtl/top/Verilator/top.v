@@ -37,7 +37,7 @@ module top #(
     output wire                             m_framebuffer_axis_tvalid,
     input  wire                             m_framebuffer_axis_tready,
     output wire                             m_framebuffer_axis_tlast,
-    output wire [CMD_STREAM_WIDTH - 1 : 0]  m_framebuffer_axis_tdata
+    output wire [15 : 0]                    m_framebuffer_axis_tdata
 );
 `define STR(x) `"x`"
     parameter VARIANT = `STR(`VARIANT);
@@ -305,6 +305,7 @@ module top #(
         .ENABLE_DEPTH_BUFFER(1),
         .ENABLE_TEXTURE_FILTERING(1),
         .ENABLE_FOG(1),
+        .ENABLE_MEMORY_COALESCING(1),
         .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(6),
         .SUB_PIXEL_CALC_PRECISION(8),
@@ -368,10 +369,8 @@ module top #(
     );
 
     AxisFramebufferReader #(
-        .DISPLAY_STREAM_WIDTH(CMD_STREAM_WIDTH),
-        .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
-        .STRB_WIDTH(STRB_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC),
         .BLOCKING(0)
     ) axisFramebufferReader (

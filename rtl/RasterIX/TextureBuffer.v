@@ -23,6 +23,9 @@
 // Pipelined: yes
 // Depth: 2 cycle
 module TextureBuffer #(
+
+`define TMAX(a,b) ((a) > (b) ? (a) : (b))
+
     // Width of the write port
     parameter STREAM_WIDTH = 32,
 
@@ -33,18 +36,22 @@ module TextureBuffer #(
     localparam NUMBER_OF_SUB_PIXELS = 4,
 
     parameter PIXEL_WIDTH = 32,
+
+    localparam MEM_WIDTH = `TMAX(32, STREAM_WIDTH),
+
     localparam SUB_PIXEL_WIDTH = PIXEL_WIDTH / NUMBER_OF_SUB_PIXELS,
 
     localparam PIXEL_WIDTH_INT = 16,
     localparam SUB_PIXEL_WIDTH_INT = PIXEL_WIDTH_INT / NUMBER_OF_SUB_PIXELS,
 
-    localparam STREAM_WIDTH_HALF = STREAM_WIDTH / 2,
+    localparam MEM_WIDTH_HALF = MEM_WIDTH / 2,
 
     localparam SIZE_IN_BYTES_LG = $clog2(MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE) + 1,
-    localparam ADDR_WIDTH = SIZE_IN_BYTES_LG - $clog2(STREAM_WIDTH / PIXEL_WIDTH_INT),
+    localparam ADDR_WIDTH = SIZE_IN_BYTES_LG - $clog2(MEM_WIDTH / PIXEL_WIDTH_INT),
     localparam ADDR_WIDTH_DIFF = SIZE_IN_BYTES_LG - ADDR_WIDTH,
 
     localparam TEX_ADDR_WIDTH = 17
+`undef TMAX
 )
 (
     input  wire                             aclk,
@@ -70,6 +77,12 @@ module TextureBuffer #(
 `include "RegisterAndDescriptorDefines.vh"
     initial 
     begin
+        if (STREAM_WIDTH < 16)
+        begin
+            $error("STREAM_WIDTH must be at least 16 bits");
+            $finish;
+        end
+
         if (PIXEL_WIDTH != 32)
         begin
             $error("PIXEL_WIDTH must be 32. Otherwise the conversions from the internal format to the external will not work.");
@@ -123,6 +136,9 @@ module TextureBuffer #(
     `Expand(Expand, SUB_PIXEL_WIDTH_INT, SUB_PIXEL_WIDTH, NUMBER_OF_SUB_PIXELS)
 
     reg  [ADDR_WIDTH - 1 : 0]           memWriteAddr = 0;
+    wire                                memWriteEven;
+    wire                                memWriteOdd;
+
     reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding00;
     reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding01;
     reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding10;
@@ -133,13 +149,13 @@ module TextureBuffer #(
     wire [ADDR_WIDTH - 1 : 0]           memReadAddrEven1;
     wire [ADDR_WIDTH - 1 : 0]           memReadAddrOdd1;
 
-    wire [STREAM_WIDTH_HALF - 1 : 0]    memReadDataEven0;
-    wire [STREAM_WIDTH_HALF - 1 : 0]    memReadDataOdd0;
-    wire [STREAM_WIDTH_HALF - 1 : 0]    memReadDataEven1;
-    wire [STREAM_WIDTH_HALF - 1 : 0]    memReadDataOdd1;
+    wire [MEM_WIDTH_HALF - 1 : 0]       memReadDataEven0;
+    wire [MEM_WIDTH_HALF - 1 : 0]       memReadDataOdd0;
+    wire [MEM_WIDTH_HALF - 1 : 0]       memReadDataEven1;
+    wire [MEM_WIDTH_HALF - 1 : 0]       memReadDataOdd1;
 
-    wire [STREAM_WIDTH_HALF - 1 : 0]    tdataEvenS;
-    wire [STREAM_WIDTH_HALF - 1 : 0]    tdataOddS;
+    wire [MEM_WIDTH_HALF - 1 : 0]       tdataEvenS;
+    wire [MEM_WIDTH_HALF - 1 : 0]       tdataOddS;
 
     wire [PIXEL_WIDTH_INT - 1 : 0]      texelSelect00;
     wire [PIXEL_WIDTH_INT - 1 : 0]      texelSelect01;
@@ -148,7 +164,7 @@ module TextureBuffer #(
 
     MipmapOptimizedRam #(
         .ADDR_WIDTH(ADDR_WIDTH),
-        .MEM_WIDTH(STREAM_WIDTH_HALF),
+        .MEM_WIDTH(MEM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT),
         .MEMORY_PRIMITIVE("block"),
         .ENABLE_LOD_OPTIMIZATION(ENABLE_LOD)
@@ -157,9 +173,9 @@ module TextureBuffer #(
         .reset(!resetn),
 
         .writeData(tdataEvenS),
-        .write(s_axis_tvalid),
+        .write(s_axis_tvalid & memWriteEven),
         .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrEven1),
-        .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH_INT){1'b1}}),
+        .writeMask({ (MEM_WIDTH_HALF / PIXEL_WIDTH_INT) { 1'b1 } }),
         .writeDataOut(memReadDataEven1),
 
         .readData(memReadDataEven0),
@@ -168,7 +184,7 @@ module TextureBuffer #(
 
     MipmapOptimizedRam #(
         .ADDR_WIDTH(ADDR_WIDTH),
-        .MEM_WIDTH(STREAM_WIDTH_HALF),
+        .MEM_WIDTH(MEM_WIDTH_HALF),
         .WRITE_STROBE_WIDTH(PIXEL_WIDTH_INT),
         .MEMORY_PRIMITIVE("block"),
         .ENABLE_LOD_OPTIMIZATION(ENABLE_LOD)
@@ -177,9 +193,9 @@ module TextureBuffer #(
         .reset(!resetn),
 
         .writeData(tdataOddS),
-        .write(s_axis_tvalid),
+        .write(s_axis_tvalid & memWriteOdd),
         .writeAddr((s_axis_tvalid) ? memWriteAddr : memReadAddrOdd1),
-        .writeMask({(STREAM_WIDTH_HALF / PIXEL_WIDTH_INT){1'b1}}),
+        .writeMask({ (MEM_WIDTH_HALF / PIXEL_WIDTH_INT) { 1'b1 } }),
         .writeDataOut(memReadDataOdd1),
 
         .readData(memReadDataOdd0),
@@ -187,7 +203,7 @@ module TextureBuffer #(
     );
     
     //////////////////////////////////////////////
-    //  Build RAM adresses
+    //  Build RAM addresses
     //////////////////////////////////////////////
 
     // Muxing of the RAM access to query the texels from the even and odd RAMs.
@@ -207,11 +223,11 @@ module TextureBuffer #(
     end
 
     //////////////////////////////////////////////
-    // Demux RAM adress and expand pixels
+    // Demux RAM address and expand pixels
     //////////////////////////////////////////////
     // Demux the RAM access and access the texels in the read vector
     generate
-        if (STREAM_WIDTH == 32)
+        if (MEM_WIDTH <= 32)
         begin
             assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0
                                                                 : memReadDataEven0;
@@ -227,9 +243,9 @@ module TextureBuffer #(
         end
         else 
         begin
-            // Bit zero is used to check, if we have to select the RAM with the even or unevent pixel adresses (see also the multiplexing of the memReadAddr*)
+            // Bit zero is used to check, if we have to select the RAM with the even or uneven pixel addresses (see also the multiplexing of the memReadAddr*)
             // Since bit zero is already used from the ADDR_WIDTH_DIFF to select the even or uneven ram, we can use the rest of the
-            // bits to select the pixel from the vector. Therefor we start at position 1 and select one bit less from ADDR_WIDTH_DIFF to keep the selection in bound.
+            // bits to select the pixel from the vector. Therefore we start at position 1 and select one bit less from ADDR_WIDTH_DIFF to keep the selection in bound.
             assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT]
                                                                 : memReadDataEven0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * PIXEL_WIDTH_INT +: PIXEL_WIDTH_INT];
 
@@ -260,37 +276,80 @@ module TextureBuffer #(
     //////////////////////////////////////////////
     // AXIS Interface
     //////////////////////////////////////////////
-    // Memory interface to write data from the AXIS to the buffer
-    always @(posedge aclk)
+    generate 
+    if (STREAM_WIDTH == PIXEL_WIDTH_INT)
     begin
-        if (!resetn)
+        reg memWriteEvenNotOdd;
+        always @(posedge aclk)
         begin
-            memWriteAddr <= 0;
-        end
-        else
-        begin
-            if (s_axis_tvalid)
+            if (!resetn)
             begin
-                if (s_axis_tlast)
+                memWriteAddr <= 0;
+                memWriteEvenNotOdd <= 1;
+            end
+            else
+            begin
+                if (s_axis_tvalid)
                 begin
-                    memWriteAddr <= 0;
-                end
-                else
-                begin
-                    memWriteAddr <= memWriteAddr + 1;
+                    if (s_axis_tlast)
+                    begin
+                        memWriteAddr <= 0;
+                        memWriteEvenNotOdd <= 1;
+                    end
+                    else
+                    begin
+                        if (memWriteEvenNotOdd)
+                        begin
+                            memWriteEvenNotOdd <= 0;
+                        end
+                        else
+                        begin
+                            memWriteAddr <= memWriteAddr + 1;
+                            memWriteEvenNotOdd <= 1;
+                        end
+                    end
                 end
             end
         end
-    end
 
-    generate 
+        assign memWriteEven = memWriteEvenNotOdd;
+        assign memWriteOdd = !memWriteEvenNotOdd;
+        assign tdataEvenS = s_axis_tdata;
+        assign tdataOddS = s_axis_tdata;
+    end
+    else
     begin
+        always @(posedge aclk)
+        begin
+            if (!resetn)
+            begin
+                memWriteAddr <= 0;
+            end
+            else
+            begin
+                if (s_axis_tvalid)
+                begin
+                    if (s_axis_tlast)
+                    begin
+                        memWriteAddr <= 0;
+                    end
+                    else
+                    begin
+                        memWriteAddr <= memWriteAddr + 1;
+                    end
+                end
+            end
+        end
+
+        assign memWriteEven = 1;
+        assign memWriteOdd = 1;
+
         // Stride the incoming data. All even pixel on the X coordinate have to go to the even RAM
         // All uneven pixel on the X coordinate have to go in the odd RAM.
         genvar i;
 
         // Stride for the even RAM
-        for (i = 0; i < STREAM_WIDTH_HALF / PIXEL_WIDTH_INT; i = i + 1)
+        for (i = 0; i < MEM_WIDTH_HALF / PIXEL_WIDTH_INT; i = i + 1)
         begin
             localparam ii = i * (PIXEL_WIDTH_INT * 2);
             localparam jj = i * PIXEL_WIDTH_INT;
@@ -298,7 +357,7 @@ module TextureBuffer #(
         end
 
         // Stride for the uneven RAM
-        for (i = 0; i < STREAM_WIDTH_HALF / PIXEL_WIDTH_INT; i = i + 1)
+        for (i = 0; i < MEM_WIDTH_HALF / PIXEL_WIDTH_INT; i = i + 1)
         begin
             localparam ii = (i * (PIXEL_WIDTH_INT * 2)) + PIXEL_WIDTH_INT;
             localparam jj = i * PIXEL_WIDTH_INT;
@@ -306,5 +365,4 @@ module TextureBuffer #(
         end
     end
     endgenerate
-
 endmodule 

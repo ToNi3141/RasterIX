@@ -890,6 +890,7 @@ module RasterIXRenderCore #(
     // Broadcasts to color, depth, and stencil framebuffers
     // Clocks: n/a
     ////////////////////////////////////////////////////////////////////////////
+    localparam RASTERIZER_FRAMEBUFFER_BROADCAST_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1;
     wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   bc2_bbx;
     wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   bc2_bby;
     wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   bc2_spx;
@@ -897,7 +898,6 @@ module RasterIXRenderCore #(
     wire [(INDEX_WIDTH * 3) - 1 : 0]        bc2_index;
     wire [ 2 : 0]                           bc2_valid;
     wire [ 2 : 0]                           bc2_pixel;
-    wire [(RR_CMD_SIZE * 3) - 1 : 0]        bc2_cmd;
     wire [ 2 : 0]                           bc2_last;
     wire [ 2 : 0]                           bc2_keep;
     wire [ 2 : 0]                           bc2_ready;
@@ -928,8 +928,7 @@ module RasterIXRenderCore #(
             bc_attr_spx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_attr_spy[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc_attr_index[1 * INDEX_WIDTH +: INDEX_WIDTH],
-            bc_attr_pixel[1],
-            bc_attr_cmd[1 * RR_CMD_SIZE +: RR_CMD_SIZE]
+            bc_attr_pixel[1]
         }),
         .s_axis_tlast(bc_attr_last[1]),
         .s_axis_tvalid(bc_attr_valid[1] & bc_attr_pixel[1]),
@@ -946,21 +945,18 @@ module RasterIXRenderCore #(
             bc2_spy[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc2_index[2 * INDEX_WIDTH +: INDEX_WIDTH],
             bc2_pixel[2],
-            bc2_cmd[2 * RR_CMD_SIZE +: RR_CMD_SIZE],
             bc2_bbx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc2_bby[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc2_spx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc2_spy[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc2_index[1 * INDEX_WIDTH +: INDEX_WIDTH],
             bc2_pixel[1],
-            bc2_cmd[1 * RR_CMD_SIZE +: RR_CMD_SIZE],
             bc2_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc2_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc2_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc2_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
             bc2_index[0 * INDEX_WIDTH +: INDEX_WIDTH],
-            bc2_pixel[0],
-            bc2_cmd[0 * RR_CMD_SIZE +: RR_CMD_SIZE]
+            bc2_pixel[0]
         }),
         .m_axis_tvalid(bc2_valid),
         .m_axis_tready(bc2_ready),
@@ -971,7 +967,7 @@ module RasterIXRenderCore #(
         .m_axis_tuser()
     );
     defparam rasterizerBroadcast2.M_COUNT = 3;
-    defparam rasterizerBroadcast2.DATA_WIDTH = RASTERIZER_CONCAT_WIDTH;
+    defparam rasterizerBroadcast2.DATA_WIDTH = RASTERIZER_FRAMEBUFFER_BROADCAST_WIDTH;
     defparam rasterizerBroadcast2.KEEP_ENABLE = 1;
     defparam rasterizerBroadcast2.KEEP_WIDTH = 1;
     defparam rasterizerBroadcast2.LAST_ENABLE = 1;

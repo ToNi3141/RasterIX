@@ -69,7 +69,8 @@ T* makeTop()
 // construction with "Adding model when time is non-zero".
 double sc_time_stamp()
 {
-    return 0;
+    double t = 0;
+    return t++;
 }
 
 #endif // GENERAL_HPP
