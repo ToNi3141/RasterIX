@@ -46,7 +46,7 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
     top->tex1_mipmap_s = 0x9000000;
     top->tex1_mipmap_t = 0x10000000;
     top->tex1_mipmap_q = 0x110000;
-    top->depth_w = 0x5555;
+    top->depth_w = 0x2000'0000;
     top->depth_z = 0x12340000;
     top->color_r = 0x00080000;
     top->color_g = 0x00090000;
@@ -75,7 +75,7 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
     top->tex1_mipmap_s = 0x9500000;
     top->tex1_mipmap_t = 0x15000000;
     top->tex1_mipmap_q = 0x115000;
-    top->depth_w = 0x15555;
+    top->depth_w = 0x1000'0000;
     top->depth_z = 0x22340000;
     top->color_r = 0x00180000;
     top->color_g = 0x00190000;
@@ -109,7 +109,7 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
     CHECK(top->m_attrb_tspy == 321);
     CHECK(top->m_attrb_tindex == 100);
 
-    CHECK(top->m_attrb_tdepth_w == 0x4740c0c0);
+    CHECK(top->m_attrb_tdepth_w == 0x3f000000);
     CHECK(top->m_attrb_tdepth_z == 0x48d0);
     CHECK(top->m_attrb_ttexture0_s == 0x7ffff);
     CHECK(top->m_attrb_ttexture0_t == 0xfffff);
@@ -134,7 +134,7 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
     CHECK(top->m_attrb_tspy == 421);
     CHECK(top->m_attrb_tindex == 101);
 
-    CHECK(top->m_attrb_tdepth_w == 0x4640300a);
+    CHECK(top->m_attrb_tdepth_w == 0x3e800000);
     CHECK(top->m_attrb_tdepth_z == 0x88d0);
     CHECK(top->m_attrb_ttexture0_s == 0x7ffff);
     CHECK(top->m_attrb_ttexture0_t == 0xeeb3d);

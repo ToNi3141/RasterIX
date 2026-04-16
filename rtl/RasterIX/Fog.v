@@ -19,7 +19,7 @@
 // It uses a fog look up table to calculate the intensity of the fog color based on the depth.
 // To see how the LUT is build, @see FunctionInterpolator
 // Pipelined: yes
-// Depth: 6 cycles
+// Depth: 4 cycles
 module Fog 
 #(
     parameter USER_WIDTH = 1,
@@ -64,7 +64,7 @@ module Fog
     ////////////////////////////////////////////////////////////////////////////
     // STEP 0
     // Calculate the fog intensity
-    // Clocks: 4 
+    // Clocks: 2 
     ////////////////////////////////////////////////////////////////////////////
     wire [23 : 0]               step0_fogIntensity;
     wire [PIXEL_WIDTH - 1 : 0]  step0_texelColor;
@@ -73,7 +73,7 @@ module Fog
 
     ValueDelay #(
         .VALUE_SIZE(1 + USER_WIDTH + PIXEL_WIDTH), 
-        .DELAY(4)
+        .DELAY(2)
     ) step0_validDelay (
         .clk(aclk), 
         .ce(ce),

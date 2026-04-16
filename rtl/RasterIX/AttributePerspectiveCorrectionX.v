@@ -113,7 +113,7 @@ module AttributePerspectiveCorrectionX #(
     wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_mipmap_s;
     wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_mipmap_t;
     wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex1_mipmap_q;
-    wire        [(FOG_PRECISION * 2) - 1 : 0]   step1_depth_w; // U21.27
+    wire        [(FOG_PRECISION * 1) - 1 : 0]   step1_depth_w; // U21.27
     wire        [DEPTH_WIDTH - 1 : 0]           step1_depth_z; // U0.16
     wire        [16 - 1 : 0]                    step1_color_r; // S7.8
     wire        [16 - 1 : 0]                    step1_color_g;
@@ -128,7 +128,7 @@ module AttributePerspectiveCorrectionX #(
     wire        [INDEX_WIDTH - 1 : 0]           step1_tindex;
 
     ValueDelay #(
-        .VALUE_SIZE(1 + 1 + 1 + KEEP_WIDTH + (SCREEN_POS_WIDTH * 2) + INDEX_WIDTH + 16 + 16 + 16 + 16 + DEPTH_WIDTH + (8 * TEXQ_PRECISION)), 
+        .VALUE_SIZE(1 + 1 + 1 + KEEP_WIDTH + (SCREEN_POS_WIDTH * 2) + INDEX_WIDTH + 16 + 16 + 16 + 16 + DEPTH_WIDTH + (8 * TEXQ_PRECISION) + FOG_PRECISION), 
         .DELAY(RECIP_DELAY)
     ) step1_delay (
         .clk(aclk), 
@@ -153,7 +153,8 @@ module AttributePerspectiveCorrectionX #(
             tex1_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
             tex1_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
             tex1_mipmap_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
-            tex1_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]
+            tex1_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
+            depth_w[ATTRIBUTE_SIZE - FOG_PRECISION - 0 +: FOG_PRECISION]
         }), 
         .out({
             step1_tvalid,
@@ -175,18 +176,9 @@ module AttributePerspectiveCorrectionX #(
             step1_tex1_s,
             step1_tex1_t,
             step1_tex1_mipmap_s,
-            step1_tex1_mipmap_t
+            step1_tex1_mipmap_t,
+            step1_depth_w
         })
-    );
-
-    XRecip #(
-        .NUMBER_WIDTH(FOG_PRECISION),
-        .ITERATIONS(FOG_ITERATIONS)
-    ) step1_depth_w_recip (
-        .clk(aclk), 
-        .ce(ce), 
-        .in(depth_w[ATTRIBUTE_SIZE - FOG_PRECISION - 1 +: FOG_PRECISION]), 
-        .out(step1_depth_w)
     );
 
     XRecip #(
@@ -301,12 +293,12 @@ module AttributePerspectiveCorrectionX #(
     IntToFloat #(
         .MANTISSA_SIZE(FLOAT_SIZE - 9), 
         .EXPONENT_SIZE(8), 
-        .INT_SIZE(ATTRIBUTE_SIZE)
+        .INT_SIZE(FOG_PRECISION)
     ) step2_tdepth_w_i2f (
         .clk(aclk), 
         .ce(ce), 
-        .offset(-9), 
-        .in(step1_depth_w[FOG_PRECISION - 8 +: FOG_PRECISION + 8]), 
+        .offset(-(FOG_PRECISION - 2)), 
+        .in(step1_depth_w), 
         .out(step2_depth_w)
     );
 

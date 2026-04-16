@@ -148,7 +148,6 @@ void calculateVertexAttributes(Attributes attr,
     res.mt1 += res.t1;
     res.mq1 += res.q1;
 
-    res.w = 1.0f / res.w;
     res.q0 = 1.0f / res.q0;
     res.q1 = 1.0f / res.q1;
     res.mq0 = 1.0f / res.mq0;

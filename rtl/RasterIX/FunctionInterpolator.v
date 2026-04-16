@@ -16,31 +16,26 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // The function interpolator will interpolate a mathematical function based on a LUT
-// The used interpolation equation is: f(x) = m*x + b
+// The used interpolation equation is: f(x) = m * x + b
 // where:
-// x: User input, mantissa is of this value is used as multiplicant for m
-// m: slope stored in the LUT and is accessed via the x's exponent - 127
-// b: offset stored in the LUT and is accessed via the x's exponent - 127
-// Since the LUT is accessed via the exponent of x, the entries in the LUT have a exponential
-// distribution. Means entry 0 is for the float value 1.0, entry 1 for 2.0, entry 2 for 4.0, entry 3 for 8.0 ...
-// There is a limitation with values below 1.0. The limitation comes from the LUT access based 
-// on the exponent. The function interpolator substracts 127 from the exponent. This means that
-// 1.0 is the smallest number. This is not really necessary, but in the usual use case,
-// this function interpolator is used for values over one. To also cover values below one,
-// we would require 128 additional LUT entries which I want to save. As work around for values
-// smaller one, one can set the lower bound to 1.0. For values lower 1.0 the function 
-// interpolator will output fx = 1.0.
+// x: User input, mantissa of this value is used as multiplicand for m
+// m: slope stored in the LUT and is accessed via the x's exponent
+// b: offset stored in the LUT and is accessed via the x's exponent
+// The LUT must have a logarithmic distribution.
+// To make the interpolation more convenient and to save a reciprocal calculation, 
+// the interpolator can use x directly as reciprocal. The downside of this strategy is the
+// reduced precision.
 // The function interpolator has 32 entries to cover input values from 1.0 to 4294967296.0
 // Dataformat
-// Beat 0 Lower bound
+// Beat 0 Lower bound in 1/x form 
 // tdata as float. If x is lower, fx will be 1.0
-// Beat 1 Upper bound
+// Beat 1 Upper bound in 1/x form
 // tdata as float. If x is higher, fx will be 0.0
 // Beat 2 .. 66 
-// Even beat: m = tdata as S1.30
+// Even beat: m = tdata as S9.22
 // Odd beat b = tdata as S1.30
 //
-// This module is pipelined. It requires 4 clock cycles until it outputs the calculated value.
+// This module is pipelined. It requires 2 clock cycles until it outputs the calculated value.
 module FunctionInterpolator #(
     localparam LUT_ENTRY_FIELD_WIDTH = 32,
     localparam FLOAT_WIDTH = LUT_ENTRY_FIELD_WIDTH,
@@ -67,7 +62,7 @@ module FunctionInterpolator #(
     localparam FLOAT_EXP_POS = 23;
     localparam FLOAT_MANTISSA_SIZE = 23;
     localparam FLOAT_MANTISSA_POS = 0;
-    localparam FLOAT_EXP_BIAS = 127;
+    localparam FLOAT_EXP_BIAS = 126;
 
     localparam STATE_WRITE_LOWER_BOUND = 0;
     localparam STATE_WRITE_UPPER_BOUND = 1;
@@ -132,51 +127,49 @@ module FunctionInterpolator #(
     // Interpolation
     always @(posedge aclk)
     if (ce) begin : Interpolation
-        // x
-        reg [FLOAT_WIDTH - 1 : 0]   xVal[0 : 3];
+        // bounds
+        reg lowerBoundExceeded;
+        reg upperBoundExceeded;
 
         // Float unpacking
         reg  [FLOAT_EXP_SIZE - 1 : 0]       floatExp;
-        reg  [FLOAT_MANTISSA_SIZE - 1 : 0]  floatMantissa[0 : 3];
+        reg  [FLOAT_MANTISSA_SIZE - 1 : 0]  floatMantissa;
 
         // Interpolation
         reg  signed [INT_WIDTH - 1 : 0]                             m;
         reg  signed [INT_WIDTH - 1 : 0]                             b;
-        reg  [INT_WIDTH - 1 : 0]                                    xi;
-        reg  [LUT_INTERPOLATION_STEPS - 1 : 0]                      xs;
+        reg         [LUT_INTERPOLATION_STEPS - 1 : 0]               xs;
         reg  signed [(INT_WIDTH + LUT_INTERPOLATION_STEPS) - 1 : 0] mx;
         reg  signed [INT_WIDTH - 1 : 0]                             mxb;
 
-        // Float unpacking and rebias
-        // Rebiasing is done, because we care usually about the integer part. Half of the values from a float lies between 0..1.
-        // so we are cutting this off
-        floatExp <= x[FLOAT_EXP_POS +: FLOAT_EXP_SIZE] - FLOAT_EXP_BIAS;
-        floatMantissa[0] <= x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
+        ///////////////////////////////
+        // Clock 0
+        ///////////////////////////////
+        // Access mantissa and LUT values
+        floatMantissa = -x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
+        xs <= floatMantissa[FLOAT_MANTISSA_SIZE - LUT_INTERPOLATION_STEPS +: LUT_INTERPOLATION_STEPS];
 
-        xVal[0] <= x;
+        lowerBoundExceeded <= x >= lutLowerBound;
+        upperBoundExceeded <= x <= lutUpperBound;
 
         // LUT access
+        floatExp = FLOAT_EXP_BIAS - x[FLOAT_EXP_POS +: FLOAT_EXP_SIZE];
         m <= lutM[floatExp[0 +: $clog2(LUT_ENTRIES)]];
         b <= lutB[floatExp[0 +: $clog2(LUT_ENTRIES)]];
 
-        xVal[1] <= xVal[0];
-        floatMantissa[1] <= floatMantissa[0];
-
+        ///////////////////////////////
+        // Clock 1
+        ///////////////////////////////
         // Calculate (interpolation)
-        xi = {floatMantissa[1][FLOAT_MANTISSA_SIZE - (INT_WIDTH - 1) +: INT_WIDTH - 1], 1'b0};
-        xs = xi[INT_WIDTH - LUT_INTERPOLATION_STEPS +: LUT_INTERPOLATION_STEPS];
         mx = m * xs;
-        mxb <= mx[0 +: INT_WIDTH] + b;
-
-        xVal[2] <= xVal[1];
-        floatMantissa[2] <= floatMantissa[1];
+        mxb = mx[0 +: INT_WIDTH] + b;
 
         // Clamp to bounds
-        if (xVal[2] <= lutLowerBound) 
+        if (lowerBoundExceeded) 
         begin
-            fx <= {1'b0, 1'b1, {(INT_WIDTH - 2){1'b0}}};
+            fx <= { 1'b0, 1'b1, { (INT_WIDTH - 2) { 1'b0 } } };
         end
-        else if (xVal[2] >= lutUpperBound)
+        else if (upperBoundExceeded)
         begin
             fx <= 0;
         end

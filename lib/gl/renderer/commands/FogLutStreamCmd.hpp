@@ -19,6 +19,7 @@
 #define _FOG_LUT_STREAM_CMD_HPP_
 
 #include "Op.hpp"
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -45,13 +46,13 @@ public:
         const float lutUpperBound = end;
 
         // Add bounds to the lut value
-        setBounds(lutLowerBound, lutUpperBound);
+        setBounds(1.0f / lutLowerBound, 1.0f / lutUpperBound);
 
         // Calculate the lut entries
         for (std::size_t i = 0; i < fogLut.size() - 1; i++)
         {
-            float f = fogLut[i];
-            float fn = fogLut[i + 1];
+            const float f = std::clamp(fogLut[i], 0.0f, 1.0f);
+            const float fn = std::clamp(fogLut[i + 1], 0.0f, 1.0f);
 
             const float deltaF = fn - f;
 
