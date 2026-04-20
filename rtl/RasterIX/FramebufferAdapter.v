@@ -60,7 +60,7 @@ module FramebufferAdapter
     input  wire                             s_frag_wlast,
     output wire                             s_frag_wready,
     input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_wdata,
-    input  wire [(PIXEL_WIDTH / 2) - 1 : 0] s_frag_wstrb,
+    input  wire [(PIXEL_WIDTH / 8) - 1 : 0] s_frag_wstrb,
     input  wire [ADDR_WIDTH - 1 : 0]        s_frag_waddr,
 
     /////////////////////////
@@ -136,7 +136,7 @@ module FramebufferAdapter
             assign s_fetch_arready = m_mem_axi_arready;
 
             // Broadcast the fragment write signals to both AW and W channels
-            localparam USER_WIDTH_FRAG = ADDR_WIDTH + (PIXEL_WIDTH / 2);
+            localparam USER_WIDTH_FRAG = ADDR_WIDTH + (PIXEL_WIDTH / 8);
             wire [ 1 : 0] bcast_m_axis_tvalid;
             wire [ 1 : 0] bcast_m_axis_tready;
             wire [2 * PIXEL_WIDTH - 1 : 0] bcast_m_axis_tdata;
@@ -177,13 +177,12 @@ module FramebufferAdapter
             assign bcast_m_axis_tready[0] = m_mem_axi_awready;  // AW channel
             assign bcast_m_axis_tready[1] = m_mem_axi_wready;   // W channel
 
-            wire [ADDR_WIDTH - 1 : 0]        bcast_awaddr_0 = bcast_m_axis_tuser[ADDR_WIDTH - 1 : 0];
-            wire [(PIXEL_WIDTH / 2) - 1 : 0] bcast_wstrb_0 = bcast_m_axis_tuser[ADDR_WIDTH + (PIXEL_WIDTH / 2) - 1 : ADDR_WIDTH];
+            wire [ADDR_WIDTH - 1 : 0]        bcast_awaddr_0 = bcast_m_axis_tuser[0 +: ADDR_WIDTH];
+            wire [(PIXEL_WIDTH / 8) - 1 : 0] bcast_wstrb_0 = bcast_m_axis_tuser[ADDR_WIDTH +: (PIXEL_WIDTH / 8)];
             
-            wire [PIXEL_WIDTH - 1 : 0]       bcast_wdata_1 = bcast_m_axis_tdata[2 * PIXEL_WIDTH - 1 : PIXEL_WIDTH];
-            wire [ADDR_WIDTH - 1 : 0 ]       bcast_awaddr_1 = bcast_m_axis_tuser[ADDR_WIDTH + USER_WIDTH_FRAG - 1 : USER_WIDTH_FRAG];
-            wire [(PIXEL_WIDTH / 2) -1  : 0] bcast_wstrb_1 = bcast_m_axis_tuser[ADDR_WIDTH + (PIXEL_WIDTH / 2) + USER_WIDTH_FRAG - 1 : ADDR_WIDTH + USER_WIDTH_FRAG];
-
+            wire [PIXEL_WIDTH - 1 : 0]       bcast_wdata_1 = bcast_m_axis_tdata[PIXEL_WIDTH +: PIXEL_WIDTH];
+            wire [ADDR_WIDTH - 1 : 0 ]       bcast_awaddr_1 = bcast_m_axis_tuser[USER_WIDTH_FRAG +: ADDR_WIDTH];
+            wire [(PIXEL_WIDTH / 8) -1  : 0] bcast_wstrb_1 = bcast_m_axis_tuser[USER_WIDTH_FRAG + ADDR_WIDTH +: (PIXEL_WIDTH / 8)];
             assign m_mem_axi_awid = 8'b0;
             assign m_mem_axi_awaddr = bcast_awaddr_0;
             assign m_mem_axi_awlen = 8'b0;

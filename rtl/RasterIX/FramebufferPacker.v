@@ -91,18 +91,12 @@ module FramebufferPacker #(
     localparam INDEX_TAG_POS = DATA_WIDTH_LG;
     localparam INDEX_TAG_WIDTH = ADDR_WIDTH - INDEX_TAG_POS;
 
-    // Workaround: Vivado may mis-synthesize variable-indexed LHS part-selects
-    // (e.g. reg[var +: W] <= val). Use explicit shift+OR on the RHS instead.
-    `define PLACE_PIXEL(pos, val)  ({{(DATA_WIDTH  - PIXEL_WIDTH){1'b0}},     (val)} << (PIXEL_WIDTH     * (pos)))
-    `define PLACE_STROBE(pos, val) ({{(STRB_WIDTH  - PIXEL_MASK_WIDTH){1'b0}}, (val)} << (PIXEL_MASK_WIDTH * (pos)))
-
     reg [ADDR_WIDTH - 1 : 0]            memRequestAddr;
     reg [DATA_WIDTH - 1 : 0]            memRequestData;
     reg [STRB_WIDTH - 1 : 0]            memRequestStrb;
     reg                                 memRequest;
 
     reg  [INDEX_TAG_WIDTH - 1 : 0]      lastAddrTag;
-    reg                                 optDataInLine;
     reg  [DATA_WIDTH - 1 : 0]           line;
     reg  [STRB_WIDTH - 1 : 0]           lineStrobe;
 
@@ -126,7 +120,6 @@ module FramebufferPacker #(
             memRequest <= 0;
             s_frag_tready <= 1;
             lastAddrTag <= 0;
-            optDataInLine <= 0;
             lineStrobe <= 0;
             lineStrobeSkid <= 0;
             lastSkid <= 0;
@@ -142,9 +135,12 @@ module FramebufferPacker #(
                     // then write the pixel into the line and update the strobes
                     if (lastAddrTag == tag)
                     begin
-                        line       <= line       | `PLACE_PIXEL(bytePos,  s_frag_tdata);
-                        lineStrobe <= lineStrobe | `PLACE_STROBE(bytePos, s_frag_tstrb);
-                        optDataInLine <= 1;
+                        if (|s_frag_tstrb)
+                        begin
+                            line[PIXEL_WIDTH * bytePos +: PIXEL_WIDTH] <= s_frag_tdata;
+                            lineStrobe[PIXEL_MASK_WIDTH * bytePos +: PIXEL_MASK_WIDTH] <= s_frag_tstrb;
+                        end
+
                         wasLast <= s_frag_tlast;
                         // The last state needs a special handling. Go into the skid 
                         // state to trigger a write request.
@@ -166,12 +162,17 @@ module FramebufferPacker #(
                             memRequestAddr <= { lastAddrTag, { DATA_WIDTH_LG { 1'b0 } } };
                             memRequestData <= line;
                             memRequestStrb <= lineStrobe;
-                            memRequest <= optDataInLine;
+                            memRequest <= |lineStrobe;
                             
-                            optDataInLine <= 1;
                             lastAddrTag <= tag;
-                            line       <= `PLACE_PIXEL(bytePos,  s_frag_tdata);
-                            lineStrobe <= `PLACE_STROBE(bytePos, s_frag_tstrb);
+
+                            lineStrobe <= 0;
+                            if (|s_frag_tstrb)
+                            begin
+                                line[PIXEL_WIDTH * bytePos +: PIXEL_WIDTH] <= s_frag_tdata;
+                                lineStrobe[PIXEL_MASK_WIDTH * bytePos +: PIXEL_MASK_WIDTH] <= s_frag_tstrb;
+                            end
+
                             wasLast <= s_frag_tlast;
                             if (s_frag_tlast)
                             begin
@@ -204,31 +205,34 @@ module FramebufferPacker #(
                     memRequestAddr <= { lastAddrTag, { DATA_WIDTH_LG { 1'b0 } } };
                     memRequestData <= line;
                     memRequestStrb <= lineStrobe;
-                    memRequest <= optDataInLine;
+                    memRequest <= |lineStrobe;
                     
                     if (wasLast)
                     begin
                         // If it was the last pixel, reset the address tag
                         lastAddrTag <= ~0;
                         wasLast <= 0;
-                        optDataInLine <= 0;
                     end
                     else
                     begin
                         // Load data from the skid buffer
                         lastAddrTag <= lastAddrTagSkid;
                         wasLast <= lastSkid;
-                        optDataInLine <= 1;
                     end
                     
-                    line       <= `PLACE_PIXEL(bytePosSkid,  pixelSkid);
-                    lineStrobe <= `PLACE_STROBE(bytePosSkid, lineStrobeSkid);
+                    lineStrobe <= 0;
+                    if (|lineStrobeSkid)
+                    begin
+                        line[PIXEL_WIDTH * bytePosSkid +: PIXEL_WIDTH] <= pixelSkid;
+                        lineStrobe[PIXEL_MASK_WIDTH * bytePosSkid +: PIXEL_MASK_WIDTH] <= lineStrobeSkid;
+                    end
+
+                    lineStrobeSkid <= 0;
                     if (lastSkid)
                     begin
                         // If it was the last pixel, go immediately into the skid state to trigger a 
                         // write request.
                         lastSkid <= 0;
-                        lineStrobeSkid <= 0;
                         s_frag_tready <= 0;
                     end
                     else
@@ -291,7 +295,4 @@ module FramebufferPacker #(
             end
         end
     end
-
-    `undef PLACE_PIXEL
-    `undef PLACE_STROBE
 endmodule

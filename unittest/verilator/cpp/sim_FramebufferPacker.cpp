@@ -590,7 +590,7 @@ TEST_CASE("Write pixels with selective strobe", "[FramebufferPacker]")
         CHECK(t->m_mem_axi_awaddr == 0x0000'0000);
         CHECK(t->m_mem_axi_awlen == 0);
         CHECK(t->m_mem_axi_wvalid == 1);
-        CHECK(t->m_mem_axi_wdata == 0x5678'1234);
+        CHECK(t->m_mem_axi_wdata == 0x0000'1234);
         CHECK(t->m_mem_axi_wstrb == 0b00'11);
 
         rr::ut::clk(t);
@@ -607,7 +607,7 @@ TEST_CASE("Write pixels with selective strobe", "[FramebufferPacker]")
         CHECK(t->m_mem_axi_awaddr == 0x0000'0004);
         CHECK(t->m_mem_axi_awlen == 0);
         CHECK(t->m_mem_axi_wvalid == 1);
-        CHECK(t->m_mem_axi_wdata == 0xbbbb'aaaa);
+        CHECK(t->m_mem_axi_wdata == 0x0000'aaaa);
         CHECK(t->m_mem_axi_wstrb == 0b00'11);
 
         rr::ut::clk(t);
