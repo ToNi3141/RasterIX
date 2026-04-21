@@ -22,7 +22,6 @@ read_verilog ./../../../../RasterIX/AttributeInterpolationX.v
 read_verilog ./../../../../RasterIX/AttributeInterpolator.v
 read_verilog ./../../../../RasterIX/AttributeInterpolatorX.v
 read_verilog ./../../../../RasterIX/AttributePerspectiveCorrectionX.v
-read_verilog ./../../../../RasterIX/AxisFramebufferReader.v
 read_verilog ./../../../../RasterIX/AxisToAxiAdapter.v
 read_verilog ./../../../../RasterIX/AxisToAxiCrossbar.v
 read_verilog ./../../../../RasterIX/CoalesceAddrGen.v
@@ -111,10 +110,13 @@ read_verilog ./../../../../3rdParty/verilog-axi/priority_encoder.v
 read_verilog ./../../../../3rdParty/sfifo.v
 read_verilog ./../../../../3rdParty/skidbuffer.v
 read_verilog ./../../../../Display/DisplayController8BitILI9341.v
+read_verilog ./../../../../Display/AxisMemoryReader.v
+read_verilog ./../../../../Display/AxisFramebufferReader.v
 read_verilog ./../../../../Util/Serial2AXIS.v
 read_verilog ./../../../../Util/SpiSlave.v
 read_verilog ./../AsyncSramController.v
 read_verilog ./../AsyncSramPhy.v
+read_verilog ./../RasterIXSystem.v
 read_xdc ./../Cmod-A7-Master.xdc
 
 source ../design_1.tcl

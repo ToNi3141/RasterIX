@@ -288,6 +288,15 @@ module RasterIXCoreEF #(
     `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, 1)
     `RGB5652XXX(RGB5652XXX, COLOR_SUB_PIXEL_WIDTH, 1)
 
+    initial 
+    begin
+        if ((DATA_WIDTH > 128) || (DATA_WIDTH < 16))
+        begin
+            $error("Unsupported DATA_WIDTH %d. Supported values are 16, 32, 64, 128.", DATA_WIDTH);
+            $finish();
+        end
+    end
+
     wire                                             framebufferParamEnableScissor;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorStartX;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorStartY;
@@ -549,7 +558,7 @@ module RasterIXCoreEF #(
                 .m_mem_axi_rready(depth_coal_rready)
             );
 
-            if (ENABLE_MEMORY_COALESCING)
+            if (ENABLE_MEMORY_COALESCING && (NR_OF_COALESCED_BEATS_DEPTH > 1))
             begin
                 Coalescer #(
                     .ID_WIDTH(ID_WIDTH),
@@ -809,7 +818,7 @@ module RasterIXCoreEF #(
     );
 
     generate
-        if (ENABLE_MEMORY_COALESCING)
+        if (ENABLE_MEMORY_COALESCING && (NR_OF_COALESCED_BEATS_COLOR > 1))
         begin
             Coalescer #(
                 .ID_WIDTH(ID_WIDTH),
@@ -1073,7 +1082,7 @@ module RasterIXCoreEF #(
                 .m_mem_axi_rready(stencil_coal_rready)
             );
 
-            if (ENABLE_MEMORY_COALESCING)
+            if (ENABLE_MEMORY_COALESCING && (NR_OF_COALESCED_BEATS_STENCIL > 1))
             begin
                 Coalescer #(
                     .ID_WIDTH(ID_WIDTH),

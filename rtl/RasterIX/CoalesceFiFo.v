@@ -73,6 +73,15 @@ module CoalesceFiFo #(
 );
     localparam DATA_WIDTH_LG = $clog2(DATA_WIDTH / 8);
 
+    initial
+    begin
+        if (MAX_BEATS_TO_COALESCE <= 1)
+        begin
+            $error("MAX_BEATS_TO_COALESCE (%d) must be greater than 1", MAX_BEATS_TO_COALESCE);
+            $finish;
+        end    
+    end
+
     wire fifo_full;
 
     wire [DATA_WIDTH - 1 : 0]   fifo_wdata;
@@ -120,6 +129,10 @@ module CoalesceFiFo #(
     assign m_mem_axi_awlock = 0;
     assign m_mem_axi_awcache = 0;
     assign m_mem_axi_awprot = 0;
+
+    assign s_mem_axi_bid = m_mem_axi_bid;
+    assign s_mem_axi_bresp = m_mem_axi_bresp;
+    assign s_mem_axi_bvalid = m_mem_axi_bvalid;
 
     always @(posedge aclk)
     begin
