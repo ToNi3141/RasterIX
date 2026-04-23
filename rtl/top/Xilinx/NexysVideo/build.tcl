@@ -22,7 +22,6 @@ read_verilog ./../../../../RasterIX/AttributeInterpolationX.v
 read_verilog ./../../../../RasterIX/AttributeInterpolator.v
 read_verilog ./../../../../RasterIX/AttributeInterpolatorX.v
 read_verilog ./../../../../RasterIX/AttributePerspectiveCorrectionX.v
-read_verilog ./../../../../RasterIX/AxisFramebufferReader.v
 read_verilog ./../../../../RasterIX/AxisToAxiAdapter.v
 read_verilog ./../../../../RasterIX/AxisToAxiCrossbar.v
 read_verilog ./../../../../RasterIX/CoalesceAddrGen.v
