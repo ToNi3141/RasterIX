@@ -131,7 +131,7 @@ module FunctionInterpolator #(
         floatMantissa = -x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
         xs <= floatMantissa[FLOAT_MANTISSA_SIZE - LUT_INTERPOLATION_STEPS +: LUT_INTERPOLATION_STEPS];
 
-        lowerBoundExceeded <= x >= 32'h3f800000; // 1.0
+        lowerBoundExceeded <= x >= 32'h3f000000; // 2^-1
         upperBoundExceeded <= x <= 32'h2f800000; // 2^⁻32
 
         // LUT access
