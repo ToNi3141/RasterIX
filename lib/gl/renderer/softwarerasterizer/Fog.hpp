@@ -53,10 +53,12 @@ public:
         return foggedColor;
     }
 
-    void setFogLut(const FogLut& lut, const float lowerBound, const float upperBound)
+    void setFogLut(const FogLut& lut)
     {
-        std::memcpy(&m_lowerBound, &lowerBound, sizeof(m_lowerBound));
-        std::memcpy(&m_upperBound, &upperBound, sizeof(m_upperBound));
+        static constexpr float LOWER_BOUND = 1.0f;
+        static constexpr float UPPER_BOUND = std::pow(2, 32);
+        std::memcpy(&m_lowerBound, &LOWER_BOUND, sizeof(m_lowerBound));
+        std::memcpy(&m_upperBound, &UPPER_BOUND, sizeof(m_upperBound));
         m_fogLut = lut;
     }
 

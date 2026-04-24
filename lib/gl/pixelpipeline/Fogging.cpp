@@ -125,7 +125,7 @@ bool Fogging::updateFogLut()
     }
 
     // Set fog LUT
-    return m_renderer.setFogLut(lut, m_fogStart, m_fogEnd);
+    return m_renderer.setFogLut(lut);
 }
 
 } // namespace rr

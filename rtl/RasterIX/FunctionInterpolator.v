@@ -18,7 +18,7 @@
 // The function interpolator will interpolate a mathematical function based on a LUT
 // The used interpolation equation is: f(x) = m * x + b
 // where:
-// x: User input, mantissa of this value is used as multiplicand for m
+// x: User input, mantissa of this value is used as multiplicand for m in reciprocal form.
 // m: slope stored in the LUT and is accessed via the x's exponent
 // b: offset stored in the LUT and is accessed via the x's exponent
 // The LUT must have a logarithmic distribution.
@@ -27,11 +27,7 @@
 // reduced precision.
 // The function interpolator has 32 entries to cover input values from 1.0 to 4294967296.0
 // Dataformat
-// Beat 0 Lower bound in 1/x form 
-// tdata as float. If x is lower, fx will be 1.0
-// Beat 1 Upper bound in 1/x form
-// tdata as float. If x is higher, fx will be 0.0
-// Beat 2 .. 66 
+// Beat 0 .. 63 
 // Even beat: m = tdata as S9.22
 // Odd beat b = tdata as S1.30
 //
@@ -64,16 +60,12 @@ module FunctionInterpolator #(
     localparam FLOAT_MANTISSA_POS = 0;
     localparam FLOAT_EXP_BIAS = 126;
 
-    localparam STATE_WRITE_LOWER_BOUND = 0;
-    localparam STATE_WRITE_UPPER_BOUND = 1;
-    localparam STATE_WRITE_LUT_M = 2;
-    localparam STATE_WRITE_LUT_B = 3;
+    localparam STATE_WRITE_LUT_M = 0;
+    localparam STATE_WRITE_LUT_B = 1;
 
     // LUT bounds
-    reg  [FLOAT_WIDTH - 1 : 0]  lutLowerBound = 0;
-    reg  [FLOAT_WIDTH - 1 : 0]  lutUpperBound = 0;
-    reg  [INT_WIDTH - 1 : 0]    lutM[0 : LUT_ENTRIES - 1];
-    reg  [INT_WIDTH - 1 : 0]    lutB[0 : LUT_ENTRIES - 1];
+    reg  [INT_WIDTH - 1 : 0] lutM[0 : LUT_ENTRIES - 1];
+    reg  [INT_WIDTH - 1 : 0] lutB[0 : LUT_ENTRIES - 1];
 
     // LUT writer
     always @(posedge aclk)
@@ -85,7 +77,7 @@ module FunctionInterpolator #(
         if (!resetn)
         begin
             memWriteAddr <= 0;
-            writeState <= STATE_WRITE_LOWER_BOUND;
+            writeState <= STATE_WRITE_LUT_M;
             s_axis_tready <= 1;
         end
         else
@@ -93,16 +85,6 @@ module FunctionInterpolator #(
             if (s_axis_tvalid)
             begin
                 case (writeState)
-                STATE_WRITE_LOWER_BOUND:
-                begin
-                    lutLowerBound <= s_axis_tdata[0 +: FLOAT_WIDTH];
-                    writeState <= STATE_WRITE_UPPER_BOUND;
-                end
-                STATE_WRITE_UPPER_BOUND:
-                begin
-                    lutUpperBound <= s_axis_tdata[0 +: FLOAT_WIDTH];
-                    writeState <= STATE_WRITE_LUT_M;
-                end
                 STATE_WRITE_LUT_M:
                 begin
                     lutM[memWriteAddr] <= s_axis_tdata[LUT_ENTRY_FIELD_WIDTH - INT_WIDTH +: INT_WIDTH];
@@ -119,7 +101,7 @@ module FunctionInterpolator #(
             if (s_axis_tlast)
             begin
                 memWriteAddr <= 0;
-                writeState <= STATE_WRITE_LOWER_BOUND;
+                writeState <= STATE_WRITE_LUT_M;
             end
         end
     end
@@ -149,8 +131,8 @@ module FunctionInterpolator #(
         floatMantissa = -x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
         xs <= floatMantissa[FLOAT_MANTISSA_SIZE - LUT_INTERPOLATION_STEPS +: LUT_INTERPOLATION_STEPS];
 
-        lowerBoundExceeded <= x >= lutLowerBound;
-        upperBoundExceeded <= x <= lutUpperBound;
+        lowerBoundExceeded <= x >= 32'h3f800000; // 1.0
+        upperBoundExceeded <= x <= 32'h2f800000; // 2^⁻32
 
         // LUT access
         floatExp = FLOAT_EXP_BIAS - x[FLOAT_EXP_POS +: FLOAT_EXP_SIZE];

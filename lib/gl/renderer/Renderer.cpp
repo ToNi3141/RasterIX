@@ -38,7 +38,7 @@ Renderer::Renderer(IDevice& device)
     setFogColor({ Vec4iColorRGBA { Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax, Vec4iColorRGBA::FracMax } });
     std::array<float, 33> fogLut {};
     std::fill(fogLut.begin(), fogLut.end(), 1.0f);
-    setFogLut(fogLut, 0.0f, (std::numeric_limits<float>::max)()); // Windows defines macros with max ... parenthesis are a work around against build errors.
+    setFogLut(fogLut);
 }
 
 void Renderer::deinit()

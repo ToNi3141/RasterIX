@@ -31,23 +31,14 @@ namespace rr
 
 class FogLutStreamCmd
 {
-    static constexpr std::size_t LUT_SIZE { 66 }; // upper bound, lower bound, 32 * (m and b)
+    static constexpr std::size_t LUT_SIZE { 64 }; // 32 * (m and b)
 public:
     using PayloadType = tcb::span<const int32_t>;
     using CommandType = uint32_t;
 
     FogLutStreamCmd() = default;
-    FogLutStreamCmd(const std::array<float, 33>& fogLut, const float start, const float end)
+    FogLutStreamCmd(const std::array<float, 33>& fogLut)
     {
-        // The verilog code is not able to handle float values smaller than 1.0f.
-        // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
-        // the set x to 1.
-        const float lutLowerBound = start < 1.0f ? 1.0f : start;
-        const float lutUpperBound = end;
-
-        // Add bounds to the lut value
-        setBounds(1.0f / lutLowerBound, 1.0f / lutUpperBound);
-
         // Calculate the lut entries
         for (std::size_t i = 0; i < fogLut.size() - 1; i++)
         {
@@ -70,28 +61,14 @@ public:
         m_payload = payload;
     }
 
-    float getLowerBound() const
-    {
-        float lowerBound;
-        std::memcpy(&lowerBound, &(m_payload[0]), sizeof(float));
-        return lowerBound;
-    }
-
-    float getUpperBound() const
-    {
-        float upperBound;
-        std::memcpy(&upperBound, &(m_payload[1]), sizeof(float));
-        return upperBound;
-    }
-
     int32_t getLutM(const std::size_t index) const
     {
-        return m_payload[((index + 1) * 2)];
+        return m_payload[(index * 2)];
     }
 
     int32_t getLutB(const std::size_t index) const
     {
-        return m_payload[((index + 1) * 2) + 1];
+        return m_payload[(index * 2) + 1];
     }
 
     const PayloadType& payload() const { return m_payload; }
@@ -108,16 +85,10 @@ public:
     }
 
 private:
-    void setBounds(const float lower, const float upper)
-    {
-        std::memcpy(&(m_lut[0]), &lower, sizeof(m_lut[0]));
-        std::memcpy(&(m_lut[1]), &upper, sizeof(m_lut[1]));
-    }
-
     void setLutValue(const std::size_t index, const float m, const float b)
     {
-        m_lut[((index + 1) * 2)] = static_cast<int32_t>(m);
-        m_lut[((index + 1) * 2) + 1] = static_cast<int32_t>(b);
+        m_lut[(index * 2)] = static_cast<int32_t>(m);
+        m_lut[(index * 2) + 1] = static_cast<int32_t>(b);
     }
 
     std::array<int32_t, LUT_SIZE> m_lut;
