@@ -55,8 +55,8 @@ public:
 
     void setFogLut(const FogLut& lut)
     {
-        static constexpr float LOWER_BOUND = 1.0f;
-        static constexpr float UPPER_BOUND = std::pow(2, 32);
+        static const float LOWER_BOUND = 1.0f;
+        static const float UPPER_BOUND = std::pow(2, 32);
         std::memcpy(&m_lowerBound, &LOWER_BOUND, sizeof(m_lowerBound));
         std::memcpy(&m_upperBound, &UPPER_BOUND, sizeof(m_upperBound));
         m_fogLut = lut;

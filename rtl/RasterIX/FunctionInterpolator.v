@@ -118,18 +118,18 @@ module FunctionInterpolator #(
         reg  [FLOAT_MANTISSA_SIZE - 1 : 0]  floatMantissa;
 
         // Interpolation
-        reg  signed [INT_WIDTH - 1 : 0]                             m;
-        reg  signed [INT_WIDTH - 1 : 0]                             b;
-        reg         [LUT_INTERPOLATION_STEPS - 1 : 0]               xs;
-        reg  signed [(INT_WIDTH + LUT_INTERPOLATION_STEPS) - 1 : 0] mx;
-        reg  signed [INT_WIDTH - 1 : 0]                             mxb;
+        reg  signed [INT_WIDTH - 1 : 0]                                 m;
+        reg  signed [INT_WIDTH - 1 : 0]                                 b;
+        reg         [(LUT_INTERPOLATION_STEPS + 1) - 1 : 0]             xs;
+        reg  signed [(INT_WIDTH + LUT_INTERPOLATION_STEPS + 1) - 1 : 0] mx;
+        reg  signed [INT_WIDTH - 1 : 0]                                 mxb;
 
         ///////////////////////////////
         // Clock 0
         ///////////////////////////////
         // Access mantissa and LUT values
-        floatMantissa = -x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
-        xs <= floatMantissa[FLOAT_MANTISSA_SIZE - LUT_INTERPOLATION_STEPS +: LUT_INTERPOLATION_STEPS];
+        floatMantissa = x[FLOAT_MANTISSA_POS +: FLOAT_MANTISSA_SIZE];
+        xs <= 9'd256 - floatMantissa[FLOAT_MANTISSA_SIZE - LUT_INTERPOLATION_STEPS +: LUT_INTERPOLATION_STEPS];
 
         lowerBoundExceeded <= x >= 32'h3f000000; // 2^-1
         upperBoundExceeded <= x <= 32'h2f800000; // 2^⁻32
@@ -151,7 +151,7 @@ module FunctionInterpolator #(
         begin
             fx <= { 1'b0, 1'b1, { (INT_WIDTH - 2) { 1'b0 } } };
         end
-        else if (upperBoundExceeded)
+        else if (upperBoundExceeded || mxb[INT_WIDTH - 1]) // Check also if mxb gets negative. This indicates also a bound overflow
         begin
             fx <= 0;
         end
