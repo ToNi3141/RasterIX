@@ -225,7 +225,7 @@ module CommandParser #(
                     end
                     OP_FOG_LUT_STREAM:
                     begin
-                        streamCounter <= 66;
+                        streamCounter <= s_cmd_axis_tdata[FOG_LUT_SIZE_POS + DATABUS_SCALE_FACTOR_LOG2 +: FOG_LUT_SIZE_SIZE - DATABUS_SCALE_FACTOR_LOG2];
                         mux <= MUX_FOG_LUT_STREAM;
                         state <= EXEC_STREAM;
                     end

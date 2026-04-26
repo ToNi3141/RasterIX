@@ -19,6 +19,7 @@
 #define _FOG_LUT_STREAM_CMD_HPP_
 
 #include "Op.hpp"
+#include "renderer/displaylist/DisplayList.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -35,6 +36,7 @@ class FogLutStreamCmd
 public:
     using PayloadType = tcb::span<const int32_t>;
     using CommandType = uint32_t;
+    using FogLutDesc = std::array<int32_t, LUT_SIZE>;
 
     FogLutStreamCmd() = default;
     FogLutStreamCmd(const std::array<float, 33>& fogLut)
@@ -72,7 +74,7 @@ public:
     }
 
     const PayloadType& payload() const { return m_payload; }
-    static constexpr CommandType command() { return op::FOG_LUT_STREAM; }
+    static constexpr CommandType command() { return op::FOG_LUT_STREAM | static_cast<uint32_t>(LUT_SIZE << 2); }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const CommandType) { return LUT_SIZE; }
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::FOG_LUT_STREAM; }
@@ -91,7 +93,7 @@ private:
         m_lut[(index * 2) + 1] = static_cast<int32_t>(b);
     }
 
-    std::array<int32_t, LUT_SIZE> m_lut;
+    FogLutDesc m_lut;
     PayloadType m_payload;
 };
 
