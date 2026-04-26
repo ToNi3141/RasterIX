@@ -50,13 +50,14 @@ void enableVerilatorTracing()
     Verilated::traceEverOn(true);
 }
 
-// Creates a Verilated model with a fresh VerilatedContext so that simulation
-// time always starts at 0, even when multiple TEST_CASEs run in the same
-// binary.  Verilator 5.024+ requires time() == 0 at model construction.
-// The context is intentionally leaked (acceptable in short-lived test binaries).
+static double g_sc_time_stamp = 0;
+
+// Creates a Verilated model with a fresh VerilatedContext.
+// Note: The sc_time_stamp must return zero when a new VerilatedContext is created
 template <typename T>
 T* makeTop()
 {
+    g_sc_time_stamp = 0;
     auto* ctx = new VerilatedContext;
     return new T { ctx };
 }
@@ -64,13 +65,9 @@ T* makeTop()
 } // namespace rr::ut
 
 // Needed for verilator when tracing is enabled.
-// Returns 0 always so that a fresh VerilatedContext (whose m_time starts at 0)
-// reports time() == 0 via the legacy callback path and never blocks model
-// construction with "Adding model when time is non-zero".
 double sc_time_stamp()
 {
-    double t = 0;
-    return t++;
+    return rr::ut::g_sc_time_stamp++;
 }
 
 #endif // GENERAL_HPP

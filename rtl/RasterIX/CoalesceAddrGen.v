@@ -15,6 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Observes the address channel and creates a coalesced address request.
+// It checks if the incoming address requests are:
+// - in order
+// - an AXI boundary is not crossed
+// - if the max beats are not reached
+// - if the next address beat is detected within (DATA_WIDTH / 8) + 1 clock cycles
+// If one of the condition fails, a coalesced address request is send
 module CoalesceAddrGen #(
     parameter ID_WIDTH   = 4,
     parameter ADDR_WIDTH = 32,

@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Coalesces AXI transfers consolidating small AXI transactions into one big.
+// Write requests are temporary stored in an internal FiFo until a 
+// new coalesced write transfer is triggered.
+// Same counts for the read channel.
 module Coalescer #(
     parameter ID_WIDTH   = 4,
     parameter ADDR_WIDTH = 32,

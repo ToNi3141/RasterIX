@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Coalesces the AXI write channel.
+// Write beats are stored in a FiFo. As soon as a request on the address channel
+// is detected, the write channel starts writing.
+// Metadata from the address channel is required to handle the strobe signal.
 module CoalesceFiFo #(
     parameter ID_WIDTH   = 4,
     parameter ADDR_WIDTH = 32,
