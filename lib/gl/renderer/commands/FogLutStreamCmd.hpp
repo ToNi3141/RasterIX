@@ -74,7 +74,7 @@ public:
     }
 
     const PayloadType& payload() const { return m_payload; }
-    static constexpr CommandType command() { return op::FOG_LUT_STREAM | static_cast<uint32_t>(LUT_SIZE << 2); }
+    static constexpr CommandType command() { return op::FOG_LUT_STREAM | (static_cast<uint32_t>(LUT_SIZE) << 2); }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const CommandType) { return LUT_SIZE; }
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::FOG_LUT_STREAM; }
