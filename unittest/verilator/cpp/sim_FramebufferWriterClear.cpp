@@ -73,29 +73,42 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
     t->confClearColor = 0xabcd;
     t->confXResolution = X_RES;
     t->confYResolution = Y_RES;
-
     t->m_frag_tready = 1;
-
     t->apply = 1;
 
     static constexpr uint32_t Y_RES_MAX_INDEX = Y_RES - 1;
-    for (uint32_t x = 0, y = Y_RES_MAX_INDEX; x < X_RES && y == 0; x++)
+    static constexpr uint32_t X_RES_MAX_INDEX = X_RES - 1;
+    uint32_t x = 0;
+    uint32_t y = 0;
+    while (y < Y_RES)
     {
         rr::ut::clk(t);
         t->apply = 0;
-        CHECK(t->s_frag_tready == 0);
-        CHECK(t->m_frag_tvalid == 1);
-        CHECK(t->m_frag_tlast == ((y == 0) && ((x + 1) == X_RES)));
-        CHECK(t->m_frag_tdata == 0xabcd);
-        CHECK(t->m_frag_tstrb == 1);
-        CHECK(t->m_frag_taddr == x + ((Y_RES_MAX_INDEX - y) * Y_RES_MAX_INDEX));
-        CHECK(t->m_frag_txpos == x);
-        CHECK(t->m_frag_typos == y);
-        if (x + 1 == X_RES)
+        REQUIRE(t->s_frag_tready == 0);
+        REQUIRE(t->m_frag_tvalid == 1);
+        REQUIRE(t->m_frag_tlast == ((y == Y_RES_MAX_INDEX) && (x == X_RES_MAX_INDEX)));
+        REQUIRE(t->m_frag_tdata == 0xabcd);
+        REQUIRE(t->m_frag_tstrb == 1);
+        REQUIRE(t->m_frag_taddr == x + (y * X_RES));
+        REQUIRE(t->m_frag_txpos == x);
+        REQUIRE(t->m_frag_typos == Y_RES_MAX_INDEX - y);
+        REQUIRE(t->applied == 0);
+
+        if (t->m_frag_tlast)
         {
-            y--;
+            break;
+        }
+
+        x++;
+        if (x >= X_RES)
+        {
+            y++;
+            x = 0;
         }
     }
+
+    rr::ut::clk(t);
+    CHECK(t->applied == 1);
 
     delete t;
 }
@@ -113,34 +126,47 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
     t->confClearColor = 0xabcd;
     t->confXResolution = X_RES;
     t->confYResolution = Y_RES;
-
     t->m_frag_tready = 0;
-
     t->apply = 1;
 
     static constexpr uint32_t Y_RES_MAX_INDEX = Y_RES - 1;
-    for (uint32_t x = 0, y = Y_RES_MAX_INDEX; x < X_RES && y > 0; x++)
+    static constexpr uint32_t X_RES_MAX_INDEX = X_RES - 1;
+    uint32_t x = 0;
+    uint32_t y = 0;
+    while (y < Y_RES)
     {
-        t->m_frag_tready = 0;
         rr::ut::clk(t);
+        t->m_frag_tready = 0;
         t->apply = 0;
         rr::ut::clk(t);
         rr::ut::clk(t);
+        REQUIRE(t->s_frag_tready == 0);
+        REQUIRE(t->m_frag_tvalid == 1);
+        REQUIRE(t->m_frag_tlast == ((y == Y_RES_MAX_INDEX) && (x == X_RES_MAX_INDEX)));
+        REQUIRE(t->m_frag_tdata == 0xabcd);
+        REQUIRE(t->m_frag_tstrb == 1);
+        REQUIRE(t->m_frag_taddr == x + (y * X_RES));
+        REQUIRE(t->m_frag_txpos == x);
+        REQUIRE(t->m_frag_typos == Y_RES_MAX_INDEX - y);
+        REQUIRE(t->applied == 0);
+
         t->m_frag_tready = 1;
-        CHECK(t->s_frag_tready == 0);
-        CHECK(t->m_frag_tvalid == 1);
-        CHECK(t->m_frag_tlast == ((y == 0) && ((x + 1) == X_RES)));
-        CHECK(t->m_frag_tdata == 0xabcd);
-        CHECK(t->m_frag_tstrb == 1);
-        CHECK(t->m_frag_taddr == x + ((Y_RES_MAX_INDEX - y) * Y_RES_MAX_INDEX));
-        CHECK(t->m_frag_txpos == x);
-        CHECK(t->m_frag_typos == y);
-        rr::ut::clk(t);
-        if (x + 1 == X_RES)
+        
+        if (t->m_frag_tlast)
         {
-            y--;
+            break;
+        }
+
+        x++;
+        if (x >= X_RES)
+        {
+            y++;
+            x = 0;
         }
     }
+
+    rr::ut::clk(t);
+    CHECK(t->applied == 1);
 
     delete t;
 }
