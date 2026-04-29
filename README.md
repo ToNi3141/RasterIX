@@ -170,7 +170,7 @@ Note: Bold options are required to be equal to the software counterparts.
 | STRB_WIDTH                                | if/ef   | Width of the AXI strobe property. Should always be 8 bit per byte. |
 | ENABLE_MEMORY_COALESCING                  | ef      | Will pack a maximum of 16 pixels into one AXI transaction. Depending on the DATA_WIDTH it results in 16 / (DATA_WIDTH / PIXEL_WIDTH) beats where PIXEL_WIDTH is RGB565=16 bit. This should improve the memory throughput. |
 | __RASTERIZER_ENABLE_FLOAT_INTERPOLATION__ | if/ef   | `true` enables the floating point interpolation. `false` enables the fixed point interpolation. |
-| RASTERIZER_FIXPOINT_PRECISION             | if/ef   | Defines the width of the multipliers used in the fixed point interpolation. Valid range: 16-25. |
+| RASTERIZER_FIXPOINT_PRECISION             | if/ef   | Defines the width of the multipliers used in the fixed point interpolation. Valid range: 18-25. |
 | RASTERIZER_FLOAT_PRECISION                | if/ef   | Precision of the floating point arithmetic. Valid range: 20-32. |
 | SUB_PIXEL_CALC_PRECISION                  | if/ef   | Precision of the sub pixel calculations in the shader and texture filter. Higher values will improve the image quality but also occupy more logic. Valid range: 5-8. |
 
