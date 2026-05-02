@@ -36,12 +36,13 @@ static int32_t floatToLutB(float b)
 }
 
 // Helper to create a simple linear fog LUT
-// Maps w values to fog factors linearly within the LUT range
+// Maps recip_w values to fog factors linearly within the LUT range
 Fog::FogLut createLinearFogLut()
 {
     Fog::FogLut lut {};
     // Create a LUT where each entry linearly decreases fog factor
-    // Entry i covers w values from 2^i to 2^(i+1)
+    // Entry i covers recip_w values from 2^-(i+1) to 2^-i
+    // b = factor at near end (xs=0, high recip_w = close), factor at far end (xs=256, low recip_w = far) = b + m*256
     for (std::size_t i = 0; i < lut.size(); ++i)
     {
         // Linear interpolation: factor goes from 1.0 to 0.0 as index increases
@@ -72,35 +73,35 @@ TEST_CASE("Fog disabled returns original color", "[Fog]")
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f }));
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 0.0f, 0.0f, 1.0f });
-    const Vec4iColorRGBA result = fog.calculateFog(100.0f, inputColor);
+    const Vec4iColorRGBA result = fog.calculateFog(0.01f, inputColor);
 
     REQUIRE(rr::ut::vec4i16Approx(result, inputColor, 2));
 }
 
-TEST_CASE("Fog enabled with w below lower bound returns original color", "[Fog]")
+TEST_CASE("Fog enabled with recip_w above lower bound returns original color", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f }));
-    fog.setFogLut(createConstantFogLut(0.0f), 10.0f, 100.0f);
+    fog.setFogLut(createConstantFogLut(0.0f));
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 0.0f, 0.0f, 1.0f });
-    // w = 5.0 is below lower bound of 10.0, so factor should be 1.0 (no fog)
-    const Vec4iColorRGBA result = fog.calculateFog(5.0f, inputColor);
+    // recip_w = 1.0 >= lower bound 0.5 (2^-1), so factor should be 1.0 (no fog)
+    const Vec4iColorRGBA result = fog.calculateFog(1.0f, inputColor);
 
     REQUIRE(rr::ut::vec4i16Approx(result, inputColor, 2));
 }
 
-TEST_CASE("Fog enabled with w above upper bound returns fog color", "[Fog]")
+TEST_CASE("Fog enabled with recip_w below upper bound returns fog color", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f }));
-    fog.setFogLut(createConstantFogLut(0.5f), 10.0f, 100.0f);
+    fog.setFogLut(createConstantFogLut(0.5f));
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 0.0f, 0.0f, 0.8f });
-    // w = 200.0 is above upper bound of 100.0, so factor should be 0.0 (full fog)
-    const Vec4iColorRGBA result = fog.calculateFog(200.0f, inputColor);
+    // recip_w = 2^-33 <= upper bound 2^-32, so factor should be 0.0 (full fog)
+    const Vec4iColorRGBA result = fog.calculateFog(std::pow(2.0f, -33.0f), inputColor);
 
     // Full fog means result should be fog color but with original alpha
     const Vec4iColorRGBA fogColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
@@ -113,26 +114,26 @@ TEST_CASE("Fog preserves alpha channel", "[Fog]")
     Fog fog;
     fog.setEnable(true);
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 0.0f }));
-    fog.setFogLut(createConstantFogLut(0.5f), 1.0f, 1000.0f);
+    fog.setFogLut(createConstantFogLut(0.5f));
 
     SECTION("Alpha 1.0 preserved")
     {
         const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
-        const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+        const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
         REQUIRE(result[3] == Approx(inputColor[3]).margin(2));
     }
 
     SECTION("Alpha 0.5 preserved")
     {
         const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 0.5f });
-        const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+        const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
         REQUIRE(result[3] == Approx(inputColor[3]).margin(2));
     }
 
     SECTION("Alpha 0.0 preserved")
     {
         const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 0.0f });
-        const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+        const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
         REQUIRE(result[3] == Vec4iColorRGBA::Zero);
     }
 }
@@ -142,10 +143,10 @@ TEST_CASE("Fog factor 1.0 returns original color (RGB)", "[Fog]")
     Fog fog;
     fog.setEnable(true);
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
-    fog.setFogLut(createConstantFogLut(1.0f), 1.0f, 1000.0f);
+    fog.setFogLut(createConstantFogLut(1.0f));
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.8f, 0.6f, 0.4f, 1.0f });
-    const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+    const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
 
     // Factor 1.0 means full original color
     REQUIRE(rr::ut::vec4i16Approx(result, inputColor, 2));
@@ -156,10 +157,10 @@ TEST_CASE("Fog factor 0.0 returns fog color (RGB)", "[Fog]")
     Fog fog;
     fog.setEnable(true);
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.3f, 0.3f, 0.3f, 1.0f }));
-    fog.setFogLut(createConstantFogLut(0.0f), 1.0f, 1000.0f);
+    fog.setFogLut(createConstantFogLut(0.0f));
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.8f, 0.6f, 0.4f, 0.7f });
-    const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+    const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
 
     // Factor 0.0 means full fog color, but alpha preserved
     const Vec4iColorRGBA fogColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.3f, 0.3f, 0.3f, 1.0f });
@@ -172,10 +173,10 @@ TEST_CASE("Fog factor 0.5 blends colors equally", "[Fog]")
     Fog fog;
     fog.setEnable(true);
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
-    fog.setFogLut(createConstantFogLut(0.5f), 1.0f, 1000.0f);
+    fog.setFogLut(createConstantFogLut(0.5f));
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
-    const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+    const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
 
     // Factor 0.5 means 50% blend: (0.5 * fogColor) + (0.5 * inputColor)
     const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
@@ -188,10 +189,10 @@ TEST_CASE("Fog result is clamped to [0,1]", "[Fog]")
     fog.setEnable(true);
     // Use extreme fog color values
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 2.0f, -1.0f, 1.5f, 1.0f }));
-    fog.setFogLut(createConstantFogLut(0.0f), 1.0f, 1000.0f);
+    fog.setFogLut(createConstantFogLut(0.0f));
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.5f, 0.5f, 0.5f, 1.0f });
-    const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+    const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
 
     // Result should be clamped
     REQUIRE(result[0] >= Vec4iColorRGBA::Zero);
@@ -208,16 +209,16 @@ TEST_CASE("Fog LUT interpolation uses log2 of w", "[Fog]")
     fog.setEnable(true);
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
 
-    // Create a LUT where entry 3 (w in range 8-16) returns factor 0.75
+    // Create a LUT where entry 3 (recip_w in range 8-16) returns factor 0.75
     Fog::FogLut lut = createConstantFogLut(0.0f);
     lut[3].m = floatToLutM(0.0f);
     lut[3].b = floatToLutB(0.75f);
-    fog.setFogLut(lut, 1.0f, 10000.0f);
+    fog.setFogLut(lut);
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
 
-    // w = 8.0 -> log2(8) = 3.0 -> index 3, frac 0.0
-    const Vec4iColorRGBA result = fog.calculateFog(8.0f, inputColor);
+    // recip_w = 0.0625 = 2^-4 -> index = 126 - 123 = 3, frac 0.0
+    const Vec4iColorRGBA result = fog.calculateFog(0.0625f, inputColor);
 
     // Factor 0.75 means 75% original + 25% fog
     const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.75f, 0.75f, 0.75f, 1.0f });
@@ -230,27 +231,28 @@ TEST_CASE("Fog LUT with slope interpolates within entry", "[Fog]")
     fog.setEnable(true);
     fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
 
-    // Create a LUT where entry 3 interpolates from 1.0 to 0.5
+    // Create a LUT where entry 3 interpolates: b=0.5, m=0.5
+    // xs = 256 - (mantissa >> 15), so factor = (m*xs + b) >> 14
+    // At xs=256 (recip_w = 2^-4, mantissa=0): factor = (0.5*256 + 0.5) scaled = 1.0
+    // At xs=128 (recip_w = 1.5*2^-4, mantissa=0x400000): factor = 0.75
     Fog::FogLut lut = createConstantFogLut(0.0f);
-    lut[3].b = floatToLutB(1.0f); // Start at 1.0
-    lut[3].m = floatToLutM(-0.5f); // End at 0.5 (b + m*1.0 = 0.5)
-    fog.setFogLut(lut, 1.0f, 10000.0f);
+    lut[3].b = floatToLutB(0.5f);
+    lut[3].m = floatToLutM(0.5f);
+    fog.setFogLut(lut);
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
 
-    SECTION("At start of range (frac=0)")
+    SECTION("At start of range (xs=256)")
     {
-        // w = 8.0 -> log2(8) = 3.0 -> index 3, frac 0.0
-        // factor = 1.0 + (-0.5 * 0.0) = 1.0
-        const Vec4iColorRGBA result = fog.calculateFog(8.0f, inputColor);
+        // recip_w = 0.0625 = 2^-4 -> index 3, mantissa=0, xs=256, factor = 1.0
+        const Vec4iColorRGBA result = fog.calculateFog(0.0625f, inputColor);
         REQUIRE(rr::ut::vec4i16Approx(result, inputColor, 2));
     }
 
-    SECTION("At middle of range (frac=0.5)")
+    SECTION("At middle of range (xs=128)")
     {
-        // w = 12.0 = 1.5 * 2^3 -> index 3, mantissa represents 0.5
-        // factor = 1.0 + (-0.5 * 0.5) = 0.75
-        const float w = 12.0f;
+        // recip_w = 0.09375 = 1.5 * 2^-4 -> index 3, mantissa=0x400000, xs=128, factor = 0.75
+        const float w = 0.09375f;
         const Vec4iColorRGBA result = fog.calculateFog(w, inputColor);
         const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.75f, 0.75f, 0.75f, 1.0f });
         REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
@@ -261,14 +263,14 @@ TEST_CASE("Fog with different colors", "[Fog]")
 {
     Fog fog;
     fog.setEnable(true);
-    fog.setFogLut(createConstantFogLut(0.0f), 1.0f, 1000.0f);
+    fog.setFogLut(createConstantFogLut(0.0f));
 
     const Vec4iColorRGBA inputColor = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 0.5f, 0.25f, 1.0f });
 
     SECTION("White fog")
     {
         fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f }));
-        const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+        const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
         const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 1.0f, 1.0f, 1.0f, 1.0f });
         REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
     }
@@ -276,7 +278,7 @@ TEST_CASE("Fog with different colors", "[Fog]")
     SECTION("Black fog")
     {
         fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f }));
-        const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+        const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
         const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 0.0f, 1.0f });
         REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
     }
@@ -284,7 +286,7 @@ TEST_CASE("Fog with different colors", "[Fog]")
     SECTION("Blue fog")
     {
         fog.setFogColor(Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 1.0f, 1.0f }));
-        const Vec4iColorRGBA result = fog.calculateFog(10.0f, inputColor);
+        const Vec4iColorRGBA result = fog.calculateFog(0.1f, inputColor);
         const Vec4iColorRGBA expected = Vec4iColorRGBA::createFromVecToInt(Vec4 { 0.0f, 0.0f, 1.0f, 1.0f });
         REQUIRE(rr::ut::vec4i16Approx(result, expected, 2));
     }

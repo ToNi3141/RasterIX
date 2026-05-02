@@ -151,7 +151,7 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
         REQUIRE(t->applied == 0);
 
         t->m_frag_tready = 1;
-        
+
         if (t->m_frag_tlast)
         {
             break;

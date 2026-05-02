@@ -75,7 +75,7 @@ private:
 
         // s S3.28 Note: Hardware uses S3.20
         // t S3.28 Note: Hardware uses S3.20
-        q = q >> 17; // S3.28 -> S3.11 Note: Hardware uses S3.21
+        q >>= 17; // S3.28 -> S3.11 Note: Hardware uses S3.21
 
         if (q != 0)
         {
@@ -88,7 +88,7 @@ private:
 
         s = mulh(s, q); // Sx.28 * Sx.19 -> Sx.47; mulh will use the upper 32 bit -> Sx.47 >> 32 -> Sx.15
         t = mulh(t, q); // Sx.28 * Sx.19 -> Sx.47; mulh will use the upper 32 bit -> Sx.47 >> 32 -> Sx.15
-        q <<= 6;
+        q >>= 4;
 
         return InterpolatedAttributesData::Texture { s, t, q };
     }

@@ -93,17 +93,7 @@ InterpolatedAttributesData AttributeInterpolator::interpolate(
     // depthZ is S1.30 -> Sx.16, clamp to valid range
     const int32_t clampedDepthZ = std::clamp(depthZ >> 14, static_cast<int32_t>(0), static_cast<int32_t>(1u << 16) - 1);
 
-    static constexpr std::size_t DepthWShift = 10;
-    int32_t depthW = (ooDepthW >> DepthWShift);
-    if (depthW != 0)
-    {
-        depthW = static_cast<int32_t>(1 << 30) / depthW; // S1.30 / Sx.20 -> Sx.10
-    }
-    else
-    {
-        depthW = std::numeric_limits<int32_t>::max();
-    }
-    const float depthWfloat = static_cast<float>(depthW) / static_cast<float>(1 << DepthWShift);
+    const float depthWfloat = static_cast<float>(ooDepthW) / static_cast<float>(1 << Vec2iDepthInterp::Shift);
 
     return {
         textures,
