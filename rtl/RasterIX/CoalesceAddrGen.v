@@ -156,7 +156,6 @@ module CoalesceAddrGen #(
                     m_mem_axi_axaddr <= axaddr;
                     m_mem_axi_axlen <= axlen - 1;
                     m_mem_axi_axvalid <= 1;
-                    m_mem_axi_axid <= m_mem_axi_axid + 1;
                     mem_req_pending <= 0;
                     
                     coalescer_valid <= 0;

@@ -73,7 +73,6 @@ TEST_CASE("Push transaction", "[VCoalesceFiFo]")
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x1000);
     REQUIRE(t->m_mem_axi_awlen == 0);
-    REQUIRE(t->m_mem_axi_awid == 1);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0); // The data is one cycle delayed. Simplifies the implementation
 
@@ -129,7 +128,6 @@ TEST_CASE("Test Skid Buffer", "[VCoalesceFiFo]")
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x1000);
     REQUIRE(t->m_mem_axi_awlen == 2);
-    REQUIRE(t->m_mem_axi_awid == 1);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
 
@@ -275,7 +273,6 @@ TEST_CASE("Test Burst", "[VCoalesceFiFo]")
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x1000);
     REQUIRE(t->m_mem_axi_awlen == 2);
-    REQUIRE(t->m_mem_axi_awid == 1);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
 
@@ -399,7 +396,6 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x1000);
     REQUIRE(t->m_mem_axi_awlen == 3);
-    REQUIRE(t->m_mem_axi_awid == 1);
     REQUIRE(t->s_mem_axi_wready == 0);
     REQUIRE(t->m_mem_axi_wvalid == 0); // The data is one cycle delayed. Simplifies the implementation
 
@@ -437,7 +433,6 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
     REQUIRE(t->m_mem_axi_awvalid == 1);
     REQUIRE(t->m_mem_axi_awaddr == 0x2000);
     REQUIRE(t->m_mem_axi_awlen == 3);
-    REQUIRE(t->m_mem_axi_awid == 2);
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0); // The data is one cycle delayed. Simplifies the implementation
 

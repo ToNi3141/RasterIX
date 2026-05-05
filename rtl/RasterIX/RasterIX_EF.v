@@ -177,16 +177,6 @@ module RasterIX_EF #(
     wire [NRS - 1 : 0]                      xbar_axi_rvalid;
     wire [NRS - 1 : 0]                      xbar_axi_rready;
 
-    // Benchmarks:            
-    // S_THREADS:   16     8     4       4       8       4
-    // M_ISSUE:     16     4     8       16      8       4
-    // FPS Quake3:  13.x   9.5   11.5    11.5    12.1    9.5
-    // S_THREADS 8 and M_ISSUE 8 seems to be the best compromize between utilization,
-    // timing, and performance. The configuration mostly hides the memory latency.
-    // Note: The xilinx smart interconnect seems to be around 10-20% faster, than 
-    // this crossbar (when connected to the mig) but with 5-10 times the utiliziation.
-    // It looks like, that there is no performance difference when the master is
-    // connected to a low latency memory.
     axi_crossbar #(
         .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
@@ -195,8 +185,8 @@ module RasterIX_EF #(
         .M_COUNT(1),
         .M_ID_WIDTH(ID_WIDTH),
         .M_ADDR_WIDTH(ADDR_WIDTH[0 +: 32]),
-        .S_THREADS({ NRS { 32'd4 } }), // Reduced to 4 because vivado gets stuck sometimes with 8
-        .M_ISSUE(32'd8)
+        .S_THREADS({ NRS { 32'd1 } }),
+        .M_ISSUE(32'd8) // Best tradeoff between performance and utilization
     ) mainXBar (
         .clk(aclk),
         .rst(!resetn),

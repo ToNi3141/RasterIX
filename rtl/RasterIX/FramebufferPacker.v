@@ -271,7 +271,6 @@ module FramebufferPacker #(
                 begin
                     m_mem_axi_awaddr <= memRequestAddr;
                     m_mem_axi_awvalid <= |memRequestStrb;
-                    m_mem_axi_awid <= m_mem_axi_awid + 1;
 
                     m_mem_axi_wdata <= memRequestData;
                     m_mem_axi_wstrb <= memRequestStrb;

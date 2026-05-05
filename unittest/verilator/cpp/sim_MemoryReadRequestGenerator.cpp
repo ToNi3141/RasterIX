@@ -32,7 +32,6 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
     rr::ut::reset(t);
 
     // Do this twice, to see, if also a second cycle is possible
-    uint32_t id = 1;
     for (uint32_t i = 0; i < 2; i++)
     {
         REQUIRE(t->s_fetch_tready == true);
@@ -50,7 +49,6 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         t->s_fetch_taddr = 0x2;
         rr::ut::clk(t);
         REQUIRE(t->s_fetch_tready == true);
-        REQUIRE(t->m_mem_axi_arid == id++);
         REQUIRE(t->m_mem_axi_arlen == 0);
         REQUIRE(t->m_mem_axi_arsize == 2);
         REQUIRE(t->m_mem_axi_arburst == 1);
@@ -74,7 +72,6 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x4);
-        REQUIRE(t->m_mem_axi_arid == id++);
 
         // Send 5. fetch
         t->s_fetch_tvalid = true;
@@ -93,7 +90,6 @@ TEST_CASE("Check complete memory request sequence (uninterrupted)", "[MemoryRead
         REQUIRE(t->s_fetch_tready == true);
         REQUIRE(t->m_mem_axi_arvalid == true);
         REQUIRE(t->m_mem_axi_araddr == 0x0);
-        REQUIRE(t->m_mem_axi_arid == id++);
 
         // Execute more clock cycles, no additional requests should be executed
         rr::ut::clk(t);

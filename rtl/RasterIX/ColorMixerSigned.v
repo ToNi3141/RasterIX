@@ -45,6 +45,7 @@ module ColorMixerSigned #(
 );
     localparam SIGN_WIDTH = 1;
     localparam SUB_PX_PRECISION_UNSIGNED_WIDTH = SUB_PIXEL_CALC_PRECISION - SIGN_WIDTH;
+    localparam SUB_PX_PRECISION_WIDTH_WITH_CARRY = SUB_PIXEL_CALC_PRECISION + 1;
     localparam SUB_PX_PRECISION_WIDTH_2X = (SUB_PX_PRECISION_UNSIGNED_WIDTH * 2) + SIGN_WIDTH;
     localparam SUB_PX_PRECISION_WIDTH_2X_WITH_CARRY = SUB_PX_PRECISION_WIDTH_2X + 1;
     localparam SUB_PX_PRECISION_WIDTH_DIFF = SUB_PIXEL_WIDTH - SUB_PIXEL_CALC_PRECISION;
@@ -55,7 +56,7 @@ module ColorMixerSigned #(
 
 
     localparam signed [SUB_PX_PRECISION_WIDTH_2X - 1 : 0] ONE_DOT_ZERO = { 1'b0, { SUB_PX_PRECISION_UNSIGNED_WIDTH { 1'b0 } }, { SUB_PX_PRECISION_UNSIGNED_WIDTH { 1'b1 } } };
-    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PX_PRECISION_WIDTH_2X_WITH_CARRY, SUB_PIXEL_CALC_PRECISION)
+    `ReduceAndSaturateSigned(ReduceAndSaturateSigned, SUB_PX_PRECISION_WIDTH_WITH_CARRY, SUB_PIXEL_CALC_PRECISION)
 
     reg signed [SUB_PX_PRECISION_WIDTH_2X - 1 : 0] V00;
     reg signed [SUB_PX_PRECISION_WIDTH_2X - 1 : 0] V01;
@@ -132,15 +133,15 @@ module ColorMixerSigned #(
         reg signed [(SUB_PIXEL_CALC_PRECISION * 2) - 1 - 1 : 0] cd2;
         reg signed [(SUB_PIXEL_CALC_PRECISION * 2) - 1 - 1 : 0] cd3;
 
-        c0 = ((V00 + V10) + ONE_DOT_ZERO) >>> SUB_PX_PRECISION_UNSIGNED_WIDTH;
-        c1 = ((V01 + V11) + ONE_DOT_ZERO) >>> SUB_PX_PRECISION_UNSIGNED_WIDTH;
-        c2 = ((V02 + V12) + ONE_DOT_ZERO) >>> SUB_PX_PRECISION_UNSIGNED_WIDTH;
-        c3 = ((V03 + V13) + ONE_DOT_ZERO) >>> SUB_PX_PRECISION_UNSIGNED_WIDTH;
+        c0 = ((V00 + V10) + ONE_DOT_ZERO);
+        c1 = ((V01 + V11) + ONE_DOT_ZERO);
+        c2 = ((V02 + V12) + ONE_DOT_ZERO);
+        c3 = ((V03 + V13) + ONE_DOT_ZERO);
 
-        cs3 = ReduceAndSaturateSigned(c3);
-        cs2 = ReduceAndSaturateSigned(c2);
-        cs1 = ReduceAndSaturateSigned(c1);
-        cs0 = ReduceAndSaturateSigned(c0);
+        cs3 = ReduceAndSaturateSigned(c3[SUB_PX_PRECISION_UNSIGNED_WIDTH +: SUB_PX_PRECISION_WIDTH_WITH_CARRY]);
+        cs2 = ReduceAndSaturateSigned(c2[SUB_PX_PRECISION_UNSIGNED_WIDTH +: SUB_PX_PRECISION_WIDTH_WITH_CARRY]);
+        cs1 = ReduceAndSaturateSigned(c1[SUB_PX_PRECISION_UNSIGNED_WIDTH +: SUB_PX_PRECISION_WIDTH_WITH_CARRY]);
+        cs0 = ReduceAndSaturateSigned(c0[SUB_PX_PRECISION_UNSIGNED_WIDTH +: SUB_PX_PRECISION_WIDTH_WITH_CARRY]);
 
         cd3 = { cs3, cs3[0 +: SUB_PIXEL_CALC_PRECISION - 1] }; // -1 is because of the sign. It is not used in the repetition
         cd2 = { cs2, cs2[0 +: SUB_PIXEL_CALC_PRECISION - 1] };

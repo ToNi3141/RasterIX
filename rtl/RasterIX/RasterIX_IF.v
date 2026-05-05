@@ -194,7 +194,8 @@ module RasterIX_IF #(
         .S_COUNT(NRS),
         .M_COUNT(1),
         .M_ID_WIDTH(ID_WIDTH),
-        .M_ADDR_WIDTH(ADDR_WIDTH[0 +: 32])
+        .M_ADDR_WIDTH(ADDR_WIDTH[0 +: 32]),
+        .S_THREADS({ NRS { 32'd1 } })
     ) mainXBar (
         .clk(aclk),
         .rst(!resetn),

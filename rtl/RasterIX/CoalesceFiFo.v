@@ -157,7 +157,6 @@ module CoalesceFiFo #(
                 s_mem_axi_awready <= 1;
                 m_mem_axi_awaddr <= s_mem_axi_awaddr;
                 m_mem_axi_awlen <= s_mem_axi_awlen;
-                m_mem_axi_awid <= m_mem_axi_awid + 1;
                 m_mem_axi_awvalid <= 1;
 
                 awcount <= s_mem_axi_awlen + 1;
