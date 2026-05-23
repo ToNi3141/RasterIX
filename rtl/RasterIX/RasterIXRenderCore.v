@@ -45,11 +45,6 @@ module RasterIXRenderCore #(
     // The maximum size of a texture
     parameter MAX_TEXTURE_SIZE = 256,
 
-    // Enables FIFOs on the memory write channel. It can improve the performance by batching write requests.
-    parameter ENABLE_WRITE_FIFO = 1,
-    // Size of the write FIFO in log2(size)
-    parameter WRITE_FIFO_SIZE = 4,
-
     // Enables FIFOs on the memory read channel. It can improve the performance by reducing stalls in the pipeline.
     parameter ENABLE_READ_FIFO = 1,
     // Size of the read FIFO in log2(size). Keep this size to make sure, it works with the rixif configuration
@@ -316,9 +311,6 @@ module RasterIXRenderCore #(
     wire             pixelInPipeline;
     wire             dataInTriangleInterpolator;
     wire             startRendering;
-    wire             color_fifo_empty;
-    wire             depth_fifo_empty;
-    wire             stencil_fifo_empty;
     wire             rasterizerRunning;
     CommandParser commandParser (
         .aclk(aclk),
@@ -347,7 +339,7 @@ module RasterIXRenderCore #(
         // Rasterizer
         // Control
         .rasterizerRunning(rasterizerRunning),
-        .pixelInPipeline(pixelInPipeline || !color_fifo_empty || !depth_fifo_empty || !stencil_fifo_empty),
+        .pixelInPipeline(pixelInPipeline),
         .dataInTriangleInterpolator(dataInTriangleInterpolator),
 
         // applied
@@ -1569,162 +1561,33 @@ module RasterIXRenderCore #(
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 8
-    // FIFOs for the flow control on the write channel
-    // Clocks: 1
+    // Writing into the memory
+    // Clocks: 0
     ////////////////////////////////////////////////////////////////////////////
-    generate
-        if (ENABLE_WRITE_FIFO)
-        begin
-            localparam COLOR_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + PIXEL_WIDTH;
-            sfifo colorWriteFifo (
-                .i_clk(aclk),
-                .i_reset(!resetn),
+    assign m_color_wvalid = framebuffer_bc_wvalid[2];
+    assign m_color_waddr = framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH];
+    assign m_color_wlast = framebuffer_bc_wlast[2];
+    assign m_color_wscreenPosX = framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+    assign m_color_wscreenPosY = framebuffer_bc_wscreenPosY[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+    assign m_color_wdata = framebuffer_color_bc_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH];
+    assign m_color_wstrb = framebuffer_color_bc_wstrb[2];
+    assign framebuffer_bc_wfull[2] = !m_color_wready;
 
-                .i_wr(framebuffer_bc_wvalid[2]),
-                .i_data({ 
-                    framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH],
-                    framebuffer_bc_wlast[2], 
-                    framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
-                    framebuffer_bc_wscreenPosY[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
-                    framebuffer_color_bc_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH], 
-                    framebuffer_color_bc_wstrb[2]
-                }),
-                .o_full(framebuffer_bc_wfull[2]),
-                .o_fill(),
+    assign m_depth_wvalid = framebuffer_bc_wvalid[1];
+    assign m_depth_waddr = framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH];
+    assign m_depth_wlast = framebuffer_bc_wlast[1];
+    assign m_depth_wscreenPosX = framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+    assign m_depth_wscreenPosY = framebuffer_bc_wscreenPosY[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+    assign m_depth_wdata = framebuffer_depth_bc_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH];
+    assign m_depth_wstrb = framebuffer_depth_bc_wstrb[1];
+    assign framebuffer_bc_wfull[1] = !m_depth_wready;
 
-                .i_rd(m_color_wready),
-                .o_data({
-                    m_color_waddr,
-                    m_color_wlast,
-                    m_color_wscreenPosX,
-                    m_color_wscreenPosY,
-                    m_color_wdata,
-                    m_color_wstrb
-                }),
-                .o_empty(color_fifo_empty)    
-            );
-            defparam colorWriteFifo.BW = COLOR_FIFO_WIDTH;
-            defparam colorWriteFifo.LGFLEN = WRITE_FIFO_SIZE;
-            defparam colorWriteFifo.OPT_ASYNC_READ = 0;
-
-            assign m_color_wvalid = !color_fifo_empty;
-        end
-        else
-        begin
-            assign m_color_wvalid = framebuffer_bc_wvalid[2];
-            assign m_color_waddr = framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH];
-            assign m_color_wlast = framebuffer_bc_wlast[2];
-            assign m_color_wscreenPosX = framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
-            assign m_color_wscreenPosY = framebuffer_bc_wscreenPosY[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
-            assign m_color_wdata = framebuffer_color_bc_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH];
-            assign m_color_wstrb = framebuffer_color_bc_wstrb[2];
-            assign framebuffer_bc_wfull[2] = !m_color_wready;
-
-            assign color_fifo_empty = 1;
-        end
-    endgenerate
-
-    generate
-        if (ENABLE_WRITE_FIFO)
-        begin
-            localparam DEPTH_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + DEPTH_WIDTH;
-            sfifo depthWriteFifo (
-                .i_clk(aclk),
-                .i_reset(!resetn),
-
-                .i_wr(framebuffer_bc_wvalid[1]),
-                .i_data({ 
-                    framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH],
-                    framebuffer_bc_wlast[1], 
-                    framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
-                    framebuffer_bc_wscreenPosY[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
-                    framebuffer_depth_bc_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH], 
-                    framebuffer_depth_bc_wstrb[1]
-                }),
-                .o_full(framebuffer_bc_wfull[1]),
-                .o_fill(),
-
-                .i_rd(m_depth_wready),
-                .o_data({
-                    m_depth_waddr,
-                    m_depth_wlast,
-                    m_depth_wscreenPosX,
-                    m_depth_wscreenPosY,
-                    m_depth_wdata,
-                    m_depth_wstrb
-                }),
-                .o_empty(depth_fifo_empty)    
-            );
-            defparam depthWriteFifo.BW = DEPTH_FIFO_WIDTH;
-            defparam depthWriteFifo.LGFLEN = WRITE_FIFO_SIZE;
-            defparam depthWriteFifo.OPT_ASYNC_READ = 0;
-
-            assign m_depth_wvalid = !depth_fifo_empty;
-        end
-        else
-        begin
-            assign m_depth_wvalid = framebuffer_bc_wvalid[1];
-            assign m_depth_waddr = framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH];
-            assign m_depth_wlast = framebuffer_bc_wlast[1];
-            assign m_depth_wscreenPosX = framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
-            assign m_depth_wscreenPosY = framebuffer_bc_wscreenPosY[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
-            assign m_depth_wdata = framebuffer_depth_bc_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH];
-            assign m_depth_wstrb = framebuffer_depth_bc_wstrb[1];
-            assign framebuffer_bc_wfull[1] = !m_depth_wready;
-
-            assign depth_fifo_empty = 1;
-        end
-    endgenerate
-    
-    generate
-        if (ENABLE_WRITE_FIFO)
-        begin
-            localparam STENCIL_FIFO_WIDTH = 1 + 1 + SCREEN_POS_WIDTH + SCREEN_POS_WIDTH + INDEX_WIDTH + STENCIL_WIDTH;
-            sfifo stencilWriteFifo (
-                .i_clk(aclk),
-                .i_reset(!resetn),
-
-                .i_wr(framebuffer_bc_wvalid[0]),
-                .i_data({ 
-                    framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH],
-                    framebuffer_bc_wlast[0], 
-                    framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
-                    framebuffer_bc_wscreenPosY[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH], 
-                    framebuffer_stencil_bc_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH], 
-                    framebuffer_stencil_bc_wstrb[0]
-                }),
-                .o_full(framebuffer_bc_wfull[0]),
-                .o_fill(),
-
-                .i_rd(m_stencil_wready),
-                .o_data({
-                    m_stencil_waddr,
-                    m_stencil_wlast,
-                    m_stencil_wscreenPosX,
-                    m_stencil_wscreenPosY,
-                    m_stencil_wdata,
-                    m_stencil_wstrb
-                }),
-                .o_empty(stencil_fifo_empty)    
-            );
-            defparam stencilWriteFifo.BW = STENCIL_FIFO_WIDTH;
-            defparam stencilWriteFifo.LGFLEN = WRITE_FIFO_SIZE;
-            defparam stencilWriteFifo.OPT_ASYNC_READ = 0;
-
-            assign m_stencil_wvalid = !stencil_fifo_empty;
-        end
-        else
-        begin
-            assign m_stencil_wvalid = framebuffer_bc_wvalid[0];
-            assign m_stencil_waddr = framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH];
-            assign m_stencil_wlast = framebuffer_bc_wlast[0];
-            assign m_stencil_wscreenPosX = framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
-            assign m_stencil_wscreenPosY = framebuffer_bc_wscreenPosY[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
-            assign m_stencil_wdata = framebuffer_stencil_bc_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH];
-            assign m_stencil_wstrb = framebuffer_stencil_bc_wstrb[0];
-            assign framebuffer_bc_wfull[0] = !m_stencil_wready;
-
-            assign stencil_fifo_empty = 1;
-        end
-    endgenerate
+    assign m_stencil_wvalid = framebuffer_bc_wvalid[0];
+    assign m_stencil_waddr = framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH];
+    assign m_stencil_wlast = framebuffer_bc_wlast[0];
+    assign m_stencil_wscreenPosX = framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+    assign m_stencil_wscreenPosY = framebuffer_bc_wscreenPosY[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
+    assign m_stencil_wdata = framebuffer_stencil_bc_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH];
+    assign m_stencil_wstrb = framebuffer_stencil_bc_wstrb[0];
+    assign framebuffer_bc_wfull[0] = !m_stencil_wready;
 endmodule
