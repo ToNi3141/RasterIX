@@ -28,7 +28,7 @@ static constexpr std::size_t NUMBER_OF_BEATS = 16;
 
 TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
 {
-    VAxisToAxiAdapter* t = new VAxisToAxiAdapter();
+    VAxisToAxiAdapter* t = rr::ut::makeTop<VAxisToAxiAdapter>();
 
     t->s_xvalid = true;
     rr::ut::reset(t);
@@ -64,7 +64,7 @@ TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
 
 TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
 {
-    VAxisToAxiAdapter* t = new VAxisToAxiAdapter();
+    VAxisToAxiAdapter* t = rr::ut::makeTop<VAxisToAxiAdapter>();
 
     t->s_xvalid = 1;
     rr::ut::reset(t);
@@ -113,7 +113,7 @@ TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
 
 TEST_CASE("check mem read", "[VAxisToAxiAdapter]")
 {
-    VAxisToAxiAdapter* t = new VAxisToAxiAdapter();
+    VAxisToAxiAdapter* t = rr::ut::makeTop<VAxisToAxiAdapter>();
 
     t->s_xvalid = 1;
     rr::ut::reset(t);
@@ -157,7 +157,7 @@ TEST_CASE("check mem read", "[VAxisToAxiAdapter]")
 
 TEST_CASE("interrupted mem write", "[VAxisToAxiAdapter]")
 {
-    VAxisToAxiAdapter* t = new VAxisToAxiAdapter();
+    VAxisToAxiAdapter* t = rr::ut::makeTop<VAxisToAxiAdapter>();
 
     t->s_xvalid = true;
     rr::ut::reset(t);

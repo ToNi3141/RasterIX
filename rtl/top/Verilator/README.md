@@ -1,7 +1,7 @@
 # Simulation Build
 A simulation can be used to easily develop and debug the renderer. The simulation can be found under `example/qtDebug/qtRasterizerFpga`. There is a Qt project which can be opened with the QtCreator. This project supports also the real hardware, which can be selected with the `TARGET_BUILD` variable in the .pro file.
 
-Before building the simulation, create the C++ code from the Verilog source via Verilator 4.036 2020-06-06 rev v4.034-208-g04c0fc8aa. Use the following commands:
+Before building the simulation, create the C++ code from the Verilog source via Verilator 5.046 2026-02-28 rev v5.046. Use the following commands:
 ```sh
 cd rtl/top/Verilator
 make -f Makefile.linux rixif -j

@@ -53,10 +53,8 @@ public:
         return foggedColor;
     }
 
-    void setFogLut(const FogLut& lut, const float lowerBound, const float upperBound)
+    void setFogLut(const FogLut& lut)
     {
-        std::memcpy(&m_lowerBound, &lowerBound, sizeof(m_lowerBound));
-        std::memcpy(&m_upperBound, &upperBound, sizeof(m_upperBound));
         m_fogLut = lut;
     }
 
@@ -78,20 +76,22 @@ private:
         uint32_t wBits;
         std::memcpy(&wBits, &w, sizeof(wBits));
 
-        const int32_t exponent = static_cast<int32_t>((wBits >> 23) & 0xFF) - 127; // Remove bias
+        const int32_t exponent = 126 - static_cast<int32_t>((wBits >> 23) & 0xFF); // Remove bias
         const int32_t mantissa = wBits & 0x7FFFFF; // 23 bits
         return { exponent, mantissa };
     }
 
     Vec4iColorRGBA::Type computeFogFactor(const float w) const
     {
+        static constexpr uint32_t LOWER_BOUND = 0x3f000000; // 2^⁻1
+        static constexpr uint32_t UPPER_BOUND = 0x2f800000; // 2^⁻32
         uint32_t wBits;
         std::memcpy(&wBits, &w, sizeof(wBits));
-        if (wBits <= m_lowerBound)
+        if (wBits >= LOWER_BOUND)
         {
             return Vec4iColorRGBA::FracMax;
         }
-        if (wBits >= m_upperBound)
+        if (wBits <= UPPER_BOUND)
         {
             return Vec4iColorRGBA::Zero;
         }
@@ -103,7 +103,7 @@ private:
         const FogLutEntry& entry = m_fogLut[index];
 
         // xs: upper 8 bits of mantissa as interpolation factor (0 - 255, representing 0.0 - 1.0)
-        const int32_t xs = static_cast<int32_t>(mantissa >> (23 - LUT_INTERPOLATION_STEPS)); // Sx.8
+        const int32_t xs = 256 - static_cast<int32_t>(mantissa >> (23 - LUT_INTERPOLATION_STEPS)); // Sx.8
         const int32_t fx = entry.m * xs + entry.b; // Sx.22
         const int32_t fx_scaled = fx >> 14; // S1.8
 
@@ -111,8 +111,6 @@ private:
     }
 
     FogLut m_fogLut {};
-    uint32_t m_lowerBound { 0x3F800000 }; // 1.0f
-    uint32_t m_upperBound { 0x447A0000 }; // 1000.0f
     Vec4iColorRGBA m_fogColor {};
     bool m_enable { false };
 };

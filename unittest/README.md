@@ -1,7 +1,7 @@
 # Unit-Tests 
 This directory contains the unit tests for the project, split into two categories:
 
-- **verilator/** - RTL simulation tests using Verilator
+- **verilator/** - RTL simulation tests using Verilator 5.046 2026-02-28 rev v5.046
 - **software/** - Software component tests
 
 ## Requirements

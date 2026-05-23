@@ -86,11 +86,8 @@ public:
         if (m_top.m_framebuffer_axis_tvalid && (m_streamAddr < framebufferSize) && (!m_framebuffer.empty()))
         {
             const uint16_t f0 = m_top.m_framebuffer_axis_tdata & 0xFFFF;
-            const uint16_t f1 = (m_top.m_framebuffer_axis_tdata >> 16) & 0xFFFF;
 
             toBgr888(m_framebuffer.subspan(m_streamAddr, 3), f0);
-            m_streamAddr += 3;
-            toBgr888(m_framebuffer.subspan(m_streamAddr, 3), f1);
             m_streamAddr += 3;
         }
 
@@ -123,7 +120,7 @@ private:
     const uint16_t m_resolutionH = 128;
     tcb::span<uint8_t> m_framebuffer;
     uint32_t m_streamAddr = 0;
-    Vtop m_top;
+    Vtop m_top { new VerilatedContext };
 };
 
 } // namespace rr

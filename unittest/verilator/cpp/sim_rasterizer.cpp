@@ -34,7 +34,7 @@ void clk(Vtop* t)
 
 int main()
 {
-    Vtop* top = new Vtop();
+    Vtop* top = rr::ut::makeTop<Vtop>();
 
     // Destroy model
     delete top;

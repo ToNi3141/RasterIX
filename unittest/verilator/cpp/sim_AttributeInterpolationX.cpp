@@ -20,10 +20,12 @@
 // Include model header, generated from Verilating "top.v"
 #include "VAttributeInterpolationX.h"
 
-static constexpr uint8_t RR_CMD_INIT { 0 };
-static constexpr uint8_t RR_CMD_X_INC { 1 };
-static constexpr uint8_t RR_CMD_X_DEC { 2 };
-static constexpr uint8_t RR_CMD_Y_INC { 3 };
+static constexpr uint8_t RR_CMD_INIT { 0x01 }; // 6'b000001
+static constexpr uint8_t RR_CMD_X_INC { 0x02 }; // 6'b000010
+static constexpr uint8_t RR_CMD_X_DEC { 0x04 }; // 6'b000100
+static constexpr uint8_t RR_CMD_Y_INC { 0x08 }; // 6'b001000
+static constexpr uint8_t RR_CMD_PUSH { 0x10 }; // 6'b010000
+static constexpr uint8_t RR_CMD_POP { 0x20 }; // 6'b100000
 
 void init(VAttributeInterpolationX* top)
 {
@@ -73,7 +75,7 @@ void init(VAttributeInterpolationX* top)
 
 TEST_CASE("Check init", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -109,7 +111,7 @@ TEST_CASE("Check init", "[AttributeInterpolationX]")
 
 TEST_CASE("Check x inc", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -148,7 +150,7 @@ TEST_CASE("Check x inc", "[AttributeInterpolationX]")
 
 TEST_CASE("Check x dec", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -187,7 +189,7 @@ TEST_CASE("Check x dec", "[AttributeInterpolationX]")
 
 TEST_CASE("Check y inc", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -226,7 +228,7 @@ TEST_CASE("Check y inc", "[AttributeInterpolationX]")
 
 TEST_CASE("Check stall", "[AttributeInterpolationX]")
 {
-    VAttributeInterpolationX* top = new VAttributeInterpolationX();
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
     rr::ut::reset(top);
 
     init(top);
@@ -287,6 +289,91 @@ TEST_CASE("Check stall", "[AttributeInterpolationX]")
     CHECK(top->curr_color_g == 900 + 22);
     CHECK(top->curr_color_b == 1000 + 23);
     CHECK(top->curr_color_a == 1100 + 24);
+
+    // Destroy model
+    delete top;
+}
+TEST_CASE("Check push", "[AttributeInterpolationX]")
+{
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
+    rr::ut::reset(top);
+
+    init(top);
+
+    // Push should save the current state without changing output values
+    top->cmd = RR_CMD_PUSH;
+    rr::ut::clk(top);
+
+    CHECK(top->curr_tex0_s == 0);
+    CHECK(top->curr_tex0_t == 100);
+    CHECK(top->curr_tex0_q == 200);
+
+    CHECK(top->curr_tex0_mipmap_s == 5);
+    CHECK(top->curr_tex0_mipmap_t == 107);
+    CHECK(top->curr_tex0_mipmap_q == 209);
+
+    CHECK(top->curr_tex1_s == 300);
+    CHECK(top->curr_tex1_t == 400);
+    CHECK(top->curr_tex1_q == 500);
+
+    CHECK(top->curr_tex1_mipmap_s == 317);
+    CHECK(top->curr_tex1_mipmap_t == 419);
+    CHECK(top->curr_tex1_mipmap_q == 521);
+
+    CHECK(top->curr_depth_w == 600);
+    CHECK(top->curr_depth_z == 700);
+
+    CHECK(top->curr_color_r == 800);
+    CHECK(top->curr_color_g == 900);
+    CHECK(top->curr_color_b == 1000);
+    CHECK(top->curr_color_a == 1100);
+
+    // Destroy model
+    delete top;
+}
+
+TEST_CASE("Check pop", "[AttributeInterpolationX]")
+{
+    VAttributeInterpolationX* top = rr::ut::makeTop<VAttributeInterpolationX>();
+    rr::ut::reset(top);
+
+    init(top);
+
+    // Push current state into the queue
+    top->cmd = RR_CMD_PUSH;
+    rr::ut::clk(top);
+
+    // Modify state with X_INC
+    top->cmd = RR_CMD_X_INC;
+    rr::ut::clk(top);
+
+    // Pop should restore the saved (init) values
+    top->cmd = RR_CMD_POP;
+    rr::ut::clk(top);
+
+    CHECK(top->curr_tex0_s == 0);
+    CHECK(top->curr_tex0_t == 100);
+    CHECK(top->curr_tex0_q == 200);
+
+    CHECK(top->curr_tex0_mipmap_s == 5);
+    CHECK(top->curr_tex0_mipmap_t == 107);
+    CHECK(top->curr_tex0_mipmap_q == 209);
+
+    CHECK(top->curr_tex1_s == 300);
+    CHECK(top->curr_tex1_t == 400);
+    CHECK(top->curr_tex1_q == 500);
+
+    CHECK(top->curr_tex1_mipmap_s == 317);
+    CHECK(top->curr_tex1_mipmap_t == 419);
+    CHECK(top->curr_tex1_mipmap_q == 521);
+
+    CHECK(top->curr_depth_w == 600);
+    CHECK(top->curr_depth_z == 700);
+
+    CHECK(top->curr_color_r == 800);
+    CHECK(top->curr_color_g == 900);
+    CHECK(top->curr_color_b == 1000);
+    CHECK(top->curr_color_a == 1100);
 
     // Destroy model
     delete top;

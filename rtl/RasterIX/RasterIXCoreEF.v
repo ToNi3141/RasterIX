@@ -67,6 +67,8 @@ module RasterIXCoreEF #(
     parameter DATA_WIDTH = 64,
     // Memory strobe width
     parameter STRB_WIDTH = DATA_WIDTH / 8,
+    // Enable coalescing of the memory beats. This can significantly improve the throughput.
+    parameter ENABLE_MEMORY_COALESCING = 1,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
@@ -275,11 +277,25 @@ module RasterIXCoreEF #(
     // without removing or adding something.
     // If it is set to a lower value, then the functions will start to remove or add new pixels.
     localparam SUB_PIXEL_OFFSET = (COLOR_NUMBER_OF_SUB_PIXEL == FRAMEBUFFER_NUMBER_OF_SUB_PIXELS) ? COLOR_NUMBER_OF_SUB_PIXEL : COLOR_A_POS; 
+    
+    localparam NR_OF_COALESCED_BEATS_COLOR = (PIXEL_WIDTH * 16) / DATA_WIDTH;
+    localparam NR_OF_COALESCED_BEATS_DEPTH = (DEPTH_WIDTH * 16) / DATA_WIDTH;
+    localparam NR_OF_COALESCED_BEATS_STENCIL = (8 * 16) / DATA_WIDTH;
+
     `ReduceVec(ColorBufferReduceVec, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `ReduceVec(ColorBufferReduceMask, 1, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS) 
     `ExpandVec(ColorBufferExpandVec, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, COLOR_NUMBER_OF_SUB_PIXEL)
     `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, 1)
     `RGB5652XXX(RGB5652XXX, COLOR_SUB_PIXEL_WIDTH, 1)
+
+    initial 
+    begin
+        if ((DATA_WIDTH > 128) || (DATA_WIDTH < 16))
+        begin
+            $error("Unsupported DATA_WIDTH %d. Supported values are 16, 32, 64, 128.", DATA_WIDTH);
+            $finish();
+        end
+    end
 
     wire                                             framebufferParamEnableScissor;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorStartX;
@@ -374,6 +390,43 @@ module RasterIXCoreEF #(
     wire [SCREEN_POS_WIDTH - 1 : 0]                  m_stencil_wscreenPosX;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  m_stencil_wscreenPosY;
 
+    // Internal wires for Coalescer instances (color channel - always used)
+    wire [ID_WIDTH - 1 : 0]             color_coal_awid;
+    wire [ID_WIDTH - 1 : 0]             color_coal_bid;
+    wire [ID_WIDTH - 1 : 0]             color_coal_arid;
+    wire [ID_WIDTH - 1 : 0]             color_coal_rid;
+    wire [ADDR_WIDTH - 1 : 0]           color_coal_awaddr;
+    wire [ADDR_WIDTH - 1 : 0]           color_coal_araddr;
+    wire [7 : 0]                        color_coal_awlen;
+    wire [7 : 0]                        color_coal_arlen;
+    wire [2 : 0]                        color_coal_awsize;
+    wire [2 : 0]                        color_coal_arsize;
+    wire [1 : 0]                        color_coal_awburst;
+    wire [1 : 0]                        color_coal_arburst;
+    wire                                color_coal_awlock;
+    wire                                color_coal_arlock;
+    wire [3 : 0]                        color_coal_awcache;
+    wire [3 : 0]                        color_coal_arcache;
+    wire [2 : 0]                        color_coal_awprot;
+    wire [2 : 0]                        color_coal_arprot;
+    wire                                color_coal_awvalid;
+    wire                                color_coal_awready;
+    wire [DATA_WIDTH - 1 : 0]           color_coal_wdata;
+    wire [DATA_WIDTH - 1 : 0]           color_coal_rdata;
+    wire [STRB_WIDTH - 1 : 0]           color_coal_wstrb;
+    wire                                color_coal_wlast;
+    wire                                color_coal_wvalid;
+    wire                                color_coal_wready;
+    wire [1 : 0]                        color_coal_bresp;
+    wire [1 : 0]                        color_coal_rresp;
+    wire                                color_coal_bvalid;
+    wire                                color_coal_bready;
+    wire                                color_coal_arvalid;
+    wire                                color_coal_arready;
+    wire                                color_coal_rvalid;
+    wire                                color_coal_rready;
+    wire                                color_coal_rlast;
+
     assign colorBufferMaskReduced = ColorBufferReduceMask(colorBufferMask);
     assign m_stencil_rdata = m_stencil_rdata_byte[0 +: STENCIL_WIDTH];
 
@@ -382,6 +435,43 @@ module RasterIXCoreEF #(
     generate
         if (ENABLE_DEPTH_BUFFER)
         begin
+            // Depth channel wires
+            wire [ID_WIDTH - 1 : 0]             depth_coal_awid;
+            wire [ID_WIDTH - 1 : 0]             depth_coal_bid;
+            wire [ID_WIDTH - 1 : 0]             depth_coal_arid;
+            wire [ID_WIDTH - 1 : 0]             depth_coal_rid;
+            wire [ADDR_WIDTH - 1 : 0]           depth_coal_awaddr;
+            wire [ADDR_WIDTH - 1 : 0]           depth_coal_araddr;
+            wire [7 : 0]                        depth_coal_awlen;
+            wire [7 : 0]                        depth_coal_arlen;
+            wire [2 : 0]                        depth_coal_awsize;
+            wire [2 : 0]                        depth_coal_arsize;
+            wire [1 : 0]                        depth_coal_awburst;
+            wire [1 : 0]                        depth_coal_arburst;
+            wire                                depth_coal_awlock;
+            wire                                depth_coal_arlock;
+            wire [3 : 0]                        depth_coal_awcache;
+            wire [3 : 0]                        depth_coal_arcache;
+            wire [2 : 0]                        depth_coal_awprot;
+            wire [2 : 0]                        depth_coal_arprot;
+            wire                                depth_coal_awvalid;
+            wire                                depth_coal_awready;
+            wire [DATA_WIDTH - 1 : 0]           depth_coal_wdata;
+            wire [DATA_WIDTH - 1 : 0]           depth_coal_rdata;
+            wire [STRB_WIDTH - 1 : 0]           depth_coal_wstrb;
+            wire                                depth_coal_wlast;
+            wire                                depth_coal_wvalid;
+            wire                                depth_coal_wready;
+            wire [1 : 0]                        depth_coal_bresp;
+            wire [1 : 0]                        depth_coal_rresp;
+            wire                                depth_coal_bvalid;
+            wire                                depth_coal_bready;
+            wire                                depth_coal_arvalid;
+            wire                                depth_coal_arready;
+            wire                                depth_coal_rvalid;
+            wire                                depth_coal_rready;
+            wire                                depth_coal_rlast;
+
             StreamFramebuffer #(
                 .DATA_WIDTH(DATA_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
@@ -427,46 +517,183 @@ module RasterIXCoreEF #(
                 .s_frag_wxpos(m_depth_wscreenPosX),
                 .s_frag_wypos(m_depth_wscreenPosY),
 
-                .m_mem_axi_awid(m_depth_axi_awid),
-                .m_mem_axi_awaddr(m_depth_axi_awaddr),
-                .m_mem_axi_awlen(m_depth_axi_awlen), 
-                .m_mem_axi_awsize(m_depth_axi_awsize), 
-                .m_mem_axi_awburst(m_depth_axi_awburst), 
-                .m_mem_axi_awlock(m_depth_axi_awlock), 
-                .m_mem_axi_awcache(m_depth_axi_awcache), 
-                .m_mem_axi_awprot(m_depth_axi_awprot), 
-                .m_mem_axi_awvalid(m_depth_axi_awvalid),
-                .m_mem_axi_awready(m_depth_axi_awready),
+                .m_mem_axi_awid(depth_coal_awid),
+                .m_mem_axi_awaddr(depth_coal_awaddr),
+                .m_mem_axi_awlen(depth_coal_awlen), 
+                .m_mem_axi_awsize(depth_coal_awsize), 
+                .m_mem_axi_awburst(depth_coal_awburst), 
+                .m_mem_axi_awlock(depth_coal_awlock), 
+                .m_mem_axi_awcache(depth_coal_awcache), 
+                .m_mem_axi_awprot(depth_coal_awprot), 
+                .m_mem_axi_awvalid(depth_coal_awvalid),
+                .m_mem_axi_awready(depth_coal_awready),
 
-                .m_mem_axi_wdata(m_depth_axi_wdata),
-                .m_mem_axi_wstrb(m_depth_axi_wstrb),
-                .m_mem_axi_wlast(m_depth_axi_wlast),
-                .m_mem_axi_wvalid(m_depth_axi_wvalid),
-                .m_mem_axi_wready(m_depth_axi_wready),
+                .m_mem_axi_wdata(depth_coal_wdata),
+                .m_mem_axi_wstrb(depth_coal_wstrb),
+                .m_mem_axi_wlast(depth_coal_wlast),
+                .m_mem_axi_wvalid(depth_coal_wvalid),
+                .m_mem_axi_wready(depth_coal_wready),
 
-                .m_mem_axi_bid(m_depth_axi_bid),
-                .m_mem_axi_bresp(m_depth_axi_bresp),
-                .m_mem_axi_bvalid(m_depth_axi_bvalid),
-                .m_mem_axi_bready(m_depth_axi_bready),
+                .m_mem_axi_bid(depth_coal_bid),
+                .m_mem_axi_bresp(depth_coal_bresp),
+                .m_mem_axi_bvalid(depth_coal_bvalid),
+                .m_mem_axi_bready(depth_coal_bready),
 
-                .m_mem_axi_arid(m_depth_axi_arid),
-                .m_mem_axi_araddr(m_depth_axi_araddr),
-                .m_mem_axi_arlen(m_depth_axi_arlen),
-                .m_mem_axi_arsize(m_depth_axi_arsize),
-                .m_mem_axi_arburst(m_depth_axi_arburst),
-                .m_mem_axi_arlock(m_depth_axi_arlock),
-                .m_mem_axi_arcache(m_depth_axi_arcache),
-                .m_mem_axi_arprot(m_depth_axi_arprot),
-                .m_mem_axi_arvalid(m_depth_axi_arvalid),
-                .m_mem_axi_arready(m_depth_axi_arready),
+                .m_mem_axi_arid(depth_coal_arid),
+                .m_mem_axi_araddr(depth_coal_araddr),
+                .m_mem_axi_arlen(depth_coal_arlen),
+                .m_mem_axi_arsize(depth_coal_arsize),
+                .m_mem_axi_arburst(depth_coal_arburst),
+                .m_mem_axi_arlock(depth_coal_arlock),
+                .m_mem_axi_arcache(depth_coal_arcache),
+                .m_mem_axi_arprot(depth_coal_arprot),
+                .m_mem_axi_arvalid(depth_coal_arvalid),
+                .m_mem_axi_arready(depth_coal_arready),
 
-                .m_mem_axi_rid(m_depth_axi_rid),
-                .m_mem_axi_rdata(m_depth_axi_rdata),
-                .m_mem_axi_rresp(m_depth_axi_rresp),
-                .m_mem_axi_rlast(m_depth_axi_rlast),
-                .m_mem_axi_rvalid(m_depth_axi_rvalid),
-                .m_mem_axi_rready(m_depth_axi_rready)
+                .m_mem_axi_rid(depth_coal_rid),
+                .m_mem_axi_rdata(depth_coal_rdata),
+                .m_mem_axi_rresp(depth_coal_rresp),
+                .m_mem_axi_rlast(depth_coal_rlast),
+                .m_mem_axi_rvalid(depth_coal_rvalid),
+                .m_mem_axi_rready(depth_coal_rready)
             );
+
+            if (ENABLE_MEMORY_COALESCING && (NR_OF_COALESCED_BEATS_DEPTH > 1))
+            begin
+                Coalescer #(
+                    .ID_WIDTH(ID_WIDTH),
+                    .ADDR_WIDTH(ADDR_WIDTH),
+                    .DATA_WIDTH(DATA_WIDTH),
+                    .STRB_WIDTH(STRB_WIDTH),
+                    .MAX_BEATS_TO_COALESCE(NR_OF_COALESCED_BEATS_DEPTH)
+                ) depth_coalescer (
+                    .aclk(aclk),
+                    .resetn(resetn),
+
+                    .s_mem_axi_awid(depth_coal_awid),
+                    .s_mem_axi_awaddr(depth_coal_awaddr),
+                    .s_mem_axi_awlen(depth_coal_awlen),
+                    .s_mem_axi_awsize(depth_coal_awsize),
+                    .s_mem_axi_awburst(depth_coal_awburst),
+                    .s_mem_axi_awlock(depth_coal_awlock),
+                    .s_mem_axi_awcache(depth_coal_awcache),
+                    .s_mem_axi_awprot(depth_coal_awprot),
+                    .s_mem_axi_awvalid(depth_coal_awvalid),
+                    .s_mem_axi_awready(depth_coal_awready),
+
+                    .s_mem_axi_wdata(depth_coal_wdata),
+                    .s_mem_axi_wstrb(depth_coal_wstrb),
+                    .s_mem_axi_wlast(depth_coal_wlast),
+                    .s_mem_axi_wvalid(depth_coal_wvalid),
+                    .s_mem_axi_wready(depth_coal_wready),
+
+                    .s_mem_axi_bid(depth_coal_bid),
+                    .s_mem_axi_bresp(depth_coal_bresp),
+                    .s_mem_axi_bvalid(depth_coal_bvalid),
+                    .s_mem_axi_bready(depth_coal_bready),
+
+                    .s_mem_axi_arid(depth_coal_arid),
+                    .s_mem_axi_araddr(depth_coal_araddr),
+                    .s_mem_axi_arlen(depth_coal_arlen),
+                    .s_mem_axi_arsize(depth_coal_arsize),
+                    .s_mem_axi_arburst(depth_coal_arburst),
+                    .s_mem_axi_arlock(depth_coal_arlock),
+                    .s_mem_axi_arcache(depth_coal_arcache),
+                    .s_mem_axi_arprot(depth_coal_arprot),
+                    .s_mem_axi_arvalid(depth_coal_arvalid),
+                    .s_mem_axi_arready(depth_coal_arready),
+
+                    .s_mem_axi_rid(depth_coal_rid),
+                    .s_mem_axi_rdata(depth_coal_rdata),
+                    .s_mem_axi_rresp(depth_coal_rresp),
+                    .s_mem_axi_rlast(depth_coal_rlast),
+                    .s_mem_axi_rvalid(depth_coal_rvalid),
+                    .s_mem_axi_rready(depth_coal_rready),
+
+                    .m_mem_axi_awid(m_depth_axi_awid),
+                    .m_mem_axi_awaddr(m_depth_axi_awaddr),
+                    .m_mem_axi_awlen(m_depth_axi_awlen),
+                    .m_mem_axi_awsize(m_depth_axi_awsize),
+                    .m_mem_axi_awburst(m_depth_axi_awburst),
+                    .m_mem_axi_awlock(m_depth_axi_awlock),
+                    .m_mem_axi_awcache(m_depth_axi_awcache),
+                    .m_mem_axi_awprot(m_depth_axi_awprot),
+                    .m_mem_axi_awvalid(m_depth_axi_awvalid),
+                    .m_mem_axi_awready(m_depth_axi_awready),
+
+                    .m_mem_axi_wdata(m_depth_axi_wdata),
+                    .m_mem_axi_wstrb(m_depth_axi_wstrb),
+                    .m_mem_axi_wlast(m_depth_axi_wlast),
+                    .m_mem_axi_wvalid(m_depth_axi_wvalid),
+                    .m_mem_axi_wready(m_depth_axi_wready),
+
+                    .m_mem_axi_bid(m_depth_axi_bid),
+                    .m_mem_axi_bresp(m_depth_axi_bresp),
+                    .m_mem_axi_bvalid(m_depth_axi_bvalid),
+                    .m_mem_axi_bready(m_depth_axi_bready),
+
+                    .m_mem_axi_arid(m_depth_axi_arid),
+                    .m_mem_axi_araddr(m_depth_axi_araddr),
+                    .m_mem_axi_arlen(m_depth_axi_arlen),
+                    .m_mem_axi_arsize(m_depth_axi_arsize),
+                    .m_mem_axi_arburst(m_depth_axi_arburst),
+                    .m_mem_axi_arlock(m_depth_axi_arlock),
+                    .m_mem_axi_arcache(m_depth_axi_arcache),
+                    .m_mem_axi_arprot(m_depth_axi_arprot),
+                    .m_mem_axi_arvalid(m_depth_axi_arvalid),
+                    .m_mem_axi_arready(m_depth_axi_arready),
+
+                    .m_mem_axi_rid(m_depth_axi_rid),
+                    .m_mem_axi_rdata(m_depth_axi_rdata),
+                    .m_mem_axi_rresp(m_depth_axi_rresp),
+                    .m_mem_axi_rlast(m_depth_axi_rlast),
+                    .m_mem_axi_rvalid(m_depth_axi_rvalid),
+                    .m_mem_axi_rready(m_depth_axi_rready)
+                );
+            end
+            else
+            begin
+                // Bypass coalescer: connect internal wires directly to module ports
+                assign m_depth_axi_awid = depth_coal_awid;
+                assign m_depth_axi_awaddr = depth_coal_awaddr;
+                assign m_depth_axi_awlen = depth_coal_awlen;
+                assign m_depth_axi_awsize = depth_coal_awsize;
+                assign m_depth_axi_awburst = depth_coal_awburst;
+                assign m_depth_axi_awlock = depth_coal_awlock;
+                assign m_depth_axi_awcache = depth_coal_awcache;
+                assign m_depth_axi_awprot = depth_coal_awprot;
+                assign m_depth_axi_awvalid = depth_coal_awvalid;
+                assign depth_coal_awready = m_depth_axi_awready;
+
+                assign m_depth_axi_wdata = depth_coal_wdata;
+                assign m_depth_axi_wstrb = depth_coal_wstrb;
+                assign m_depth_axi_wlast = depth_coal_wlast;
+                assign m_depth_axi_wvalid = depth_coal_wvalid;
+                assign depth_coal_wready = m_depth_axi_wready;
+
+                assign depth_coal_bid = m_depth_axi_bid;
+                assign depth_coal_bresp = m_depth_axi_bresp;
+                assign depth_coal_bvalid = m_depth_axi_bvalid;
+                assign m_depth_axi_bready = depth_coal_bready;
+
+                assign m_depth_axi_arid = depth_coal_arid;
+                assign m_depth_axi_araddr = depth_coal_araddr;
+                assign m_depth_axi_arlen = depth_coal_arlen;
+                assign m_depth_axi_arsize = depth_coal_arsize;
+                assign m_depth_axi_arburst = depth_coal_arburst;
+                assign m_depth_axi_arlock = depth_coal_arlock;
+                assign m_depth_axi_arcache = depth_coal_arcache;
+                assign m_depth_axi_arprot = depth_coal_arprot;
+                assign m_depth_axi_arvalid = depth_coal_arvalid;
+                assign depth_coal_arready = m_depth_axi_arready;
+
+                assign depth_coal_rid = m_depth_axi_rid;
+                assign depth_coal_rdata = m_depth_axi_rdata;
+                assign depth_coal_rresp = m_depth_axi_rresp;
+                assign depth_coal_rlast = m_depth_axi_rlast;
+                assign depth_coal_rvalid = m_depth_axi_rvalid;
+                assign m_depth_axi_rready = depth_coal_rready;
+            end
         end
         else
         begin
@@ -475,6 +702,32 @@ module RasterIXCoreEF #(
             assign m_depth_rdata = 16'hffff;
             assign m_depth_wready = 1;
             assign depthBufferApplied = 1;
+            
+            // Tie off depth coalescer outputs when depth buffer is disabled
+            assign m_depth_axi_awid = 0;
+            assign m_depth_axi_awaddr = 0;
+            assign m_depth_axi_awlen = 0;
+            assign m_depth_axi_awsize = 0;
+            assign m_depth_axi_awburst = 0;
+            assign m_depth_axi_awlock = 0;
+            assign m_depth_axi_awcache = 0;
+            assign m_depth_axi_awprot = 0;
+            assign m_depth_axi_awvalid = 0;
+            assign m_depth_axi_wdata = 0;
+            assign m_depth_axi_wstrb = 0;
+            assign m_depth_axi_wlast = 0;
+            assign m_depth_axi_wvalid = 0;
+            assign m_depth_axi_bready = 0;
+            assign m_depth_axi_arid = 0;
+            assign m_depth_axi_araddr = 0;
+            assign m_depth_axi_arlen = 0;
+            assign m_depth_axi_arsize = 0;
+            assign m_depth_axi_arburst = 0;
+            assign m_depth_axi_arlock = 0;
+            assign m_depth_axi_arcache = 0;
+            assign m_depth_axi_arprot = 0;
+            assign m_depth_axi_arvalid = 0;
+            assign m_depth_axi_rready = 0;
         end
     endgenerate
 
@@ -523,50 +776,226 @@ module RasterIXCoreEF #(
         .s_frag_wxpos(m_color_wscreenPosX),
         .s_frag_wypos(m_color_wscreenPosY),
 
-        .m_mem_axi_awid(m_color_axi_awid),
-        .m_mem_axi_awaddr(m_color_axi_awaddr),
-        .m_mem_axi_awlen(m_color_axi_awlen), 
-        .m_mem_axi_awsize(m_color_axi_awsize), 
-        .m_mem_axi_awburst(m_color_axi_awburst), 
-        .m_mem_axi_awlock(m_color_axi_awlock), 
-        .m_mem_axi_awcache(m_color_axi_awcache), 
-        .m_mem_axi_awprot(m_color_axi_awprot), 
-        .m_mem_axi_awvalid(m_color_axi_awvalid),
-        .m_mem_axi_awready(m_color_axi_awready),
+        .m_mem_axi_awid(color_coal_awid),
+        .m_mem_axi_awaddr(color_coal_awaddr),
+        .m_mem_axi_awlen(color_coal_awlen), 
+        .m_mem_axi_awsize(color_coal_awsize), 
+        .m_mem_axi_awburst(color_coal_awburst), 
+        .m_mem_axi_awlock(color_coal_awlock), 
+        .m_mem_axi_awcache(color_coal_awcache), 
+        .m_mem_axi_awprot(color_coal_awprot), 
+        .m_mem_axi_awvalid(color_coal_awvalid),
+        .m_mem_axi_awready(color_coal_awready),
 
-        .m_mem_axi_wdata(m_color_axi_wdata),
-        .m_mem_axi_wstrb(m_color_axi_wstrb),
-        .m_mem_axi_wlast(m_color_axi_wlast),
-        .m_mem_axi_wvalid(m_color_axi_wvalid),
-        .m_mem_axi_wready(m_color_axi_wready),
+        .m_mem_axi_wdata(color_coal_wdata),
+        .m_mem_axi_wstrb(color_coal_wstrb),
+        .m_mem_axi_wlast(color_coal_wlast),
+        .m_mem_axi_wvalid(color_coal_wvalid),
+        .m_mem_axi_wready(color_coal_wready),
 
-        .m_mem_axi_bid(m_color_axi_bid),
-        .m_mem_axi_bresp(m_color_axi_bresp),
-        .m_mem_axi_bvalid(m_color_axi_bvalid),
-        .m_mem_axi_bready(m_color_axi_bready),
+        .m_mem_axi_bid(color_coal_bid),
+        .m_mem_axi_bresp(color_coal_bresp),
+        .m_mem_axi_bvalid(color_coal_bvalid),
+        .m_mem_axi_bready(color_coal_bready),
 
-        .m_mem_axi_arid(m_color_axi_arid),
-        .m_mem_axi_araddr(m_color_axi_araddr),
-        .m_mem_axi_arlen(m_color_axi_arlen),
-        .m_mem_axi_arsize(m_color_axi_arsize),
-        .m_mem_axi_arburst(m_color_axi_arburst),
-        .m_mem_axi_arlock(m_color_axi_arlock),
-        .m_mem_axi_arcache(m_color_axi_arcache),
-        .m_mem_axi_arprot(m_color_axi_arprot),
-        .m_mem_axi_arvalid(m_color_axi_arvalid),
-        .m_mem_axi_arready(m_color_axi_arready),
+        .m_mem_axi_arid(color_coal_arid),
+        .m_mem_axi_araddr(color_coal_araddr),
+        .m_mem_axi_arlen(color_coal_arlen),
+        .m_mem_axi_arsize(color_coal_arsize),
+        .m_mem_axi_arburst(color_coal_arburst),
+        .m_mem_axi_arlock(color_coal_arlock),
+        .m_mem_axi_arcache(color_coal_arcache),
+        .m_mem_axi_arprot(color_coal_arprot),
+        .m_mem_axi_arvalid(color_coal_arvalid),
+        .m_mem_axi_arready(color_coal_arready),
 
-        .m_mem_axi_rid(m_color_axi_rid),
-        .m_mem_axi_rdata(m_color_axi_rdata),
-        .m_mem_axi_rresp(m_color_axi_rresp),
-        .m_mem_axi_rlast(m_color_axi_rlast),
-        .m_mem_axi_rvalid(m_color_axi_rvalid),
-        .m_mem_axi_rready(m_color_axi_rready)
+        .m_mem_axi_rid(color_coal_rid),
+        .m_mem_axi_rdata(color_coal_rdata),
+        .m_mem_axi_rresp(color_coal_rresp),
+        .m_mem_axi_rlast(color_coal_rlast),
+        .m_mem_axi_rvalid(color_coal_rvalid),
+        .m_mem_axi_rready(color_coal_rready)
     );
+
+    generate
+        if (ENABLE_MEMORY_COALESCING && (NR_OF_COALESCED_BEATS_COLOR > 1))
+        begin
+            Coalescer #(
+                .ID_WIDTH(ID_WIDTH),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .DATA_WIDTH(DATA_WIDTH),
+                .STRB_WIDTH(STRB_WIDTH),
+                .MAX_BEATS_TO_COALESCE(NR_OF_COALESCED_BEATS_COLOR)
+            ) color_coalescer (
+                .aclk(aclk),
+                .resetn(resetn),
+
+                .s_mem_axi_awid(color_coal_awid),
+                .s_mem_axi_awaddr(color_coal_awaddr),
+                .s_mem_axi_awlen(color_coal_awlen),
+                .s_mem_axi_awsize(color_coal_awsize),
+                .s_mem_axi_awburst(color_coal_awburst),
+                .s_mem_axi_awlock(color_coal_awlock),
+                .s_mem_axi_awcache(color_coal_awcache),
+                .s_mem_axi_awprot(color_coal_awprot),
+                .s_mem_axi_awvalid(color_coal_awvalid),
+                .s_mem_axi_awready(color_coal_awready),
+
+                .s_mem_axi_wdata(color_coal_wdata),
+                .s_mem_axi_wstrb(color_coal_wstrb),
+                .s_mem_axi_wlast(color_coal_wlast),
+                .s_mem_axi_wvalid(color_coal_wvalid),
+                .s_mem_axi_wready(color_coal_wready),
+
+                .s_mem_axi_bid(color_coal_bid),
+                .s_mem_axi_bresp(color_coal_bresp),
+                .s_mem_axi_bvalid(color_coal_bvalid),
+                .s_mem_axi_bready(color_coal_bready),
+
+                .s_mem_axi_arid(color_coal_arid),
+                .s_mem_axi_araddr(color_coal_araddr),
+                .s_mem_axi_arlen(color_coal_arlen),
+                .s_mem_axi_arsize(color_coal_arsize),
+                .s_mem_axi_arburst(color_coal_arburst),
+                .s_mem_axi_arlock(color_coal_arlock),
+                .s_mem_axi_arcache(color_coal_arcache),
+                .s_mem_axi_arprot(color_coal_arprot),
+                .s_mem_axi_arvalid(color_coal_arvalid),
+                .s_mem_axi_arready(color_coal_arready),
+
+                .s_mem_axi_rid(color_coal_rid),
+                .s_mem_axi_rdata(color_coal_rdata),
+                .s_mem_axi_rresp(color_coal_rresp),
+                .s_mem_axi_rlast(color_coal_rlast),
+                .s_mem_axi_rvalid(color_coal_rvalid),
+                .s_mem_axi_rready(color_coal_rready),
+
+                .m_mem_axi_awid(m_color_axi_awid),
+                .m_mem_axi_awaddr(m_color_axi_awaddr),
+                .m_mem_axi_awlen(m_color_axi_awlen),
+                .m_mem_axi_awsize(m_color_axi_awsize),
+                .m_mem_axi_awburst(m_color_axi_awburst),
+                .m_mem_axi_awlock(m_color_axi_awlock),
+                .m_mem_axi_awcache(m_color_axi_awcache),
+                .m_mem_axi_awprot(m_color_axi_awprot),
+                .m_mem_axi_awvalid(m_color_axi_awvalid),
+                .m_mem_axi_awready(m_color_axi_awready),
+
+                .m_mem_axi_wdata(m_color_axi_wdata),
+                .m_mem_axi_wstrb(m_color_axi_wstrb),
+                .m_mem_axi_wlast(m_color_axi_wlast),
+                .m_mem_axi_wvalid(m_color_axi_wvalid),
+                .m_mem_axi_wready(m_color_axi_wready),
+
+                .m_mem_axi_bid(m_color_axi_bid),
+                .m_mem_axi_bresp(m_color_axi_bresp),
+                .m_mem_axi_bvalid(m_color_axi_bvalid),
+                .m_mem_axi_bready(m_color_axi_bready),
+
+                .m_mem_axi_arid(m_color_axi_arid),
+                .m_mem_axi_araddr(m_color_axi_araddr),
+                .m_mem_axi_arlen(m_color_axi_arlen),
+                .m_mem_axi_arsize(m_color_axi_arsize),
+                .m_mem_axi_arburst(m_color_axi_arburst),
+                .m_mem_axi_arlock(m_color_axi_arlock),
+                .m_mem_axi_arcache(m_color_axi_arcache),
+                .m_mem_axi_arprot(m_color_axi_arprot),
+                .m_mem_axi_arvalid(m_color_axi_arvalid),
+                .m_mem_axi_arready(m_color_axi_arready),
+
+                .m_mem_axi_rid(m_color_axi_rid),
+                .m_mem_axi_rdata(m_color_axi_rdata),
+                .m_mem_axi_rresp(m_color_axi_rresp),
+                .m_mem_axi_rlast(m_color_axi_rlast),
+                .m_mem_axi_rvalid(m_color_axi_rvalid),
+                .m_mem_axi_rready(m_color_axi_rready)
+            );
+        end
+        else
+        begin
+            // Bypass coalescer: connect internal wires directly to module ports
+            assign m_color_axi_awid = color_coal_awid;
+            assign m_color_axi_awaddr = color_coal_awaddr;
+            assign m_color_axi_awlen = color_coal_awlen;
+            assign m_color_axi_awsize = color_coal_awsize;
+            assign m_color_axi_awburst = color_coal_awburst;
+            assign m_color_axi_awlock = color_coal_awlock;
+            assign m_color_axi_awcache = color_coal_awcache;
+            assign m_color_axi_awprot = color_coal_awprot;
+            assign m_color_axi_awvalid = color_coal_awvalid;
+            assign color_coal_awready = m_color_axi_awready;
+
+            assign m_color_axi_wdata = color_coal_wdata;
+            assign m_color_axi_wstrb = color_coal_wstrb;
+            assign m_color_axi_wlast = color_coal_wlast;
+            assign m_color_axi_wvalid = color_coal_wvalid;
+            assign color_coal_wready = m_color_axi_wready;
+
+            assign color_coal_bid = m_color_axi_bid;
+            assign color_coal_bresp = m_color_axi_bresp;
+            assign color_coal_bvalid = m_color_axi_bvalid;
+            assign m_color_axi_bready = color_coal_bready;
+
+            assign m_color_axi_arid = color_coal_arid;
+            assign m_color_axi_araddr = color_coal_araddr;
+            assign m_color_axi_arlen = color_coal_arlen;
+            assign m_color_axi_arsize = color_coal_arsize;
+            assign m_color_axi_arburst = color_coal_arburst;
+            assign m_color_axi_arlock = color_coal_arlock;
+            assign m_color_axi_arcache = color_coal_arcache;
+            assign m_color_axi_arprot = color_coal_arprot;
+            assign m_color_axi_arvalid = color_coal_arvalid;
+            assign color_coal_arready = m_color_axi_arready;
+
+            assign color_coal_rid = m_color_axi_rid;
+            assign color_coal_rdata = m_color_axi_rdata;
+            assign color_coal_rresp = m_color_axi_rresp;
+            assign color_coal_rlast = m_color_axi_rlast;
+            assign color_coal_rvalid = m_color_axi_rvalid;
+            assign m_color_axi_rready = color_coal_rready;
+        end
+    endgenerate
 
     generate 
         if (ENABLE_STENCIL_BUFFER)
         begin
+            // Stencil channel wires
+            wire [ID_WIDTH - 1 : 0]             stencil_coal_awid;
+            wire [ID_WIDTH - 1 : 0]             stencil_coal_bid;
+            wire [ID_WIDTH - 1 : 0]             stencil_coal_arid;
+            wire [ID_WIDTH - 1 : 0]             stencil_coal_rid;
+            wire [ADDR_WIDTH - 1 : 0]           stencil_coal_awaddr;
+            wire [ADDR_WIDTH - 1 : 0]           stencil_coal_araddr;
+            wire [7 : 0]                        stencil_coal_awlen;
+            wire [7 : 0]                        stencil_coal_arlen;
+            wire [2 : 0]                        stencil_coal_awsize;
+            wire [2 : 0]                        stencil_coal_arsize;
+            wire [1 : 0]                        stencil_coal_awburst;
+            wire [1 : 0]                        stencil_coal_arburst;
+            wire                                stencil_coal_awlock;
+            wire                                stencil_coal_arlock;
+            wire [3 : 0]                        stencil_coal_awcache;
+            wire [3 : 0]                        stencil_coal_arcache;
+            wire [2 : 0]                        stencil_coal_awprot;
+            wire [2 : 0]                        stencil_coal_arprot;
+            wire                                stencil_coal_awvalid;
+            wire                                stencil_coal_awready;
+            wire [DATA_WIDTH - 1 : 0]           stencil_coal_wdata;
+            wire [DATA_WIDTH - 1 : 0]           stencil_coal_rdata;
+            wire [STRB_WIDTH - 1 : 0]           stencil_coal_wstrb;
+            wire                                stencil_coal_wlast;
+            wire                                stencil_coal_wvalid;
+            wire                                stencil_coal_wready;
+            wire [1 : 0]                        stencil_coal_bresp;
+            wire [1 : 0]                        stencil_coal_rresp;
+            wire                                stencil_coal_bvalid;
+            wire                                stencil_coal_bready;
+            wire                                stencil_coal_arvalid;
+            wire                                stencil_coal_arready;
+            wire                                stencil_coal_rvalid;
+            wire                                stencil_coal_rready;
+            wire                                stencil_coal_rlast;
+
             StreamFramebuffer #(
                 .DATA_WIDTH(DATA_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
@@ -612,46 +1041,183 @@ module RasterIXCoreEF #(
                 .s_frag_wxpos(m_stencil_wscreenPosX),
                 .s_frag_wypos(m_stencil_wscreenPosY),
 
-                .m_mem_axi_awid(m_stencil_axi_awid),
-                .m_mem_axi_awaddr(m_stencil_axi_awaddr),
-                .m_mem_axi_awlen(m_stencil_axi_awlen), 
-                .m_mem_axi_awsize(m_stencil_axi_awsize), 
-                .m_mem_axi_awburst(m_stencil_axi_awburst), 
-                .m_mem_axi_awlock(m_stencil_axi_awlock), 
-                .m_mem_axi_awcache(m_stencil_axi_awcache), 
-                .m_mem_axi_awprot(m_stencil_axi_awprot), 
-                .m_mem_axi_awvalid(m_stencil_axi_awvalid),
-                .m_mem_axi_awready(m_stencil_axi_awready),
+                .m_mem_axi_awid(stencil_coal_awid),
+                .m_mem_axi_awaddr(stencil_coal_awaddr),
+                .m_mem_axi_awlen(stencil_coal_awlen), 
+                .m_mem_axi_awsize(stencil_coal_awsize), 
+                .m_mem_axi_awburst(stencil_coal_awburst), 
+                .m_mem_axi_awlock(stencil_coal_awlock), 
+                .m_mem_axi_awcache(stencil_coal_awcache), 
+                .m_mem_axi_awprot(stencil_coal_awprot), 
+                .m_mem_axi_awvalid(stencil_coal_awvalid),
+                .m_mem_axi_awready(stencil_coal_awready),
 
-                .m_mem_axi_wdata(m_stencil_axi_wdata),
-                .m_mem_axi_wstrb(m_stencil_axi_wstrb),
-                .m_mem_axi_wlast(m_stencil_axi_wlast),
-                .m_mem_axi_wvalid(m_stencil_axi_wvalid),
-                .m_mem_axi_wready(m_stencil_axi_wready),
+                .m_mem_axi_wdata(stencil_coal_wdata),
+                .m_mem_axi_wstrb(stencil_coal_wstrb),
+                .m_mem_axi_wlast(stencil_coal_wlast),
+                .m_mem_axi_wvalid(stencil_coal_wvalid),
+                .m_mem_axi_wready(stencil_coal_wready),
 
-                .m_mem_axi_bid(m_stencil_axi_bid),
-                .m_mem_axi_bresp(m_stencil_axi_bresp),
-                .m_mem_axi_bvalid(m_stencil_axi_bvalid),
-                .m_mem_axi_bready(m_stencil_axi_bready),
+                .m_mem_axi_bid(stencil_coal_bid),
+                .m_mem_axi_bresp(stencil_coal_bresp),
+                .m_mem_axi_bvalid(stencil_coal_bvalid),
+                .m_mem_axi_bready(stencil_coal_bready),
 
-                .m_mem_axi_arid(m_stencil_axi_arid),
-                .m_mem_axi_araddr(m_stencil_axi_araddr),
-                .m_mem_axi_arlen(m_stencil_axi_arlen),
-                .m_mem_axi_arsize(m_stencil_axi_arsize),
-                .m_mem_axi_arburst(m_stencil_axi_arburst),
-                .m_mem_axi_arlock(m_stencil_axi_arlock),
-                .m_mem_axi_arcache(m_stencil_axi_arcache),
-                .m_mem_axi_arprot(m_stencil_axi_arprot),
-                .m_mem_axi_arvalid(m_stencil_axi_arvalid),
-                .m_mem_axi_arready(m_stencil_axi_arready),
+                .m_mem_axi_arid(stencil_coal_arid),
+                .m_mem_axi_araddr(stencil_coal_araddr),
+                .m_mem_axi_arlen(stencil_coal_arlen),
+                .m_mem_axi_arsize(stencil_coal_arsize),
+                .m_mem_axi_arburst(stencil_coal_arburst),
+                .m_mem_axi_arlock(stencil_coal_arlock),
+                .m_mem_axi_arcache(stencil_coal_arcache),
+                .m_mem_axi_arprot(stencil_coal_arprot),
+                .m_mem_axi_arvalid(stencil_coal_arvalid),
+                .m_mem_axi_arready(stencil_coal_arready),
 
-                .m_mem_axi_rid(m_stencil_axi_rid),
-                .m_mem_axi_rdata(m_stencil_axi_rdata),
-                .m_mem_axi_rresp(m_stencil_axi_rresp),
-                .m_mem_axi_rlast(m_stencil_axi_rlast),
-                .m_mem_axi_rvalid(m_stencil_axi_rvalid),
-                .m_mem_axi_rready(m_stencil_axi_rready)
+                .m_mem_axi_rid(stencil_coal_rid),
+                .m_mem_axi_rdata(stencil_coal_rdata),
+                .m_mem_axi_rresp(stencil_coal_rresp),
+                .m_mem_axi_rlast(stencil_coal_rlast),
+                .m_mem_axi_rvalid(stencil_coal_rvalid),
+                .m_mem_axi_rready(stencil_coal_rready)
             );
+
+            if (ENABLE_MEMORY_COALESCING && (NR_OF_COALESCED_BEATS_STENCIL > 1))
+            begin
+                Coalescer #(
+                    .ID_WIDTH(ID_WIDTH),
+                    .ADDR_WIDTH(ADDR_WIDTH),
+                    .DATA_WIDTH(DATA_WIDTH),
+                    .STRB_WIDTH(STRB_WIDTH),
+                    .MAX_BEATS_TO_COALESCE(NR_OF_COALESCED_BEATS_STENCIL)
+                ) stencil_coalescer (
+                    .aclk(aclk),
+                    .resetn(resetn),
+
+                    .s_mem_axi_awid(stencil_coal_awid),
+                    .s_mem_axi_awaddr(stencil_coal_awaddr),
+                    .s_mem_axi_awlen(stencil_coal_awlen),
+                    .s_mem_axi_awsize(stencil_coal_awsize),
+                    .s_mem_axi_awburst(stencil_coal_awburst),
+                    .s_mem_axi_awlock(stencil_coal_awlock),
+                    .s_mem_axi_awcache(stencil_coal_awcache),
+                    .s_mem_axi_awprot(stencil_coal_awprot),
+                    .s_mem_axi_awvalid(stencil_coal_awvalid),
+                    .s_mem_axi_awready(stencil_coal_awready),
+
+                    .s_mem_axi_wdata(stencil_coal_wdata),
+                    .s_mem_axi_wstrb(stencil_coal_wstrb),
+                    .s_mem_axi_wlast(stencil_coal_wlast),
+                    .s_mem_axi_wvalid(stencil_coal_wvalid),
+                    .s_mem_axi_wready(stencil_coal_wready),
+
+                    .s_mem_axi_bid(stencil_coal_bid),
+                    .s_mem_axi_bresp(stencil_coal_bresp),
+                    .s_mem_axi_bvalid(stencil_coal_bvalid),
+                    .s_mem_axi_bready(stencil_coal_bready),
+
+                    .s_mem_axi_arid(stencil_coal_arid),
+                    .s_mem_axi_araddr(stencil_coal_araddr),
+                    .s_mem_axi_arlen(stencil_coal_arlen),
+                    .s_mem_axi_arsize(stencil_coal_arsize),
+                    .s_mem_axi_arburst(stencil_coal_arburst),
+                    .s_mem_axi_arlock(stencil_coal_arlock),
+                    .s_mem_axi_arcache(stencil_coal_arcache),
+                    .s_mem_axi_arprot(stencil_coal_arprot),
+                    .s_mem_axi_arvalid(stencil_coal_arvalid),
+                    .s_mem_axi_arready(stencil_coal_arready),
+
+                    .s_mem_axi_rid(stencil_coal_rid),
+                    .s_mem_axi_rdata(stencil_coal_rdata),
+                    .s_mem_axi_rresp(stencil_coal_rresp),
+                    .s_mem_axi_rlast(stencil_coal_rlast),
+                    .s_mem_axi_rvalid(stencil_coal_rvalid),
+                    .s_mem_axi_rready(stencil_coal_rready),
+
+                    .m_mem_axi_awid(m_stencil_axi_awid),
+                    .m_mem_axi_awaddr(m_stencil_axi_awaddr),
+                    .m_mem_axi_awlen(m_stencil_axi_awlen),
+                    .m_mem_axi_awsize(m_stencil_axi_awsize),
+                    .m_mem_axi_awburst(m_stencil_axi_awburst),
+                    .m_mem_axi_awlock(m_stencil_axi_awlock),
+                    .m_mem_axi_awcache(m_stencil_axi_awcache),
+                    .m_mem_axi_awprot(m_stencil_axi_awprot),
+                    .m_mem_axi_awvalid(m_stencil_axi_awvalid),
+                    .m_mem_axi_awready(m_stencil_axi_awready),
+
+                    .m_mem_axi_wdata(m_stencil_axi_wdata),
+                    .m_mem_axi_wstrb(m_stencil_axi_wstrb),
+                    .m_mem_axi_wlast(m_stencil_axi_wlast),
+                    .m_mem_axi_wvalid(m_stencil_axi_wvalid),
+                    .m_mem_axi_wready(m_stencil_axi_wready),
+
+                    .m_mem_axi_bid(m_stencil_axi_bid),
+                    .m_mem_axi_bresp(m_stencil_axi_bresp),
+                    .m_mem_axi_bvalid(m_stencil_axi_bvalid),
+                    .m_mem_axi_bready(m_stencil_axi_bready),
+
+                    .m_mem_axi_arid(m_stencil_axi_arid),
+                    .m_mem_axi_araddr(m_stencil_axi_araddr),
+                    .m_mem_axi_arlen(m_stencil_axi_arlen),
+                    .m_mem_axi_arsize(m_stencil_axi_arsize),
+                    .m_mem_axi_arburst(m_stencil_axi_arburst),
+                    .m_mem_axi_arlock(m_stencil_axi_arlock),
+                    .m_mem_axi_arcache(m_stencil_axi_arcache),
+                    .m_mem_axi_arprot(m_stencil_axi_arprot),
+                    .m_mem_axi_arvalid(m_stencil_axi_arvalid),
+                    .m_mem_axi_arready(m_stencil_axi_arready),
+
+                    .m_mem_axi_rid(m_stencil_axi_rid),
+                    .m_mem_axi_rdata(m_stencil_axi_rdata),
+                    .m_mem_axi_rresp(m_stencil_axi_rresp),
+                    .m_mem_axi_rlast(m_stencil_axi_rlast),
+                    .m_mem_axi_rvalid(m_stencil_axi_rvalid),
+                    .m_mem_axi_rready(m_stencil_axi_rready)
+                );
+            end
+            else
+            begin
+                // Bypass coalescer: connect internal wires directly to module ports
+                assign m_stencil_axi_awid = stencil_coal_awid;
+                assign m_stencil_axi_awaddr = stencil_coal_awaddr;
+                assign m_stencil_axi_awlen = stencil_coal_awlen;
+                assign m_stencil_axi_awsize = stencil_coal_awsize;
+                assign m_stencil_axi_awburst = stencil_coal_awburst;
+                assign m_stencil_axi_awlock = stencil_coal_awlock;
+                assign m_stencil_axi_awcache = stencil_coal_awcache;
+                assign m_stencil_axi_awprot = stencil_coal_awprot;
+                assign m_stencil_axi_awvalid = stencil_coal_awvalid;
+                assign stencil_coal_awready = m_stencil_axi_awready;
+
+                assign m_stencil_axi_wdata = stencil_coal_wdata;
+                assign m_stencil_axi_wstrb = stencil_coal_wstrb;
+                assign m_stencil_axi_wlast = stencil_coal_wlast;
+                assign m_stencil_axi_wvalid = stencil_coal_wvalid;
+                assign stencil_coal_wready = m_stencil_axi_wready;
+
+                assign stencil_coal_bid = m_stencil_axi_bid;
+                assign stencil_coal_bresp = m_stencil_axi_bresp;
+                assign stencil_coal_bvalid = m_stencil_axi_bvalid;
+                assign m_stencil_axi_bready = stencil_coal_bready;
+
+                assign m_stencil_axi_arid = stencil_coal_arid;
+                assign m_stencil_axi_araddr = stencil_coal_araddr;
+                assign m_stencil_axi_arlen = stencil_coal_arlen;
+                assign m_stencil_axi_arsize = stencil_coal_arsize;
+                assign m_stencil_axi_arburst = stencil_coal_arburst;
+                assign m_stencil_axi_arlock = stencil_coal_arlock;
+                assign m_stencil_axi_arcache = stencil_coal_arcache;
+                assign m_stencil_axi_arprot = stencil_coal_arprot;
+                assign m_stencil_axi_arvalid = stencil_coal_arvalid;
+                assign stencil_coal_arready = m_stencil_axi_arready;
+
+                assign stencil_coal_rid = m_stencil_axi_rid;
+                assign stencil_coal_rdata = m_stencil_axi_rdata;
+                assign stencil_coal_rresp = m_stencil_axi_rresp;
+                assign stencil_coal_rlast = m_stencil_axi_rlast;
+                assign stencil_coal_rvalid = m_stencil_axi_rvalid;
+                assign m_stencil_axi_rready = stencil_coal_rready;
+            end
         end
         else
         begin
@@ -660,6 +1226,32 @@ module RasterIXCoreEF #(
             assign m_stencil_rdata = 0;
             assign m_stencil_wready = 1;
             assign stencilBufferApplied = 1;
+            
+            // Tie off stencil coalescer outputs when stencil buffer is disabled
+            assign m_stencil_axi_awid = 0;
+            assign m_stencil_axi_awaddr = 0;
+            assign m_stencil_axi_awlen = 0;
+            assign m_stencil_axi_awsize = 0;
+            assign m_stencil_axi_awburst = 0;
+            assign m_stencil_axi_awlock = 0;
+            assign m_stencil_axi_awcache = 0;
+            assign m_stencil_axi_awprot = 0;
+            assign m_stencil_axi_awvalid = 0;
+            assign m_stencil_axi_wdata = 0;
+            assign m_stencil_axi_wstrb = 0;
+            assign m_stencil_axi_wlast = 0;
+            assign m_stencil_axi_wvalid = 0;
+            assign m_stencil_axi_bready = 0;
+            assign m_stencil_axi_arid = 0;
+            assign m_stencil_axi_araddr = 0;
+            assign m_stencil_axi_arlen = 0;
+            assign m_stencil_axi_arsize = 0;
+            assign m_stencil_axi_arburst = 0;
+            assign m_stencil_axi_arlock = 0;
+            assign m_stencil_axi_arcache = 0;
+            assign m_stencil_axi_arprot = 0;
+            assign m_stencil_axi_arvalid = 0;
+            assign m_stencil_axi_rready = 0;
         end
     endgenerate
 
@@ -676,7 +1268,7 @@ module RasterIXCoreEF #(
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ENABLE_WRITE_FIFO(0),
         .ENABLE_READ_FIFO(1),
-        .READ_FIFO_SIZE(5), // Decouples the read channel from the internal pipeline
+        .READ_FIFO_SIZE(6), // Decouples the read channel from the internal pipeline
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),

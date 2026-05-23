@@ -66,15 +66,11 @@ module PagedMemoryReader #(
     localparam LG_BEAT_SIZE = $clog2(BYTES_PER_BEAT);
 
     
-    localparam BEATS = 1024 / BYTES_PER_BEAT;
+    localparam BEATS = 512 / BYTES_PER_BEAT;
 
     localparam INCREMENT = BEATS << LG_BEAT_SIZE;
     initial 
     begin
-        if (DATA_WIDTH < 32)
-        begin
-            $error("DATA_WIDTH must be at least 32 bit");
-        end
         if (PAGE_SIZE < 1024)
         begin
             $error("PAGE_SIZE must be at least 1024 bytes");

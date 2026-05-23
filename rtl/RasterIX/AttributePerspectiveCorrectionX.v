@@ -25,7 +25,7 @@ module AttributePerspectiveCorrectionX #(
     parameter ENABLE_LOD_CALC = 1,
     parameter ENABLE_SECOND_TMU = 1,
     parameter SUB_PIXEL_WIDTH = 8,
-    parameter CALC_PRECISION = 25, // The pricision of a signed multiplication
+    parameter CALC_PRECISION = 25, // The precision of a signed multiplication
 
     localparam DEPTH_WIDTH = 16,
     localparam ATTRIBUTE_SIZE = 32,
@@ -89,11 +89,19 @@ module AttributePerspectiveCorrectionX #(
     output wire [SUB_PIXEL_WIDTH - 1 : 0]       m_attrb_tcolor_g, // Qn.0
     output wire [SUB_PIXEL_WIDTH - 1 : 0]       m_attrb_tcolor_r // Qn.0
 );
-    localparam FOG_PRECISION = CALC_PRECISION - 1; // Converts the size from signed to unsigned
-    localparam FOG_ITERATIONS = 2;
-    localparam TEXQ_PRECISION = CALC_PRECISION - 1; // Converts the size from signed to unsigned
+    localparam FOG_PRECISION = CALC_PRECISION - 1; // Keep a spare bit for a potential sign
+    localparam TEXQ_PRECISION = CALC_PRECISION - 1; // Keep a spare bit for a potential sign
     localparam TEXQ_ITERATIONS = 2;
     localparam TEX_PERSP_CORR_SHIFT = TEXQ_PRECISION - 8;
+
+    initial 
+    begin
+        if ((CALC_PRECISION < 18) || (CALC_PRECISION > 25))
+        begin
+            $error("The fixpoint calculation precision must be between 18 and 25. Currently: %d", CALC_PRECISION);
+            $finish;
+        end
+    end
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
@@ -113,7 +121,7 @@ module AttributePerspectiveCorrectionX #(
     wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_mipmap_s;
     wire signed [TEXQ_PRECISION - 1 : 0]        step1_tex1_mipmap_t;
     wire        [(TEXQ_PRECISION * 2) - 1 : 0]  step1_tex1_mipmap_q;
-    wire        [(FOG_PRECISION * 2) - 1 : 0]   step1_depth_w; // U21.27
+    wire        [(FOG_PRECISION * 1) - 1 : 0]   step1_depth_w; // S1.22
     wire        [DEPTH_WIDTH - 1 : 0]           step1_depth_z; // U0.16
     wire        [16 - 1 : 0]                    step1_color_r; // S7.8
     wire        [16 - 1 : 0]                    step1_color_g;
@@ -128,7 +136,7 @@ module AttributePerspectiveCorrectionX #(
     wire        [INDEX_WIDTH - 1 : 0]           step1_tindex;
 
     ValueDelay #(
-        .VALUE_SIZE(1 + 1 + 1 + KEEP_WIDTH + (SCREEN_POS_WIDTH * 2) + INDEX_WIDTH + 16 + 16 + 16 + 16 + DEPTH_WIDTH + (8 * TEXQ_PRECISION)), 
+        .VALUE_SIZE(1 + 1 + 1 + KEEP_WIDTH + (SCREEN_POS_WIDTH * 2) + INDEX_WIDTH + 16 + 16 + 16 + 16 + DEPTH_WIDTH + (8 * TEXQ_PRECISION) + FOG_PRECISION), 
         .DELAY(RECIP_DELAY)
     ) step1_delay (
         .clk(aclk), 
@@ -153,7 +161,8 @@ module AttributePerspectiveCorrectionX #(
             tex1_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
             tex1_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
             tex1_mipmap_s[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
-            tex1_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION]
+            tex1_mipmap_t[ATTRIBUTE_SIZE - TEXQ_PRECISION +: TEXQ_PRECISION],
+            depth_w[ATTRIBUTE_SIZE - FOG_PRECISION - 0 +: FOG_PRECISION]
         }), 
         .out({
             step1_tvalid,
@@ -175,18 +184,9 @@ module AttributePerspectiveCorrectionX #(
             step1_tex1_s,
             step1_tex1_t,
             step1_tex1_mipmap_s,
-            step1_tex1_mipmap_t
+            step1_tex1_mipmap_t,
+            step1_depth_w
         })
-    );
-
-    XRecip #(
-        .NUMBER_WIDTH(FOG_PRECISION),
-        .ITERATIONS(FOG_ITERATIONS)
-    ) step1_depth_w_recip (
-        .clk(aclk), 
-        .ce(ce), 
-        .in(depth_w[ATTRIBUTE_SIZE - FOG_PRECISION - 1 +: FOG_PRECISION]), 
-        .out(step1_depth_w)
     );
 
     XRecip #(
@@ -301,12 +301,12 @@ module AttributePerspectiveCorrectionX #(
     IntToFloat #(
         .MANTISSA_SIZE(FLOAT_SIZE - 9), 
         .EXPONENT_SIZE(8), 
-        .INT_SIZE(ATTRIBUTE_SIZE)
+        .INT_SIZE(FOG_PRECISION)
     ) step2_tdepth_w_i2f (
         .clk(aclk), 
         .ce(ce), 
-        .offset(-9), 
-        .in(step1_depth_w[FOG_PRECISION - 8 +: FOG_PRECISION + 8]), 
+        .offset(-(FOG_PRECISION - 2)), 
+        .in(step1_depth_w), 
         .out(step2_depth_w)
     );
 
@@ -329,12 +329,12 @@ module AttributePerspectiveCorrectionX #(
         step2_color_g_reg <= (step1_color_g[15]) ? 0 : (|step1_color_g[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_g[0 +: SUB_PIXEL_WIDTH];
         step2_color_r_reg <= (step1_color_r[15]) ? 0 : (|step1_color_r[SUB_PIXEL_WIDTH +: 7]) ? { SUB_PIXEL_WIDTH { 1'b1 } } : step1_color_r[0 +: SUB_PIXEL_WIDTH];
 
-        step2_tex0_s_reg <= (step1_tex0_s * $signed({ 1'b0, step1_tex0_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT); // U13.11 * S3.20 = 16.31 >>> 16 = S16.15
-        step2_tex0_t_reg <= (step1_tex0_t * $signed({ 1'b0, step1_tex0_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT);
+        step2_tex0_s_reg <= (step1_tex0_s * $signed({ 1'b0, step1_tex0_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT; // U13.11 * S3.20 = 16.31 >>> 16 = S16.15
+        step2_tex0_t_reg <= (step1_tex0_t * $signed({ 1'b0, step1_tex0_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT;
         if (ENABLE_LOD_CALC)
         begin
-            step2_tex0_mipmap_s_reg <= (step1_tex0_mipmap_s * $signed({ 1'b0, step1_tex0_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT);
-            step2_tex0_mipmap_t_reg <= (step1_tex0_mipmap_t * $signed({ 1'b0, step1_tex0_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> (TEX_PERSP_CORR_SHIFT);
+            step2_tex0_mipmap_s_reg <= (step1_tex0_mipmap_s * $signed({ 1'b0, step1_tex0_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT;
+            step2_tex0_mipmap_t_reg <= (step1_tex0_mipmap_t * $signed({ 1'b0, step1_tex0_mipmap_q[TEXQ_PRECISION - 8 +: TEXQ_PRECISION] })) >>> TEX_PERSP_CORR_SHIFT;
         end
         else
         begin
@@ -367,7 +367,7 @@ module AttributePerspectiveCorrectionX #(
     end
 
     ValueDelay #(
-        .VALUE_SIZE(( 8 * ATTRIBUTE_SIZE) + (4 * SUB_PIXEL_WIDTH)), 
+        .VALUE_SIZE((8 * ATTRIBUTE_SIZE) + (4 * SUB_PIXEL_WIDTH)), 
         .DELAY(I2F_DELAY - 1)
     ) step2_delay2 (
         .clk(aclk), 

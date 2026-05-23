@@ -104,7 +104,7 @@ bool SoftwareRasterizationInstance::handleCommand(const FogLutStreamCmd& cmd)
         lut[i].m = cmd.getLutM(i) >> 8; // Qx.22 -> Sx.14
         lut[i].b = cmd.getLutB(i) >> 8; // S1.30 -> S1.22
     }
-    m_fog.setFogLut(lut, cmd.getLowerBound(), cmd.getUpperBound());
+    m_fog.setFogLut(lut);
     return true;
 }
 

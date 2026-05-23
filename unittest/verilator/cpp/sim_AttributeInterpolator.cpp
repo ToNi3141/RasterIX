@@ -148,7 +148,6 @@ void calculateVertexAttributes(Attributes attr,
     res.mt1 += res.t1;
     res.mq1 += res.q1;
 
-    res.w = 1.0f / res.w;
     res.q0 = 1.0f / res.q0;
     res.q1 = 1.0f / res.q1;
     res.mq0 = 1.0f / res.mq0;
@@ -178,7 +177,7 @@ void calculateVertexAttributes(Attributes attr,
 TEST_CASE("Check the interpolation through the pipeline", "[AttributeInterpolator]")
 {
     static const uint32_t CLOCK_DELAY = 31;
-    VAttributeInterpolator* top = new VAttributeInterpolator();
+    VAttributeInterpolator* top = rr::ut::makeTop<VAttributeInterpolator>();
 
     // Reset cycle
     rr::ut::reset(top);

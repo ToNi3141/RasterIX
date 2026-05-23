@@ -45,6 +45,8 @@ module RasterIX_EF #(
     parameter DATA_WIDTH = 32,
     // Memory strobe width
     parameter STRB_WIDTH = DATA_WIDTH / 8,
+    // Enable coalescing of the memory beats. This can significantly improve the throughput.
+    parameter ENABLE_MEMORY_COALESCING = 1,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
@@ -175,16 +177,6 @@ module RasterIX_EF #(
     wire [NRS - 1 : 0]                      xbar_axi_rvalid;
     wire [NRS - 1 : 0]                      xbar_axi_rready;
 
-    // Benchmarks:            
-    // S_THREADS:   16     8     4       4       8       4
-    // M_ISSUE:     16     4     8       16      8       4
-    // FPS Quake3:  13.x   9.5   11.5    11.5    12.1    9.5
-    // S_THREADS 8 and M_ISSUE 8 seems to be the best compromize between utilization,
-    // timing, and performance. The configuration mostly hides the memory latency.
-    // Note: The xilinx smart interconnect seems to be around 10-20% faster, than 
-    // this crossbar (when connected to the mig) but with 5-10 times the utiliziation.
-    // It looks like, that there is no performance difference when the master is
-    // connected to a low latency memory.
     axi_crossbar #(
         .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
@@ -193,8 +185,8 @@ module RasterIX_EF #(
         .M_COUNT(1),
         .M_ID_WIDTH(ID_WIDTH),
         .M_ADDR_WIDTH(ADDR_WIDTH[0 +: 32]),
-        .S_THREADS({ NRS { 32'd4 } }), // Reduced to 4 because vivado gets stuck sometimes with 8
-        .M_ISSUE(32'd8)
+        .S_THREADS({ NRS { 32'd1 } }),
+        .M_ISSUE(32'd8) // Best tradeoff between performance and utilization
     ) mainXBar (
         .clk(aclk),
         .rst(!resetn),
@@ -339,7 +331,9 @@ module RasterIX_EF #(
         .M_STRB_WIDTH(STRB_WIDTH),
         .S_DATA_WIDTH(CMD_STREAM_WIDTH),
         .S_STRB_WIDTH(CMD_STREAM_STRB_WIDTH),
-        .ID_WIDTH(ID_WIDTH_LOC)
+        .ID_WIDTH(ID_WIDTH_LOC),
+        .CONVERT_BURST(1),
+        .CONVERT_NARROW_BURST(1)
     ) commonAxiAdapter (
         .clk(aclk),
         .rst(!resetn),
@@ -524,7 +518,8 @@ module RasterIX_EF #(
         .TMU_COUNT(TMU_COUNT),
         .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
-        .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION)
+        .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
+        .ENABLE_MEMORY_COALESCING(ENABLE_MEMORY_COALESCING)
     ) rixef (
         .aclk(aclk),
         .resetn(resetn),
@@ -547,7 +542,7 @@ module RasterIX_EF #(
         .m_color_axi_awburst(xbar_axi_awburst[1 * 2 +: 2]),
         .m_color_axi_awlock(xbar_axi_awlock[1 * 1 +: 1]),
         .m_color_axi_awcache(xbar_axi_awcache[1 * 4 +: 4]),
-        .m_color_axi_awprot(xbar_axi_awprot[1 * 3 +: 3]), 
+        .m_color_axi_awprot(xbar_axi_awprot[1 * 3 +: 3]),
         .m_color_axi_awvalid(xbar_axi_awvalid[1 * 1 +: 1]),
         .m_color_axi_awready(xbar_axi_awready[1 * 1 +: 1]),
 
@@ -587,7 +582,7 @@ module RasterIX_EF #(
         .m_depth_axi_awburst(xbar_axi_awburst[2 * 2 +: 2]),
         .m_depth_axi_awlock(xbar_axi_awlock[2 * 1 +: 1]),
         .m_depth_axi_awcache(xbar_axi_awcache[2 * 4 +: 4]),
-        .m_depth_axi_awprot(xbar_axi_awprot[2 * 3 +: 3]), 
+        .m_depth_axi_awprot(xbar_axi_awprot[2 * 3 +: 3]),
         .m_depth_axi_awvalid(xbar_axi_awvalid[2 * 1 +: 1]),
         .m_depth_axi_awready(xbar_axi_awready[2 * 1 +: 1]),
 
@@ -627,7 +622,7 @@ module RasterIX_EF #(
         .m_stencil_axi_awburst(xbar_axi_awburst[3 * 2 +: 2]),
         .m_stencil_axi_awlock(xbar_axi_awlock[3 * 1 +: 1]),
         .m_stencil_axi_awcache(xbar_axi_awcache[3 * 4 +: 4]),
-        .m_stencil_axi_awprot(xbar_axi_awprot[3 * 3 +: 3]), 
+        .m_stencil_axi_awprot(xbar_axi_awprot[3 * 3 +: 3]),
         .m_stencil_axi_awvalid(xbar_axi_awvalid[3 * 1 +: 1]),
         .m_stencil_axi_awready(xbar_axi_awready[3 * 1 +: 1]),
 

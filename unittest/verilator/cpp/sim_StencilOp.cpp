@@ -34,7 +34,7 @@ static constexpr uint8_t INVERT = 7;
 
 TEST_CASE("Test stencil fail op", "[VStencilOp]")
 {
-    VStencilOp* top = new VStencilOp();
+    VStencilOp* top = rr::ut::makeTop<VStencilOp>();
     rr::ut::reset(top);
     top->ce = 1;
 
@@ -101,7 +101,7 @@ TEST_CASE("Test stencil fail op", "[VStencilOp]")
 
 TEST_CASE("Test z fail op", "[VStencilOp]")
 {
-    VStencilOp* top = new VStencilOp();
+    VStencilOp* top = rr::ut::makeTop<VStencilOp>();
     rr::ut::reset(top);
     top->ce = 1;
 
@@ -168,7 +168,7 @@ TEST_CASE("Test z fail op", "[VStencilOp]")
 
 TEST_CASE("Test z pass op", "[VStencilOp]")
 {
-    VStencilOp* top = new VStencilOp();
+    VStencilOp* top = rr::ut::makeTop<VStencilOp>();
     rr::ut::reset(top);
     top->ce = 1;
 
@@ -235,7 +235,7 @@ TEST_CASE("Test z pass op", "[VStencilOp]")
 
 TEST_CASE("Test wrapping", "[VStencilOp]")
 {
-    VStencilOp* top = new VStencilOp();
+    VStencilOp* top = rr::ut::makeTop<VStencilOp>();
     rr::ut::reset(top);
     top->ce = 1;
 
@@ -278,7 +278,7 @@ TEST_CASE("Test wrapping", "[VStencilOp]")
 
 TEST_CASE("Check stall", "[VStencilOp]")
 {
-    VStencilOp* top = new VStencilOp();
+    VStencilOp* top = rr::ut::makeTop<VStencilOp>();
     rr::ut::reset(top);
     top->ce = 1;
 

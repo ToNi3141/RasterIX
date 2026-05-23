@@ -50,13 +50,24 @@ void enableVerilatorTracing()
     Verilated::traceEverOn(true);
 }
 
+static double g_sc_time_stamp = 0;
+
+// Creates a Verilated model with a fresh VerilatedContext.
+// Note: The sc_time_stamp must return zero when a new VerilatedContext is created
+template <typename T>
+T* makeTop()
+{
+    g_sc_time_stamp = 0;
+    auto* ctx = new VerilatedContext;
+    return new T { ctx };
+}
+
 } // namespace rr::ut
 
-// Needed for verilator when tracing is enabled
+// Needed for verilator when tracing is enabled.
 double sc_time_stamp()
 {
-    static double t = 0;
-    return ++t;
+    return rr::ut::g_sc_time_stamp++;
 }
 
 #endif // GENERAL_HPP

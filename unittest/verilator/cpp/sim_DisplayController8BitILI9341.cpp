@@ -60,7 +60,7 @@ void initTest(VDisplayController8BitILI9341& t, const bool dc, const uint8_t dat
 
 TEST_CASE("Stream data", "[Display]")
 {
-    VDisplayController8BitILI9341* top = new VDisplayController8BitILI9341();
+    VDisplayController8BitILI9341* top = rr::ut::makeTop<VDisplayController8BitILI9341>();
     VDisplayController8BitILI9341& t = *top;
 
     reset(t);

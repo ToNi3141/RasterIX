@@ -22,9 +22,11 @@ read_verilog ./../../../../RasterIX/AttributeInterpolationX.v
 read_verilog ./../../../../RasterIX/AttributeInterpolator.v
 read_verilog ./../../../../RasterIX/AttributeInterpolatorX.v
 read_verilog ./../../../../RasterIX/AttributePerspectiveCorrectionX.v
-read_verilog ./../../../../RasterIX/AxisFramebufferReader.v
 read_verilog ./../../../../RasterIX/AxisToAxiAdapter.v
 read_verilog ./../../../../RasterIX/AxisToAxiCrossbar.v
+read_verilog ./../../../../RasterIX/CoalesceAddrGen.v
+read_verilog ./../../../../RasterIX/CoalesceFiFo.v
+read_verilog ./../../../../RasterIX/Coalescer.v
 read_verilog ./../../../../RasterIX/ColorBlender.v
 read_verilog ./../../../../RasterIX/ColorInterpolator.v
 read_verilog ./../../../../RasterIX/ColorMixerSigned.v
@@ -33,6 +35,7 @@ read_verilog ./../../../../RasterIX/CommandParser.v
 read_verilog ./../../../../RasterIX/FrameStreamingCore.v
 read_verilog ./../../../../RasterIX/DualPortRam.v
 read_verilog ./../../../../RasterIX/Fog.v
+read_verilog ./../../../../RasterIX/FramebufferAdapter.v
 read_verilog ./../../../../RasterIX/FramebufferReader.v
 read_verilog ./../../../../RasterIX/FramebufferSerializer.v
 read_verilog ./../../../../RasterIX/InternalFramebuffer.v
@@ -43,7 +46,9 @@ read_verilog ./../../../../RasterIX/InternalFramebufferScissorFunc.vh
 read_verilog ./../../../../RasterIX/InternalFramebufferWriter.v
 read_verilog ./../../../../RasterIX/FramebufferWriterClear.v
 read_verilog ./../../../../RasterIX/FramebufferWriterStrobeGen.v
-read_verilog ./../../../../RasterIX/FramebufferWriter.v
+read_verilog ./../../../../RasterIX/FramebufferScissor.v
+read_verilog ./../../../../RasterIX/FramebufferMMU.v
+read_verilog ./../../../../RasterIX/FramebufferPacker.v
 read_verilog ./../../../../RasterIX/FunctionInterpolator.v
 read_verilog ./../../../../RasterIX/LinearAddressGenerator.v
 read_verilog ./../../../../RasterIX/LodCalculator.v
@@ -67,6 +72,7 @@ read_verilog ./../../../../RasterIX/RasterIX.v
 read_verilog ./../../../../RasterIX/StencilOp.v
 read_verilog ./../../../../RasterIX/StreamConcatFifo.v
 read_verilog ./../../../../RasterIX/StreamFramebuffer.v
+read_verilog ./../../../../RasterIX/StreamSemaphore.v
 read_verilog ./../../../../RasterIX/TestFunc.v
 read_verilog ./../../../../RasterIX/TexEnv.v
 read_verilog ./../../../../RasterIX/TextureBuffer.v

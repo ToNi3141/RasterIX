@@ -63,6 +63,8 @@ module RasterIX #(
     parameter DATA_WIDTH = 32,
     // Memory strobe width
     parameter STRB_WIDTH = DATA_WIDTH / 8,
+    // Enable coalescing of the memory beats. This can significantly improve the throughput.
+    parameter ENABLE_MEMORY_COALESCING = 1,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
@@ -240,7 +242,8 @@ module RasterIX #(
                 .STRB_WIDTH(STRB_WIDTH),
                 .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
                 .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
-                .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
+                .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
+                .ENABLE_MEMORY_COALESCING(ENABLE_MEMORY_COALESCING)
             ) rixef (
                 .aclk(aclk),
                 .resetn(resetn),

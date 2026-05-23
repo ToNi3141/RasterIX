@@ -244,7 +244,7 @@ proc write_mig_file_design_1_mig_7series_0_0 { str_mig_prj_filepath } {
    puts $mig_prj_file {    <BankAddress>3</BankAddress>}
    puts $mig_prj_file {    <MemoryVoltage>1.5V</MemoryVoltage>}
    puts $mig_prj_file {    <C0_MEM_SIZE>536870912</C0_MEM_SIZE>}
-   puts $mig_prj_file {    <UserMemoryAddressMap>BANK_ROW_COLUMN</UserMemoryAddressMap>}
+   puts $mig_prj_file {    <UserMemoryAddressMap>ROW_BANK_COLUMN</UserMemoryAddressMap>}
    puts $mig_prj_file {    <PinSelection>}
    puts $mig_prj_file {      <Pin IN_TERM="" IOSTANDARD="SSTL15" PADName="M2" SLEW="" VCCAUX_IO="" name="ddr3_addr[0]"/>}
    puts $mig_prj_file {      <Pin IN_TERM="" IOSTANDARD="SSTL15" PADName="L5" SLEW="" VCCAUX_IO="" name="ddr3_addr[10]"/>}
@@ -536,7 +536,7 @@ proc create_root_design { parentCell } {
 
   # Generate the PRJ File for MIG
   set str_mig_folder [get_property IP_DIR [ get_ips [ get_property CONFIG.Component_Name $mig_7series_0 ] ] ]
-  set str_mig_file_name mig_a.prj
+  set str_mig_file_name mig_b.prj
   set str_mig_file_path ${str_mig_folder}/${str_mig_file_name}
   write_mig_file_design_1_mig_7series_0_0 $str_mig_file_path
 
@@ -544,7 +544,7 @@ proc create_root_design { parentCell } {
     CONFIG.BOARD_MIG_PARAM {ddr3_sdram} \
     CONFIG.MIG_DONT_TOUCH_PARAM {Custom} \
     CONFIG.RESET_BOARD_INTERFACE {reset} \
-    CONFIG.XML_INPUT_FILE {mig_a.prj} \
+    CONFIG.XML_INPUT_FILE {mig_b.prj} \
   ] $mig_7series_0
 
 

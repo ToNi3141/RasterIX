@@ -15,28 +15,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Helper module to create a write strobe of a pixel in the pixel vector.
+// Helper module to create a write mask for a pixel.
+// Gates confMask with the pixel strobe signal.
+// Widens the 1-bit tstrb into a MASK_WIDTH-bit mask.
+// All other fragment stream signals pass through unchanged.
 module FramebufferWriterStrobeGen #(
-    parameter STRB_WIDTH = 16,
     parameter MASK_WIDTH = 4,
-    localparam INDEX_COUNT = STRB_WIDTH / MASK_WIDTH,
-    localparam INDEX_WIDTH = $clog2(INDEX_COUNT)
+    parameter PIXEL_WIDTH = 16,
+    parameter ADDR_WIDTH = 32
 ) (
-    input  wire [MASK_WIDTH - 1 : 0]    mask,
-    input  wire [INDEX_WIDTH - 1 : 0]   val,
-    output reg  [STRB_WIDTH - 1 : 0]    strobe
+    input  wire [MASK_WIDTH - 1 : 0]    confMask,
+
+    /////////////////////////
+    // Slave fragment interface
+    /////////////////////////
+    input  wire                             s_frag_tvalid,
+    input  wire                             s_frag_tlast,
+    output wire                             s_frag_tready,
+    input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_tdata,
+    input  wire                             s_frag_tstrb,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_frag_taddr,
+
+    /////////////////////////
+    // Master fragment interface
+    /////////////////////////
+    output wire                             m_frag_tvalid,
+    output wire                             m_frag_tlast,
+    input  wire                             m_frag_tready,
+    output wire [PIXEL_WIDTH - 1 : 0]       m_frag_tdata,
+    output wire [MASK_WIDTH - 1 : 0]        m_frag_tstrb,
+    output wire [ADDR_WIDTH - 1 : 0]        m_frag_taddr
 );
-    generate
-        /* verilator lint_off LATCH */
-        always @(*)
-        /* verilator lint_on LATCH */
-        begin : bla
-            integer i;
-            for (i = 0; i < INDEX_COUNT; i = i + 1)
-                if (val == i[0 +: INDEX_WIDTH])
-                begin
-                    strobe = { { (STRB_WIDTH - MASK_WIDTH) { 1'b0 } }, mask } << (i * MASK_WIDTH);
-                end
-        end
-    endgenerate
+
+    // Pass through
+    assign m_frag_tvalid = s_frag_tvalid;
+    assign m_frag_tlast  = s_frag_tlast;
+    assign s_frag_tready = m_frag_tready;
+    assign m_frag_tdata  = s_frag_tdata;
+    assign m_frag_taddr  = s_frag_taddr;
+
+    // Strobe generation
+    assign m_frag_tstrb = s_frag_tstrb ? confMask : { MASK_WIDTH { 1'b0 } };
+
 endmodule

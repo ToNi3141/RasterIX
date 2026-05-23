@@ -588,11 +588,7 @@ module AttributeInterpolator #(
         end
     endgenerate
     
-    // Use the cheap reciprocal calculation. It should be sufficient for fog.
-    wire [RASTERIZER_FLOAT_PRECISION - 1 : 0] step_6_depth_w_tmp;
-    FloatFastRecip #(.MANTISSA_SIZE(MANTISSA_SIZE))
-        recip_depth_w (.clk(aclk), .ce(ce), .in(step_5_depth_w_inv), .out(step_6_depth_w_tmp));
-    ValueDelay #(.VALUE_SIZE(RASTERIZER_FLOAT_PRECISION), .DELAY(RECIP_DELAY - 4)) step_6_delay_d_w (.clk(aclk), .ce(ce), .in(step_6_depth_w_tmp), .out(step_6_depth_w));
+    ValueDelay #(.VALUE_SIZE(RASTERIZER_FLOAT_PRECISION), .DELAY(RECIP_DELAY)) step_6_delay_d_w (.clk(aclk), .ce(ce), .in(step_5_depth_w_inv), .out(step_6_depth_w));
 
     wire [RASTERIZER_FLOAT_PRECISION - 1 : 0] step_6_texture0_s_inv;
     wire [RASTERIZER_FLOAT_PRECISION - 1 : 0] step_6_texture0_t_inv;

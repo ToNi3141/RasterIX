@@ -72,7 +72,7 @@ module LinearAddressGenerator #(
         axsize = AxSIZE_BYTES_PER_BEAT[0 +: 3];
         axburst = AxBURST[0 +: 2];
         axlock = 0;
-        axcache = 0; 
+        axcache = 4'b0011; 
         axprot = 0;
         axvalid = 0;
     end

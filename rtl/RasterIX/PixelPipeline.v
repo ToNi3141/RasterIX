@@ -22,7 +22,7 @@
 // interpolator into fixed point numbers, which can be used from the 
 // fragment and framebuffer pipeline.
 // Pipelined: yes
-// Depth: 30 cycles
+// Depth: 28 cycles
 module PixelPipeline
 #(
     // The minimum bit width which is required to contain the resolution
@@ -318,7 +318,7 @@ module PixelPipeline
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
     // Calculate Fog
-    // Clocks: 6
+    // Clocks: 4
     ////////////////////////////////////////////////////////////////////////////
     wire [PIXEL_WIDTH - 1 : 0]              step3_fragmentColor;
     wire [INDEX_WIDTH - 1 : 0]              step3_index;

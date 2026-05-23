@@ -711,7 +711,7 @@ module RasterIXRenderCore #(
     wire [INDEX_WIDTH - 1 : 0]      rasterizer_tindex;
     wire [RR_CMD_SIZE - 1 : 0]      rasterizer_tcmd;
 
-    Rasterizer rop (
+    Rasterizer rasterizer (
         .clk(aclk), 
         .reset(!resetn), 
 
@@ -746,17 +746,23 @@ module RasterIXRenderCore #(
         .m_rr_tindex(rasterizer_tindex),
         .m_rr_tcmd(rasterizer_tcmd)
     );
-    defparam rop.X_BIT_WIDTH = SCREEN_POS_WIDTH;
-    defparam rop.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
-    defparam rop.INDEX_WIDTH = INDEX_WIDTH;
-    defparam rop.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_FLOAT_INTERPOLATION;
+    defparam rasterizer.X_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam rasterizer.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam rasterizer.INDEX_WIDTH = INDEX_WIDTH;
+    defparam rasterizer.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_FLOAT_INTERPOLATION;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
     // Counting of the pixels which are send from the rasterizer and which leave
     // the pipeline. Used to determine if there are pixel on the fly or not.
     ////////////////////////////////////////////////////////////////////////////
+    localparam RASTERIZER_CONCAT_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
     wire fragmentProcessed;
+    wire [RASTERIZER_CONCAT_WIDTH - 1 : 0] semaphoreRasterizerData;
+    wire                                   semaphoreRasterizerValid;
+    wire                                   semaphoreRasterizerReady;
+    wire                                   semaphoreRasterizerKeep;
+    wire                                   semaphoreRasterizerLast;
 
     ValueTrack vt (
         .aclk(aclk),
@@ -775,41 +781,24 @@ module RasterIXRenderCore #(
         .sigOutgoingValue(alrp_tpixel & alrp_tvalid & alrp_tready),
         .valueInPipeline(dataInTriangleInterpolator)
     );
+
+    // This semaphore is used to prevent an overrun of the StreamConcat.
+    // An overrun can cause a deadlock in crossbars when reading fragments from the framebuffers.
+    // The StreamConcat can carry READ_FIFO_SIZE fragments. In the case (coalescing worsens the problem),
+    // where only one framebuffer requests more than READ_FIFO_SIZE fragments, the StreamConcat
+    // blocks, which blocks the crossbar and prevents other fragments from reaching the StreamConcat,
+    // deadlocking the pipeline. The semaphore ensures that a maximum of READ_FIFO_SIZE fragments are read,
+    // so that the StreamConcat will never block.
+    StreamSemaphore concatSem (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .m_axis_tvalid(semaphoreRasterizerValid),
+        .m_axis_tlast(semaphoreRasterizerLast),
+        .m_axis_tdata(semaphoreRasterizerData),
+        .m_axis_tkeep(semaphoreRasterizerKeep),
+        .m_axis_tready(semaphoreRasterizerReady),
     
-    ////////////////////////////////////////////////////////////////////////////
-    // STEP 2
-    // Broadcaster to broadcast the stream from the rasterizer to the attribute
-    // interpolator and to all framebuffers
-    // Clocks: n
-    ////////////////////////////////////////////////////////////////////////////
-    wire [(SCREEN_POS_WIDTH * 4) - 1 : 0]   bc_bbx;
-    wire [(SCREEN_POS_WIDTH * 4) - 1 : 0]   bc_bby;
-    wire [(SCREEN_POS_WIDTH * 4) - 1 : 0]   bc_spx;
-    wire [(SCREEN_POS_WIDTH * 4) - 1 : 0]   bc_spy;
-    wire [(INDEX_WIDTH * 4) - 1 : 0]        bc_index;
-    wire [ 3 : 0]                           bc_valid;
-    wire [ 3 : 0]                           bc_pixel;
-    wire [(RR_CMD_SIZE * 4) - 1 : 0]        bc_cmd;
-    wire [ 3 : 0]                           bc_last;
-    wire [ 3 : 0]                           bc_keep;
-    wire [ 3 : 0]                           bc_ready;
-    assign m_color_araddr     = bc_index[INDEX_WIDTH * 3 +: INDEX_WIDTH];
-    assign m_depth_araddr     = bc_index[INDEX_WIDTH * 2 +: INDEX_WIDTH];
-    assign m_stencil_araddr   = bc_index[INDEX_WIDTH * 1 +: INDEX_WIDTH];
-    assign m_color_arvalid    = bc_valid[3] & colorBufferEnable & bc_pixel[3];
-    assign m_depth_arvalid    = bc_valid[2] & depthBufferEnable & bc_pixel[2];
-    assign m_stencil_arvalid  = bc_valid[1] & stencilBufferEnable & bc_pixel[1];
-    assign m_color_arlast     = bc_last[3];
-    assign m_depth_arlast     = bc_last[2];
-    assign m_stencil_arlast   = bc_last[1];
-    assign bc_ready[3] = m_color_arready | !colorBufferEnable;
-    assign bc_ready[2] = m_depth_arready | !depthBufferEnable;
-    assign bc_ready[1] = m_stencil_arready | !stencilBufferEnable;
-
-    axis_broadcast rasterizerBroadcast (
-        .clk(aclk),
-        .rst(!resetn),
-
         .s_axis_tdata({
             rasterizer_tbbx,
             rasterizer_tbby,
@@ -823,56 +812,168 @@ module RasterIXRenderCore #(
         .s_axis_tvalid(rasterizer_tvalid),
         .s_axis_tready(rasterizer_tready),
         .s_axis_tkeep(rasterizer_tkeep),
+    
+        .sigLock(rasterizer_tpixel & rasterizer_tvalid & rasterizer_tready),
+        .sigRelease(fragment_stream_out_tvalid & fragment_stream_out_tready),
+        .released()
+    );
+    defparam concatSem.STREAM_WIDTH = RASTERIZER_CONCAT_WIDTH;
+    defparam concatSem.MAX_NUMBER_OF_ELEMENTS = 2 ** READ_FIFO_SIZE;
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 2.1
+    // First Broadcaster
+    // Broadcasts from semaphore to AttributeInterpolator and to second broadcaster
+    // Clocks: n/a
+    ////////////////////////////////////////////////////////////////////////////
+    wire [(SCREEN_POS_WIDTH * 2) - 1 : 0]   bc_attr_bbx;
+    wire [(SCREEN_POS_WIDTH * 2) - 1 : 0]   bc_attr_bby;
+    wire [(SCREEN_POS_WIDTH * 2) - 1 : 0]   bc_attr_spx;
+    wire [(SCREEN_POS_WIDTH * 2) - 1 : 0]   bc_attr_spy;
+    wire [(INDEX_WIDTH * 2) - 1 : 0]        bc_attr_index;
+    wire [ 1 : 0]                           bc_attr_valid;
+    wire [ 1 : 0]                           bc_attr_pixel;
+    wire [(RR_CMD_SIZE * 2) - 1 : 0]        bc_attr_cmd;
+    wire [ 1 : 0]                           bc_attr_last;
+    wire [ 1 : 0]                           bc_attr_keep;
+    wire [ 1 : 0]                           bc_attr_ready;
+
+    axis_broadcast rasterizerBroadcast (
+        .clk(aclk),
+        .rst(!resetn),
+
+        .s_axis_tdata(semaphoreRasterizerData),
+        .s_axis_tlast(semaphoreRasterizerLast),
+        .s_axis_tvalid(semaphoreRasterizerValid),
+        .s_axis_tready(semaphoreRasterizerReady),
+        .s_axis_tkeep(semaphoreRasterizerKeep),
         .s_axis_tid(),
         .s_axis_tdest(),
         .s_axis_tuser(),
 
         .m_axis_tdata({
-            bc_bbx[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_bby[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_spx[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_spy[3 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_index[3 * INDEX_WIDTH +: INDEX_WIDTH],
-            bc_pixel[3],
-            bc_cmd[3 * RR_CMD_SIZE +: RR_CMD_SIZE],
-            bc_bbx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_bby[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_spx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_spy[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_index[2 * INDEX_WIDTH +: INDEX_WIDTH],
-            bc_pixel[2],
-            bc_cmd[2 * RR_CMD_SIZE +: RR_CMD_SIZE],
-            bc_bbx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_bby[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_spx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_spy[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_index[1 * INDEX_WIDTH +: INDEX_WIDTH],
-            bc_pixel[1],
-            bc_cmd[1 * RR_CMD_SIZE +: RR_CMD_SIZE],
-            bc_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
-            bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH],
-            bc_pixel[0],
-            bc_cmd[0 * RR_CMD_SIZE +: RR_CMD_SIZE]
+            bc_attr_bbx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_bby[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_spx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_spy[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_index[1 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc_attr_pixel[1],
+            bc_attr_cmd[1 * RR_CMD_SIZE +: RR_CMD_SIZE],
+            bc_attr_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_index[0 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc_attr_pixel[0],
+            bc_attr_cmd[0 * RR_CMD_SIZE +: RR_CMD_SIZE]
         }),
-        .m_axis_tvalid(bc_valid),
-        .m_axis_tready(bc_ready),
-        .m_axis_tlast(bc_last),
-        .m_axis_tkeep(bc_keep),
+        .m_axis_tvalid(bc_attr_valid),
+        .m_axis_tready(bc_attr_ready),
+        .m_axis_tlast(bc_attr_last),
+        .m_axis_tkeep(bc_attr_keep),
         .m_axis_tid(),
         .m_axis_tdest(),
         .m_axis_tuser()
     );
-    defparam rasterizerBroadcast.M_COUNT = 4;
-    defparam rasterizerBroadcast.DATA_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
+    defparam rasterizerBroadcast.M_COUNT = 2;
+    defparam rasterizerBroadcast.DATA_WIDTH = RASTERIZER_CONCAT_WIDTH;
     defparam rasterizerBroadcast.KEEP_ENABLE = 1;
     defparam rasterizerBroadcast.KEEP_WIDTH = 1;
     defparam rasterizerBroadcast.LAST_ENABLE = 1;
     defparam rasterizerBroadcast.ID_ENABLE = 0;
     defparam rasterizerBroadcast.DEST_ENABLE = 0;
     defparam rasterizerBroadcast.USER_ENABLE = 0;
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 2.2
+    // Second Broadcaster
+    // Broadcasts to color, depth, and stencil framebuffers
+    // Clocks: n/a
+    ////////////////////////////////////////////////////////////////////////////
+    localparam RASTERIZER_FRAMEBUFFER_BROADCAST_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1;
+    wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   bc2_bbx;
+    wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   bc2_bby;
+    wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   bc2_spx;
+    wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   bc2_spy;
+    wire [(INDEX_WIDTH * 3) - 1 : 0]        bc2_index;
+    wire [ 2 : 0]                           bc2_valid;
+    wire [ 2 : 0]                           bc2_pixel;
+    wire [ 2 : 0]                           bc2_last;
+    wire [ 2 : 0]                           bc2_keep;
+    wire [ 2 : 0]                           bc2_ready;
+
+    assign m_color_araddr = bc2_index[INDEX_WIDTH * 2 +: INDEX_WIDTH];
+    assign m_depth_araddr = bc2_index[INDEX_WIDTH * 1 +: INDEX_WIDTH];
+    assign m_stencil_araddr = bc2_index[INDEX_WIDTH * 0 +: INDEX_WIDTH];
+    assign m_color_arvalid = bc2_valid[2] & colorBufferEnable;
+    assign m_depth_arvalid = bc2_valid[1] & depthBufferEnable;
+    assign m_stencil_arvalid = bc2_valid[0] & stencilBufferEnable;
+    assign m_color_arlast = bc2_last[2];
+    assign m_depth_arlast = bc2_last[1];
+    assign m_stencil_arlast = bc2_last[0];
+    assign bc2_ready[2] = m_color_arready | !colorBufferEnable;
+    assign bc2_ready[1] = m_depth_arready | !depthBufferEnable;
+    assign bc2_ready[0] = m_stencil_arready | !stencilBufferEnable;
+    
+    wire bc_pixel_ready;
+    assign bc_attr_ready[1] = !bc_attr_pixel[1] | bc_pixel_ready;
+
+    axis_broadcast rasterizerBroadcast2 (
+        .clk(aclk),
+        .rst(!resetn),
+
+        .s_axis_tdata({
+            bc_attr_bbx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_bby[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_spx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_spy[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc_attr_index[1 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc_attr_pixel[1]
+        }),
+        .s_axis_tlast(bc_attr_last[1]),
+        .s_axis_tvalid(bc_attr_valid[1] & bc_attr_pixel[1]),
+        .s_axis_tready(bc_pixel_ready),
+        .s_axis_tkeep(bc_attr_keep[1]),
+        .s_axis_tid(),
+        .s_axis_tdest(),
+        .s_axis_tuser(),
+
+        .m_axis_tdata({
+            bc2_bbx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_bby[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_spx[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_spy[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_index[2 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc2_pixel[2],
+            bc2_bbx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_bby[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_spx[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_spy[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_index[1 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc2_pixel[1],
+            bc2_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH],
+            bc2_index[0 * INDEX_WIDTH +: INDEX_WIDTH],
+            bc2_pixel[0]
+        }),
+        .m_axis_tvalid(bc2_valid),
+        .m_axis_tready(bc2_ready),
+        .m_axis_tlast(bc2_last),
+        .m_axis_tkeep(bc2_keep),
+        .m_axis_tid(),
+        .m_axis_tdest(),
+        .m_axis_tuser()
+    );
+    defparam rasterizerBroadcast2.M_COUNT = 3;
+    defparam rasterizerBroadcast2.DATA_WIDTH = RASTERIZER_FRAMEBUFFER_BROADCAST_WIDTH;
+    defparam rasterizerBroadcast2.KEEP_ENABLE = 1;
+    defparam rasterizerBroadcast2.KEEP_WIDTH = 1;
+    defparam rasterizerBroadcast2.LAST_ENABLE = 1;
+    defparam rasterizerBroadcast2.ID_ENABLE = 0;
+    defparam rasterizerBroadcast2.DEST_ENABLE = 0;
+    defparam rasterizerBroadcast2.USER_ENABLE = 0;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 3
@@ -909,15 +1010,15 @@ module RasterIXRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .s_attrb_tready(bc_ready[0]),
-                .s_attrb_tvalid(bc_valid[0]),
-                .s_attrb_tlast(bc_last[0]),
-                .s_attrb_tkeep(bc_keep[0]),
-                .s_attrb_tspx(bc_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-                .s_attrb_tspy(bc_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-                .s_attrb_tindex(bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH]),
-                .s_attrb_tpixel(bc_pixel[0]),
-                .s_attrb_tcmd(bc_cmd[0 +: RR_CMD_SIZE]),
+                .s_attrb_tready(bc_attr_ready[0]),
+                .s_attrb_tvalid(bc_attr_valid[0]),
+                .s_attrb_tlast(bc_attr_last[0]),
+                .s_attrb_tkeep(bc_attr_keep[0]),
+                .s_attrb_tspx(bc_attr_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tspy(bc_attr_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tindex(bc_attr_index[0 * INDEX_WIDTH +: INDEX_WIDTH]),
+                .s_attrb_tpixel(bc_attr_pixel[0]),
+                .s_attrb_tcmd(bc_attr_cmd[0 +: RR_CMD_SIZE]),
 
                 .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
                 .tex0_t(triangleParams[TRIANGLE_STREAM_INC_TEX0_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
@@ -1014,16 +1115,16 @@ module RasterIXRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .s_attrb_tready(bc_ready[0]),
-                .s_attrb_tvalid(bc_valid[0]),
-                .s_attrb_tpixel(bc_pixel[0]),
-                .s_attrb_tlast(bc_last[0]),
-                .s_attrb_tkeep(bc_keep[0]),
-                .s_attrb_tbbx(bc_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-                .s_attrb_tbby(bc_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-                .s_attrb_tspx(bc_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-                .s_attrb_tspy(bc_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
-                .s_attrb_tindex(bc_index[0 * INDEX_WIDTH +: INDEX_WIDTH]),
+                .s_attrb_tready(bc_attr_ready[0]),
+                .s_attrb_tvalid(bc_attr_valid[0]),
+                .s_attrb_tpixel(bc_attr_pixel[0]),
+                .s_attrb_tlast(bc_attr_last[0]),
+                .s_attrb_tkeep(bc_attr_keep[0]),
+                .s_attrb_tbbx(bc_attr_bbx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tbby(bc_attr_bby[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tspx(bc_attr_spx[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tspy(bc_attr_spy[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH]),
+                .s_attrb_tindex(bc_attr_index[0 * INDEX_WIDTH +: INDEX_WIDTH]),
 
                 .tex0_s(triangleParams[TRIANGLE_STREAM_INC_TEX0_S * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),
                 .tex0_t(triangleParams[TRIANGLE_STREAM_INC_TEX0_T * TRIANGLE_STREAM_PARAM_SIZE +: TRIANGLE_STREAM_PARAM_SIZE]),

@@ -159,6 +159,58 @@ TEST_CASE("AttributeInterpolator depth interpolation", "[AttributeInterpolator]"
     }
 }
 
+TEST_CASE("AttributeInterpolator depthW interpolation", "[AttributeInterpolator]")
+{
+    AttributeInterpolator interpolator;
+    interpolator.setEnableTMU(0, false);
+
+    TriangleDesc desc = createTestTriangleDesc();
+
+    SECTION("depthW at origin")
+    {
+        // depthZw[1] = 1.0 -> depthW = 1.0
+        InterpolatedAttributesData result = interpolator.interpolate(desc, 0, 0);
+        REQUIRE(result.depthW == Approx(1.0f).margin(0.001f));
+    }
+
+    SECTION("depthW interpolation along X")
+    {
+        // W starts at 1.0, increments by 0.1 per pixel in X
+        desc.param.depthZwXInc = Vec2 { 0.0f, 0.1f };
+        // At x=5: W = 1.0 + 5*0.1 = 1.5
+        InterpolatedAttributesData result = interpolator.interpolate(desc, 5, 0);
+        REQUIRE(result.depthW == Approx(1.5f).margin(0.001f));
+    }
+
+    SECTION("depthW interpolation along Y")
+    {
+        // W starts at 1.0, increments by 0.05 per pixel in Y
+        desc.param.depthZwYInc = Vec2 { 0.0f, 0.05f };
+        // At y=4: W = 1.0 + 4*0.05 = 1.2
+        InterpolatedAttributesData result = interpolator.interpolate(desc, 0, 4);
+        REQUIRE(result.depthW == Approx(1.2f).margin(0.001f));
+    }
+
+    SECTION("depthW interpolation along X and Y")
+    {
+        // W starts at 1.0, increments by 0.1 in X and 0.05 in Y
+        desc.param.depthZwXInc = Vec2 { 0.0f, 0.1f };
+        desc.param.depthZwYInc = Vec2 { 0.0f, 0.05f };
+        // At (3, 4): W = 1.0 + 3*0.1 + 4*0.05 = 1.5
+        InterpolatedAttributesData result = interpolator.interpolate(desc, 3, 4);
+        REQUIRE(result.depthW == Approx(1.5f).margin(0.001f));
+    }
+
+    SECTION("depthW with negative increment")
+    {
+        // W starts at 1.0, decrements by 0.02 per pixel in X
+        desc.param.depthZwXInc = Vec2 { 0.0f, -0.02f };
+        // At x=10: W = 1.0 + 10*(-0.02) = 0.8
+        InterpolatedAttributesData result = interpolator.interpolate(desc, 10, 0);
+        REQUIRE(result.depthW == Approx(0.8f).margin(0.001f));
+    }
+}
+
 TEST_CASE("AttributeInterpolator texture interpolation", "[AttributeInterpolator]")
 {
     AttributeInterpolator interpolator;

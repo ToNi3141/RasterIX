@@ -26,7 +26,7 @@
 
 TEST_CASE("Check interpolation", "[ColorInterpolator]")
 {
-    VColorInterpolator* top = new VColorInterpolator();
+    VColorInterpolator* top = rr::ut::makeTop<VColorInterpolator>();
     rr::ut::reset(top);
     top->ce = 1;
 
@@ -52,7 +52,7 @@ TEST_CASE("Check interpolation", "[ColorInterpolator]")
 
 TEST_CASE("Check pipelining", "[ColorInterpolator]")
 {
-    VColorInterpolator* top = new VColorInterpolator();
+    VColorInterpolator* top = rr::ut::makeTop<VColorInterpolator>();
     rr::ut::reset(top);
     top->ce = 1;
 
@@ -79,7 +79,7 @@ TEST_CASE("Check pipelining", "[ColorInterpolator]")
 
 TEST_CASE("Check channels", "[ColorInterpolator]")
 {
-    VColorInterpolator* top = new VColorInterpolator();
+    VColorInterpolator* top = rr::ut::makeTop<VColorInterpolator>();
     rr::ut::reset(top);
     top->ce = 1;
 
@@ -115,7 +115,7 @@ TEST_CASE("Check channels", "[ColorInterpolator]")
 
 TEST_CASE("Check stalling", "[ColorInterpolator]")
 {
-    VColorInterpolator* top = new VColorInterpolator();
+    VColorInterpolator* top = rr::ut::makeTop<VColorInterpolator>();
     rr::ut::reset(top);
     top->ce = 1;
 

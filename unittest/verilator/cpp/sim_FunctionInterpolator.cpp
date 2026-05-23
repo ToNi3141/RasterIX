@@ -47,15 +47,12 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
     // So, if start is smaller than 1.0f, set the lower bound to 1.0f which will
     // the set x to 1.
     const float startInc = start < 1.0f ? 1.0f : start;
-    const float lutLowerBound = startInc;
-    const float lutUpperBound = end;
+    const float lutLowerBound = 1.0f / startInc;
+    const float lutUpperBound = 1.0f / end;
 
     t->s_axis_tvalid = 1;
     t->s_axis_tlast = 0;
-    t->s_axis_tdata = *reinterpret_cast<const uint32_t*>(&lutLowerBound);
-    rr::ut::clk(t);
-    t->s_axis_tdata = *reinterpret_cast<const uint32_t*>(&lutUpperBound);
-    rr::ut::clk(t);
+
     // printf("lowerBound %d, upperBound %d, bounds: 0x%llX\r\n", lutLowerBound, lutUpperBound, bounds.axiVal);
     for (int i = 0; i < (int)LUT_SIZE; i++)
     {
@@ -63,6 +60,9 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
 
         float f = calculateLinearValue(start, end, powf(2, i));
         float fn = calculateLinearValue(start, end, powf(2, i + 1));
+
+        f = std::clamp(f, 0.0f, 1.0f);
+        fn = std::clamp(fn, 0.0f, 1.0f);
 
         float diff = fn - f;
         float step = diff / 256.0f;
@@ -81,19 +81,20 @@ void generateLinearTable(VFunctionInterpolator* t, const float start, const floa
 
 TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
 {
-    const float start = 0;
-    const float end = 100000;
-    VFunctionInterpolator* top = new VFunctionInterpolator();
+    const float start = 1.0f;
+    const float end = 1024.0f;
+    VFunctionInterpolator* top = rr::ut::makeTop<VFunctionInterpolator>();
     rr::ut::reset(top);
     top->ce = 1;
     generateLinearTable(top, start, end);
 
     uint32_t pipelineSteps = 0;
-    static constexpr float STEPS = 0.1;
-    static constexpr float PIPELINE_STEPS = 4;
+    static constexpr float STEPS = 1.0;
+    static constexpr float PIPELINE_STEPS = 2;
     for (float i = start; i < (end + 200); i += STEPS)
     {
-        top->x = *((uint32_t*)&i);
+        const float ooi = 1.0f / i;
+        top->x = *((uint32_t*)&ooi);
         rr::ut::clk(top);
 
         pipelineSteps++;
@@ -102,7 +103,7 @@ TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
             const float ref = clamp(calculateLinearValue(start, end, i - (PIPELINE_STEPS * STEPS)), 0.0f, 1.0f);
             const float actual = (float)(top->fx) / powf(2, 22);
             // printf("i: %f, ref %f, actual: %f\r\n", i, ref, actual);
-            REQUIRE(ref == Approx(actual).margin(0.005));
+            REQUIRE(ref == Approx(actual).margin(0.1));
 
             REQUIRE(actual <= 1.0f);
             REQUIRE(actual >= 0.0f);
@@ -115,29 +116,28 @@ TEST_CASE("Check interpolation of the values", "[FunctionInterpolator]")
 
 TEST_CASE("Check stall", "[FunctionInterpolator]")
 {
-    const float start = 0;
-    const float end = 100000;
-    VFunctionInterpolator* top = new VFunctionInterpolator();
+    const float start = 1.0f;
+    const float end = std::pow(2.0f, 10.0f);
+    VFunctionInterpolator* top = rr::ut::makeTop<VFunctionInterpolator>();
     rr::ut::reset(top);
     top->ce = 1;
     generateLinearTable(top, start, end);
 
-    float x = 50000.0f;
+    float x = 1.0f / std::pow(2.0f, 9.9f);
     top->x = *((uint32_t*)&x);
     rr::ut::clk(top);
 
     top->x = 0;
-    rr::ut::clk(top);
     top->ce = 0;
     rr::ut::clk(top);
     rr::ut::clk(top);
 
     top->ce = 1;
     rr::ut::clk(top);
-    rr::ut::clk(top);
 
     const float fx = (float)(top->fx) / powf(2, 22); // Note: Needs to be divided by 22 because the resulting fix point number has 22 fraction bits (S1.22)
-    REQUIRE(0.5f == Approx(fx).margin(0.005));
+    const float ref = clamp(calculateLinearValue(start, end, 1.0f / x), 0.0f, 1.0f);
+    REQUIRE(ref == Approx(fx).margin(0.05));
 
     // Destroy model
     delete top;

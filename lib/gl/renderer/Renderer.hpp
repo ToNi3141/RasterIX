@@ -223,10 +223,8 @@ public:
     /// @param fogLut the fog lookup table
     /// The fog LUT uses a exponential distribution of w, means fogLut[0] = f(1), fogLut[1] = f(2), fogLut[2] = f(4), fogLut[3] = f(8).
     /// The fog values between start and end must not exceed 1.0f
-    /// @param start the start value of the fog
-    /// @param end the end value of the fog
     /// @return true if succeeded, false if it was not possible to apply this command (for instance, displaylist was out if memory)
-    bool setFogLut(const std::array<float, 33>& fogLut, float start, float end) { return addCommand(FogLutStreamCmd { fogLut, start, end }); }
+    bool setFogLut(const std::array<float, 33>& fogLut) { return addCommand(FogLutStreamCmd { fogLut }); }
 
     /// @brief Will clear a buffer
     /// @param frameBuffer Will clear the frame buffer

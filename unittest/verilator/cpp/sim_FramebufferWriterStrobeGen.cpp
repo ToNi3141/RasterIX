@@ -23,29 +23,42 @@
 // Include model header, generated from Verilating "top.v"
 #include "VFramebufferWriterStrobeGen.h"
 
-TEST_CASE("Check stream concatenation", "[FramebufferWriterStrobeGen]")
+TEST_CASE("Check mask gating", "[FramebufferWriterStrobeGen]")
 {
-    VFramebufferWriterStrobeGen* t = new VFramebufferWriterStrobeGen();
+    VFramebufferWriterStrobeGen* t = rr::ut::makeTop<VFramebufferWriterStrobeGen>();
 
-    t->mask = 0xA;
-    t->val = 0;
-    t->eval();
-    CHECK(t->strobe == 0x000A);
+    t->s_frag_tvalid = 1;
+    t->s_frag_tlast = 0;
+    t->m_frag_tready = 1;
+    t->s_frag_tdata = 0xABCD;
+    t->s_frag_taddr = 0x100;
 
-    t->mask = 0xF;
-    t->val = 1;
+    // tstrb=1 passes confMask through
+    t->confMask = 0x3;
+    t->s_frag_tstrb = 1;
     t->eval();
-    CHECK(t->strobe == 0x00F0);
+    CHECK(t->m_frag_tstrb == 0x3);
+    CHECK(t->m_frag_tvalid == 1);
+    CHECK(t->m_frag_tlast == 0);
+    CHECK(t->s_frag_tready == 1);
+    CHECK(t->m_frag_tdata == 0xABCD);
+    CHECK(t->m_frag_taddr == 0x100);
 
-    t->mask = 0xF;
-    t->val = 2;
+    t->confMask = 0xA;
+    t->s_frag_tstrb = 1;
     t->eval();
-    CHECK(t->strobe == 0x0F00);
+    CHECK(t->m_frag_tstrb == 0xA);
 
-    t->mask = 0xF;
-    t->val = 3;
+    // tstrb=0 zeroes the mask
+    t->confMask = 0xF;
+    t->s_frag_tstrb = 0;
     t->eval();
-    CHECK(t->strobe == 0xF000);
+    CHECK(t->m_frag_tstrb == 0x0);
+
+    t->confMask = 0x3;
+    t->s_frag_tstrb = 0;
+    t->eval();
+    CHECK(t->m_frag_tstrb == 0x0);
 
     delete t;
 }
