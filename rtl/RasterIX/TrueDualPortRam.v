@@ -45,6 +45,8 @@ module TrueDualPortRam #(
 `ifndef UNITTEST
     genvar i;
     generate 
+        // Note: this macro has to be added to vivado
+        // set_property XPM_LIBRARIES {XPM_MEMORY} [current_project]
         for (i = 0; i < WRITE_MASK_SIZE; i = i + 1)
         begin
             xpm_memory_tdpram #(

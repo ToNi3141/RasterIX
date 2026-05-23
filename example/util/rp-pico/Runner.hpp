@@ -18,7 +18,7 @@ class BusConnector : public rr::IBusConnector
 public:
     static constexpr uint32_t RESET { 21 };
     static constexpr uint32_t CTS { 20 };
-    static constexpr uint32_t MAX_CHUNK_SIZE { 32768 - 2048 };
+    static constexpr uint32_t MAX_CHUNK_SIZE { 1024 * 3 };
 
     BusConnector() { }
 
@@ -92,7 +92,7 @@ public:
         gpio_init(CTS);
         gpio_set_dir(RESET, GPIO_OUT);
         gpio_set_dir(CTS, GPIO_IN);
-        spi_init(spi_default, 20 * 1000 * 1000);
+        spi_init(spi_default, 18 * 1000 * 1000);
         gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
         gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
         gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, true);
