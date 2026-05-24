@@ -87,13 +87,13 @@ The rasterizer is running on the following platforms:
 
 - [Verilator Simulation](/rtl/top/Verilator/README.md)
 - [Digilent Nexys Video](/rtl/top/Xilinx/NexysVideo/README.md)
-- [Digilent CMod7](/rtl/top/Xilinx/CmodA7/README.md)
+- [Trenz Electronic GmbH TE0890](/rtl/top/Xilinx/te0890/README.md)
 - [Digilent ArtyZ7-20](/rtl/top/Xilinx/ArtyZ7-20/README.md)
 
 # How to integrate
-To integrate it into your own project, first have a look at the already existing platforms. If you want to integrate it in a already existing SoC system, you may have a look at the ArtyZ7. If you want to use it as standalone, have a look at the Nexys Video or CMod7.
+To integrate it into your own project, first have a look at the already existing platforms. If you want to integrate it in a already existing SoC system, you may have a look at the ArtyZ7. If you want to use it as standalone, have a look at the Nexys Video or TE0890.
 
-The __pico-sdk__ and __PlatformIO__ are supported. See [Digilent CMod7](/rtl/top/Xilinx/CmodA7/README.md).
+The __pico-sdk__ and __PlatformIO__ are supported. See [Trenz Electronic GmbH TE0890](/rtl/top/Xilinx/te0890/README.md).
 
 ## How to port the Driver
 To port the driver to a new interface (like SPI, async FT245, AXIS, or others) use the following steps:

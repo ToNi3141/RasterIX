@@ -57,10 +57,10 @@ Uses the [CMOD A7 Build](#cmod-a7-build) and the pico-sdk. By default, this buil
 Open a terminal. Use the following commands to build a rppico binary:
 ```sh
 cd <rasterix_directory>
-cmake --preset rppico -DPICO_BOARD=pico
-cmake --build build/rppico --config Release --parallel 
+cmake --preset rppico_cmod7a -DPICO_BOARD=pico
+cmake --build build/rppico_cmod7a --config Release --parallel 
 ```
-You will find a `minimal.uf2` file in the `build/rppico/example/rp-pico` directory.
+You will find a `minimal.uf2` file in the `build/rppico_cmod7a/example/` directory.
 
 Note: The rix library heavily relies on floating point arithmetics. A MCU, like the `rp2350`, with FPU is recommended. It can speed up the overall performance of around 10 times.
 

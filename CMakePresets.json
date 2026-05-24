@@ -140,14 +140,43 @@
                 "RIX_CORE_TEXTURE_PAGE_SIZE": "2048",
                 "RIX_CORE_GRAM_MEMORY_LOC": "0x0",
                 "RIX_CORE_COLOR_BUFFER_LOC_0": "0x35000",
-                "RIX_CORE_COLOR_BUFFER_LOC_1": "0x35000",
-                "RIX_CORE_COLOR_BUFFER_LOC_2": "0x35000",
+                "RIX_CORE_COLOR_BUFFER_LOC_1": "0x135000",
+                "RIX_CORE_COLOR_BUFFER_LOC_2": "0x235000",
                 "RIX_CORE_DEPTH_BUFFER_LOC": "0x5A800",
-                "RIX_CORE_STENCIL_BUFFER_LOC": "0x22400",
+                "RIX_CORE_STENCIL_BUFFER_LOC": "0x82400",
                 "RIX_CORE_THREADED_RASTERIZATION": "false",
                 "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "0",
                 "RIX_CORE_ENABLE_VSYNC": "false",
-                "RIX_CORE_MAX_VBO_COUNT": "4",
+                "RIX_CORE_MAX_VBO_COUNT": "8",
+                "RIX_CORE_SOFTWARE_RENDERING": "false"
+            }
+        },
+        {
+            "name": "te0890_rixef",
+            "hidden": true,
+            "description": "Configuration for the te0890 rixef",
+            "cacheVariables": 
+            {
+                "RIX_CORE_TMU_COUNT": "1",
+                "RIX_CORE_MAX_TEXTURE_SIZE": "128",
+                "RIX_CORE_ENABLE_MIPMAPPING": "true",
+                "RIX_CORE_MAX_DISPLAY_WIDTH": "320",
+                "RIX_CORE_MAX_DISPLAY_HEIGHT": "240",
+                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
+                "RIX_CORE_USE_FLOAT_INTERPOLATION": "false",
+                "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "512",
+                "RIX_CORE_NUMBER_OF_TEXTURES": "128",
+                "RIX_CORE_TEXTURE_PAGE_SIZE": "2048",
+                "RIX_CORE_GRAM_MEMORY_LOC": "0x0",
+                "RIX_CORE_COLOR_BUFFER_LOC_0": "0x400000",
+                "RIX_CORE_COLOR_BUFFER_LOC_1": "0x400000",
+                "RIX_CORE_COLOR_BUFFER_LOC_2": "0x508000",
+                "RIX_CORE_DEPTH_BUFFER_LOC":   "0x610000",
+                "RIX_CORE_STENCIL_BUFFER_LOC": "0x718000",
+                "RIX_CORE_THREADED_RASTERIZATION": "false",
+                "RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE": "0",
+                "RIX_CORE_ENABLE_VSYNC": "false",
+                "RIX_CORE_MAX_VBO_COUNT": "8",
                 "RIX_CORE_SOFTWARE_RENDERING": "false"
             }
         },
@@ -258,6 +287,20 @@
             "displayName": "rppico build",
             "description": "rppico build to be used for the Raspberry Pi Pico",
             "binaryDir": "${sourceDir}/build/rppico",
+            "generator": "Unix Makefiles",
+            "inherits": "te0890_rixef",
+            "cacheVariables": 
+            {
+                "PICO_SDK_FETCH_FROM_GIT": "ON",
+                "RIX_BUILD_RPPICO": "ON",
+                "RIX_BUILD_EXAMPLES": "ON"
+            }
+        },
+        {
+            "name": "rppico_cmod7a",
+            "displayName": "rppico build",
+            "description": "rppico build to be used for the Raspberry Pi Pico",
+            "binaryDir": "${sourceDir}/build/rppico_cmod7a",
             "generator": "Unix Makefiles",
             "inherits": "cmod7_rixef",
             "cacheVariables": 
