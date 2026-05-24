@@ -501,7 +501,7 @@ module RasterIXRenderCore #(
     assign framebufferParamYResolution = confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
     assign depthBufferEnable = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS];
     assign depthBufferMask = confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE];
-    assign colorBufferEnable = 1'b1;
+    assign colorBufferEnable = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS +: RENDER_CONFIG_FEATURE_ENABLE_BLENDING_SIZE];
     assign colorBufferMask = { 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_R_SIZE], 
                     confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_POS +: RENDER_CONFIG_FRAGMENT_COLOR_MASK_G_SIZE], 
@@ -1478,7 +1478,7 @@ module RasterIXRenderCore #(
     wire [(SCREEN_POS_WIDTH * 3) - 1 : 0]   framebuffer_bc_wscreenPosY;
 
     wire [(PIXEL_WIDTH * 3) - 1 : 0]        framebuffer_color_bc_wdata;
-    wire  [ 2 : 0]                          framebuffer_color_bc_wstrb;
+    wire [ 2 : 0]                           framebuffer_color_bc_wstrb;
 
     wire [(DEPTH_WIDTH * 3) - 1 : 0]        framebuffer_depth_bc_wdata;
     wire [ 2 : 0]                           framebuffer_depth_bc_wstrb;
@@ -1564,7 +1564,7 @@ module RasterIXRenderCore #(
     // Writing into the memory
     // Clocks: 0
     ////////////////////////////////////////////////////////////////////////////
-    assign m_color_wvalid = framebuffer_bc_wvalid[2];
+    assign m_color_wvalid = framebuffer_bc_wvalid[2] & (framebuffer_color_bc_wstrb[2] | framebuffer_bc_wlast[2]);
     assign m_color_waddr = framebuffer_bc_waddr[2 * INDEX_WIDTH +: INDEX_WIDTH];
     assign m_color_wlast = framebuffer_bc_wlast[2];
     assign m_color_wscreenPosX = framebuffer_bc_wscreenPosX[2 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
@@ -1573,7 +1573,7 @@ module RasterIXRenderCore #(
     assign m_color_wstrb = framebuffer_color_bc_wstrb[2];
     assign framebuffer_bc_wfull[2] = !m_color_wready;
 
-    assign m_depth_wvalid = framebuffer_bc_wvalid[1];
+    assign m_depth_wvalid = framebuffer_bc_wvalid[1] & (framebuffer_depth_bc_wstrb[1] | framebuffer_bc_wlast[1]);
     assign m_depth_waddr = framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH];
     assign m_depth_wlast = framebuffer_bc_wlast[1];
     assign m_depth_wscreenPosX = framebuffer_bc_wscreenPosX[1 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
@@ -1582,7 +1582,7 @@ module RasterIXRenderCore #(
     assign m_depth_wstrb = framebuffer_depth_bc_wstrb[1];
     assign framebuffer_bc_wfull[1] = !m_depth_wready;
 
-    assign m_stencil_wvalid = framebuffer_bc_wvalid[0];
+    assign m_stencil_wvalid = framebuffer_bc_wvalid[0] & (framebuffer_stencil_bc_wstrb[0] | framebuffer_bc_wlast[0]);
     assign m_stencil_waddr = framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH];
     assign m_stencil_wlast = framebuffer_bc_wlast[0];
     assign m_stencil_wscreenPosX = framebuffer_bc_wscreenPosX[0 * SCREEN_POS_WIDTH +: SCREEN_POS_WIDTH];
