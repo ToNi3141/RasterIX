@@ -123,19 +123,19 @@ An example for the Arduino framework is available in the `examples` directory.
 # Memory Layout
 
 ```
-0x000'0000      +-----------------------+
-0x0ff'ffff      | Texture Memory        |
-0x100'0000      |-----------------------|
-0x3ff'ffff      | Free                  |
-0x400'0000      |-----------------------|
-0x4ff'ffff      | Color Buffer 0/1      |
-0x500'0000      |-----------------------|
-0x5ff'ffff      | Color Buffer 2        |
-0x600'0000      |-----------------------|
-0x6ff'ffff      | Depth Buffer          |
-0x700'0000      |-----------------------|
-0x7ff'ffff      | Stencil Buffer        |
-0x800'0000      +-----------------------+
+0x000'0000 +-----------------------+
+      1 MB | Texture Memory        |
+0x100'0000 |-----------------------|
+      3 MB | Free                  |
+0x400'0000 |-----------------------|
+      1 MB | Color Buffer 0/1      |
+0x500'0000 |-----------------------|
+      1 MB | Color Buffer 2        |
+0x600'0000 |-----------------------|
+      1 MB | Depth Buffer          |
+0x700'0000 |-----------------------|
+      1 MB | Stencil Buffer        |
+0x800'0000 +-----------------------+
 ```
 
 **Note:** It is beneficial to offset buffer addresses by 512 B to 8 KB, which improves memory subsystem performance by ensuring each buffer accesses a different bank, potentially reducing RAS latency. This optimization provides noticeable benefits for SDRAM and DDR memory, though the impact on HyperRAM may be minimal.
