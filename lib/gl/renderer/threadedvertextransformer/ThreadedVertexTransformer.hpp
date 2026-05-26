@@ -48,10 +48,10 @@ namespace rr::threadedvertextransformer
 class ThreadedVertexTransformer : public IDevice
 {
 public:
-    ThreadedVertexTransformer(IDevice& device, IThreadRunner& uploadThread, IThreadRunner& workerThread)
+    ThreadedVertexTransformer(IDevice& device, IThreadRunner& workerThread, IThreadRunner& uploadThread)
         : m_device { device }
-        , m_uploadThread { uploadThread }
         , m_workerThread { workerThread }
+        , m_uploadThread { uploadThread }
     {
         initDisplayLists();
         SPDLOG_INFO("Treaded rasterization enabled");
@@ -111,7 +111,8 @@ public:
         m_workerThread.wait();
         if (!m_textureUploadList.addPage(data, addr))
         {
-            SPDLOG_ERROR("Failed to add page to texture upload list");
+            SPDLOG_WARN("Texture upload list full. A call to streamDisplayList() will upload pending pages and clears the list. "
+                "If this happens too often, increase the THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE.");
             return false;
         }
         return true;
@@ -170,6 +171,7 @@ private:
                     const std::size_t,
                     const std::size_t)
                 {
+                    m_device.blockUntilDeviceIsIdle();
                     if (dispatcher.getDisplayListSize(i) > 0)
                     {
                         m_device.streamDisplayList(
@@ -178,7 +180,6 @@ private:
                     }
                     return true;
                 });
-            m_device.blockUntilDeviceIsIdle();
         };
         m_uploadThread.run(uploader);
     }
@@ -616,8 +617,8 @@ private:
     static constexpr std::size_t NUMBER_OF_DISPLAY_LISTS { 2 };
 
     IDevice& m_device;
-    IThreadRunner& m_uploadThread;
     IThreadRunner& m_workerThread;
+    IThreadRunner& m_uploadThread;
     std::array<DisplayListAssemblerArrayType, 2> m_displayListAssembler {};
     std::array<DisplayListDispatcherType, 2> m_displayListDispatcher { m_displayListAssembler[0], m_displayListAssembler[1] };
     DisplayListDoubleBufferType m_displayListBuffer { m_displayListDispatcher[0], m_displayListDispatcher[1] };

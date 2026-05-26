@@ -237,7 +237,6 @@ module RasterIXCoreIF #(
     wire                                             colorBufferCmdSwap;
     wire                                             colorBufferCmdRead;
     wire                                             colorBufferCmdSwapEnableVsync;
-    wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
     wire                                             m_color_arvalid;
     wire                                             m_color_arlast;
@@ -261,7 +260,6 @@ module RasterIXCoreIF #(
     wire                                             depthBufferCmdCommit;
     wire                                             depthBufferCmdMemset;
     wire                                             depthBufferCmdRead;
-    wire                                             depthBufferEnable;
     wire                                             depthBufferMask;
     wire                                             m_depth_arvalid;
     wire                                             m_depth_arlast;
@@ -285,7 +283,6 @@ module RasterIXCoreIF #(
     wire                                             stencilBufferCmdCommit;
     wire                                             stencilBufferCmdMemset;
     wire                                             stencilBufferCmdRead;
-    wire                                             stencilBufferEnable;
     wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask;
     wire                                             m_stencil_arvalid;
     wire                                             m_stencil_arlast;
@@ -308,7 +305,6 @@ module RasterIXCoreIF #(
                 .clk(aclk),
                 .reset(!resetn),
 
-                .confEnable(depthBufferEnable),
                 .confClearColor(depthBufferClearDepth),
                 .confEnableScissor(framebufferParamEnableScissor),
                 .confScissorStartX(framebufferParamScissorStartX),
@@ -393,7 +389,6 @@ module RasterIXCoreIF #(
         .clk(aclk),
         .reset(!resetn),
 
-        .confEnable(colorBufferEnable),
         .confClearColor(ColorBufferReduce(ColorBufferReduceVec(colorBufferClearColor))),
         .confEnableScissor(framebufferParamEnableScissor),
         .confScissorStartX(framebufferParamScissorStartX),
@@ -501,7 +496,6 @@ module RasterIXCoreIF #(
                 .clk(aclk),
                 .reset(!resetn),
 
-                .confEnable(stencilBufferEnable),
                 .confClearColor(stencilBufferClearStencil),
                 .confEnableScissor(framebufferParamEnableScissor),
                 .confScissorStartX(framebufferParamScissorStartX),
@@ -623,7 +617,6 @@ module RasterIXCoreIF #(
         .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferCmdRead(colorBufferCmdRead),
         .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
-        .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
         .m_color_arready(1),
         .m_color_arlast(m_color_arlast),
@@ -649,7 +642,6 @@ module RasterIXCoreIF #(
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
         .depthBufferCmdRead(depthBufferCmdRead),
-        .depthBufferEnable(depthBufferEnable),
         .depthBufferMask(depthBufferMask),
         .m_depth_arready(1),
         .m_depth_arlast(m_depth_arlast),
@@ -675,7 +667,6 @@ module RasterIXCoreIF #(
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdMemset(stencilBufferCmdMemset),
         .stencilBufferCmdRead(stencilBufferCmdRead),
-        .stencilBufferEnable(stencilBufferEnable),
         .stencilBufferMask(stencilBufferMask),
         .m_stencil_arready(1),
         .m_stencil_arlast(m_stencil_arlast),

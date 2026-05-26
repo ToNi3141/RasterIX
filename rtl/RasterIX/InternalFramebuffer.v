@@ -79,7 +79,6 @@ module InternalFramebuffer
     /////////////////////////
     // Configs
     /////////////////////////
-    input  wire                                 confEnable,
     input  wire [PIXEL_WIDTH - 1 : 0]           confClearColor,
     input  wire                                 confEnableScissor,
     input  wire [X_BIT_WIDTH - 1 : 0]           confScissorStartX,
@@ -225,7 +224,6 @@ module InternalFramebuffer
         .reset(reset),
 
         // Configs
-        .confEnable(confEnable),
         .confEnableScissor(confEnableScissor),
         .confScissorStartX(confScissorStartX),
         .confScissorStartY(confScissorStartY),
