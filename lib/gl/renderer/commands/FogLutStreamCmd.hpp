@@ -43,7 +43,7 @@ public:
         std::memset(m_lut.data(), 0, sizeof(m_lut));
         m_payload = { m_lut };
     }
-    
+
     FogLutStreamCmd(const std::array<float, 33>& fogLut)
     {
         // Calculate the lut entries

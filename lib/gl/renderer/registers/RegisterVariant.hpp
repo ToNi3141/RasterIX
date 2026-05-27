@@ -35,10 +35,15 @@ using RegisterVariant = std::variant<
     ScissorStartReg,
     StencilBufferAddrReg,
     StencilReg,
+    YOffsetReg,
     TexEnvColorReg,
     TexEnvReg,
-    TmuTextureReg,
-    YOffsetReg>;
+    TmuTextureReg>;
+using TextureRegisterVariant = std::variant<
+    std::monostate,
+    TexEnvColorReg,
+    TexEnvReg,
+    TmuTextureReg>;
 
 } // namespace rr
 

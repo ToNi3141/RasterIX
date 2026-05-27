@@ -112,7 +112,7 @@ public:
         if (!m_textureUploadList.addPage(data, addr))
         {
             SPDLOG_WARN("Texture upload list full. A call to streamDisplayList() will upload pending pages and clears the list. "
-                "If this happens too often, increase the THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE.");
+                        "If this happens too often, increase the THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE.");
             return false;
         }
         return true;
@@ -171,9 +171,9 @@ private:
                     const std::size_t,
                     const std::size_t)
                 {
-                    m_device.blockUntilDeviceIsIdle();
                     if (dispatcher.getDisplayListSize(i) > 0)
                     {
+                        m_device.blockUntilDeviceIsIdle();
                         m_device.streamDisplayList(
                             dispatcher.getDisplayListBufferId(i),
                             dispatcher.getDisplayListSize(i));
@@ -569,6 +569,7 @@ private:
     void swapAndUploadDisplayLists()
     {
         m_uploadThread.wait();
+        m_device.blockUntilDeviceIsIdle();
         switchDisplayLists();
         textureUpload();
         uploadDisplayList();
@@ -610,7 +611,6 @@ private:
             }
         }
         m_textureUploadList.clear();
-        m_device.blockUntilDeviceIsIdle();
     }
 
     using ConcreteDisplayListAssembler = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList, false>;
