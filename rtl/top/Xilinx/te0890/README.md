@@ -107,9 +107,9 @@ build_flags =
     -DRIX_CORE_GRAM_MEMORY_LOC=0x0
     -DRIX_CORE_COLOR_BUFFER_LOC_0=0x400000
     -DRIX_CORE_COLOR_BUFFER_LOC_1=0x400000
-    -DRIX_CORE_COLOR_BUFFER_LOC_2=0x508000
-    -DRIX_CORE_DEPTH_BUFFER_LOC=0x610000
-    -DRIX_CORE_STENCIL_BUFFER_LOC=0x718000
+    -DRIX_CORE_COLOR_BUFFER_LOC_2=0x500800
+    -DRIX_CORE_DEPTH_BUFFER_LOC=0x601000
+    -DRIX_CORE_STENCIL_BUFFER_LOC=0x701800
     -DRIX_CORE_THREADED_RASTERIZATION=false
     -DRIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE=0
     -DRIX_CORE_ENABLE_VSYNC=false
@@ -123,19 +123,19 @@ An example for the Arduino framework is available in the `examples` directory.
 # Memory Layout
 
 ```
-0x000'0000 +-----------------------+
-      1 MB | Texture Memory        |
-0x100'0000 |-----------------------|
-      3 MB | Free                  |
-0x400'0000 |-----------------------|
-      1 MB | Color Buffer 0/1      |
-0x500'0000 |-----------------------|
-      1 MB | Color Buffer 2        |
-0x600'0000 |-----------------------|
-      1 MB | Depth Buffer          |
-0x700'0000 |-----------------------|
-      1 MB | Stencil Buffer        |
-0x800'0000 +-----------------------+
+0x00'0000 +-----------------------+
+     1 MB | Texture Memory        |
+0x10'0000 |-----------------------|
+     3 MB | Free                  |
+0x40'0000 |-----------------------|
+     1 MB | Color Buffer 0/1      |
+0x50'0000 |-----------------------|
+     1 MB | Color Buffer 2        |
+0x60'0000 |-----------------------|
+     1 MB | Depth Buffer          |
+0x70'0000 |-----------------------|
+     1 MB | Stencil Buffer        |
+0x80'0000 +-----------------------+
 ```
 
 **Note:** It is beneficial to offset buffer addresses by 512 B to 8 KB, which improves memory subsystem performance by ensuring each buffer accesses a different bank, potentially reducing RAS latency. This optimization provides noticeable benefits for SDRAM and DDR memory, though the impact on HyperRAM may be minimal.

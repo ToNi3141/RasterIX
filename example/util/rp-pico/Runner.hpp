@@ -1,15 +1,64 @@
+#include "IThreadRunner.hpp"
 #include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
 #include "gl.h"
 #include "glu.h"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
+#include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 
+#include <atomic>
 #include <hardware/dma.h>
 #include <hardware/spi.h>
 #include <pico/binary_info.h>
+#include <pico/multicore.h>
 #include <pico/stdlib.h>
 
 #include <algorithm>
+
+class PicoThreadRunner : public rr::IThreadRunner
+{
+public:
+    PicoThreadRunner()
+    {
+        multicore_launch_core1(core1_entry);
+    }
+
+    void wait() override
+    {
+        if (m_jobRunning)
+        {
+            multicore_fifo_pop_blocking();
+            m_jobRunning = false;
+        }
+    }
+
+    void run(const std::function<void()>& operation) override
+    {
+        wait();
+        m_currentJob = operation;
+        multicore_fifo_push_blocking((uintptr_t)&m_currentJob);
+        m_jobRunning = true;
+    }
+
+    bool isBusy() const override
+    {
+        return m_jobRunning;
+    }
+
+private:
+    static void core1_entry()
+    {
+        while (1)
+        {
+            auto func = (const std::function<void()>*)multicore_fifo_pop_blocking();
+            (*func)();
+            multicore_fifo_push_blocking(1);
+        }
+    }
+
+    std::atomic<bool> m_jobRunning { false };
+    std::function<void()> m_currentJob;
+};
 
 // Simple BusConnector which wraps the SPI
 template <uint32_t DISPLAYLIST_SIZE = 30 * 1024>
@@ -159,7 +208,10 @@ private:
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
     BusConnector<4096> m_busConnector {};
-    rr::devicedatauploader::DeviceDataUploader m_device { m_busConnector };
+    PicoThreadRunner m_workerThread {};
+    rr::NoThreadRunner m_uploadThread {};
+    rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_device { m_dduDevice, m_workerThread, m_uploadThread };
     bool led = false;
     Scene m_scene {};
 };

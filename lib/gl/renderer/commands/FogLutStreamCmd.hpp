@@ -40,7 +40,7 @@ public:
 
     FogLutStreamCmd()
     {
-        std::memset(m_lut.data(), 0, sizeof(m_lut));
+        std::fill(m_lut.begin(), m_lut.end(), 0);
         m_payload = { m_lut };
     }
 
