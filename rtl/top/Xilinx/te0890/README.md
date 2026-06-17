@@ -49,6 +49,8 @@ To connect the Pico to the FPGA, use the following pin mapping:
 
 **Maximum supported SPI clock speed:** 18 MHz
 
+**Note:** The SPI controller samples signals at the core clock frequency, making the bus more robust for breadboard setups. However, this approach is relatively slow. The maximum frequency is limited to core clock / 4, which in this case is 75 MHz / 4 = ~18 MHz.
+
 The display (Adafruit 2.4" TFT LCD Breakout Board) connects directly to the FPGA via an 8080-I parallel interface. The FPGA automatically configures the display when the `RSTN` pin is asserted. Use the following pin mapping to connect the display:
 
 | Signal   | TE0890                             | ILI9341 |

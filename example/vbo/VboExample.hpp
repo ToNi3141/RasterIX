@@ -33,9 +33,6 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, vboVerts);
         glEnableClientState(GL_VERTEX_ARRAY);
         glVertexPointer(3, GL_FLOAT, 0, nullptr);
-        glBindBuffer(GL_ARRAY_BUFFER, vboNormals);
-        glEnableClientState(GL_NORMAL_ARRAY);
-        glNormalPointer(GL_FLOAT, 0, nullptr);
         glBindBuffer(GL_ARRAY_BUFFER, vboColors);
         glEnableClientState(GL_COLOR_ARRAY);
         glColorPointer(3, GL_FLOAT, 0, nullptr);
@@ -47,8 +44,8 @@ public:
 
     ~VboExample()
     {
-        GLuint buffers[4] = { vboVerts, vboNormals, vboColors, vboIndices };
-        glDeleteBuffers(4, buffers);
+        GLuint buffers[3] = { vboVerts, vboColors, vboIndices };
+        glDeleteBuffers(3, buffers);
     }
 
     void setupVBOs()
@@ -56,9 +53,6 @@ public:
         glGenBuffers(1, &vboVerts);
         glBindBuffer(GL_ARRAY_BUFFER, vboVerts);
         glBufferData(GL_ARRAY_BUFFER, cubeVerts.size() * sizeof(float), cubeVerts.data(), GL_STATIC_DRAW);
-        glGenBuffers(1, &vboNormals);
-        glBindBuffer(GL_ARRAY_BUFFER, vboNormals);
-        glBufferData(GL_ARRAY_BUFFER, cubeNormals.size() * sizeof(float), cubeNormals.data(), GL_STATIC_DRAW);
         glGenBuffers(1, &vboColors);
         glBindBuffer(GL_ARRAY_BUFFER, vboColors);
         glBufferData(GL_ARRAY_BUFFER, cubeColors.size() * sizeof(float), cubeColors.data(), GL_STATIC_DRAW);
@@ -71,7 +65,6 @@ public:
 
 private:
     GLuint vboVerts = 0;
-    GLuint vboNormals = 0;
     GLuint vboColors = 0;
     GLuint vboIndices = 0;
     GLint tmuCount = 0;
@@ -80,99 +73,38 @@ private:
 
     const std::array<uint16_t, 36> cubeIndex = { {
         // clang-format off
-        0, 1, 2, 0, 2, 3,
-        4, 5, 6, 4, 6, 7,
-        8, 9, 10, 8, 10, 11,
-        12, 13, 14, 12, 14, 15,
-        16, 17, 18, 16, 18, 19,
-        20, 21, 22, 20, 22, 23,
+        4, 5, 6, 4, 6, 7, // front  (z = +1)
+        0, 3, 2, 0, 2, 1, // back   (z = -1)
+        0, 4, 7, 0, 7, 3, // left   (x = -1)
+        1, 2, 6, 1, 6, 5, // right  (x = +1)
+        3, 7, 6, 3, 6, 2, // top    (y = +1)
+        0, 1, 5, 0, 5, 4, // bottom (y = -1)
         // clang-format on
     } };
 
-    const std::array<float, 72> cubeVerts = { {
+    const std::array<float, 24> cubeVerts = { {
         // clang-format off
-         -1.0f, 1.0f, 1.0f,
-        -1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
-        -1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, -1.0f,
-        -1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, 1.0f,
-        1.0f, 1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, 1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f, // 0
+         1.0f, -1.0f, -1.0f, // 1
+         1.0f,  1.0f, -1.0f, // 2
+        -1.0f,  1.0f, -1.0f, // 3
+        -1.0f, -1.0f,  1.0f, // 4
+         1.0f, -1.0f,  1.0f, // 5
+         1.0f,  1.0f,  1.0f, // 6
+        -1.0f,  1.0f,  1.0f, // 7
         // clang-format on
     } };
 
-    const std::array<float, 72> cubeNormals = { {
+    const std::array<float, 24> cubeColors = { {
         // clang-format off
-        0.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 1.0f,
-        -1.0f, 0.0f, 0.0f,
-        -1.0f, 0.0f, 0.0f,
-        -1.0f, 0.0f, 0.0f,
-        -1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, -1.0f, 0.0f,
-        0.0f, -1.0f, 0.0f,
-        0.0f, -1.0f, 0.0f,
-        0.0f, -1.0f, 0.0f,
-        0.0f, 0.0f, -1.0f,
-        0.0f, 0.0f, -1.0f,
-        0.0f, 0.0f, -1.0f,
-        0.0f, 0.0f, -1.0f,
-        // clang-format on
-    } };
-
-    const std::array<float, 72> cubeColors = { {
-        // clang-format off
-        1.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 1.0f,
-        0.0f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f,
-        1.0f, 0.5f, 0.0f,
-        0.5f, 0.0f, 0.5f,
-        0.0f, 0.5f, 0.5f,
-        0.5f, 1.0f, 0.5f,
-        0.5f, 0.5f, 1.0f,
-        1.0f, 0.5f, 1.0f,
-        0.5f, 1.0f, 1.0f,
-        1.0f, 1.0f, 0.5f,
-        0.5f, 1.0f, 0.0f,
-        1.0f, 0.0f, 0.5f,
-        0.0f, 1.0f, 0.5f,
-        0.5f, 0.0f, 1.0f,
-        0.0f, 0.5f, 1.0f,
-        1.0f, 0.5f, 0.5f,
-        0.5f, 0.5f, 0.0f,
-        0.0f, 0.0f, 0.5f,
-        0.5f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, // 0
+        1.0f, 1.0f, 0.0f, // 1
+        1.0f, 0.8f, 0.0f, // 2
+        1.0f, 1.0f, 0.0f, // 3
+        1.0f, 0.0f, 1.0f, // 4
+        1.0f, 0.8f, 0.0f, // 5
+        1.0f, 0.0f, 0.0f, // 6
+        0.0f, 0.0f, 0.0f, // 7
         // clang-format on
     } };
 };
