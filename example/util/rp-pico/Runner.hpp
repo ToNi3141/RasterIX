@@ -207,11 +207,15 @@ private:
     static constexpr uint32_t RESOLUTION_H = 240;
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
-    BusConnector<4096> m_busConnector {};
+    BusConnector<3072> m_busConnector {};
     PicoThreadRunner m_workerThread {};
     rr::NoThreadRunner m_uploadThread {};
+#if RIX_CORE_THREADED_RASTERIZATION
     rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
     rr::threadedvertextransformer::ThreadedVertexTransformer m_device { m_dduDevice, m_workerThread, m_uploadThread };
+#else
+    rr::devicedatauploader::DeviceDataUploader m_device { m_busConnector };
+#endif
     bool led = false;
     Scene m_scene {};
 };

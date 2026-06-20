@@ -21,6 +21,7 @@
 #include "Op.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/displaylist/DisplayList.hpp"
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -40,6 +41,11 @@ public:
     using CommandType = uint32_t;
 
     TextureStreamCmd() = default;
+    TextureStreamCmd(const TextureStreamCmd& rhs)
+    {
+        *this = rhs;
+    }
+
     TextureStreamCmd(const std::size_t tmu, const tcb::span<const std::size_t>& pages)
     {
         for (std::size_t i = 0; i < pages.size(); i++)
@@ -70,7 +76,7 @@ public:
     TextureStreamCmd& operator=(const TextureStreamCmd& rhs)
     {
         std::copy(rhs.m_payload.begin(), rhs.m_payload.end(), m_pages.begin());
-        m_payload = { m_pages };
+        m_payload = { m_pages.data(), rhs.m_payload.size() };
         m_op = rhs.m_op;
         return *this;
     }

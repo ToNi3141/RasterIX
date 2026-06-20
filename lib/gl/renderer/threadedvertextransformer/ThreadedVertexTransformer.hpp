@@ -329,6 +329,10 @@ private:
                     const std::size_t screenSize = resX * resY * displayLines;
                     FramebufferCmd c { cmd.getSelectColorBuffer(), cmd.getSelectDepthBuffer(), cmd.getSelectStencilBuffer(), screenSize };
                     c.swapFramebuffer();
+                    if (cmd.getEnableVSync())
+                    {
+                        c.enableVSync();
+                    }
                     return c;
                 });
         }
