@@ -10,7 +10,7 @@
 
 namespace labyrinth
 {
-template<typename T>
+template <typename T>
 using Quad = std::array<T, 4>;
 
 enum class MeshKind

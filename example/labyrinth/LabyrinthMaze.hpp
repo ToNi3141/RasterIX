@@ -3,6 +3,7 @@
 #include "LabyrinthTypes.hpp"
 #include <array>
 #include <cstdint>
+#include <stdint.h>
 #include <vector>
 
 namespace labyrinth
@@ -17,8 +18,8 @@ public:
     static constexpr float EyeHeight = 0.82f;
     using GridType = std::array<const char*, Height>;
 
-    template<size_t... RowLengths>
-    static constexpr GridType makeGrid(const char (&...rows)[RowLengths])
+    template <std::size_t... RowLengths>
+    static constexpr GridType makeGrid(const char (&... rows)[RowLengths])
     {
         static_assert(sizeof...(rows) == Height, "Maze grid must provide exactly Height rows.");
         static_assert(((RowLengths == (Width + 1)) && ...), "Each maze row must contain exactly Width characters.");
