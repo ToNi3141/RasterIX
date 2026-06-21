@@ -11,6 +11,7 @@ declare -a files=(
     example/minimal
     example/mipmap
     example/stencilShadow
+    example/labyrinth
     example/vbo
     example/util
     example/platformio

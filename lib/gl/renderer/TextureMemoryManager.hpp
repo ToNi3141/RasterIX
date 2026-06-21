@@ -280,7 +280,8 @@ public:
     {
         if (!m_textureUpdateRequired)
             return true;
-        m_textureUpdateRequired = false;
+
+        bool ret { true };
 
         // Upload textures
         for (std::size_t i = 0; i < RenderConfig::NUMBER_OF_TEXTURES; i++)
@@ -289,12 +290,22 @@ public:
             TextureEntry& textureEntry = m_textureEntryFlags[i];
             if (textureEntry.requiresUpload)
             {
-                bool ret { true };
                 std::array<uint8_t, TEXTURE_PAGE_SIZE> buffer;
                 std::size_t j = 0;
                 for (tcb::span<const uint8_t> b = texture.getPageData(j, buffer); !b.empty(); b = texture.getPageData(++j, buffer))
                 {
-                    ret = ret && uploader(static_cast<std::size_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, { buffer });
+                    if (m_pageTable[texture.pageTable[j]].requiresUpload)
+                    {
+                        ret = ret && uploader(static_cast<std::size_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, { buffer });
+                        if (ret)
+                        {
+                            m_pageTable[texture.pageTable[j]].requiresUpload = false;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
                 }
                 textureEntry.requiresUpload = !ret;
             }
@@ -308,6 +319,8 @@ public:
             }
         }
 
+        m_textureUpdateRequired = !ret;
+
         return true;
     }
 
@@ -315,6 +328,7 @@ private:
     struct PageEntry
     {
         bool inUse { false };
+        bool requiresUpload { false };
     };
 
     struct TextureEntry
@@ -395,6 +409,7 @@ private:
             {
                 tex.pageTable[cp] = p;
                 m_pageTable[p].inUse = true;
+                m_pageTable[p].requiresUpload = true;
                 SPDLOG_DEBUG("Use page: {}", p);
                 cp++;
                 tex.pages = cp;

@@ -54,20 +54,17 @@ module SpiSlave
         else
         begin
             clkSr <= { clkSr[0], sck };
+            valid <= 0;
             if ((clkSr[1] == 0) && (clkSr[0] == 1))
             begin
                 data <= { data[6 : 0], mosi };
                 cnt <= cnt + 1;
                 active <= 1;
-            end
-            if (cnt == 4'h8)
-            begin
-                valid <= 1;
-                cnt <= 4'h0;
-            end
-            else
-            begin
-                valid <= 0;
+                if (cnt == 4'h7)
+                begin
+                    valid <= 1;
+                    cnt <= 4'h0;
+                end
             end
         end
     end

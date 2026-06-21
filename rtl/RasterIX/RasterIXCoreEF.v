@@ -315,7 +315,6 @@ module RasterIXCoreEF #(
     wire                                             colorBufferCmdMemset;
     wire                                             colorBufferCmdRead;
     wire                                             colorBufferCmdSwap;
-    wire                                             colorBufferEnable;
     wire [3 : 0]                                     colorBufferMask;
     wire [COLOR_NUMBER_OF_SUB_PIXEL - 1 : 0]         colorBufferMaskReduced;
     wire                                             m_color_arvalid;
@@ -343,7 +342,6 @@ module RasterIXCoreEF #(
     wire                                             depthBufferCmdCommit;
     wire                                             depthBufferCmdMemset;
     wire                                             depthBufferCmdRead;
-    wire                                             depthBufferEnable;
     wire                                             depthBufferMask;
     wire                                             m_depth_arvalid;
     wire                                             m_depth_arlast;
@@ -370,7 +368,6 @@ module RasterIXCoreEF #(
     wire                                             stencilBufferCmdCommit;
     wire                                             stencilBufferCmdMemset;
     wire                                             stencilBufferCmdRead;
-    wire                                             stencilBufferEnable;
     wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask;
     wire                                             m_stencil_arvalid;
     wire                                             m_stencil_arlast;
@@ -1266,7 +1263,6 @@ module RasterIXCoreEF #(
         .ENABLE_FOG(ENABLE_FOG),
         .TMU_MEMORY_WIDTH(DATA_WIDTH),
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
-        .ENABLE_WRITE_FIFO(0),
         .ENABLE_READ_FIFO(1),
         .READ_FIFO_SIZE(6), // Decouples the read channel from the internal pipeline
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
@@ -1301,7 +1297,6 @@ module RasterIXCoreEF #(
         .colorBufferCmdRead(colorBufferCmdRead),
         .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
-        .colorBufferEnable(colorBufferEnable),
         .colorBufferMask(colorBufferMask),
         .m_color_arready(m_color_arready),
         .m_color_arlast(m_color_arlast),
@@ -1327,7 +1322,6 @@ module RasterIXCoreEF #(
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdMemset(depthBufferCmdMemset),
         .depthBufferCmdRead(depthBufferCmdRead),
-        .depthBufferEnable(depthBufferEnable),
         .depthBufferMask(depthBufferMask),
         .m_depth_arready(m_depth_arready),
         .m_depth_arlast(m_depth_arlast),
@@ -1353,7 +1347,6 @@ module RasterIXCoreEF #(
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdMemset(stencilBufferCmdMemset),
         .stencilBufferCmdRead(stencilBufferCmdRead),
-        .stencilBufferEnable(stencilBufferEnable),
         .stencilBufferMask(stencilBufferMask),
         .m_stencil_arready(m_stencil_arready),
         .m_stencil_arlast(m_stencil_arlast),

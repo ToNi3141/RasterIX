@@ -340,7 +340,9 @@ module RasterIX_IF #(
         .M_STRB_WIDTH(STRB_WIDTH),
         .S_DATA_WIDTH(CMD_STREAM_WIDTH),
         .S_STRB_WIDTH(CMD_STREAM_STRB_WIDTH),
-        .ID_WIDTH(ID_WIDTH_LOC)
+        .ID_WIDTH(ID_WIDTH_LOC),
+        .CONVERT_BURST(1),
+        .CONVERT_NARROW_BURST(1)
     ) commonAxiAdapter (
         .clk(aclk),
         .rst(!resetn),

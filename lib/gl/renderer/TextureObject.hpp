@@ -127,7 +127,7 @@ struct TextureObject
     std::size_t getLevels() const
     {
         const std::size_t maxPixel = std::max(getWidth(0), getHeight(0));
-        const float level = std::log2(static_cast<float>(maxPixel));
+        const float level = std::log2(static_cast<float>(maxPixel)) + 1.0f; // +1 because the base level is also counted as a mipmap level
         return static_cast<std::size_t>(level);
     }
 

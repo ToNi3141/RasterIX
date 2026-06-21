@@ -1,3 +1,6 @@
 [submodule "rtl/Float"]
 	path = rtl/Float
 	url = https://github.com/ToNi3141/Float.git
+[submodule "rtl/top/Xilinx/te0890/HyperRAM"]
+	path = rtl/top/Xilinx/te0890/HyperRAM
+	url = https://github.com/MJoergen/HyperRAM.git

@@ -4,7 +4,7 @@
 
 double sc_time_stamp() {
     static double t = 0;
-    return ++t;
+    return t++;
 }
 
 int main(int argc, char *argv[])

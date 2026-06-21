@@ -6,11 +6,13 @@ set(RTL_DIR ${CMAKE_SOURCE_DIR}/rtl)
 set(RTL_RASTERIX ${RTL_DIR}/RasterIX)
 set(RTL_FLOAT ${RTL_DIR}/Float/rtl/float)
 set(RTL_DISPLAY ${RTL_DIR}/Display)
+set(RTL_UTIL ${RTL_DIR}/Util)
 set(RTL_3RDPARTY ${RTL_DIR}/3rdParty)
 
 set(COMMON_VERILATOR_INCLUDES
     -I${RTL_RASTERIX}
     -I${RTL_FLOAT}
+    -I${RTL_UTIL}
     -I${RTL_3RDPARTY}
 )
 
@@ -88,3 +90,4 @@ add_verilator_test(logicOp LogicOp ${RTL_RASTERIX}/LogicOp.v)
 add_verilator_test(coalesceFiFo CoalesceFiFo ${RTL_RASTERIX}/CoalesceFiFo.v)
 add_verilator_test(coalesceAddrGen CoalesceAddrGen ${RTL_RASTERIX}/CoalesceAddrGen.v)
 add_verilator_test(streamSemaphore StreamSemaphore ${RTL_RASTERIX}/StreamSemaphore.v)
+add_verilator_test(axiToAvalonBridge AxiToAvalonBridge ${RTL_UTIL}/AxiToAvalonBridge.v)

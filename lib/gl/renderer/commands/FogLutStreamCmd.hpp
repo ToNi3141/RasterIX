@@ -38,7 +38,12 @@ public:
     using CommandType = uint32_t;
     using FogLutDesc = std::array<int32_t, LUT_SIZE>;
 
-    FogLutStreamCmd() = default;
+    FogLutStreamCmd()
+    {
+        std::fill(m_lut.begin(), m_lut.end(), 0);
+        m_payload = { m_lut };
+    }
+
     FogLutStreamCmd(const std::array<float, 33>& fogLut)
     {
         // Calculate the lut entries

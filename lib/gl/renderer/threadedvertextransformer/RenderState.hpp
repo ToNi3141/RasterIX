@@ -22,9 +22,36 @@
 #include "renderer/registers/RegisterVariant.hpp"
 #include <cstdint>
 #include <tcb/span.hpp>
+#include <type_traits>
 
 namespace rr::threadedvertextransformer
 {
+
+template <typename T, typename Variant>
+struct is_variant_alternative;
+
+template <typename T, typename... Ts>
+struct is_variant_alternative<T, std::variant<Ts...>>
+    : std::disjunction<std::is_same<T, Ts>...>
+{
+};
+
+template <typename T, typename Variant>
+inline constexpr bool is_variant_alternative_v = is_variant_alternative<T, Variant>::value;
+
+template <typename T, typename Variant, std::size_t I = 0>
+struct variant_index;
+
+template <typename T, typename First, typename... Rest, std::size_t I>
+struct variant_index<T, std::variant<First, Rest...>, I>
+    : std::conditional_t<std::is_same_v<T, First>,
+          std::integral_constant<std::size_t, I>,
+          variant_index<T, std::variant<Rest...>, I + 1>>
+{
+};
+
+template <typename T, typename Variant>
+inline constexpr std::size_t variant_index_v = variant_index<T, Variant>::value;
 
 class RenderState
 {
@@ -39,6 +66,13 @@ public:
         for (const auto& r : m_state.registers)
         {
             std::visit(regHandlers, r);
+        }
+        for (const auto& texRegArray : m_state.texRegisters)
+        {
+            for (const auto& texReg : texRegArray)
+            {
+                std::visit(regHandlers, texReg);
+            }
         }
         cmdHandlers(m_state.fogLut);
         for (const auto& ts : m_state.textureStream)
@@ -67,13 +101,26 @@ private:
     struct State
     {
         std::array<RegisterVariant, std::variant_size_v<RegisterVariant>> registers {};
+        std::array<std::array<TextureRegisterVariant, std::variant_size_v<TextureRegisterVariant>>, RenderConfig::TMU_COUNT> texRegisters {};
         FogLutStreamCmd fogLut {};
         std::array<TextureStreamCmd, RenderConfig::TMU_COUNT> textureStream {};
     };
 
     void storeRegister(const WriteRegisterCmd& cmd)
     {
-        m_state.registers[cmd.getRegister().index()] = cmd.getRegister();
+        const auto reg = cmd.getRegister();
+        std::visit([&](const auto& r)
+            {
+            using T = std::decay_t<decltype(r)>;
+            if constexpr (is_variant_alternative_v<T, TextureRegisterVariant> && !std::is_same_v<T, std::monostate>)
+            {
+                m_state.texRegisters[r.getTmuFromAddr()][variant_index_v<T, TextureRegisterVariant>] = r;
+            }
+            else
+            {
+                m_state.registers[reg.index()] = reg;
+            } },
+            reg);
     }
 
     void storeTextureStream(const TextureStreamCmd& cmd)

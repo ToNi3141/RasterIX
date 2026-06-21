@@ -83,16 +83,6 @@ public:
     }
 
 private:
-    template <typename TCommand>
-    bool hasDisplayListEnoughSpace(const TCommand& cmd)
-    {
-        if (getCommandSize(cmd) >= m_displayList.getFreeSpace())
-        {
-            return false;
-        }
-        return true;
-    }
-
     TDisplayList m_displayList {};
     RIXDisplayListAssembler<TDisplayList> m_rixDisplayListAssembler { m_displayList };
     TextureLoadOptimizer<TMU_COUNT, TDisplayList> m_textureLoadOptimizer { m_displayList };

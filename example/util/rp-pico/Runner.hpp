@@ -1,15 +1,64 @@
+#include "IThreadRunner.hpp"
 #include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
 #include "gl.h"
 #include "glu.h"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
+#include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 
+#include <atomic>
 #include <hardware/dma.h>
 #include <hardware/spi.h>
 #include <pico/binary_info.h>
+#include <pico/multicore.h>
 #include <pico/stdlib.h>
 
 #include <algorithm>
+
+class PicoThreadRunner : public rr::IThreadRunner
+{
+public:
+    PicoThreadRunner()
+    {
+        multicore_launch_core1(core1_entry);
+    }
+
+    void wait() override
+    {
+        if (m_jobRunning)
+        {
+            multicore_fifo_pop_blocking();
+            m_jobRunning = false;
+        }
+    }
+
+    void run(const std::function<void()>& operation) override
+    {
+        wait();
+        m_currentJob = operation;
+        multicore_fifo_push_blocking((uintptr_t)&m_currentJob);
+        m_jobRunning = true;
+    }
+
+    bool isBusy() const override
+    {
+        return m_jobRunning;
+    }
+
+private:
+    static void core1_entry()
+    {
+        while (1)
+        {
+            auto func = (const std::function<void()>*)multicore_fifo_pop_blocking();
+            (*func)();
+            multicore_fifo_push_blocking(1);
+        }
+    }
+
+    std::atomic<bool> m_jobRunning { false };
+    std::function<void()> m_currentJob;
+};
 
 // Simple BusConnector which wraps the SPI
 template <uint32_t DISPLAYLIST_SIZE = 30 * 1024>
@@ -18,7 +67,7 @@ class BusConnector : public rr::IBusConnector
 public:
     static constexpr uint32_t RESET { 21 };
     static constexpr uint32_t CTS { 20 };
-    static constexpr uint32_t MAX_CHUNK_SIZE { 32768 - 2048 };
+    static constexpr uint32_t MAX_CHUNK_SIZE { 1024 * 3 };
 
     BusConnector() { }
 
@@ -92,7 +141,7 @@ public:
         gpio_init(CTS);
         gpio_set_dir(RESET, GPIO_OUT);
         gpio_set_dir(CTS, GPIO_IN);
-        spi_init(spi_default, 20 * 1000 * 1000);
+        spi_init(spi_default, 18 * 1000 * 1000);
         gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
         gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
         gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, true);
@@ -158,8 +207,15 @@ private:
     static constexpr uint32_t RESOLUTION_H = 240;
     static constexpr uint32_t RESOLUTION_W = 320;
     static constexpr uint LED_PIN = 25;
-    BusConnector<4096> m_busConnector {};
+    BusConnector<3072> m_busConnector {};
+    PicoThreadRunner m_workerThread {};
+    rr::NoThreadRunner m_uploadThread {};
+#if RIX_CORE_THREADED_RASTERIZATION
+    rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_device { m_dduDevice, m_workerThread, m_uploadThread };
+#else
     rr::devicedatauploader::DeviceDataUploader m_device { m_busConnector };
+#endif
     bool led = false;
     Scene m_scene {};
 };

@@ -53,7 +53,6 @@ module InternalFramebufferWriter
     /////////////////////////
     // Configs
     /////////////////////////
-    input  wire                                 confEnable,
     input  wire                                 confEnableScissor,
     input  wire [X_BIT_WIDTH - 1 : 0]           confScissorStartX,
     input  wire [Y_BIT_WIDTH - 1 : 0]           confScissorStartY,
@@ -97,7 +96,7 @@ module InternalFramebufferWriter
             assign writeAddrPort = waddr;
             assign writeDataPort = wdata;
             assign writeMaskPort = memMask & { NUMBER_OF_SUB_PIXELS { memScissorTest } };
-            assign writeEnablePort = wvalid && wstrb && confEnable;
+            assign writeEnablePort = wvalid && wstrb;
         end
         else
         begin
@@ -110,7 +109,7 @@ module InternalFramebufferWriter
             end
             assign writeAddrPort = waddr[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
             assign writeDataPort = { NUMBER_OF_PIXELS_PER_BEAT { wdata } };
-            assign writeEnablePort = wvalid && wstrb && confEnable;
+            assign writeEnablePort = wvalid && wstrb;
         end
     endgenerate
 endmodule
