@@ -34,7 +34,7 @@ You will find `rasterix.bin` and `rasterix.bit` in the `synth` directory. To pro
 
 The following hardware setup shows a Raspberry Pi Pico 2 connected to a TE0890 board and a 320x240 pixel display with an `ILI9341` chipset.
 
-<img src="../../../../screenshots/cmod7.jpg" width="50%"> 
+<img src="../../../../screenshots/te0890.png" width="70%"> 
 
 To connect the Pico to the FPGA, use the following pin mapping:
 
@@ -76,7 +76,7 @@ cmake --preset rppico -DPICO_BOARD=pico2
 cmake --build build/rppico --config Release --parallel
 ```
 
-The compiled `minimal.uf2` file will be located in `build/rppico/example/`.
+The compiled `labyrinth.uf2` file, together with other exampels, will be located in `build/rppico/example/`.
 
 **Note:** The RIX library makes heavy use of floating-point arithmetic. An MCU with an FPU, such as the `rp2350`, is recommended and can improve overall performance by approximately 10×.
 
