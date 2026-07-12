@@ -548,6 +548,7 @@ GLAPI void APIENTRY impl_glGetFloatv(GLenum pname, GLfloat* params)
         params[0] = static_cast<GLfloat>(convertTypeToOpenGL(RIXGL::getInstance().vertexArray().getVertexType()));
         break;
     default:
+        SPDLOG_WARN("glGetFloatv: Unhandled pname 0x{:X}", pname);
         params[0] = 0.0f;
         break;
     }

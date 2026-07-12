@@ -21,11 +21,92 @@
 #include "RIXGL.hpp"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 #include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
+#include <cstdlib>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
 static constexpr uint32_t RESOLUTION_H = 600;
 static constexpr uint32_t RESOLUTION_W = 1024;
+
+// The hardware supports exactly one fixed framebuffer format: RGB565 with a
+// 16 bit depth buffer. This single config is exposed to all FBConfig queries.
+struct __GLXFBConfigRec
+{
+    int visualId;
+    int fbConfigId;
+    int screen;
+    int redSize;
+    int greenSize;
+    int blueSize;
+    int alphaSize;
+    int depthSize;
+    int stencilSize;
+    int bufferSize;
+    int level;
+    Bool doubleBuffer;
+    int renderType;
+    int drawableType;
+};
+
+static __GLXFBConfigRec g_fbConfig {
+    /* visualId */ 0x21,
+    /* fbConfigId */ 0x21,
+    /* screen */ 0,
+    /* redSize */ 5,
+    /* greenSize */ 6,
+    /* blueSize */ 5,
+    /* alphaSize */ 0,
+    /* depthSize */ 16,
+    /* stencilSize */ 8,
+    /* bufferSize */ 16,
+    /* level */ 0,
+    /* doubleBuffer */ True,
+    /* renderType */ GLX_RGBA_BIT,
+    /* drawableType */ GLX_WINDOW_BIT,
+};
+
+// The implementation advertises GLX 1.4, matching the highest GLX_VERSION_1_x
+// token defined in the header.
+static constexpr int GLX_IMPL_VERSION_MAJOR = 1;
+static constexpr int GLX_IMPL_VERSION_MINOR = 4;
+static constexpr char GLX_IMPL_VENDOR[] = "RasterIX";
+static constexpr char GLX_IMPL_VERSION_STRING[] = "1.4";
+static constexpr char GLX_IMPL_EXTENSIONS[] = "";
+
+// glXGetCurrentDisplay returns the Display* of the most recently made-current
+// context. It is captured whenever a context is made current.
+static Display* g_currentDisplay = nullptr;
+
+static XVisualInfo* createVisualInfo(Display* display, int screen)
+{
+    XVisualInfo templateInfo {};
+    templateInfo.screen = screen;
+    templateInfo.depth = 16;
+    templateInfo.c_class = TrueColor;
+
+    int count = 0;
+    XVisualInfo* visuals = XGetVisualInfo(
+        display,
+        VisualScreenMask | VisualDepthMask | VisualClassMask,
+        &templateInfo,
+        &count
+    );
+
+    for (int i = 0; i < count; i++)
+    {
+        if (visuals[i].red_mask == 0xf800 &&
+            visuals[i].green_mask == 0x07e0 &&
+            visuals[i].blue_mask == 0x001f)
+        {
+            XVisualInfo* result = new XVisualInfo(visuals[i]);
+            XFree(visuals);
+            return result;
+        }
+    }
+
+    XFree(visuals);
+    return nullptr;
+}
 
 class GLInitGuard
 {
@@ -42,6 +123,22 @@ public:
         rr::RIXGL::getInstance().addLibProcedure("glXQueryDrawable", ADDRESS_OF(glXQueryDrawable));
         rr::RIXGL::getInstance().addLibProcedure("glXGetCurrentContext", ADDRESS_OF(glXGetCurrentContext));
         rr::RIXGL::getInstance().addLibProcedure("glXGetCurrentDrawable", ADDRESS_OF(glXGetCurrentDrawable));
+        rr::RIXGL::getInstance().addLibProcedure("glXChooseFBConfig", ADDRESS_OF(glXChooseFBConfig));
+        rr::RIXGL::getInstance().addLibProcedure("glXGetFBConfigs", ADDRESS_OF(glXGetFBConfigs));
+        rr::RIXGL::getInstance().addLibProcedure("glXGetFBConfigAttrib", ADDRESS_OF(glXGetFBConfigAttrib));
+        rr::RIXGL::getInstance().addLibProcedure("glXGetVisualFromFBConfig", ADDRESS_OF(glXGetVisualFromFBConfig));
+        rr::RIXGL::getInstance().addLibProcedure("glXCreateNewContext", ADDRESS_OF(glXCreateNewContext));
+        rr::RIXGL::getInstance().addLibProcedure("glXCreateWindow", ADDRESS_OF(glXCreateWindow));
+        rr::RIXGL::getInstance().addLibProcedure("glXMakeContextCurrent", ADDRESS_OF(glXMakeContextCurrent));
+        rr::RIXGL::getInstance().addLibProcedure("glXQueryVersion", ADDRESS_OF(glXQueryVersion));
+        rr::RIXGL::getInstance().addLibProcedure("glXIsDirect", ADDRESS_OF(glXIsDirect));
+        rr::RIXGL::getInstance().addLibProcedure("glXGetConfig", ADDRESS_OF(glXGetConfig));
+        rr::RIXGL::getInstance().addLibProcedure("glXQueryExtensionsString", ADDRESS_OF(glXQueryExtensionsString));
+        rr::RIXGL::getInstance().addLibProcedure("glXQueryServerString", ADDRESS_OF(glXQueryServerString));
+        rr::RIXGL::getInstance().addLibProcedure("glXGetClientString", ADDRESS_OF(glXGetClientString));
+        rr::RIXGL::getInstance().addLibProcedure("glXGetCurrentDisplay", ADDRESS_OF(glXGetCurrentDisplay));
+        rr::RIXGL::getInstance().addLibProcedure("glXSwapIntervalEXT", ADDRESS_OF(glXSwapIntervalEXT));
+        rr::RIXGL::getInstance().addLibProcedure("glXCreateContextAttribsARB", ADDRESS_OF(glXCreateContextAttribsARB));
 #undef ADDRESS_OF
     }
     ~GLInitGuard()
@@ -73,29 +170,12 @@ private:
 } guard;
 
 GLAPI XVisualInfo* APIENTRY glXChooseVisual(
-    [[maybe_unused]] Display* dpy,
-    [[maybe_unused]] int screen,
+    Display* dpy,
+    int screen,
     [[maybe_unused]] int* attribList)
 {
     SPDLOG_DEBUG("glXChooseVisual called");
-    XVisualInfo* vi = new XVisualInfo;
-    vi->visual = new Visual;
-    vi->visualid = 0x21;
-    vi->screen = 0;
-    vi->depth = 16;
-    vi->red_mask = 0x1f;
-    vi->green_mask = 0x3f;
-    vi->blue_mask = 0x1f;
-    vi->colormap_size = 16;
-    vi->bits_per_rgb = log2(16);
-    vi->visual->visualid = 0x21;
-    vi->visual->bits_per_rgb = log2(16);
-    vi->visual->red_mask = 0x1f << 11;
-    vi->visual->green_mask = 0x3f << 5;
-    vi->visual->blue_mask = 0x1f;
-    vi->visual->c_class = TrueColor;
-    vi->visual->map_entries = 0x20;
-    return vi;
+    return createVisualInfo(dpy, screen);
 }
 
 GLAPI GLXContext APIENTRY glXCreateContext(
@@ -130,12 +210,13 @@ GLAPI void APIENTRY glXDestroyContext([[maybe_unused]] Display* dpy, [[maybe_unu
 }
 
 GLAPI Bool APIENTRY glXMakeCurrent(
-    [[maybe_unused]] Display* dpy,
+    Display* dpy,
     [[maybe_unused]] GLXDrawable drawable,
     [[maybe_unused]] GLXContext ctx)
 {
     SPDLOG_DEBUG("glXMakeCurrent called");
     // Nothing todo. Only one context exists
+    g_currentDisplay = dpy;
     return 1;
 }
 
@@ -176,25 +257,90 @@ GLAPI Bool APIENTRY glXQueryExtension([[maybe_unused]] Display* dpy, int* errorb
     return 1;
 }
 
-GLAPI Bool APIENTRY glXQueryVersion([[maybe_unused]] Display* dpy, [[maybe_unused]] int* maj, [[maybe_unused]] int* min)
+GLAPI Bool APIENTRY glXQueryVersion([[maybe_unused]] Display* dpy, int* maj, int* min)
 {
-    SPDLOG_WARN("glXQueryVersion not implemented");
-    return 0;
+    SPDLOG_DEBUG("glXQueryVersion called");
+    if (maj != nullptr)
+    {
+        *maj = GLX_IMPL_VERSION_MAJOR;
+    }
+    if (min != nullptr)
+    {
+        *min = GLX_IMPL_VERSION_MINOR;
+    }
+    return True;
 }
 
 GLAPI Bool APIENTRY glXIsDirect([[maybe_unused]] Display* dpy, [[maybe_unused]] GLXContext ctx)
 {
-    SPDLOG_WARN("glXIsDirect not implemented");
-    return 0;
+    SPDLOG_DEBUG("glXIsDirect called");
+    // Rendering happens locally through the hardware, so the context is direct.
+    return True;
 }
 
 GLAPI int APIENTRY glXGetConfig(
     [[maybe_unused]] Display* dpy,
-    [[maybe_unused]] XVisualInfo* visual,
-    [[maybe_unused]] int attrib,
-    [[maybe_unused]] int* value)
+    XVisualInfo* visual,
+    int attrib,
+    int* value)
 {
-    SPDLOG_WARN("glXGetConfig not implemented");
+    SPDLOG_DEBUG("glXGetConfig called");
+    if (visual == nullptr || value == nullptr)
+    {
+        return GLX_BAD_VALUE;
+    }
+
+    switch (attrib)
+    {
+    case GLX_USE_GL:
+        *value = True;
+        break;
+    case GLX_RGBA:
+        *value = True;
+        break;
+    case GLX_BUFFER_SIZE:
+        *value = g_fbConfig.bufferSize;
+        break;
+    case GLX_LEVEL:
+        *value = g_fbConfig.level;
+        break;
+    case GLX_DOUBLEBUFFER:
+        *value = g_fbConfig.doubleBuffer;
+        break;
+    case GLX_STEREO:
+        *value = False;
+        break;
+    case GLX_AUX_BUFFERS:
+        *value = 0;
+        break;
+    case GLX_RED_SIZE:
+        *value = g_fbConfig.redSize;
+        break;
+    case GLX_GREEN_SIZE:
+        *value = g_fbConfig.greenSize;
+        break;
+    case GLX_BLUE_SIZE:
+        *value = g_fbConfig.blueSize;
+        break;
+    case GLX_ALPHA_SIZE:
+        *value = g_fbConfig.alphaSize;
+        break;
+    case GLX_DEPTH_SIZE:
+        *value = g_fbConfig.depthSize;
+        break;
+    case GLX_STENCIL_SIZE:
+        *value = g_fbConfig.stencilSize;
+        break;
+    case GLX_ACCUM_RED_SIZE:
+    case GLX_ACCUM_GREEN_SIZE:
+    case GLX_ACCUM_BLUE_SIZE:
+    case GLX_ACCUM_ALPHA_SIZE:
+        *value = 0;
+        break;
+    default:
+        SPDLOG_WARN("glXGetConfig unknown attribute {}", attrib);
+        return GLX_BAD_ATTRIBUTE;
+    }
     return 0;
 }
 
@@ -232,27 +378,49 @@ GLAPI void APIENTRY glXUseXFont(
 /* GLX 1.1 and later */
 GLAPI const char* APIENTRY glXQueryExtensionsString([[maybe_unused]] Display* dpy, [[maybe_unused]] int screen)
 {
-    SPDLOG_WARN("glXQueryExtensionsString not implemented");
-    return nullptr;
+    SPDLOG_DEBUG("glXQueryExtensionsString called");
+    return GLX_IMPL_EXTENSIONS;
 }
 
-GLAPI const char* APIENTRY glXQueryServerString([[maybe_unused]] Display* dpy, [[maybe_unused]] int screen, [[maybe_unused]] int name)
+GLAPI const char* APIENTRY glXQueryServerString([[maybe_unused]] Display* dpy, [[maybe_unused]] int screen, int name)
 {
-    SPDLOG_WARN("glXQueryServerString not implemented");
-    return nullptr;
+    SPDLOG_DEBUG("glXQueryServerString called");
+    switch (name)
+    {
+    case GLX_VENDOR:
+        return GLX_IMPL_VENDOR;
+    case GLX_VERSION:
+        return GLX_IMPL_VERSION_STRING;
+    case GLX_EXTENSIONS:
+        return GLX_IMPL_EXTENSIONS;
+    default:
+        SPDLOG_WARN("glXQueryServerString unknown name {}", name);
+        return nullptr;
+    }
 }
 
-GLAPI const char* APIENTRY glXGetClientString([[maybe_unused]] Display* dpy, [[maybe_unused]] int name)
+GLAPI const char* APIENTRY glXGetClientString([[maybe_unused]] Display* dpy, int name)
 {
-    SPDLOG_WARN("glXGetClientString not implemented");
-    return nullptr;
+    SPDLOG_DEBUG("glXGetClientString called");
+    switch (name)
+    {
+    case GLX_VENDOR:
+        return GLX_IMPL_VENDOR;
+    case GLX_VERSION:
+        return GLX_IMPL_VERSION_STRING;
+    case GLX_EXTENSIONS:
+        return GLX_IMPL_EXTENSIONS;
+    default:
+        SPDLOG_WARN("glXGetClientString unknown name {}", name);
+        return nullptr;
+    }
 }
 
 /* GLX 1.2 and later */
 GLAPI Display* APIENTRY glXGetCurrentDisplay(void)
 {
-    SPDLOG_WARN("glXGetCurrentDisplay not implemented");
-    return nullptr;
+    SPDLOG_DEBUG("glXGetCurrentDisplay called");
+    return g_currentDisplay;
 }
 
 /* GLX 1.3 and later */
@@ -260,47 +428,164 @@ GLAPI GLXFBConfig* APIENTRY glXChooseFBConfig(
     [[maybe_unused]] Display* dpy,
     [[maybe_unused]] int screen,
     [[maybe_unused]] const int* attribList,
-    [[maybe_unused]] int* nitems)
+    int* nitems)
 {
-    SPDLOG_WARN("glXChooseFBConfig not implemented");
-    return nullptr;
+    SPDLOG_DEBUG("glXChooseFBConfig called");
+    // The hardware exposes a single fixed config, so any requested attributes are
+    // ignored and the one available config is always returned.
+    GLXFBConfig* configs = static_cast<GLXFBConfig*>(malloc(sizeof(GLXFBConfig)));
+    configs[0] = &g_fbConfig;
+    if (nitems != nullptr)
+    {
+        *nitems = 1;
+    }
+    return configs;
 }
 
 GLAPI int APIENTRY glXGetFBConfigAttrib(
     [[maybe_unused]] Display* dpy,
-    [[maybe_unused]] GLXFBConfig config,
-    [[maybe_unused]] int attribute,
-    [[maybe_unused]] int* value)
+    GLXFBConfig config,
+    int attribute,
+    int* value)
 {
-    SPDLOG_WARN("glXGetFBConfigAttrib not implemented");
+    SPDLOG_DEBUG("glXGetFBConfigAttrib called");
+    if (config == nullptr || value == nullptr)
+    {
+        return GLX_BAD_VALUE;
+    }
+
+    switch (attribute)
+    {
+    case GLX_FBCONFIG_ID:
+        *value = config->fbConfigId;
+        break;
+    case GLX_VISUAL_ID:
+        *value = config->visualId;
+        break;
+    case GLX_SCREEN:
+        *value = config->screen;
+        break;
+    case GLX_BUFFER_SIZE:
+        *value = config->bufferSize;
+        break;
+    case GLX_LEVEL:
+        *value = config->level;
+        break;
+    case GLX_DOUBLEBUFFER:
+        *value = config->doubleBuffer;
+        break;
+    case GLX_STEREO:
+        *value = False;
+        break;
+    case GLX_AUX_BUFFERS:
+        *value = 0;
+        break;
+    case GLX_RED_SIZE:
+        *value = config->redSize;
+        break;
+    case GLX_GREEN_SIZE:
+        *value = config->greenSize;
+        break;
+    case GLX_BLUE_SIZE:
+        *value = config->blueSize;
+        break;
+    case GLX_ALPHA_SIZE:
+        *value = config->alphaSize;
+        break;
+    case GLX_DEPTH_SIZE:
+        *value = config->depthSize;
+        break;
+    case GLX_STENCIL_SIZE:
+        *value = config->stencilSize;
+        break;
+    case GLX_ACCUM_RED_SIZE:
+    case GLX_ACCUM_GREEN_SIZE:
+    case GLX_ACCUM_BLUE_SIZE:
+    case GLX_ACCUM_ALPHA_SIZE:
+        *value = 0;
+        break;
+    case GLX_RENDER_TYPE:
+        *value = config->renderType;
+        break;
+    case GLX_DRAWABLE_TYPE:
+        *value = config->drawableType;
+        break;
+    case GLX_X_RENDERABLE:
+        *value = True;
+        break;
+    case GLX_X_VISUAL_TYPE:
+        *value = GLX_TRUE_COLOR;
+        break;
+    case GLX_CONFIG_CAVEAT:
+        *value = GLX_NONE;
+        break;
+    case GLX_TRANSPARENT_TYPE:
+        *value = GLX_NONE;
+        break;
+    case GLX_SAMPLE_BUFFERS:
+    case GLX_SAMPLES:
+        *value = 0;
+        break;
+    case GLX_MAX_PBUFFER_WIDTH:
+    case GLX_MAX_PBUFFER_HEIGHT:
+    case GLX_MAX_PBUFFER_PIXELS:
+        *value = 0;
+        break;
+    default:
+        SPDLOG_WARN("glXGetFBConfigAttrib unknown attribute {}", attribute);
+        return GLX_BAD_ATTRIBUTE;
+    }
     return 0;
 }
 
 GLAPI GLXFBConfig* APIENTRY glXGetFBConfigs(
     [[maybe_unused]] Display* dpy,
     [[maybe_unused]] int screen,
-    [[maybe_unused]] int* nelements)
+    int* nelements)
 {
-    SPDLOG_WARN("glXGetFBConfigs not implemented");
-    return nullptr;
+    SPDLOG_DEBUG("glXGetFBConfigs called");
+    GLXFBConfig* configs = static_cast<GLXFBConfig*>(malloc(sizeof(GLXFBConfig)));
+    configs[0] = &g_fbConfig;
+    if (nelements != nullptr)
+    {
+        *nelements = 1;
+    }
+    return configs;
 }
 
 GLAPI XVisualInfo* APIENTRY glXGetVisualFromFBConfig(
     [[maybe_unused]] Display* dpy,
     [[maybe_unused]] GLXFBConfig config)
 {
-    SPDLOG_WARN("glXGetVisualFromFBConfig not implemented");
-    return nullptr;
+    SPDLOG_DEBUG("glXGetVisualFromFBConfig called");
+    if (!config)
+        return nullptr;
+
+    int count = 0;
+    XVisualInfo templateInfo {};
+
+    templateInfo.screen = config->screen;
+    templateInfo.depth = 16;
+    templateInfo.c_class = TrueColor;
+
+    XVisualInfo* visuals = XGetVisualInfo(
+        dpy,
+        VisualScreenMask | VisualDepthMask | VisualClassMask,
+        &templateInfo,
+        &count
+    );
+    return visuals;
 }
 
 GLAPI GLXWindow APIENTRY glXCreateWindow(
     [[maybe_unused]] Display* dpy,
     [[maybe_unused]] GLXFBConfig config,
-    [[maybe_unused]] Window win,
+    Window win,
     [[maybe_unused]] const int* attribList)
 {
-    SPDLOG_WARN("glXCreateWindow not implemented");
-    return 0;
+    SPDLOG_DEBUG("glXCreateWindow called");
+    // Only a single drawable exists; map the GLX window onto the X window.
+    return win;
 }
 
 GLAPI void APIENTRY glXDestroyWindow([[maybe_unused]] Display* dpy, [[maybe_unused]] GLXWindow window)
@@ -353,18 +638,21 @@ GLAPI GLXContext APIENTRY glXCreateNewContext(
     [[maybe_unused]] GLXContext shareList,
     [[maybe_unused]] Bool direct)
 {
-    SPDLOG_WARN("glXCreateNewContext not implemented");
-    return nullptr;
+    SPDLOG_DEBUG("glXCreateNewContext called");
+    guard.getInst().setRenderResolution(RESOLUTION_W, RESOLUTION_H);
+    return reinterpret_cast<GLXContext>(&guard.getInst());
 }
 
 GLAPI Bool APIENTRY glXMakeContextCurrent(
-    [[maybe_unused]] Display* dpy,
+    Display* dpy,
     [[maybe_unused]] GLXDrawable draw,
     [[maybe_unused]] GLXDrawable read,
     [[maybe_unused]] GLXContext ctx)
 {
-    SPDLOG_WARN("glXMakeContextCurrent not implemented");
-    return 0;
+    SPDLOG_DEBUG("glXMakeContextCurrent called");
+    // Nothing todo. Only one context exists
+    g_currentDisplay = dpy;
+    return 1;
 }
 
 GLAPI GLXDrawable APIENTRY glXGetCurrentReadDrawable(void)
@@ -403,4 +691,25 @@ GLAPI __GLXextFuncPtr APIENTRY glXGetProcAddressARB([[maybe_unused]] const GLuby
 {
     SPDLOG_DEBUG("glXGetProcAddressARB {} called", s);
     return reinterpret_cast<__GLXextFuncPtr>(guard.getInst().getLibProcedure(reinterpret_cast<const char*>(s)));
+}
+
+GLAPI void APIENTRY glXSwapIntervalEXT(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXDrawable drawable,
+    [[maybe_unused]] int interval)
+{
+    SPDLOG_DEBUG("glXSwapIntervalEXT called");
+    // The hardware presents every swap unconditionally; the swap interval is
+    // not configurable, so this is intentionally a no-op.
+}
+
+GLAPI GLXContext APIENTRY glXCreateContextAttribsARB(
+    [[maybe_unused]] Display* dpy,
+    [[maybe_unused]] GLXFBConfig config,
+    [[maybe_unused]] GLXContext share_context,
+    [[maybe_unused]] Bool direct,
+    [[maybe_unused]] const int* attrib_list)
+{
+    SPDLOG_DEBUG("glXCreateContextAttribsARB called");
+    return glXCreateContext(dpy, nullptr, share_context, direct);
 }

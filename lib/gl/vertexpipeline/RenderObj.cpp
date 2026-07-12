@@ -181,7 +181,7 @@ void RenderObj::logCurrentConfig() const
 {
     SPDLOG_DEBUG("RenderObj:");
     SPDLOG_DEBUG("  m_indicesEnabled {}", m_indicesEnabled);
-    SPDLOG_DEBUG("  m_indicesType {}", m_indicesType);
+    SPDLOG_DEBUG("  m_indicesType {}", typeToString(m_indicesType));
     SPDLOG_DEBUG("  m_arrayOffset {}", m_arrayOffset);
     SPDLOG_DEBUG("  getDrawMode {}", drawModeToString(getDrawMode()));
     SPDLOG_DEBUG("  getCount {}", getCount());

@@ -33,12 +33,12 @@ GLAPI const GLubyte* APIENTRY impl_glGetString(GLenum name)
     case GL_RENDERER:
         return reinterpret_cast<const GLubyte*>("RasterIX");
     case GL_VERSION:
-        return reinterpret_cast<const GLubyte*>("OpenGL ES-CM 1.1");
+        return reinterpret_cast<const GLubyte*>("1.5"); // 1.5 seems to be more compatible than OpenGL ES-CM 1.1
     case GL_EXTENSIONS:
         return reinterpret_cast<const GLubyte*>(RIXGL::getInstance().getLibExtensions());
     default:
         SPDLOG_WARN("glGetString 0x{:X} not supported", name);
         break;
     }
-    return nullptr;
+    return reinterpret_cast<const GLubyte*>("");
 }

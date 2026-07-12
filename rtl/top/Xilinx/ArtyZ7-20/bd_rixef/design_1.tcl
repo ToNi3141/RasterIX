@@ -271,7 +271,9 @@ proc create_root_design { parentCell } {
     CONFIG.DATA_WIDTH {64} \
     CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {5} \
     CONFIG.ID_WIDTH {6} \
+    CONFIG.RASTERIZER_FIXPOINT_PRECISION {18} \
     CONFIG.STRB_WIDTH {8} \
+    CONFIG.SUB_PIXEL_CALC_PRECISION {8} \
     CONFIG.TMU_COUNT {1} \
     CONFIG.VARIANT {ef} \
   ] $RasterIX_0
@@ -283,10 +285,13 @@ proc create_root_design { parentCell } {
     CONFIG.c_enable_multi_channel {0} \
     CONFIG.c_include_mm2s {1} \
     CONFIG.c_include_s2mm {1} \
+    CONFIG.c_include_sg {1} \
     CONFIG.c_m_axi_mm2s_data_width {64} \
     CONFIG.c_m_axi_s2mm_data_width {64} \
     CONFIG.c_m_axis_mm2s_tdata_width {32} \
     CONFIG.c_micro_dma {0} \
+    CONFIG.c_mm2s_burst_size {16} \
+    CONFIG.c_s2mm_burst_size {16} \
     CONFIG.c_s_axis_s2mm_tdata_width {32} \
     CONFIG.c_sg_include_stscntrl_strm {0} \
     CONFIG.c_sg_length_width {26} \
@@ -297,7 +302,8 @@ proc create_root_design { parentCell } {
   # Create instance: axi_dwidth_converter_0, and set properties
   set axi_dwidth_converter_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dwidth_converter:2.1 axi_dwidth_converter_0 ]
   set_property -dict [list \
-    CONFIG.MAX_SPLIT_BEATS {16} \
+    CONFIG.ADDR_WIDTH {32} \
+    CONFIG.MAX_SPLIT_BEATS {256} \
     CONFIG.MI_DATA_WIDTH {64} \
     CONFIG.PROTOCOL {AXI4} \
     CONFIG.SI_DATA_WIDTH {32} \
@@ -314,19 +320,26 @@ proc create_root_design { parentCell } {
 
   # Create instance: axi_protocol_convert_0, and set properties
   set axi_protocol_convert_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_0 ]
+  set_property CONFIG.TRANSLATION_MODE {2} $axi_protocol_convert_0
+
 
   # Create instance: axi_protocol_convert_1, and set properties
   set axi_protocol_convert_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_1 ]
-  set_property CONFIG.ID_WIDTH {6} $axi_protocol_convert_1
+  set_property CONFIG.TRANSLATION_MODE {0} $axi_protocol_convert_1
 
 
   # Create instance: axi_protocol_convert_2, and set properties
   set axi_protocol_convert_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_2 ]
-  set_property CONFIG.DATA_WIDTH {32} $axi_protocol_convert_2
+  set_property -dict [list \
+    CONFIG.DATA_WIDTH {32} \
+    CONFIG.TRANSLATION_MODE {0} \
+  ] $axi_protocol_convert_2
 
 
   # Create instance: axi_protocol_convert_3, and set properties
   set axi_protocol_convert_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_3 ]
+  set_property CONFIG.TRANSLATION_MODE {0} $axi_protocol_convert_3
+
 
   # Create instance: axis_data_fifo_0, and set properties
   set axis_data_fifo_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 axis_data_fifo_0 ]

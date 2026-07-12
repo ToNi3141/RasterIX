@@ -266,9 +266,9 @@ module RasterIXRenderCore #(
             $finish;
         end
 
-        if ((RASTERIZER_FLOAT_PRECISION > 32) || (RASTERIZER_FLOAT_PRECISION < 20))
+        if ((RASTERIZER_FLOAT_PRECISION > 32) || (RASTERIZER_FLOAT_PRECISION < 24))
         begin
-            $error("RASTERIZER_FLOAT_PRECISION must be between 25 and 20");
+            $error("RASTERIZER_FLOAT_PRECISION must be between 24 and 32");
             $finish;
         end
 
