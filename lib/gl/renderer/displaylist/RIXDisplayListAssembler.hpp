@@ -54,7 +54,7 @@ public:
     template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
-        if (getCommandSize<TCommand>(cmd) >= m_displayList.getFreeSpace())
+        if (!canAddCommand(cmd))
         {
             return false;
         }
@@ -63,6 +63,12 @@ public:
     }
 
 private:
+    template <typename TCommand>
+    bool canAddCommand(const TCommand& cmd) const
+    {
+        return getCommandSize<TCommand>(cmd) <= m_displayList.getFreeSpace();
+    }
+
     template <typename TCommand>
     void writeCommand(const TCommand& cmd)
     {

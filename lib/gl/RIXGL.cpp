@@ -574,7 +574,7 @@ RIXGL::~RIXGL()
 
 void RIXGL::swapDisplayList()
 {
-    SPDLOG_INFO("swapDisplayList called");
+    SPDLOG_DEBUG("swapDisplayList called");
     m_renderDevice->pixelPipeline.swapDisplayList();
 }
 
