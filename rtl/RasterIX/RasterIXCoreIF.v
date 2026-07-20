@@ -198,7 +198,12 @@ module RasterIXCoreIF #(
     input  wire [ 1 : 0]                        m_tmu1_axi_rresp,
     input  wire                                 m_tmu1_axi_rlast,
     input  wire                                 m_tmu1_axi_rvalid,
-    output wire                                 m_tmu1_axi_rready
+    output wire                                 m_tmu1_axi_rready,
+
+    // Performance signals
+    output wire                                 perfBusy,
+    output wire                                 perfTriangleRendering,
+    output wire                                 perfRasterizerStall
 );
 `include "RegisterAndDescriptorDefines.vh"
     localparam DEFAULT_ALPHA_VAL = 0;
@@ -716,7 +721,11 @@ module RasterIXCoreIF #(
         .m_tmu1_axi_rresp(m_tmu1_axi_rresp),
         .m_tmu1_axi_rlast(m_tmu1_axi_rlast),
         .m_tmu1_axi_rvalid(m_tmu1_axi_rvalid),
-        .m_tmu1_axi_rready(m_tmu1_axi_rready)
+        .m_tmu1_axi_rready(m_tmu1_axi_rready),
+
+        .perfBusy(perfBusy),
+        .perfTriangleRendering(perfTriangleRendering),
+        .perfRasterizerStall(perfRasterizerStall)
     );
 
     assign swap_fb = colorBufferApply && colorBufferCmdSwap;

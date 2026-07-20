@@ -365,7 +365,11 @@ module top #(
         .m_axi_rresp(xbar_axi_rresp[0 +: 2]),
         .m_axi_rlast(xbar_axi_rlast[0]),
         .m_axi_rvalid(xbar_axi_rvalid[0]),
-        .m_axi_rready(xbar_axi_rready[0])
+        .m_axi_rready(xbar_axi_rready[0]),
+
+        .perfBusy(),
+        .perfTriangleRendering(),
+        .perfRasterizerStall()
     );
 
     AxisFramebufferReader #(

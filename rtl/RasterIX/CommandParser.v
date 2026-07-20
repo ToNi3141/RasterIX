@@ -68,7 +68,11 @@ module CommandParser #(
     output reg                                  stencilBufferCmdCommit,
     output reg                                  stencilBufferCmdMemset,
     output reg                                  stencilBufferCmdRead,
-    output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   stencilBufferSize
+    output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   stencilBufferSize,
+
+    // Performance signals
+    output wire                                 perfBusy,
+    output wire                                 perfTriangleRendering
 );
 `include "RegisterAndDescriptorDefines.vh"
     localparam DATABUS_SCALE_FACTOR = (CMD_STREAM_WIDTH / 8);
@@ -119,6 +123,9 @@ module CommandParser #(
     assign m_cmd_tmu0_axis_tvalid        = (mux == MUX_TEXTURE0_STREAM) ? tvalid : 0;
     assign m_cmd_tmu1_axis_tvalid        = (mux == MUX_TEXTURE1_STREAM) ? tvalid : 0;
     assign m_cmd_config_axis_tvalid      = (mux == MUX_RENDER_CONFIG) ? tvalid : 0;
+
+    assign perfBusy = state != COMMAND_IN;
+    assign perfTriangleRendering = rasterizerRunning && pixelInPipeline && dataInTriangleInterpolator;
 
     assign framebufferCommandApplied = colorBufferApplied & depthBufferApplied & stencilBufferApplied;
 

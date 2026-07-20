@@ -225,7 +225,12 @@ module RasterIXRenderCore #(
     input  wire [ 1 : 0]                        m_tmu1_axi_rresp,
     input  wire                                 m_tmu1_axi_rlast,
     input  wire                                 m_tmu1_axi_rvalid,
-    output wire                                 m_tmu1_axi_rready
+    output wire                                 m_tmu1_axi_rready,
+
+    // Performance signals
+    output wire                                 perfBusy,
+    output wire                                 perfTriangleRendering,
+    output wire                                 perfRasterizerStall
 );
 `include "RegisterAndDescriptorDefines.vh"
 
@@ -359,7 +364,11 @@ module RasterIXRenderCore #(
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdMemset(stencilBufferCmdMemset),
         .stencilBufferCmdRead(stencilBufferCmdRead),
-        .stencilBufferSize(stencilBufferSize)
+        .stencilBufferSize(stencilBufferSize),
+
+        // Performance signals
+        .perfBusy(perfBusy),
+        .perfTriangleRendering(perfTriangleRendering)
     );
     defparam commandParser.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
     defparam commandParser.TEXTURE_STREAM_WIDTH = TEXTURE_STREAM_WIDTH;
@@ -752,6 +761,8 @@ module RasterIXRenderCore #(
     wire                                   semaphoreRasterizerReady;
     wire                                   semaphoreRasterizerKeep;
     wire                                   semaphoreRasterizerLast;
+
+    assign perfRasterizerStall = rasterizer_tvalid & !rasterizer_tready;
 
     ValueTrack vt (
         .aclk(aclk),

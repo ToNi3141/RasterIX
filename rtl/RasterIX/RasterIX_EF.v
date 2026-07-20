@@ -124,7 +124,12 @@ module RasterIX_EF #(
     input  wire [ 1 : 0]                    m_axi_rresp,
     input  wire                             m_axi_rlast,
     input  wire                             m_axi_rvalid,
-    output wire                             m_axi_rready
+    output wire                             m_axi_rready,
+
+    // Performance signals
+    output wire                             perfBusy,
+    output wire                             perfTriangleRendering,
+    output wire                             perfRasterizerStall
 );
     localparam ID_WIDTH_LOC = ID_WIDTH - 3;
     localparam NRS = 6;
@@ -689,7 +694,11 @@ module RasterIX_EF #(
         .m_tmu1_axi_rresp(xbar_axi_rresp[5 * 2 +: 2]),
         .m_tmu1_axi_rlast(xbar_axi_rlast[5 * 1 +: 1]),
         .m_tmu1_axi_rvalid(xbar_axi_rvalid[5 * 1 +: 1]),
-        .m_tmu1_axi_rready(xbar_axi_rready[5 * 1 +: 1])
+        .m_tmu1_axi_rready(xbar_axi_rready[5 * 1 +: 1]),
+
+        .perfBusy(perfBusy),
+        .perfTriangleRendering(perfTriangleRendering),
+        .perfRasterizerStall(perfRasterizerStall)
     );
 
     // Directly assign a value does not work in verilator.

@@ -243,6 +243,9 @@ proc create_root_design { parentCell } {
   set hdmi_tx_g_p [ create_bd_port -dir O -from 0 -to 0 hdmi_tx_g_p ]
   set hdmi_tx_r_n [ create_bd_port -dir O -from 0 -to 0 hdmi_tx_r_n ]
   set hdmi_tx_r_p [ create_bd_port -dir O -from 0 -to 0 hdmi_tx_r_p ]
+  set led0 [ create_bd_port -dir O led0 ]
+  set led1 [ create_bd_port -dir O led1 ]
+  set led2 [ create_bd_port -dir O led2 ]
 
   # Create instance: Dvi_0, and set properties
   set block_name Dvi
@@ -988,6 +991,9 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Dvi_0_dvi_red [get_bd_pins Dvi_0/dvi_red] [get_bd_pins util_ds_buf_0/OBUF_IN]
   connect_bd_net -net Dvi_0_swapped [get_bd_pins Dvi_0/swapped] [get_bd_pins RasterIX_0/fb_swapped]
   connect_bd_net -net RasterIX_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RasterIX_0/fb_addr]
+  connect_bd_net -net RasterIX_0_perfBusy [get_bd_ports led2] [get_bd_pins RasterIX_0/perfBusy]
+  connect_bd_net -net RasterIX_0_perfRasterizerStall [get_bd_ports led0] [get_bd_pins RasterIX_0/perfRasterizerStall]
+  connect_bd_net -net RasterIX_0_perfTriangleRendering [get_bd_ports led1] [get_bd_pins RasterIX_0/perfTriangleRendering]
   connect_bd_net -net RasterIX_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RasterIX_0/swap_fb]
   connect_bd_net -net RasterIX_0_swap_fb_enable_vsync [get_bd_pins Dvi_0/enable_vsync] [get_bd_pins RasterIX_0/swap_fb_enable_vsync]
   connect_bd_net -net axi_dma_0_mm2s_introut [get_bd_pins axi_dma_0/mm2s_introut] [get_bd_pins xlconcat_0/In0]
