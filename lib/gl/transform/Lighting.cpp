@@ -172,7 +172,10 @@ float LightingCalc::calculateAttenuation(const LightingData::LightConfig& lightC
 {
     float att = 1.0f;
 
-    if (lightConfig.position[3] != 0.0f)
+    if ((lightConfig.position[3] != 0.0f)
+        && ((lightConfig.constantAttenuation != 1.0f)
+            || (lightConfig.linearAttenuation != 0.0f)
+            || (lightConfig.quadraticAttenuation != 0.0f)))
     {
         const float dist = v0.dist(lightConfig.position);
         att = 1.0f / (lightConfig.constantAttenuation + (lightConfig.linearAttenuation * dist) + lightConfig.quadraticAttenuation * (dist * dist));
@@ -187,41 +190,37 @@ float LightingCalc::calculateSpecular(
     const Vec3& dir,
     const float materialSpecularExponent) const
 {
-    Vec3 halfWayVector = dir;
+    float specular = 1.0f;
+    const float f = (nDotDir != 0.0f) ? 1.0f : 0.0f;
 
-    // Convert now the direction in dir to the half way vector
-    // Not supported in OpenGL ES
-    // if (lightConfig.localViewer)
-    // {
-    //     Vec4 dirEye { 0.0f, 0.0f, 0.0f, 1.0f };
-    //     dirEye -= v0;
-    //     dirEye.normalize();
-    //     dir += dirEye;
-    //     dir.unit();
-    // }
-    // else
-    // {
-    const Vec3 pointEye { 0.0f, 0.0f, 1.0f };
-    halfWayVector += pointEye;
-    halfWayVector.unit();
-    // }
-
-    float specular = n0.dot(halfWayVector);
-
-    // Optimization: pows are expensive
-    if (materialSpecularExponent == 0.0f) // x^0 == 1.0
+    if ((materialSpecularExponent != 0.0f) // Only calculate when exponent is not 0.0f, because x^0 == 1.0
+        && (f != 0.0f)) // Only calculate when nDotDir is not 0. Because x * 0 == 0
     {
-        specular = 1.0f;
-    }
-    else if (materialSpecularExponent != 1.0f) // x^1 == x
-    {
-        specular = powf(specular, materialSpecularExponent);
-    }
+        Vec3 halfWayVector = dir;
 
-    float f = 0.0f;
-    if (nDotDir != 0.0f)
-    {
-        f = 1.0f;
+        // Convert now the direction in dir to the half way vector
+        // Not supported in OpenGL ES
+        // if (lightConfig.localViewer)
+        // {
+        //     Vec4 dirEye { 0.0f, 0.0f, 0.0f, 1.0f };
+        //     dirEye -= v0;
+        //     dirEye.normalize();
+        //     dir += dirEye;
+        //     dir.unit();
+        // }
+        // else
+        // {
+        const Vec3 pointEye { 0.0f, 0.0f, 1.0f };
+        halfWayVector += pointEye;
+        halfWayVector.unit();
+        // }
+
+        specular = n0.dot(halfWayVector);
+
+        if (materialSpecularExponent != 1.0f) // x^1 == x, avoid unnecessary powf call
+        {
+            specular = powf(specular, materialSpecularExponent);
+        }
     }
 
     return specular * f;
