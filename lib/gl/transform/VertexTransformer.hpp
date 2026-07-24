@@ -18,6 +18,7 @@
 #ifndef VERTEXTRANSFORMER_HPP
 #define VERTEXTRANSFORMER_HPP
 
+#include "Cache.hpp"
 #include "Clipper.hpp"
 #include "Culling.hpp"
 #include "ElementGlobalData.hpp"
@@ -83,6 +84,7 @@ template <typename TDrawTriangleFunc, typename TUpdateStencilFunc>
 class VertexTransformerCalc
 {
     using Triangle = std::array<TransformingVertexParameter, 3>;
+    static constexpr std::size_t VERTEX_CACHE_SIZE = 16;
 
 public:
     VertexTransformerCalc(
@@ -97,7 +99,12 @@ public:
 
     bool pushVertex(const VertexParameter& param)
     {
-        TransformingVertexParameter transformingVertexParameter = transform(param);
+        TransformingVertexParameter transformingVertexParameter;
+        if (!m_vertexCache.get(param.sourceIndex, transformingVertexParameter))
+        {
+            transformingVertexParameter = transform(param);
+            m_vertexCache.put(param.sourceIndex, transformingVertexParameter);
+        }
         m_primitiveAssembler.pushParameter(transformingVertexParameter);
 
         const primitiveassembler::PrimitiveAssemblerCalc::Primitive primitive = m_primitiveAssembler.getPrimitive();
@@ -118,6 +125,7 @@ public:
     void init()
     {
         m_primitiveAssembler.init();
+        m_vertexCache.reset();
         updateNormalMatrix();
     }
 
@@ -527,6 +535,7 @@ private:
         m_data.viewPort.viewportHeight
     };
     lighting::LightingCalc m_lighting { m_data.lighting };
+    cache::Cache<TransformingVertexParameter, VERTEX_CACHE_SIZE> m_vertexCache {};
 };
 
 } // namespace rr::vertextransformer

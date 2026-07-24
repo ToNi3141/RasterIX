@@ -19,14 +19,15 @@
 #include "DMAProxyBusConnector.hpp"
 #include "MultiThreadRunner.hpp"
 #include "RIXGL.hpp"
+#include "RenderConfigs.hpp"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 #include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <cstdlib>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
-static constexpr uint32_t RESOLUTION_H = 600;
-static constexpr uint32_t RESOLUTION_W = 1024;
+static constexpr uint32_t RESOLUTION_H = rr::RenderConfig::MAX_DISPLAY_HEIGHT;
+static constexpr uint32_t RESOLUTION_W = rr::RenderConfig::MAX_DISPLAY_WIDTH;
 
 // The hardware supports exactly one fixed framebuffer format: RGB565 with a
 // 16 bit depth buffer. This single config is exposed to all FBConfig queries.

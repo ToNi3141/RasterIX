@@ -21,6 +21,7 @@
 #include "RenderConfigs.hpp"
 #include "math/Vec.hpp"
 #include <array>
+#include <cstdint>
 
 namespace rr
 {
@@ -32,6 +33,7 @@ struct VertexParameter
     Vec3 normal;
     float pointSize;
     std::array<Vec4, RenderConfig::TMU_COUNT> tex;
+    std::size_t sourceIndex;
 };
 
 } // namespace rr

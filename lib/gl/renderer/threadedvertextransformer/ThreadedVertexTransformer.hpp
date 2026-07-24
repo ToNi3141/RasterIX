@@ -599,6 +599,7 @@ private:
     {
         if (m_displayListBuffer.getBack().singleList())
         {
+            SPDLOG_INFO("Intermediate upload called");
             swapAndUploadDisplayLists();
         }
         else
