@@ -196,12 +196,11 @@ bool SoftwareRasterizationInstance::handleCommand(const TextureStreamCmd& cmd)
 
 bool SoftwareRasterizationInstance::handleCommand(const WriteRegisterCmd& cmd)
 {
-    return std::visit(
+    return cmd.handleRegister(
         [this](const auto& reg)
         {
             return handleRegister(reg);
-        },
-        cmd.getRegister());
+        });
 }
 
 bool SoftwareRasterizationInstance::handleRegister(const ColorBufferAddrReg& reg)

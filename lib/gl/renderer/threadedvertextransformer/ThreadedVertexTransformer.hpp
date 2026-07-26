@@ -463,12 +463,11 @@ private:
 
     bool handleCommand(const WriteRegisterCmd& cmd)
     {
-        return std::visit(
+        return cmd.handleRegister(
             [this](const auto& reg)
             {
                 return handleRegister(reg);
-            },
-            cmd.getRegister());
+            });
     }
 
     bool handleRegister(const ColorBufferAddrReg& reg)
