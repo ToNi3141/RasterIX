@@ -37,12 +37,12 @@ struct PrimitiveAssemblerData
 class PrimitiveAssemblerCalc
 {
 public:
-    using Primitive = tcb::span<const TransformingVertexParameter>;
+    using Primitive = tcb::span<TransformingVertexParameter>;
 
     PrimitiveAssemblerCalc(const viewport::ViewPortData& viewPortData, const PrimitiveAssemblerData& primitiveAssemblerData);
     void init();
 
-    Primitive getPrimitive();
+    Primitive createPrimitive();
     void removePrimitive() { m_queue.removeElements(m_decrement); }
 
     TransformingVertexParameter& createParameter() { return m_queue.create_back(); }

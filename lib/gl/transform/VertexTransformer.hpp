@@ -83,7 +83,6 @@ struct VertexTransformerData
 template <typename TDrawTriangleFunc, typename TUpdateStencilFunc>
 class VertexTransformerCalc
 {
-    using Triangle = std::array<TransformingVertexParameter, 3>;
     static constexpr std::size_t VERTEX_CACHE_SIZE = 16;
 
 public:
@@ -107,7 +106,7 @@ public:
         }
         m_primitiveAssembler.pushParameter(transformingVertexParameter);
 
-        const primitiveassembler::PrimitiveAssemblerCalc::Primitive primitive = m_primitiveAssembler.getPrimitive();
+        const primitiveassembler::PrimitiveAssemblerCalc::Primitive primitive = m_primitiveAssembler.createPrimitive();
         if (primitive.empty())
         {
             return true;
@@ -167,8 +166,13 @@ private:
         bool ret = true;
         for (std::size_t i = 3; i <= clippedVertexParameter.size(); i++)
         {
-            const Triangle triangle { clippedVertexParameter[0], clippedVertexParameter[i - 2], clippedVertexParameter[i - 1] };
-            ret = ret && drawTriangle(triangle);
+            std::array<TransformingVertexParameter, 3> triangle {
+                clippedVertexParameter[0],
+                clippedVertexParameter[i - 2],
+                clippedVertexParameter[i - 1]
+            };
+            tcb::span<TransformingVertexParameter> triangleSpan { triangle.data(), 3 };
+            ret = ret && drawTriangle(triangleSpan);
         }
         return ret;
     }
@@ -315,15 +319,15 @@ private:
         return true;
     }
 
-    bool drawUnclippedTriangle(const Triangle& triangle)
+    bool drawUnclippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
         // Optimized version of the drawTriangle when a triangle is not needed to be clipped.
 
-        Vec4 v0 = triangle[0].vertex;
-        Vec4 v1 = triangle[1].vertex;
-        Vec4 v2 = triangle[2].vertex;
-
         // Perspective division
+        Vec4& v0 = primitive[0].vertex;
+        Vec4& v1 = primitive[1].vertex;
+        Vec4& v2 = primitive[2].vertex;
+
         v0.perspectiveDivide();
         v1.perspectiveDivide();
         v2.perspectiveDivide();
@@ -338,16 +342,16 @@ private:
             return true;
         }
 
-        Vec4 c0 = triangle[0].colorFront;
-        Vec4 c1 = triangle[1].colorFront;
-        Vec4 c2 = triangle[2].colorFront;
+        Vec4& c0 = primitive[0].colorFront;
+        Vec4& c1 = primitive[1].colorFront;
+        Vec4& c2 = primitive[2].colorFront;
         if (m_data.lighting.lightingEnabled && m_data.lighting.enableTwoSideModel)
         {
             if (!culling::CullingCalc { m_data.culling }.isFrontFace(v0, v1, v2))
             {
-                c0 = triangle[0].colorBack;
-                c1 = triangle[1].colorBack;
-                c2 = triangle[2].colorBack;
+                c0 = primitive[0].colorBack;
+                c1 = primitive[1].colorBack;
+                c2 = primitive[2].colorBack;
             }
         }
 
@@ -369,23 +373,23 @@ private:
             v0,
             v1,
             v2,
-            triangle[0].tex,
-            triangle[1].tex,
-            triangle[2].tex,
+            primitive[0].tex,
+            primitive[1].tex,
+            primitive[2].tex,
             c0,
             c1,
             c2,
         });
     }
 
-    bool drawClippedTriangle(const Triangle& triangle)
+    bool drawClippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
         Clipper::ClipList list;
         Clipper::ClipList listBuffer;
 
-        list[0] = triangle[0];
-        list[1] = triangle[1];
-        list[2] = triangle[2];
+        list[0] = primitive[0];
+        list[1] = primitive[1];
+        list[2] = primitive[2];
 
         tcb::span<TransformingVertexParameter> clippedVertexParameter = Clipper::clip(list, listBuffer);
 
@@ -397,66 +401,67 @@ private:
         return drawClippedTriangleList(clippedVertexParameter);
     }
 
-    bool drawPreClippedTriangle(const Triangle& triangle)
+    bool drawPreClippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        if (Clipper::isInside(triangle[0].vertex, triangle[1].vertex, triangle[2].vertex))
+        if (Clipper::isInside(primitive[0].vertex, primitive[1].vertex, primitive[2].vertex))
         {
-            return drawUnclippedTriangle(triangle);
+            return drawUnclippedTriangle(primitive);
         }
 
-        if (Clipper::isOutside(triangle[0].vertex, triangle[1].vertex, triangle[2].vertex))
+        if (Clipper::isOutside(primitive[0].vertex, primitive[1].vertex, primitive[2].vertex))
         {
             return true;
         }
-        return drawClippedTriangle(triangle);
+        return drawClippedTriangle(primitive);
     }
 
     bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        Triangle projectedTriangle { primitive[0], primitive[1], primitive[2] };
+        TransformingVertexParameter& p0 = primitive[0];
+        TransformingVertexParameter& p1 = primitive[1];
+        TransformingVertexParameter& p2 = primitive[2];
 
-        projectedTriangle[0].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[0].vertex);
-        projectedTriangle[1].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[1].vertex);
-        projectedTriangle[2].vertex = m_data.transformMatrices.projection.transform(projectedTriangle[2].vertex);
+        p0.vertex = m_data.transformMatrices.projection.transform(p0.vertex);
+        p1.vertex = m_data.transformMatrices.projection.transform(p1.vertex);
+        p2.vertex = m_data.transformMatrices.projection.transform(p2.vertex);
 
-        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle(
-            projectedTriangle[0],
-            projectedTriangle[1],
-            projectedTriangle[2]);
+        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle( p0, p1, p2);
 
-        return drawPreClippedTriangle(projectedTriangle);
+        return drawPreClippedTriangle(primitive);
     }
 
     bool drawLine(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        TransformingVertexParameter vp0 = primitive[0];
-        TransformingVertexParameter vp1 = primitive[1];
+        TransformingVertexParameter& p0 = primitive[0];
+        TransformingVertexParameter& p1 = primitive[1];
 
-        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelLine(vp0, vp1);
+        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelLine(p0, p1);
 
         // Transform vertices to get the projected ones in NDC
-        vp0.vertex = m_data.transformMatrices.projection.transform(vp0.vertex);
-        vp1.vertex = m_data.transformMatrices.projection.transform(vp1.vertex);
+        p0.vertex = m_data.transformMatrices.projection.transform(p0.vertex);
+        p1.vertex = m_data.transformMatrices.projection.transform(p1.vertex);
 
-        lineassembly::LineAssemblyCalc::Triangles triangles = m_lineAssembly.createLine(vp0, vp1);
+        lineassembly::LineAssemblyCalc::Triangles triangles = m_lineAssembly.createLine(p0, p1);
 
-        drawPreClippedTriangle({ triangles[0], triangles[1], triangles[2] });
+        tcb::span<TransformingVertexParameter> triangleSpan { triangles.data(), triangles.size() };
+        drawPreClippedTriangle(triangleSpan.subspan(0, 3));
         // Assume when the first one fails, the second one will also fail.
-        return drawPreClippedTriangle({ triangles[3], triangles[4], triangles[5] });
+        return drawPreClippedTriangle(triangleSpan.subspan(3, 3));
     }
 
     bool drawPoint(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        TransformingVertexParameter vp0 = primitive[0];
+        TransformingVertexParameter& p0 = primitive[0];
 
         // Transform vertices to get the projected ones in NDC
-        vp0.vertex = m_data.transformMatrices.projection.transform(vp0.vertex);
+        p0.vertex = m_data.transformMatrices.projection.transform(p0.vertex);
 
-        pointassembly::PointAssemblyCalc::Triangles triangles = m_pointAssembly.createPoint(vp0);
+        pointassembly::PointAssemblyCalc::Triangles triangles = m_pointAssembly.createPoint(p0);
 
-        drawPreClippedTriangle({ triangles[0], triangles[1], triangles[2] });
+        tcb::span<TransformingVertexParameter> triangleSpan { triangles.data(), triangles.size() };
+        drawPreClippedTriangle(triangleSpan.subspan(0, 3));
         // Assume when the first one fails, the second one will also fail.
-        return drawPreClippedTriangle({ triangles[3], triangles[4], triangles[5] });
+        return drawPreClippedTriangle(triangleSpan.subspan(3, 3));
     }
 
     bool drawPrimitive(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
