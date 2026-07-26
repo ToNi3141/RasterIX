@@ -40,15 +40,9 @@ void SoftwareRasterizationInstance::streamDisplayList(tcb::span<const uint8_t> d
     srcList.setCurrentSize(static_cast<std::size_t>(displayList.size()));
     displaylist::DisplayListDisassembler disassembler { srcList };
 
-    while (disassembler.hasNextCommand())
+    while (disassembler.handleNextCommand([this](const auto& cmd)
+        { return handleCommand(cmd); }))
     {
-        const bool ret = std::visit([this](const auto& cmd)
-            { return handleCommand(cmd); },
-            disassembler.getNextCommand());
-        if (!ret)
-        {
-            SPDLOG_ERROR("Failed to handle command in external display list. This might cause the renderer to crash ...");
-        }
     }
 }
 

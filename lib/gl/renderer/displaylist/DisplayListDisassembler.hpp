@@ -16,14 +16,15 @@ public:
     {
     }
 
-    CommandVariant getNextCommand()
+    template <typename TCmdHandler>
+    bool handleNextCommand(const TCmdHandler& cmdHandler)
     {
         if (m_displayList.atEnd())
         {
-            return CommandVariant {};
+            return false;
         }
 
-        return decodeCommand(m_displayList);
+        return decodeCommand(m_displayList, cmdHandler);
     }
 
     bool hasNextCommand() const
@@ -32,61 +33,62 @@ public:
     }
 
 private:
-    CommandVariant decodeCommand(DisplayList& srcList)
+    template <typename TCmdHandler>
+    bool decodeCommand(DisplayList& srcList, const TCmdHandler& cmdHandler)
     {
         const uint32_t op = *(srcList.lookAhead<uint32_t>());
 
         if (PushVertexCmd::isThis(op))
         {
-            return deserializeCommand<PushVertexCmd>(srcList);
+            return cmdHandler(deserializeCommand<PushVertexCmd>(srcList));
         }
         else if (DrawNewElementCmd::isThis(op))
         {
-            return deserializeCommand<DrawNewElementCmd>(srcList);
+            return cmdHandler(deserializeCommand<DrawNewElementCmd>(srcList));
         }
         else if (SetElementLocalCtxCmd::isThis(op))
         {
-            return deserializeCommand<SetElementLocalCtxCmd>(srcList);
+            return cmdHandler(deserializeCommand<SetElementLocalCtxCmd>(srcList));
         }
         else if (SetElementGlobalCtxCmd::isThis(op))
         {
-            return deserializeCommand<SetElementGlobalCtxCmd>(srcList);
+            return cmdHandler(deserializeCommand<SetElementGlobalCtxCmd>(srcList));
         }
         else if (SetLightingCtxCmd::isThis(op))
         {
-            return deserializeCommand<SetLightingCtxCmd>(srcList);
+            return cmdHandler(deserializeCommand<SetLightingCtxCmd>(srcList));
         }
         else if (WriteRegisterCmd::isThis(op))
         {
-            return deserializeCommand<WriteRegisterCmd>(srcList);
+            return cmdHandler(deserializeCommand<WriteRegisterCmd>(srcList));
         }
         else if (NopCmd::isThis(op))
         {
-            return deserializeCommand<NopCmd>(srcList);
+            return cmdHandler(deserializeCommand<NopCmd>(srcList));
         }
         else if (TextureStreamCmd::isThis(op))
         {
-            return deserializeCommand<TextureStreamCmd>(srcList);
+            return cmdHandler(deserializeCommand<TextureStreamCmd>(srcList));
         }
         else if (FramebufferCmd::isThis(op))
         {
-            return deserializeCommand<FramebufferCmd>(srcList);
+            return cmdHandler(deserializeCommand<FramebufferCmd>(srcList));
         }
         else if (FogLutStreamCmd::isThis(op))
         {
-            return deserializeCommand<FogLutStreamCmd>(srcList);
+            return cmdHandler(deserializeCommand<FogLutStreamCmd>(srcList));
         }
         else if (TriangleStreamCmd::isThis(op))
         {
-            return deserializeCommand<TriangleStreamCmd>(srcList);
+            return cmdHandler(deserializeCommand<TriangleStreamCmd>(srcList));
         }
 
         SPDLOG_CRITICAL("Unknown command (0x{:X}) found. This might cause the renderer to crash ...", op);
-        return {};
+        return false;
     }
 
     template <typename TCmd>
-    CommandVariant deserializeCommand(DisplayList& src)
+    TCmd deserializeCommand(DisplayList& src)
     {
         using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(TCmd {}.payload()[0])>::type>::type;
         const typename TCmd::CommandType* op = src.getNext<typename TCmd::CommandType>();

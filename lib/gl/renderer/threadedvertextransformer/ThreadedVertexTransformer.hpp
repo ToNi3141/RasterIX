@@ -85,20 +85,14 @@ public:
                     { handleCommand(cmd); });
             }
 
-            while (disassembler.hasNextCommand())
-            {
-                const bool ret = std::visit([this](const auto& cmd)
-                    { 
+            while (disassembler.handleNextCommand([this](const auto& cmd)
+                { 
                         if constexpr (!DisplayListDispatcherType::singleList())
                         {
                             m_renderState.storeCommand(cmd);
                         }
-                        return handleCommand(cmd); },
-                    disassembler.getNextCommand());
-                if (!ret)
-                {
-                    SPDLOG_ERROR("Failed to handle command in display list. This might cause the renderer to crash ...");
-                }
+                        return handleCommand(cmd); }))
+            {
             }
             swapAndUploadDisplayLists();
         };
