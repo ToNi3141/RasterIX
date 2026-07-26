@@ -147,6 +147,14 @@ private:
         }
     }
 
+    void clipPlaneProjectiveTransformation(tcb::span<TransformingVertexParameter> list)
+    {
+        for (std::size_t i = 0; i < list.size(); i++)
+        {
+            list[i].vertex = m_data.transformMatrices.projection.transform(list[i].vertex);
+        }
+    }
+
     bool clipAtPlaneAndDrawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
         planeclipper::PlaneClipperCalc::ClipList list;
@@ -162,6 +170,9 @@ private:
         {
             return true;
         }
+
+        // Transform the clipped vertexes to projection space
+        clipPlaneProjectiveTransformation({ &clippedVertexParameter[0], clippedVertexParameter.size() });
 
         bool ret = true;
         for (std::size_t i = 3; i <= clippedVertexParameter.size(); i++)
@@ -187,6 +198,9 @@ private:
 
         tcb::span<TransformingVertexParameter> clippedVertexParameter = m_planeClipper.clipLine(list, listBuffer);
 
+        // Transform the clipped vertexes to projection space
+        clipPlaneProjectiveTransformation(clippedVertexParameter);
+
         if (clippedVertexParameter.empty())
         {
             return true;
@@ -203,6 +217,9 @@ private:
         list[0] = primitive[0];
 
         tcb::span<TransformingVertexParameter> clippedVertexParameter = m_planeClipper.clipPoint(list, listBuffer);
+
+        // Transform the clipped vertexes to projection space
+        clipPlaneProjectiveTransformation(clippedVertexParameter);
 
         if (clippedVertexParameter.empty())
         {
@@ -258,6 +275,12 @@ private:
         }
 
         outParam.pointSize = parameter.pointSize;
+
+        // Optimization: Clipping works in model space. If the clipping is disabled, we can directly transform to projection space.
+        if (!m_planeClipper.enabled())
+        {
+            outParam.vertex = m_data.transformMatrices.projection.transform(outParam.vertex);
+        }
 
         return outParam;
     }
@@ -421,9 +444,9 @@ private:
         TransformingVertexParameter& p1 = primitive[1];
         TransformingVertexParameter& p2 = primitive[2];
 
-        p0.vertex = m_data.transformMatrices.projection.transform(p0.vertex);
-        p1.vertex = m_data.transformMatrices.projection.transform(p1.vertex);
-        p2.vertex = m_data.transformMatrices.projection.transform(p2.vertex);
+        // p0.vertex = m_data.transformMatrices.projection.transform(p0.vertex);
+        // p1.vertex = m_data.transformMatrices.projection.transform(p1.vertex);
+        // p2.vertex = m_data.transformMatrices.projection.transform(p2.vertex);
 
         shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle( p0, p1, p2);
 
@@ -437,10 +460,6 @@ private:
 
         shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelLine(p0, p1);
 
-        // Transform vertices to get the projected ones in NDC
-        p0.vertex = m_data.transformMatrices.projection.transform(p0.vertex);
-        p1.vertex = m_data.transformMatrices.projection.transform(p1.vertex);
-
         lineassembly::LineAssemblyCalc::Triangles triangles = m_lineAssembly.createLine(p0, p1);
 
         tcb::span<TransformingVertexParameter> triangleSpan { triangles.data(), triangles.size() };
@@ -452,9 +471,6 @@ private:
     bool drawPoint(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
         TransformingVertexParameter& p0 = primitive[0];
-
-        // Transform vertices to get the projected ones in NDC
-        p0.vertex = m_data.transformMatrices.projection.transform(p0.vertex);
 
         pointassembly::PointAssemblyCalc::Triangles triangles = m_pointAssembly.createPoint(p0);
 

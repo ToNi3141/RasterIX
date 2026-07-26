@@ -74,6 +74,7 @@ public:
     {
         Mat44 mat = m_modelViewMat;
         mat.invert();
+        mat.transpose();
         m_data.equation = mat.transform(equation);
     }
 
