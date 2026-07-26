@@ -35,14 +35,21 @@ public:
     Mat44(const float* val) { operator=(val); }
     ~Mat44() { }
 
+    static constexpr ValType IDENTITY_MATRIX {
+        { { 1.0f, 0.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f, 0.0f, 0.0f },
+            { 0.0f, 0.0f, 1.0f, 0.0f },
+            { 0.0f, 0.0f, 0.0f, 1.0f } }
+    };
+
     void identity()
     {
-        // clang-format off
-        mat[0][0] = 1.0f; mat[1][0] = 0.0f; mat[2][0] = 0.0f; mat[3][0] = 0.0f;
-        mat[0][1] = 0.0f; mat[1][1] = 1.0f; mat[2][1] = 0.0f; mat[3][1] = 0.0f;
-        mat[0][2] = 0.0f; mat[1][2] = 0.0f; mat[2][2] = 1.0f; mat[3][2] = 0.0f;
-        mat[0][3] = 0.0f; mat[1][3] = 0.0f; mat[2][3] = 0.0f; mat[3][3] = 1.0f;
-        // clang-format on
+        std::copy(IDENTITY_MATRIX.begin(), IDENTITY_MATRIX.end(), mat.begin());
+    }
+
+    bool isIdentity() const
+    {
+        return std::equal(mat.begin(), mat.end(), IDENTITY_MATRIX.begin(), IDENTITY_MATRIX.end());
     }
 
     void transpose()

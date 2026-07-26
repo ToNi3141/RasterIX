@@ -56,11 +56,6 @@ void TexGenCalc::calculateTexGenCoords(
     }
 }
 
-bool TexGenCalc::isEnabled() const
-{
-    return m_data.texGenEnableS || m_data.texGenEnableT || m_data.texGenEnableR;
-}
-
 void TexGenCalc::calculateObjectLinear(Vec4& st0, const Vec4& v0) const
 {
     if (m_data.texGenEnableS && (m_data.texGenModeS == TexGenMode::OBJECT_LINEAR))

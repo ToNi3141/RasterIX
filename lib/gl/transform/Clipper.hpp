@@ -29,27 +29,36 @@ namespace rr
 class Clipper
 {
 public:
+    enum class Position
+    {
+        Inside,
+        Outside,
+        Intersecting
+    };
+
     // Each clipping plane can potentially introduce one more vertex. A triangle contains 3 vertexes, plus 6 possible planes, results in 9 vertexes.
     using ClipList = std::array<TransformingVertexParameter, 9>;
 
     static tcb::span<TransformingVertexParameter> clip(ClipList& __restrict list, ClipList& __restrict listBuffer);
 
-    static bool isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
+    static Position isIntersecting(const Vec4& v0, const Vec4& v1, const Vec4& v2)
     {
         const OutCode oc0 = outCode(v0);
         const OutCode oc1 = outCode(v1);
         const OutCode oc2 = outCode(v2);
 
-        return oc0 & oc1 & oc2;
-    }
-
-    static bool isInside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
-    {
-        const OutCode oc0 = outCode(v0);
-        const OutCode oc1 = outCode(v1);
-        const OutCode oc2 = outCode(v2);
-
-        return (oc0 | oc1 | oc2) == OutCode::OC_NONE;
+        if (oc0 & oc1 & oc2)
+        {
+            return Position::Outside;
+        }
+        else if ((oc0 | oc1 | oc2) == OutCode::OC_NONE)
+        {
+            return Position::Inside;
+        }
+        else
+        {
+            return Position::Intersecting;
+        }
     }
 
 private:

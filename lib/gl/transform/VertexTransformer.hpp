@@ -126,6 +126,7 @@ public:
         m_primitiveAssembler.init();
         m_vertexCache.reset();
         updateNormalMatrix();
+        checkForRequiredTextureTransformations();
     }
 
 private:
@@ -144,6 +145,17 @@ private:
         {
             m_normalMatrix = createNormalMatrix();
             m_lighting.init(m_normalMatrix);
+        }
+    }
+
+    void checkForRequiredTextureTransformations()
+    {
+        for (std::size_t tu = 0; tu < RenderConfig::TMU_COUNT; tu++)
+        {
+            if (m_data.tmuEnabled[tu])
+            {
+                m_textureTransformationRequired[tu] = !m_data.transformMatrices.texture[tu].isIdentity();
+            }
         }
     }
 
@@ -243,7 +255,10 @@ private:
                     m_normalMatrix,
                     parameter.vertex,
                     parameter.normal);
-                outParam.tex[tu] = m_data.transformMatrices.texture[tu].transform(outParam.tex[tu]);
+                if (m_textureTransformationRequired[tu])
+                {
+                    outParam.tex[tu] = m_data.transformMatrices.texture[tu].transform(outParam.tex[tu]);
+                }
             }
         }
 
@@ -285,7 +300,7 @@ private:
         return outParam;
     }
 
-    bool drawClippedTriangleList(tcb::span<TransformingVertexParameter> list)
+    bool drawClippedTriangleList(const tcb::span<TransformingVertexParameter>& list)
     {
         const std::size_t clippedVertexListSize = list.size();
         for (std::size_t i = 0; i < clippedVertexListSize; i++)
@@ -296,14 +311,17 @@ private:
 
         // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
         // facing backwards, then all in the clipping list will do this and vice versa.
-        if (culling::CullingCalc { m_data.culling }.cull(list[0].vertex, list[1].vertex, list[2].vertex))
+        const Vec4& v0 = list[0].vertex;
+        const Vec4& v1 = list[1].vertex;
+        const Vec4& v2 = list[2].vertex;
+        if (culling::CullingCalc { m_data.culling }.cull(v0, v1, v2))
         {
             return true;
         }
 
         if (m_data.lighting.lightingEnabled && m_data.lighting.enableTwoSideModel)
         {
-            if (!culling::CullingCalc { m_data.culling }.isFrontFace(list[0].vertex, list[1].vertex, list[2].vertex))
+            if (!culling::CullingCalc { m_data.culling }.isFrontFace(v0, v1, v2))
             {
                 for (std::size_t i = 0; i < clippedVertexListSize; i++)
                 {
@@ -314,7 +332,7 @@ private:
 
         if (m_data.stencil.enableTwoSideStencil)
         {
-            const StencilReg reg = stencil::StencilCalc { m_data.stencil }.updateStencilFace(list[0].vertex, list[1].vertex, list[2].vertex);
+            const StencilReg reg = stencil::StencilCalc { m_data.stencil }.updateStencilFace(v0, v1, v2);
             if (!m_updateStencilFunc(reg))
             {
                 return false;
@@ -426,16 +444,16 @@ private:
 
     bool drawPreClippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        if (Clipper::isInside(primitive[0].vertex, primitive[1].vertex, primitive[2].vertex))
+        switch (Clipper::isIntersecting(primitive[0].vertex, primitive[1].vertex, primitive[2].vertex))
         {
+        case Clipper::Position::Inside:
             return drawUnclippedTriangle(primitive);
-        }
-
-        if (Clipper::isOutside(primitive[0].vertex, primitive[1].vertex, primitive[2].vertex))
-        {
+        case Clipper::Position::Outside:
             return true;
+        case Clipper::Position::Intersecting:
+            return drawClippedTriangle(primitive);
         }
-        return drawClippedTriangle(primitive);
+        return false;
     }
 
     bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
@@ -444,11 +462,7 @@ private:
         TransformingVertexParameter& p1 = primitive[1];
         TransformingVertexParameter& p2 = primitive[2];
 
-        // p0.vertex = m_data.transformMatrices.projection.transform(p0.vertex);
-        // p1.vertex = m_data.transformMatrices.projection.transform(p1.vertex);
-        // p2.vertex = m_data.transformMatrices.projection.transform(p2.vertex);
-
-        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle( p0, p1, p2);
+        shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle(p0, p1, p2);
 
         return drawPreClippedTriangle(primitive);
     }
@@ -482,17 +496,10 @@ private:
 
     bool drawPrimitive(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        // TODO: Check how to improve the transformation.
-        // First problem: Before the clipping plane or everything else can be calculated, a
-        // full triangle from the primitive assembler is required.
-        // Second problem: Only the clipping plane requires vertices in eye coordinates after
-        // primitive assembly. Without clipping plane or after the clipping plane, only
-        // projected vertices are required. That means, without clipping plane, the projection
-        // could be applied in the transform() method is a precalculated modelViewProjection
-        // matrix. A modelViewProjection matrix in the transform() method can safe almost three
-        // projection transformations.
-        if (primitive.size() == 3)
+        switch (primitive.size())
         {
+        case 3:
+
             if (m_planeClipper.enabled())
             {
                 return clipAtPlaneAndDrawTriangle(primitive);
@@ -501,9 +508,8 @@ private:
             {
                 return drawTriangle(primitive);
             }
-        }
-        if (primitive.size() == 2)
-        {
+
+        case 2:
             if (m_planeClipper.enabled())
             {
                 return clipAtPlaneAndDrawLine(primitive);
@@ -512,9 +518,8 @@ private:
             {
                 return drawLine(primitive);
             }
-        }
-        if (primitive.size() == 1)
-        {
+
+        case 1:
             if (m_planeClipper.enabled())
             {
                 return clipAtPlaneAndDrawPoint(primitive);
@@ -522,8 +527,11 @@ private:
             else
             {
                 return drawPoint(primitive);
-            };
+            }
+        default:
+            return false;
         }
+
         return true;
     }
 
@@ -557,6 +565,8 @@ private:
     };
     lighting::LightingCalc m_lighting { m_data.lighting };
     cache::Cache<TransformingVertexParameter, VERTEX_CACHE_SIZE> m_vertexCache {};
+
+    std::bitset<RenderConfig::TMU_COUNT> m_textureTransformationRequired {};
 };
 
 } // namespace rr::vertextransformer
