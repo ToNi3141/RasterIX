@@ -69,7 +69,7 @@ bool CullingCalc::cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
 
 bool CullingCalc::isFrontFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
 {
-    const float edgeVal { Rasterizer::edgeFunctionFloat(v0, v1, v2) };
+    const float edgeVal { Rasterizer::edgeFunction(v0, v1, v2) };
     if (m_data.frontFace == Orientation::CCW)
     {
         return edgeVal < 0.0f;
