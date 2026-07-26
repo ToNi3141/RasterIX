@@ -38,9 +38,13 @@ private:
     static constexpr uint32_t RESOLUTION_H = 600;
     static constexpr uint32_t RESOLUTION_W = 1024;
     rr::FT60XBusConnector m_busConnector {};
+#if RIX_CORE_THREADED_RASTERIZATION
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
     rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
     rr::threadedvertextransformer::ThreadedVertexTransformer m_device { m_dduDevice, m_workerThread, m_uploadThread };
+#else
+    rr::devicedatauploader::DeviceDataUploader m_device { m_busConnector };
+#endif
     Scene m_scene {};
 };

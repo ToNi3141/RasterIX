@@ -114,7 +114,7 @@ class GLInitGuard
 public:
     GLInitGuard()
     {
-        rr::RIXGL::createInstance(m_threadedRasterizer);
+        rr::RIXGL::createInstance(m_device);
 #define ADDRESS_OF(X) reinterpret_cast<const void*>(&X)
         rr::RIXGL::getInstance().addLibProcedure("glXChooseVisual", ADDRESS_OF(glXChooseVisual));
         rr::RIXGL::getInstance().addLibProcedure("glXCreateContext", ADDRESS_OF(glXCreateContext));
@@ -164,10 +164,14 @@ public:
 
 private:
     rr::DMAProxyBusConnector m_busConnector {};
+#if RIX_CORE_THREADED_RASTERIZATION
     rr::MultiThreadRunner m_workerThread {};
     rr::MultiThreadRunner m_uploadThread {};
     rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
-    rr::threadedvertextransformer::ThreadedVertexTransformer m_threadedRasterizer { m_dduDevice, m_workerThread, m_uploadThread };
+    rr::threadedvertextransformer::ThreadedVertexTransformer m_device { m_dduDevice, m_workerThread, m_uploadThread };
+#else
+    rr::devicedatauploader::DeviceDataUploader m_device { m_busConnector };
+#endif
 } guard;
 
 GLAPI XVisualInfo* APIENTRY glXChooseVisual(
