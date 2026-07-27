@@ -73,9 +73,6 @@ private:
         OC_RIGHT = 0x20
     };
 
-    inline static float lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1);
-    inline static bool hasOutCode(const Vec4& v, const OutCode oc);
-
     static std::size_t clipAgainstPlane(ClipList& __restrict listOut,
         const OutCode clipPlane,
         const ClipList& listIn,
@@ -100,6 +97,27 @@ private:
             c |= OutCode::OC_FAR;
 
         return c;
+    }
+
+    static float planeDistance(const Vec4& v, const OutCode plane)
+    {
+        switch (plane)
+        {
+        case OutCode::OC_LEFT:
+            return v[0] + v[3];
+        case OutCode::OC_RIGHT:
+            return v[3] - v[0];
+        case OutCode::OC_BOTTOM:
+            return v[1] + v[3];
+        case OutCode::OC_TOP:
+            return v[3] - v[1];
+        case OutCode::OC_NEAR:
+            return v[2] + v[3];
+        case OutCode::OC_FAR:
+            return v[3] - v[2];
+        default:
+            return 0.0f;
+        }
     }
 
     friend Clipper::OutCode operator|=(Clipper::OutCode& lhs, Clipper::OutCode rhs);
