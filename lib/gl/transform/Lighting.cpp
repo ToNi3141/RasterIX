@@ -116,13 +116,13 @@ void LightingCalc::calculateLight(
     const Vec3& n0) const
 {
     // Calculate light from lights
-    const Vec3 dir = calculateDirection(v0, lightConfig.position);
+    const Vec3 dirVertexToLight = calculateDirection(v0, lightConfig.position);
 
-    const float nDotDir = std::clamp(n0.dot(dir), 0.0f, 1.0f);
+    const float nDotDir = std::clamp(n0.dot(dirVertexToLight), 0.0f, 1.0f);
 
     const float att = calculateAttenuation(lightConfig, v0);
-    const float specular = calculateSpecular(nDotDir, n0, dir, materialSpecularExponent);
-    const float spot = calculateSpotlight(lightConfig, v0);
+    const float specular = calculateSpecular(nDotDir, n0, dirVertexToLight, materialSpecularExponent);
+    const float spot = calculateSpotlight(lightConfig, v0, dirVertexToLight);
 
     const Vec4 ambientColor = lightConfig.ambientColor * materialAmbientColor;
     const Vec4 colorLightSpecular = lightConfig.specularColor * materialSpecularColor * specular;
@@ -226,15 +226,15 @@ float LightingCalc::calculateSpecular(
     return specular * f;
 }
 
-float LightingCalc::calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0) const
+float LightingCalc::calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0, const Vec3& dirLightToVertex) const
 {
     float spot = 1.0;
     if (lightConfig.spotlightCutoff != 180.0f)
     {
-        const Vec3 dir = calculateDirection(lightConfig.position, v0);
         Vec3 sdl = lightConfig.spotlightDirection;
         sdl.unit();
-        const float val = dir.dot(sdl);
+        const Vec3 dirVertexToLight = dirLightToVertex * -1.0f;
+        const float val = dirVertexToLight.dot(sdl);
         const float cosCutoff = std::cos(lightConfig.spotlightCutoff * 3.1418f / 180.0f);
         if (val >= std::abs(cosCutoff))
         {

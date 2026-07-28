@@ -109,7 +109,7 @@ private:
         const Vec3& n0,
         const Vec3& dir,
         const float materialSpecularExponent) const;
-    float calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
+    float calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0, const Vec3& dirLightToVertex) const;
     Vec3 calculateDirection(const Vec4& p1, const Vec4& p2) const;
 
     const LightingData& m_data;
