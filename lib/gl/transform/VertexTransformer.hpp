@@ -249,7 +249,7 @@ private:
             if (m_data.tmuEnabled[tu])
             {
                 outParam.tex[tu] = parameter.tex[tu];
-                if (const texgen::TexGenCalc  texGen { m_data.texGen[tu] }; texGen.isEnabled())
+                if (const texgen::TexGenCalc texGen { m_data.texGen[tu] }; texGen.isEnabled())
                 {
                     texGen.calculateTexGenCoords(
                         outParam.tex[tu],

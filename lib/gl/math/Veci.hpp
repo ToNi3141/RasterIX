@@ -191,7 +191,7 @@ public:
     }
 
 private:
-    std::array<T, VecSize> vec {};
+    std::array<T, VecSize> vec;
 };
 
 template <typename T, std::size_t VecSize, std::size_t DefaultShift>
