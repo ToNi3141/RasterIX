@@ -249,12 +249,15 @@ private:
             if (m_data.tmuEnabled[tu])
             {
                 outParam.tex[tu] = parameter.tex[tu];
-                texgen::TexGenCalc { m_data.texGen[tu] }.calculateTexGenCoords(
-                    outParam.tex[tu],
-                    m_data.transformMatrices.modelView,
-                    m_normalMatrix,
-                    parameter.vertex,
-                    parameter.normal);
+                if (const texgen::TexGenCalc  texGen { m_data.texGen[tu] }; texGen.isEnabled())
+                {
+                    texGen.calculateTexGenCoords(
+                        outParam.tex[tu],
+                        m_data.transformMatrices.modelView,
+                        m_normalMatrix,
+                        parameter.vertex,
+                        parameter.normal);
+                }
                 if (m_textureTransformationRequired[tu])
                 {
                     outParam.tex[tu] = m_data.transformMatrices.texture[tu].transform(outParam.tex[tu]);

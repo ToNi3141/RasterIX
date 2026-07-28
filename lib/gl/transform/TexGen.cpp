@@ -27,32 +27,29 @@ void TexGenCalc::calculateTexGenCoords(
     const Vec4& v0,
     const Vec3& n0) const
 {
-    if (isEnabled())
+    if ((m_data.texGenModeS == TexGenMode::OBJECT_LINEAR)
+        || (m_data.texGenModeT == TexGenMode::OBJECT_LINEAR)
+        || (m_data.texGenModeR == TexGenMode::OBJECT_LINEAR))
     {
-        if ((m_data.texGenModeS == TexGenMode::OBJECT_LINEAR)
-            || (m_data.texGenModeT == TexGenMode::OBJECT_LINEAR)
-            || (m_data.texGenModeR == TexGenMode::OBJECT_LINEAR))
-        {
-            calculateObjectLinear(st0, v0);
-        }
-        if ((m_data.texGenModeS == TexGenMode::EYE_LINEAR)
-            || (m_data.texGenModeT == TexGenMode::EYE_LINEAR)
-            || (m_data.texGenModeR == TexGenMode::EYE_LINEAR))
-        {
-            calculateEyeLinear(st0, modelViewMatrix.transform(v0));
-        }
-        if ((m_data.texGenModeS == TexGenMode::SPHERE_MAP)
-            || (m_data.texGenModeT == TexGenMode::SPHERE_MAP)
-            || (m_data.texGenModeR == TexGenMode::SPHERE_MAP))
-        {
-            calculateSphereMap(st0, modelViewMatrix.transform(v0), normalMatrix.transform(n0));
-        }
-        if ((m_data.texGenModeS == TexGenMode::REFLECTION_MAP)
-            || (m_data.texGenModeT == TexGenMode::REFLECTION_MAP)
-            || (m_data.texGenModeR == TexGenMode::REFLECTION_MAP))
-        {
-            calculateReflectionMap(st0, modelViewMatrix.transform(v0), normalMatrix.transform(n0));
-        }
+        calculateObjectLinear(st0, v0);
+    }
+    if ((m_data.texGenModeS == TexGenMode::EYE_LINEAR)
+        || (m_data.texGenModeT == TexGenMode::EYE_LINEAR)
+        || (m_data.texGenModeR == TexGenMode::EYE_LINEAR))
+    {
+        calculateEyeLinear(st0, modelViewMatrix.transform(v0));
+    }
+    if ((m_data.texGenModeS == TexGenMode::SPHERE_MAP)
+        || (m_data.texGenModeT == TexGenMode::SPHERE_MAP)
+        || (m_data.texGenModeR == TexGenMode::SPHERE_MAP))
+    {
+        calculateSphereMap(st0, modelViewMatrix.transform(v0), normalMatrix.transform(n0));
+    }
+    if ((m_data.texGenModeS == TexGenMode::REFLECTION_MAP)
+        || (m_data.texGenModeT == TexGenMode::REFLECTION_MAP)
+        || (m_data.texGenModeR == TexGenMode::REFLECTION_MAP))
+    {
+        calculateReflectionMap(st0, modelViewMatrix.transform(v0), normalMatrix.transform(n0));
     }
 }
 
