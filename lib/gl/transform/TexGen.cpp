@@ -121,7 +121,7 @@ void TexGenCalc::calculateReflectionMap(Vec4& st0, const Vec4& eyeVertex, const 
 
 Vec3 TexGenCalc::calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) const
 {
-    eyeVertex.normalize();
+    eyeVertex = eyeVertex.normalize();
     const Vec3 eyeVertex3 { eyeVertex.data() };
     Vec3 reflectionVector = eyeVertex3 - eyeNormal * 2.0f * eyeNormal.dot(eyeVertex3);
     reflectionVector[2] += 1.0f;
@@ -131,7 +131,7 @@ Vec3 TexGenCalc::calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) co
 
 Vec3 TexGenCalc::calculateReflectionVector(Vec4 eyeVertex, const Vec3& eyeNormal) const
 {
-    eyeVertex.normalize();
+    eyeVertex = eyeVertex.normalize();
     const Vec3 eyeVertex3 { eyeVertex.data() };
     const float dotResult = 2.0f * eyeVertex3.dot(eyeNormal);
     return eyeVertex3 - (eyeNormal * dotResult);

@@ -102,17 +102,19 @@ public:
         return *this;
     }
 
-    void perspectiveDivide()
+    Vec<VecSize> perspectiveDivide() const
     {
+        Vec<VecSize> result;
         const float inv = 1.0f / vec[VecSize - 1];
         if constexpr (VecSize < 1)
         {
-            vec[0] = inv;
-            return;
+            result[0] = inv;
+            return result;
         }
-        vec[VecSize - 1] = inv;
+        result[VecSize - 1] = inv;
         for (std::size_t i = 0; i < VecSize - 1; i++)
-            vec[i] = vec[i] * inv;
+            result[i] = vec[i] * inv;
+        return result;
     }
 
     void div(float val)
@@ -178,7 +180,7 @@ public:
         return *this;
     }
 
-    float dot(const Vec<VecSize>& val) const
+    [[nodiscard]] float dot(const Vec<VecSize>& val) const
     {
         float retVal = 0;
         for (std::size_t i = 0; i < VecSize; i++)
@@ -186,22 +188,22 @@ public:
         return retVal;
     }
 
-    void normalize()
+    [[nodiscard]] Vec<VecSize> normalize() const
     {
         float tmp = 0;
         for (std::size_t i = 0; i < VecSize; i++)
             tmp += vec[i] * vec[i];
 
         tmp = sqrtf(tmp);
-        if (tmp == 0.0f)
-            return;
-
+        tmp = std::max(tmp, 1e-30f); // Avoid division by zero
         tmp = 1.0f / tmp;
+        Vec<VecSize> result;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = vec[i] * tmp;
+            result[i] = vec[i] * tmp;
+        return result;
     }
 
-    float dist(const Vec<VecSize>& val) const
+    [[nodiscard]] float dist(const Vec<VecSize>& val) const
     {
         float tmp = 0;
         for (std::size_t i = 0; i < VecSize; i++)
@@ -209,28 +211,29 @@ public:
         return sqrtf(tmp);
     }
 
-    void unit()
+    [[nodiscard]] Vec<VecSize> unit() const
     {
         float tmp = 0;
         for (std::size_t i = 0; i < VecSize; i++)
             tmp += vec[i] * vec[i];
 
         tmp = sqrtf(tmp);
-        if (tmp == 0.0f)
-            return;
-
+        tmp = std::max(tmp, 1e-30f); // Avoid division by zero
         tmp = 1.0f / tmp;
+        Vec<VecSize> result;
         for (std::size_t i = 0; i < VecSize; i++)
-            vec[i] = vec[i] * tmp;
+            result[i] = vec[i] * tmp;
+        return result;
     }
 
-    void cross(const Vec<VecSize>& val)
+    [[nodiscard]] Vec<VecSize> cross(const Vec<VecSize>& val) const
     {
-        const Vec<VecSize> tmp { *this };
+        Vec<VecSize> result;
         for (std::size_t i = 0; i < VecSize; i++)
         {
-            vec[i] = (tmp[(i + 1) % VecSize] * val[(i + 2) % VecSize]) - (tmp[(i + 2) % VecSize] * val[(i + 1) % VecSize]);
+            result[i] = (vec[(i + 1) % VecSize] * val[(i + 2) % VecSize]) - (vec[(i + 2) % VecSize] * val[(i + 1) % VecSize]);
         }
+        return result;
     }
 
     void clamp(const float minVal, const float maxVal)

@@ -57,16 +57,16 @@ GLAPI void APIENTRY gluLookAt(GLfloat eyex, GLfloat eyey, GLfloat eyez, GLfloat 
 
     rr::Mat44 m;
 
-    forward.normalize();
+    forward = forward.normalize();
     rr::Vec3 side { forward };
 
     /* Side = forward x up */
-    side.cross(up);
-    side.normalize();
+    side = side.cross(up);
+    side = side.normalize();
 
     /* Recompute up as: up = side x forward */
     up = side;
-    up.cross(forward);
+    up = up.cross(forward);
 
     m.identity();
     m[0][0] = side[0];

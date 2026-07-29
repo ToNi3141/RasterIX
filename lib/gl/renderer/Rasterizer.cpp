@@ -183,7 +183,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
     // Avoid that the w gets too small/big by normalizing it
     if (m_enableScaling)
     {
-        w.normalize();
+        w = w.normalize();
     }
 
     // Texture

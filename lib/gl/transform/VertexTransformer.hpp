@@ -308,7 +308,7 @@ private:
         const std::size_t clippedVertexListSize = list.size();
         for (std::size_t i = 0; i < clippedVertexListSize; i++)
         {
-            list[i].vertex.perspectiveDivide();
+            list[i].vertex = list[i].vertex.perspectiveDivide();
             viewport::ViewPortCalc { m_data.viewPort }.transform(list[i].vertex);
         }
 
@@ -372,9 +372,9 @@ private:
         Vec4& v1 = primitive[1].vertex;
         Vec4& v2 = primitive[2].vertex;
 
-        v0.perspectiveDivide();
-        v1.perspectiveDivide();
-        v2.perspectiveDivide();
+        v0 = v0.perspectiveDivide();
+        v1 = v1.perspectiveDivide();
+        v2 = v2.perspectiveDivide();
 
         // Viewport transformation of the vertex
         viewport::ViewPortCalc { m_data.viewPort }.transform(v0);

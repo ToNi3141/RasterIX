@@ -269,14 +269,12 @@ private:
     {
         static constexpr float EPSILON { 0.0001F };
 
-        rr::Vec3 lightDir = start - lightPos;
-        lightDir.normalize();
+        rr::Vec3 lightDir = (start - lightPos).normalize();
         const rr::Vec3 pos2 = lightDir;
         lightDir *= EPSILON;
         rr::Vec3 pos1 = start + lightDir;
 
-        lightDir = end - lightPos;
-        lightDir.normalize();
+        lightDir = (end - lightPos).normalize();
         const rr::Vec3 pos4 = lightDir;
         lightDir *= EPSILON;
         rr::Vec3 pos3 = end + lightDir;
@@ -311,29 +309,25 @@ private:
             const rr::Vec3 e5 = line[2] - line[1];
             const rr::Vec3 e6 = line[5] - line[0];
 
-            rr::Vec3 normal = e1;
-            normal.cross(e2);
+            rr::Vec3 normal = e1.cross(e2);
             rr::Vec3 lightDir = tLightPos - line[0];
 
             if (normal.dot(lightDir) > 0.00001)
             {
-                normal = e3;
-                normal.cross(e1);
+                normal = e3.cross(e1);
                 if (normal.dot(lightDir) <= 0)
                 {
                     emitQuad(line[0], line[1], tLightPos);
                 }
 
-                normal = e4;
-                normal.cross(e5);
+                normal = e4.cross(e5);
                 lightDir = tLightPos - line[1];
                 if (normal.dot(lightDir) <= 0)
                 {
                     emitQuad(line[1], line[2], tLightPos);
                 }
 
-                normal = e2;
-                normal.cross(e6);
+                normal = e2.cross(e6);
                 lightDir = tLightPos - line[2];
                 if (normal.dot(lightDir) <= 0)
                 {
