@@ -15,6 +15,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-set(COMPILER_FLAGS " -marm -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a9 -save-temps -Ofast -ffast-math -funroll-loops -fno-rtti -fno-stack-protector -Wall -Wstrict-aliasing -Wdeprecated-copy -Wtype-limits -fno-tree-vectorize")
+set(COMPILER_FLAGS " -marm -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a9 -save-temps -Ofast -ffast-math -fno-rtti -fno-stack-protector -Wall -Wstrict-aliasing -Wdeprecated-copy -Wtype-limits -fno-tree-vectorize -flto -fomit-frame-pointer -frename-registers -falign-functions=32 -falign-loops=32")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMPILER_FLAGS}" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS}" CACHE STRING "" FORCE)
