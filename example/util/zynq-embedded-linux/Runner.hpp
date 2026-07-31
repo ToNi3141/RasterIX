@@ -35,8 +35,8 @@ public:
     }
 
 private:
-    static constexpr uint32_t RESOLUTION_H = 320;
-    static constexpr uint32_t RESOLUTION_W = 480;
+    static constexpr uint32_t RESOLUTION_H = 600;
+    static constexpr uint32_t RESOLUTION_W = 1024;
     rr::DMAProxyBusConnector m_busConnector {};
 #if RIX_CORE_THREADED_RASTERIZATION
     rr::MultiThreadRunner m_workerThread {};

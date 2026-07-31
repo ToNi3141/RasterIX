@@ -63,7 +63,8 @@ bool DeviceDataUploader::readFromDeviceMemory(tcb::span<uint8_t> data, const uin
 uint32_t DeviceDataUploader::addDduStorePayload(const std::size_t offset, const tcb::span<const uint8_t> payload)
 {
     tcb::span<uint8_t> s = m_busConnector.requestWriteBuffer(getStoreBufferIndex());
-    std::copy(payload.begin(), payload.end(), s.last(s.size() - offset).begin());
+    tcb::span<uint8_t> destBuffer = s.last(s.size() - offset).first(payload.size());
+    std::copy(payload.begin(), payload.end(), destBuffer.begin());
     return (std::max)(static_cast<uint32_t>(payload.size()), DEVICE_MIN_TRANSFER_SIZE);
 }
 
