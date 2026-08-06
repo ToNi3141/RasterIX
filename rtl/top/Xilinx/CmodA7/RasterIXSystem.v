@@ -443,7 +443,11 @@ module RasterIXSystem #(
         .m_axi_rresp    (rix_rresp),
         .m_axi_rlast    (rix_rlast),
         .m_axi_rvalid   (rix_rvalid),
-        .m_axi_rready   (rix_rready)
+        .m_axi_rready   (rix_rready),
+
+        .perfBusy               (perfBusy),
+        .perfTriangleRendering  (perfTriangleRendering),
+        .perfRasterizerStall    (perfRasterizerStall)
     );
 
     // -----------------------------------------------------------------------
@@ -624,11 +628,7 @@ module RasterIXSystem #(
         .m_axi_rlast    (m_axi_rlast),
         .m_axi_ruser    (0),
         .m_axi_rvalid   (m_axi_rvalid),
-        .m_axi_rready   (m_axi_rready),
-
-        .perfBusy               (perfBusy),
-        .perfTriangleRendering  (perfTriangleRendering),
-        .perfRasterizerStall    (perfRasterizerStall)
+        .m_axi_rready   (m_axi_rready)
     );
 
 endmodule
