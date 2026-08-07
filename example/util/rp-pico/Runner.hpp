@@ -160,7 +160,7 @@ public:
         gpio_put(RESET, 0);
         sleep_ms(50);
         gpio_put(RESET, 1);
-        sleep_ms(500); // Wait a moment till the FPGA has load its configuration
+        sleep_ms(3000); // Wait a moment till the FPGA has load its configuration
         gpio_put(RESET, 0);
         gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 0);
         sleep_ms(50);
