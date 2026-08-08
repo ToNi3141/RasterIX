@@ -1,5 +1,5 @@
 #include "FT60XBusConnector.hpp"
-#include "MultiThreadRunner.hpp"
+#include "StdThreadRunner.hpp"
 #include "RIXGL.hpp"
 #include "gl.h"
 #include "glu.h"
@@ -39,8 +39,8 @@ private:
     static constexpr uint32_t RESOLUTION_W = 1024;
     rr::FT60XBusConnector m_busConnector {};
 #if RIX_CORE_THREADED_RASTERIZATION
-    rr::MultiThreadRunner m_workerThread {};
-    rr::MultiThreadRunner m_uploadThread {};
+    rr::StdThreadRunner m_workerThread {};
+    rr::StdThreadRunner m_uploadThread {};
     rr::devicedatauploader::DeviceDataUploader m_dduDevice { m_busConnector };
     rr::threadedvertextransformer::ThreadedVertexTransformer m_device { m_dduDevice, m_workerThread, m_uploadThread };
 #else

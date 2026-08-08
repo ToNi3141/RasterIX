@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef MULTITHREADRUNNER_HPP
-#define MULTITHREADRUNNER_HPP
+#ifndef STDTHREADRUNNER_HPP
+#define STDTHREADRUNNER_HPP
 
 #include "IThreadRunner.hpp"
 #include <condition_variable>
@@ -26,10 +26,10 @@
 namespace rr
 {
 
-class MultiThreadRunner : public IThreadRunner
+class StdThreadRunner : public IThreadRunner
 {
 public:
-    MultiThreadRunner()
+    StdThreadRunner()
     {
         m_renderThread = std::thread([this]()
             { threadMain(); });
@@ -42,7 +42,7 @@ public:
 #endif
     }
 
-    ~MultiThreadRunner()
+    ~StdThreadRunner()
     {
         {
             std::lock_guard<std::mutex> lock { m_mutex };
@@ -119,4 +119,4 @@ private:
 
 } // namespace rr
 
-#endif // MULTITHREADRUNNER_HPP
+#endif // STDTHREADRUNNER_HPP
