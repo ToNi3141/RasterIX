@@ -19,7 +19,8 @@
 #define MULTITHREADRUNNER_HPP
 
 #include "IThreadRunner.hpp"
-#include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <thread>
 
 namespace rr
@@ -30,32 +31,8 @@ class MultiThreadRunner : public IThreadRunner
 public:
     MultiThreadRunner()
     {
-        // Initialize the render thread by running it once
-        m_renderThread = std::thread([]() {});
-    }
-
-    void wait() override
-    {
-        if (m_renderThread.joinable())
-        {
-            m_renderThread.join();
-        }
-    }
-
-    bool isBusy() const override
-    {
-        return m_busy;
-    }
-
-    void run(const std::function<void()>& operation) override
-    {
-        wait();
-
-        m_busy = true;
-        m_renderThread = std::thread([this, operation]()
-            {
-            operation();
-            m_busy = false; });
+        m_renderThread = std::thread([this]()
+            { threadMain(); });
 #ifdef WIN32
         SetThreadPriority(m_renderThread.native_handle(), 2);
 #else
@@ -63,12 +40,81 @@ public:
         sch_params.sched_priority = 2;
         pthread_setschedparam(m_renderThread.native_handle(), SCHED_RR, &sch_params);
 #endif
-        std::this_thread::yield();
+    }
+
+    ~MultiThreadRunner()
+    {
+        {
+            std::lock_guard<std::mutex> lock { m_mutex };
+            m_stop = true;
+        }
+        m_workAvailable.notify_one();
+        if (m_renderThread.joinable())
+        {
+            m_renderThread.join();
+        }
+    }
+
+    void wait() override
+    {
+        std::unique_lock<std::mutex> lock { m_mutex };
+        m_workCompleted.wait(lock, [this]()
+            { return !m_busy; });
+    }
+
+    bool isBusy() const override
+    {
+        std::lock_guard<std::mutex> lock { m_mutex };
+        return m_busy;
+    }
+
+    void run(const std::function<void()>& operation) override
+    {
+        {
+            std::unique_lock<std::mutex> lock { m_mutex };
+            m_workCompleted.wait(lock, [this]()
+                { return !m_busy; });
+    
+            m_operation = operation;
+            m_busy = true;
+        }
+        m_workAvailable.notify_one();
     }
 
 private:
+    void threadMain()
+    {
+        for (;;)
+        {
+            std::function<void()> operation;
+            {
+                std::unique_lock<std::mutex> lock { m_mutex };
+                m_workAvailable.wait(lock, [this]()
+                    { return m_stop || m_busy; });
+                if (m_stop)
+                {
+                    return;
+                }
+                operation = std::move(m_operation);
+            }
+
+            operation();
+
+            {
+                std::lock_guard<std::mutex> lock { m_mutex };
+                m_busy = false;
+            }
+            m_workCompleted.notify_all();
+        }
+    }
+
     std::thread m_renderThread;
-    std::atomic<bool> m_busy { false };
+    mutable std::mutex m_mutex;
+    std::condition_variable m_workAvailable;
+    std::condition_variable m_workCompleted;
+    std::function<void()> m_operation;
+    bool m_busy { false };
+    bool m_stop { false };
 };
 
 } // namespace rr
