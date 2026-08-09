@@ -77,20 +77,18 @@ void LightingCalc::calculateLights(
         const Vec4& diffuseColor = (m_data.enableColorMaterialDiffuse) ? triangleColor : m_data.material.diffuseColor;
         const Vec4& specularColor = (m_data.enableColorMaterialSpecular) ? triangleColor : m_data.material.specularColor;
 
-        Vec4 colorTmp;
-        calculateSceneLight(colorTmp, emissionColor, ambientColor, m_data.material.ambientColorScene);
-
         Vec3 n = normal * m_rescaleFactor;
         if (m_data.normalizeLightNormal)
         {
-            n.normalize();
+            n = n.normalize();
         }
 
+        Vec4 colorSum = calculateSceneLight(emissionColor, ambientColor, m_data.material.ambientColorScene);
         for (std::size_t i = 0; i < LightingData::MAX_LIGHTS; i++)
         {
             if (!m_data.lightEnable[i])
                 continue;
-            calculateLight(colorTmp,
+            colorSum += calculateLight(
                 m_data.lights[i],
                 m_data.material.specularExponent,
                 ambientColor,
@@ -99,14 +97,12 @@ void LightingCalc::calculateLights(
                 vertex,
                 n);
         }
-
-        color = colorTmp;
+        color = colorSum;
         color[3] = alphaOld;
     }
 }
 
-void LightingCalc::calculateLight(
-    Vec4& __restrict color,
+Vec4 LightingCalc::calculateLight(
     const LightingData::LightConfig& lightConfig,
     const float materialSpecularExponent,
     const Vec4& materialAmbientColor,
@@ -116,54 +112,38 @@ void LightingCalc::calculateLight(
     const Vec3& n0) const
 {
     // Calculate light from lights
-    const Vec3 dir = calculateDirection(v0, lightConfig.position);
+    const Vec3 dirVertexToLight = calculateDirection(v0, lightConfig.position);
 
-    const float nDotDir = std::clamp(n0.dot(dir), 0.0f, 1.0f);
+    const float nDotDir = std::clamp(n0.dot(dirVertexToLight), 0.0f, 1.0f);
 
     const float att = calculateAttenuation(lightConfig, v0);
-    const float specular = calculateSpecular(nDotDir, n0, dir, materialSpecularExponent);
-    const float spot = calculateSpotlight(lightConfig, v0);
+    const float specular = calculateSpecular(nDotDir, n0, dirVertexToLight, materialSpecularExponent);
+    const float spot = calculateSpotlight(lightConfig, v0, dirVertexToLight);
 
     const Vec4 ambientColor = lightConfig.ambientColor * materialAmbientColor;
     const Vec4 colorLightSpecular = lightConfig.specularColor * materialSpecularColor * specular;
-    const Vec4 colorLight = ((lightConfig.diffuseColor * materialDiffuseColor * nDotDir) + ambientColor + colorLightSpecular) * att * spot;
-
-    // Add light sums to final color
-    color += colorLight;
+    return ((lightConfig.diffuseColor * materialDiffuseColor * nDotDir) + ambientColor + colorLightSpecular) * att * spot;
 }
 
 Vec3 LightingCalc::calculateDirection(const Vec4& p1, const Vec4& p2) const
 {
     if ((p1[3] != 0.0f) && (p2[3] == 0.0f))
     {
-        Vec3 dir { p2[0], p2[1], p2[2] };
-        dir.unit();
-        return dir;
+        return Vec3 { p2[0], p2[1], p2[2] }.unit();
     }
     if ((p1[3] == 0.0f) && (p2[3] != 0.0f))
     {
-        Vec3 dir { p1[0], p1[1], p1[2] };
-        dir *= -1.0f;
-        dir.unit();
-        return dir;
+        return (Vec3 { p1[0], p1[1], p1[2] } * -1.0f).unit();
     }
     if ((p1[3] == 0.0f) && (p2[3] == 0.0f))
     {
-        Vec3 dir { p2[0], p2[1], p2[2] };
-        dir -= Vec3 { p1[0], p1[1], p1[2] };
-        dir.unit();
-        return dir;
+        return Vec3 { p2[0], p2[1], p2[2] } - Vec3 { p1[0], p1[1], p1[2] }.unit();
     }
     if ((p1[3] != 0.0f) && (p2[3] != 0.0f))
     {
-        Vec4 p1p = p1;
-        p1p.perspectiveDivide();
-        Vec4 p2p = p2;
-        p2p.perspectiveDivide();
-        Vec3 dir { p2p[0], p2p[1], p2p[2] };
-        dir -= Vec3 { p1p[0], p1p[1], p1p[2] };
-        dir.unit();
-        return dir;
+        const Vec4 p1p = p1.perspectiveDivide();
+        const Vec4 p2p = p2.perspectiveDivide();
+        return (Vec3 { p2p[0], p2p[1], p2p[2] } - Vec3 { p1p[0], p1p[1], p1p[2] }).unit();
     }
     return Vec3 { 0.0f, 0.0f, 0.0f };
 }
@@ -172,7 +152,10 @@ float LightingCalc::calculateAttenuation(const LightingData::LightConfig& lightC
 {
     float att = 1.0f;
 
-    if (lightConfig.position[3] != 0.0f)
+    if ((lightConfig.position[3] != 0.0f)
+        && ((lightConfig.constantAttenuation != 1.0f)
+            || (lightConfig.linearAttenuation != 0.0f)
+            || (lightConfig.quadraticAttenuation != 0.0f)))
     {
         const float dist = v0.dist(lightConfig.position);
         att = 1.0f / (lightConfig.constantAttenuation + (lightConfig.linearAttenuation * dist) + lightConfig.quadraticAttenuation * (dist * dist));
@@ -187,55 +170,48 @@ float LightingCalc::calculateSpecular(
     const Vec3& dir,
     const float materialSpecularExponent) const
 {
-    Vec3 halfWayVector = dir;
+    float specular = 1.0f;
+    const float f = (nDotDir != 0.0f) ? 1.0f : 0.0f;
 
-    // Convert now the direction in dir to the half way vector
-    // Not supported in OpenGL ES
-    // if (lightConfig.localViewer)
-    // {
-    //     Vec4 dirEye { 0.0f, 0.0f, 0.0f, 1.0f };
-    //     dirEye -= v0;
-    //     dirEye.normalize();
-    //     dir += dirEye;
-    //     dir.unit();
-    // }
-    // else
-    // {
-    const Vec3 pointEye { 0.0f, 0.0f, 1.0f };
-    halfWayVector += pointEye;
-    halfWayVector.unit();
-    // }
-
-    float specular = n0.dot(halfWayVector);
-
-    // Optimization: pows are expensive
-    if (materialSpecularExponent == 0.0f) // x^0 == 1.0
+    if ((materialSpecularExponent != 0.0f) // Only calculate when exponent is not 0.0f, because x^0 == 1.0
+        && (f != 0.0f)) // Only calculate when nDotDir is not 0. Because x * 0 == 0
     {
-        specular = 1.0f;
-    }
-    else if (materialSpecularExponent != 1.0f) // x^1 == x
-    {
-        specular = powf(specular, materialSpecularExponent);
-    }
 
-    float f = 0.0f;
-    if (nDotDir != 0.0f)
-    {
-        f = 1.0f;
+        // Convert now the direction in dir to the half way vector
+        // Not supported in OpenGL ES
+        // if (lightConfig.localViewer)
+        // {
+        //     Vec4 dirEye { 0.0f, 0.0f, 0.0f, 1.0f };
+        //     dirEye -= v0;
+        //     dirEye.normalize();
+        //     dir += dirEye;
+        //     dir.unit();
+        // }
+        // else
+        // {
+        const Vec3 pointEye { 0.0f, 0.0f, 1.0f };
+        const Vec3 halfWayVector = (dir + pointEye).unit();
+        // }
+
+        specular = n0.dot(halfWayVector);
+
+        if (materialSpecularExponent != 1.0f) // x^1 == x, avoid unnecessary powf call
+        {
+            specular = powf(specular, materialSpecularExponent);
+        }
     }
 
     return specular * f;
 }
 
-float LightingCalc::calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0) const
+float LightingCalc::calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0, const Vec3& dirLightToVertex) const
 {
     float spot = 1.0;
     if (lightConfig.spotlightCutoff != 180.0f)
     {
-        const Vec3 dir = calculateDirection(lightConfig.position, v0);
-        Vec3 sdl = lightConfig.spotlightDirection;
-        sdl.unit();
-        const float val = dir.dot(sdl);
+        const Vec3 sdl = lightConfig.spotlightDirection.unit();
+        const Vec3 dirVertexToLight = dirLightToVertex * -1.0f;
+        const float val = dirVertexToLight.dot(sdl);
         const float cosCutoff = std::cos(lightConfig.spotlightCutoff * 3.1418f / 180.0f);
         if (val >= std::abs(cosCutoff))
         {
@@ -249,17 +225,12 @@ float LightingCalc::calculateSpotlight(const LightingData::LightConfig& lightCon
     return spot;
 }
 
-void LightingCalc::calculateSceneLight(
-    Vec4& __restrict sceneLight,
+Vec4 LightingCalc::calculateSceneLight(
     const Vec4& emissionColor,
     const Vec4& ambientColor,
     const Vec4& ambientColorScene) const
 {
-    // Ambient Color Material and ambient scene color
-    sceneLight = ambientColor;
-    sceneLight *= ambientColorScene;
-    // Emission color of material
-    sceneLight += emissionColor;
+    return (ambientColor * ambientColorScene) + emissionColor;
 }
 
 void LightingSetter::enableLighting(bool enable)

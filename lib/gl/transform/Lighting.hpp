@@ -87,14 +87,12 @@ public:
     bool isEnabled() const { return m_data.lightingEnabled; }
 
 private:
-    void calculateSceneLight(
-        Vec4& __restrict sceneLight,
+    Vec4 calculateSceneLight(
         const Vec4& emissionColor,
         const Vec4& ambientColor,
         const Vec4& ambientColorScene) const;
 
-    void calculateLight(
-        Vec4& __restrict color,
+    Vec4 calculateLight(
         const LightingData::LightConfig& lightConfig,
         const float materialSpecularExponent,
         const Vec4& materialAmbientColor,
@@ -109,7 +107,7 @@ private:
         const Vec3& n0,
         const Vec3& dir,
         const float materialSpecularExponent) const;
-    float calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0) const;
+    float calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0, const Vec3& dirLightToVertex) const;
     Vec3 calculateDirection(const Vec4& p1, const Vec4& p2) const;
 
     const LightingData& m_data;

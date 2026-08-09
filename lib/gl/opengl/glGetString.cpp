@@ -40,5 +40,5 @@ GLAPI const GLubyte* APIENTRY impl_glGetString(GLenum name)
         SPDLOG_WARN("glGetString 0x{:X} not supported", name);
         break;
     }
-    return nullptr;
+    return reinterpret_cast<const GLubyte*>("");
 }

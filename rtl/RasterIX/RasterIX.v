@@ -143,7 +143,12 @@ module RasterIX #(
     input  wire [ 1 : 0]                    m_axi_rresp,
     input  wire                             m_axi_rlast,
     input  wire                             m_axi_rvalid,
-    output wire                             m_axi_rready
+    output wire                             m_axi_rready,
+
+    // Performance signals
+    output wire                             perfBusy,
+    output wire                             perfTriangleRendering,
+    output wire                             perfRasterizerStall
 );
     generate
         if (VARIANT == "if" || VARIANT == "IF")
@@ -221,7 +226,11 @@ module RasterIX #(
                 .m_axi_rresp(m_axi_rresp),
                 .m_axi_rlast(m_axi_rlast),
                 .m_axi_rvalid(m_axi_rvalid),
-                .m_axi_rready(m_axi_rready)
+                .m_axi_rready(m_axi_rready),
+
+                .perfBusy(perfBusy),
+                .perfTriangleRendering(perfTriangleRendering),
+                .perfRasterizerStall(perfRasterizerStall)
             );
         end
         if (VARIANT == "ef" || VARIANT == "EF")
@@ -298,7 +307,11 @@ module RasterIX #(
                 .m_axi_rresp(m_axi_rresp),
                 .m_axi_rlast(m_axi_rlast),
                 .m_axi_rvalid(m_axi_rvalid),
-                .m_axi_rready(m_axi_rready)
+                .m_axi_rready(m_axi_rready),
+
+                .perfBusy(perfBusy),
+                .perfTriangleRendering(perfTriangleRendering),
+                .perfRasterizerStall(perfRasterizerStall)
             );
         end
     endgenerate

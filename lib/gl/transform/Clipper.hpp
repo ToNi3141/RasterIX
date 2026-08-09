@@ -29,27 +29,36 @@ namespace rr
 class Clipper
 {
 public:
+    enum class Position
+    {
+        Inside,
+        Outside,
+        Intersecting
+    };
+
     // Each clipping plane can potentially introduce one more vertex. A triangle contains 3 vertexes, plus 6 possible planes, results in 9 vertexes.
     using ClipList = std::array<TransformingVertexParameter, 9>;
 
     static tcb::span<TransformingVertexParameter> clip(ClipList& __restrict list, ClipList& __restrict listBuffer);
 
-    static bool isOutside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
+    static Position isIntersecting(const Vec4& v0, const Vec4& v1, const Vec4& v2)
     {
         const OutCode oc0 = outCode(v0);
         const OutCode oc1 = outCode(v1);
         const OutCode oc2 = outCode(v2);
 
-        return oc0 & oc1 & oc2;
-    }
-
-    static bool isInside(const Vec4& v0, const Vec4& v1, const Vec4& v2)
-    {
-        const OutCode oc0 = outCode(v0);
-        const OutCode oc1 = outCode(v1);
-        const OutCode oc2 = outCode(v2);
-
-        return (oc0 | oc1 | oc2) == OutCode::OC_NONE;
+        if (oc0 & oc1 & oc2)
+        {
+            return Position::Outside;
+        }
+        else if ((oc0 | oc1 | oc2) == OutCode::OC_NONE)
+        {
+            return Position::Inside;
+        }
+        else
+        {
+            return Position::Intersecting;
+        }
     }
 
 private:
@@ -63,9 +72,6 @@ private:
         OC_LEFT = 0x10,
         OC_RIGHT = 0x20
     };
-
-    inline static float lerpAmt(OutCode plane, const Vec4& v0, const Vec4& v1);
-    inline static bool hasOutCode(const Vec4& v, const OutCode oc);
 
     static std::size_t clipAgainstPlane(ClipList& __restrict listOut,
         const OutCode clipPlane,
@@ -91,6 +97,27 @@ private:
             c |= OutCode::OC_FAR;
 
         return c;
+    }
+
+    static float planeDistance(const Vec4& v, const OutCode plane)
+    {
+        switch (plane)
+        {
+        case OutCode::OC_LEFT:
+            return v[0] + v[3];
+        case OutCode::OC_RIGHT:
+            return v[3] - v[0];
+        case OutCode::OC_BOTTOM:
+            return v[1] + v[3];
+        case OutCode::OC_TOP:
+            return v[3] - v[1];
+        case OutCode::OC_NEAR:
+            return v[2] + v[3];
+        case OutCode::OC_FAR:
+            return v[3] - v[2];
+        default:
+            return 0.0f;
+        }
     }
 
     friend Clipper::OutCode operator|=(Clipper::OutCode& lhs, Clipper::OutCode rhs);

@@ -243,6 +243,9 @@ proc create_root_design { parentCell } {
   set hdmi_tx_g_p [ create_bd_port -dir O -from 0 -to 0 hdmi_tx_g_p ]
   set hdmi_tx_r_n [ create_bd_port -dir O -from 0 -to 0 hdmi_tx_r_n ]
   set hdmi_tx_r_p [ create_bd_port -dir O -from 0 -to 0 hdmi_tx_r_p ]
+  set led0 [ create_bd_port -dir O led0 ]
+  set led1 [ create_bd_port -dir O led1 ]
+  set led2 [ create_bd_port -dir O led2 ]
 
   # Create instance: Dvi_0, and set properties
   set block_name Dvi
@@ -271,7 +274,12 @@ proc create_root_design { parentCell } {
     CONFIG.DATA_WIDTH {64} \
     CONFIG.FRAMEBUFFER_SUB_PIXEL_WIDTH {5} \
     CONFIG.ID_WIDTH {6} \
+    CONFIG.RASTERIZER_ENABLE_FLOAT_INTERPOLATION {0} \
+    CONFIG.RASTERIZER_FIXPOINT_PRECISION {18} \
+    CONFIG.RASTERIZER_FLOAT_PRECISION {24} \
     CONFIG.STRB_WIDTH {8} \
+    CONFIG.SUB_PIXEL_CALC_PRECISION {8} \
+    CONFIG.TEXTURE_PAGE_SIZE {2048} \
     CONFIG.TMU_COUNT {1} \
     CONFIG.VARIANT {ef} \
   ] $RasterIX_0
@@ -283,10 +291,13 @@ proc create_root_design { parentCell } {
     CONFIG.c_enable_multi_channel {0} \
     CONFIG.c_include_mm2s {1} \
     CONFIG.c_include_s2mm {1} \
+    CONFIG.c_include_sg {1} \
     CONFIG.c_m_axi_mm2s_data_width {64} \
     CONFIG.c_m_axi_s2mm_data_width {64} \
     CONFIG.c_m_axis_mm2s_tdata_width {32} \
     CONFIG.c_micro_dma {0} \
+    CONFIG.c_mm2s_burst_size {16} \
+    CONFIG.c_s2mm_burst_size {16} \
     CONFIG.c_s_axis_s2mm_tdata_width {32} \
     CONFIG.c_sg_include_stscntrl_strm {0} \
     CONFIG.c_sg_length_width {26} \
@@ -297,7 +308,8 @@ proc create_root_design { parentCell } {
   # Create instance: axi_dwidth_converter_0, and set properties
   set axi_dwidth_converter_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dwidth_converter:2.1 axi_dwidth_converter_0 ]
   set_property -dict [list \
-    CONFIG.MAX_SPLIT_BEATS {16} \
+    CONFIG.ADDR_WIDTH {32} \
+    CONFIG.MAX_SPLIT_BEATS {256} \
     CONFIG.MI_DATA_WIDTH {64} \
     CONFIG.PROTOCOL {AXI4} \
     CONFIG.SI_DATA_WIDTH {32} \
@@ -314,19 +326,26 @@ proc create_root_design { parentCell } {
 
   # Create instance: axi_protocol_convert_0, and set properties
   set axi_protocol_convert_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_0 ]
+  set_property CONFIG.TRANSLATION_MODE {2} $axi_protocol_convert_0
+
 
   # Create instance: axi_protocol_convert_1, and set properties
   set axi_protocol_convert_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_1 ]
-  set_property CONFIG.ID_WIDTH {6} $axi_protocol_convert_1
+  set_property CONFIG.TRANSLATION_MODE {0} $axi_protocol_convert_1
 
 
   # Create instance: axi_protocol_convert_2, and set properties
   set axi_protocol_convert_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_2 ]
-  set_property CONFIG.DATA_WIDTH {32} $axi_protocol_convert_2
+  set_property -dict [list \
+    CONFIG.DATA_WIDTH {32} \
+    CONFIG.TRANSLATION_MODE {0} \
+  ] $axi_protocol_convert_2
 
 
   # Create instance: axi_protocol_convert_3, and set properties
   set axi_protocol_convert_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_3 ]
+  set_property CONFIG.TRANSLATION_MODE {0} $axi_protocol_convert_3
+
 
   # Create instance: axis_data_fifo_0, and set properties
   set axis_data_fifo_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 axis_data_fifo_0 ]
@@ -972,6 +991,9 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Dvi_0_dvi_red [get_bd_pins Dvi_0/dvi_red] [get_bd_pins util_ds_buf_0/OBUF_IN]
   connect_bd_net -net Dvi_0_swapped [get_bd_pins Dvi_0/swapped] [get_bd_pins RasterIX_0/fb_swapped]
   connect_bd_net -net RasterIX_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RasterIX_0/fb_addr]
+  connect_bd_net -net RasterIX_0_perfBusy [get_bd_ports led2] [get_bd_pins RasterIX_0/perfBusy]
+  connect_bd_net -net RasterIX_0_perfRasterizerStall [get_bd_ports led0] [get_bd_pins RasterIX_0/perfRasterizerStall]
+  connect_bd_net -net RasterIX_0_perfTriangleRendering [get_bd_ports led1] [get_bd_pins RasterIX_0/perfTriangleRendering]
   connect_bd_net -net RasterIX_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RasterIX_0/swap_fb]
   connect_bd_net -net RasterIX_0_swap_fb_enable_vsync [get_bd_pins Dvi_0/enable_vsync] [get_bd_pins RasterIX_0/swap_fb_enable_vsync]
   connect_bd_net -net axi_dma_0_mm2s_introut [get_bd_pins axi_dma_0/mm2s_introut] [get_bd_pins xlconcat_0/In0]

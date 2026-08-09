@@ -33,7 +33,7 @@ void PrimitiveAssemblerCalc::init()
     clear();
 }
 
-PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::getPrimitive()
+PrimitiveAssemblerCalc::Primitive PrimitiveAssemblerCalc::createPrimitive()
 {
     switch (m_primitiveType)
     {

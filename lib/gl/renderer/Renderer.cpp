@@ -125,6 +125,8 @@ void Renderer::initDisplayLists()
 
 void Renderer::intermediateUpload()
 {
+    SPDLOG_INFO("Intermediate upload called");
+
     // Add a raw commit framebuffer command to write the current frame into the framebuffer
     FramebufferCmd cmd { true, !RenderConfig::PERFORMANCE_MODE, !RenderConfig::PERFORMANCE_MODE, m_resolutionX * m_resolutionY };
     cmd.commitFramebuffer();

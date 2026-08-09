@@ -73,7 +73,7 @@ bool Rasterizer::increment(TriangleStreamTypes::TriangleDesc& desc,
     return false;
 }
 
-VecInt Rasterizer::edgeFunctionFixPoint(const Vec2i& a, const Vec2i& b, const Vec2i& c)
+VecInt Rasterizer::edgeFunctionX(const Vec2i& a, const Vec2i& b, const Vec2i& c)
 {
     VecInt val1 = (c[0] - a[0]) * (b[1] - a[1]);
     VecInt val2 = (c[1] - a[1]) * (b[0] - a[0]);
@@ -89,7 +89,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
     Vec2i v1 = Vec2i::createFromVec<std::array<float, 2>, EDGE_FUNC_SIZE>({ triangle.vertex1[0], triangle.vertex1[1] });
     Vec2i v2 = Vec2i::createFromVec<std::array<float, 2>, EDGE_FUNC_SIZE>({ triangle.vertex2[0], triangle.vertex2[1] });
 
-    VecInt area = edgeFunctionFixPoint(v0, v1, v2); // Sn.4
+    VecInt area = edgeFunctionX(v0, v1, v2); // Sn.4
     VecInt sign = -1; // 1 backface culling; -1 frontface culling
     sign = (area <= 0) ? -1 : 1; // No culling
     area *= sign;
@@ -151,22 +151,22 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
     Vec3i& wi = params.wInit; // Sn.4
     Vec3i& wIncX = params.wXInc;
     Vec3i& wIncY = params.wYInc;
-    wi[0] = edgeFunctionFixPoint(v1, v2, p);
-    wi[1] = edgeFunctionFixPoint(v2, v0, p);
-    wi[2] = edgeFunctionFixPoint(v0, v1, p);
+    wi[0] = edgeFunctionX(v1, v2, p);
+    wi[1] = edgeFunctionX(v2, v0, p);
+    wi[2] = edgeFunctionX(v0, v1, p);
     wi *= sign;
-    Vec2i pw = { bbStartX + EDGE_FUNC_ONE_P_ZERO, bbStartY };
-    wIncX[0] = edgeFunctionFixPoint(v1, v2, pw);
-    wIncX[1] = edgeFunctionFixPoint(v2, v0, pw);
-    wIncX[2] = edgeFunctionFixPoint(v0, v1, pw);
+    // Calculate the increments of the edge functions for the x and y direction.
+    // Optimized version of a
+    // Vec2i pw = { bbStartX + EDGE_FUNC_ONE_P_ZERO, bbStartY };
+    // wIncX[0] = edgeFunctionX(v1, v2, pw);
+    wIncX[0] = (v2[1] - v1[1]) * EDGE_FUNC_ONE_P_ZERO;
+    wIncX[1] = (v0[1] - v2[1]) * EDGE_FUNC_ONE_P_ZERO;
+    wIncX[2] = (v1[1] - v0[1]) * EDGE_FUNC_ONE_P_ZERO;
     wIncX *= sign;
-    wIncX -= wi;
-    Vec2i ph = { bbStartX, bbStartY + EDGE_FUNC_ONE_P_ZERO };
-    wIncY[0] = edgeFunctionFixPoint(v1, v2, ph);
-    wIncY[1] = edgeFunctionFixPoint(v2, v0, ph);
-    wIncY[2] = edgeFunctionFixPoint(v0, v1, ph);
+    wIncY[0] = (v1[0] - v2[0]) * EDGE_FUNC_ONE_P_ZERO;
+    wIncY[1] = (v2[0] - v0[0]) * EDGE_FUNC_ONE_P_ZERO;
+    wIncY[2] = (v0[0] - v1[0]) * EDGE_FUNC_ONE_P_ZERO;
     wIncY *= sign;
-    wIncY -= wi;
 
     float areaInv = 1.0f / area;
 
@@ -183,7 +183,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
     // Avoid that the w gets too small/big by normalizing it
     if (m_enableScaling)
     {
-        w.normalize();
+        w = w.normalize();
     }
 
     // Texture
@@ -287,7 +287,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
     return true;
 }
 
-float Rasterizer::edgeFunctionFloat(const Vec4& a, const Vec4& b, const Vec4& c)
+float Rasterizer::edgeFunction(const Vec4& a, const Vec4& b, const Vec4& c)
 {
     float val1 = (c[0] - a[0]) * (b[1] - a[1]);
     float val2 = (c[1] - a[1]) * (b[0] - a[0]);

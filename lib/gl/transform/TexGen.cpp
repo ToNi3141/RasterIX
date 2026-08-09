@@ -27,38 +27,30 @@ void TexGenCalc::calculateTexGenCoords(
     const Vec4& v0,
     const Vec3& n0) const
 {
-    if (isEnabled())
+    if ((m_data.texGenModeS == TexGenMode::OBJECT_LINEAR)
+        || (m_data.texGenModeT == TexGenMode::OBJECT_LINEAR)
+        || (m_data.texGenModeR == TexGenMode::OBJECT_LINEAR))
     {
-        if ((m_data.texGenModeS == TexGenMode::OBJECT_LINEAR)
-            || (m_data.texGenModeT == TexGenMode::OBJECT_LINEAR)
-            || (m_data.texGenModeR == TexGenMode::OBJECT_LINEAR))
-        {
-            calculateObjectLinear(st0, v0);
-        }
-        if ((m_data.texGenModeS == TexGenMode::EYE_LINEAR)
-            || (m_data.texGenModeT == TexGenMode::EYE_LINEAR)
-            || (m_data.texGenModeR == TexGenMode::EYE_LINEAR))
-        {
-            calculateEyeLinear(st0, modelViewMatrix.transform(v0));
-        }
-        if ((m_data.texGenModeS == TexGenMode::SPHERE_MAP)
-            || (m_data.texGenModeT == TexGenMode::SPHERE_MAP)
-            || (m_data.texGenModeR == TexGenMode::SPHERE_MAP))
-        {
-            calculateSphereMap(st0, modelViewMatrix.transform(v0), normalMatrix.transform(n0));
-        }
-        if ((m_data.texGenModeS == TexGenMode::REFLECTION_MAP)
-            || (m_data.texGenModeT == TexGenMode::REFLECTION_MAP)
-            || (m_data.texGenModeR == TexGenMode::REFLECTION_MAP))
-        {
-            calculateReflectionMap(st0, modelViewMatrix.transform(v0), normalMatrix.transform(n0));
-        }
+        calculateObjectLinear(st0, v0);
     }
-}
-
-bool TexGenCalc::isEnabled() const
-{
-    return m_data.texGenEnableS || m_data.texGenEnableT || m_data.texGenEnableR;
+    if ((m_data.texGenModeS == TexGenMode::EYE_LINEAR)
+        || (m_data.texGenModeT == TexGenMode::EYE_LINEAR)
+        || (m_data.texGenModeR == TexGenMode::EYE_LINEAR))
+    {
+        calculateEyeLinear(st0, modelViewMatrix.transform(v0));
+    }
+    if ((m_data.texGenModeS == TexGenMode::SPHERE_MAP)
+        || (m_data.texGenModeT == TexGenMode::SPHERE_MAP)
+        || (m_data.texGenModeR == TexGenMode::SPHERE_MAP))
+    {
+        calculateSphereMap(st0, modelViewMatrix.transform(v0), normalMatrix.transform(n0));
+    }
+    if ((m_data.texGenModeS == TexGenMode::REFLECTION_MAP)
+        || (m_data.texGenModeT == TexGenMode::REFLECTION_MAP)
+        || (m_data.texGenModeR == TexGenMode::REFLECTION_MAP))
+    {
+        calculateReflectionMap(st0, modelViewMatrix.transform(v0), normalMatrix.transform(n0));
+    }
 }
 
 void TexGenCalc::calculateObjectLinear(Vec4& st0, const Vec4& v0) const
@@ -129,7 +121,7 @@ void TexGenCalc::calculateReflectionMap(Vec4& st0, const Vec4& eyeVertex, const 
 
 Vec3 TexGenCalc::calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) const
 {
-    eyeVertex.normalize();
+    eyeVertex = eyeVertex.normalize();
     const Vec3 eyeVertex3 { eyeVertex.data() };
     Vec3 reflectionVector = eyeVertex3 - eyeNormal * 2.0f * eyeNormal.dot(eyeVertex3);
     reflectionVector[2] += 1.0f;
@@ -139,7 +131,7 @@ Vec3 TexGenCalc::calculateSphereVector(Vec4 eyeVertex, const Vec3& eyeNormal) co
 
 Vec3 TexGenCalc::calculateReflectionVector(Vec4 eyeVertex, const Vec3& eyeNormal) const
 {
-    eyeVertex.normalize();
+    eyeVertex = eyeVertex.normalize();
     const Vec3 eyeVertex3 { eyeVertex.data() };
     const float dotResult = 2.0f * eyeVertex3.dot(eyeNormal);
     return eyeVertex3 - (eyeNormal * dotResult);

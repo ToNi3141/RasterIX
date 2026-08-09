@@ -152,11 +152,11 @@ module FrameStreamingCore #(
     localparam BYTES_PER_BEAT = STREAM_WIDTH / 8;
     localparam BYTES_PER_BEAT_LG2 = $clog2(BYTES_PER_BEAT);
 
-    // Memory transfers have to be 128 bytes aligned.
-    // 128 because: The zynq has 64 bit axi3 ports, which means one beat contains 8 bytes.
+    // Memory transfers have to be 64 bytes aligned.
+    // 64 because: The zynq has at least 32 bit axi3 ports, which means one beat contains 4 bytes.
     // Max beats of an axi3 port are 16.
-    // 128 / 8 = 16. So we will be axi3 compliant.
-    localparam BEATS_PER_TRANSFER = 128 / BYTES_PER_BEAT;
+    // 64 / 4 = 16. So we will be axi3 compliant.
+    localparam BEATS_PER_TRANSFER = 64 / BYTES_PER_BEAT;
 
     localparam OP_IMM_POS = 0;
     localparam OP_IMM_SIZE = 28;
@@ -176,6 +176,12 @@ module FrameStreamingCore #(
     localparam STREAM_PAUSED = 5;
 
     localparam AUTO_LOAD = AUTO_CH_IN != 0 && AUTO_CH_OUT != 0;
+
+    initial begin
+        if (STREAM_WIDTH < 32) begin
+            $error("STREAM_WIDTH must be at least 32");
+        end
+    end
 
     wire                         m_int_axis_tvalid;
     wire                         m_int_axis_tready;

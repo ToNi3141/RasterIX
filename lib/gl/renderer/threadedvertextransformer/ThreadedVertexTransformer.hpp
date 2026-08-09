@@ -85,20 +85,14 @@ public:
                     { handleCommand(cmd); });
             }
 
-            while (disassembler.hasNextCommand())
-            {
-                const bool ret = std::visit([this](const auto& cmd)
-                    { 
+            while (disassembler.handleNextCommand([this](const auto& cmd)
+                { 
                         if constexpr (!DisplayListDispatcherType::singleList())
                         {
                             m_renderState.storeCommand(cmd);
                         }
-                        return handleCommand(cmd); },
-                    disassembler.getNextCommand());
-                if (!ret)
-                {
-                    SPDLOG_ERROR("Failed to handle command in display list. This might cause the renderer to crash ...");
-                }
+                        return handleCommand(cmd); }))
+            {
             }
             swapAndUploadDisplayLists();
         };
@@ -193,27 +187,29 @@ private:
     template <typename Command>
     bool addCommand(const Command& cmd)
     {
-        bool ret = m_displayListBuffer.getBack().addCommand(cmd);
-        if (!ret)
-        {
-            intermediateUpload();
-            ret = m_displayListBuffer.getBack().addCommand(cmd);
-        }
-        return ret;
+        return addWithIntermediateUpload(
+            [this, &cmd]()
+            { return m_displayListBuffer.getBack().addCommand(cmd); });
     }
 
     template <typename Command>
     bool addLastCommand(const Command& cmd)
     {
-        return m_displayListBuffer.getBack().addLastCommand(cmd);
+        return addWithIntermediateUpload(
+            [this, &cmd]()
+            { return m_displayListBuffer.getBack().addLastCommand(cmd); });
     }
 
     template <typename Factory>
     bool addLastCommandWithFactory(const Factory& commandFactory)
     {
-        return m_displayListBuffer.getBack().addLastCommandWithFactory_if(commandFactory,
-            [](std::size_t, std::size_t, std::size_t, std::size_t)
-            { return true; });
+        return addWithIntermediateUpload(
+            [this, &commandFactory]()
+            {
+                return m_displayListBuffer.getBack().addLastCommandWithFactory_if(commandFactory,
+                    [](std::size_t, std::size_t, std::size_t, std::size_t)
+                    { return true; });
+            });
     }
 
     template <typename Factory>
@@ -227,7 +223,21 @@ private:
     template <typename Factory, typename Pred>
     bool addCommandWithFactory_if(const Factory& commandFactory, const Pred& pred)
     {
-        return m_displayListBuffer.getBack().addCommandWithFactory_if(commandFactory, pred);
+        return addWithIntermediateUpload(
+            [this, &commandFactory, &pred]()
+            { return m_displayListBuffer.getBack().addCommandWithFactory_if(commandFactory, pred); });
+    }
+
+    template <typename AddCommandFunc>
+    bool addWithIntermediateUpload(const AddCommandFunc& addCommandFunc)
+    {
+        bool ret = addCommandFunc();
+        if (!ret)
+        {
+            intermediateUpload();
+            ret = addCommandFunc();
+        }
+        return ret;
     }
 
     template <typename Function>
@@ -453,12 +463,11 @@ private:
 
     bool handleCommand(const WriteRegisterCmd& cmd)
     {
-        return std::visit(
+        return cmd.handleRegister(
             [this](const auto& reg)
             {
                 return handleRegister(reg);
-            },
-            cmd.getRegister());
+            });
     }
 
     bool handleRegister(const ColorBufferAddrReg& reg)
@@ -583,6 +592,7 @@ private:
     {
         if (m_displayListBuffer.getBack().singleList())
         {
+            SPDLOG_INFO("Intermediate upload called");
             swapAndUploadDisplayLists();
         }
         else
@@ -593,7 +603,7 @@ private:
 
     bool setStencilBufferConfig(const StencilReg& stencilConf)
     {
-        return m_displayListBuffer.getBack().addCommand(WriteRegisterCmd { stencilConf });
+        return addCommand(WriteRegisterCmd { stencilConf });
     }
 
     void textureUpload()

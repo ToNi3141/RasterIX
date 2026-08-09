@@ -71,50 +71,61 @@ public:
 
     RegisterVariant getRegister() const
     {
+        RegisterVariant reg {};
+        handleRegister([&reg](const auto& r) -> bool
+            {
+            reg = r;
+            return true; });
+        return reg;
+    }
+
+    template <typename THandler>
+    bool handleRegister(const THandler& handler) const
+    {
         switch (getRegAddr())
         {
         case ColorBufferAddrReg::getAddr():
-            return deserializeRegister<ColorBufferAddrReg>();
+            return handler(deserializeRegister<ColorBufferAddrReg>());
         case ColorBufferClearColorReg::getAddr():
-            return deserializeRegister<ColorBufferClearColorReg>();
+            return handler(deserializeRegister<ColorBufferClearColorReg>());
         case DepthBufferAddrReg::getAddr():
-            return deserializeRegister<DepthBufferAddrReg>();
+            return handler(deserializeRegister<DepthBufferAddrReg>());
         case DepthBufferClearDepthReg::getAddr():
-            return deserializeRegister<DepthBufferClearDepthReg>();
+            return handler(deserializeRegister<DepthBufferClearDepthReg>());
         case FeatureEnableReg::getAddr():
-            return deserializeRegister<FeatureEnableReg>();
+            return handler(deserializeRegister<FeatureEnableReg>());
         case FogColorReg::getAddr():
-            return deserializeRegister<FogColorReg>();
+            return handler(deserializeRegister<FogColorReg>());
         case FragmentPipelineReg::getAddr():
-            return deserializeRegister<FragmentPipelineReg>();
+            return handler(deserializeRegister<FragmentPipelineReg>());
         case RenderResolutionReg::getAddr():
-            return deserializeRegister<RenderResolutionReg>();
+            return handler(deserializeRegister<RenderResolutionReg>());
         case ScissorEndReg::getAddr():
-            return deserializeRegister<ScissorEndReg>();
+            return handler(deserializeRegister<ScissorEndReg>());
         case ScissorStartReg::getAddr():
-            return deserializeRegister<ScissorStartReg>();
+            return handler(deserializeRegister<ScissorStartReg>());
         case StencilBufferAddrReg::getAddr():
-            return deserializeRegister<StencilBufferAddrReg>();
+            return handler(deserializeRegister<StencilBufferAddrReg>());
         case StencilReg::getAddr():
-            return deserializeRegister<StencilReg>();
+            return handler(deserializeRegister<StencilReg>());
         case TexEnvColorReg::getAddr(0):
-            return deserializeTextureRegister<TexEnvColorReg>(0);
+            return handler(deserializeTextureRegister<TexEnvColorReg>(0));
         case TexEnvReg::getAddr(0):
-            return deserializeTextureRegister<TexEnvReg>(0);
+            return handler(deserializeTextureRegister<TexEnvReg>(0));
         case TmuTextureReg::getAddr(0):
-            return deserializeTextureRegister<TmuTextureReg>(0);
+            return handler(deserializeTextureRegister<TmuTextureReg>(0));
         case TexEnvColorReg::getAddr(1):
-            return deserializeTextureRegister<TexEnvColorReg>(1);
+            return handler(deserializeTextureRegister<TexEnvColorReg>(1));
         case TexEnvReg::getAddr(1):
-            return deserializeTextureRegister<TexEnvReg>(1);
+            return handler(deserializeTextureRegister<TexEnvReg>(1));
         case TmuTextureReg::getAddr(1):
-            return deserializeTextureRegister<TmuTextureReg>(1);
+            return handler(deserializeTextureRegister<TmuTextureReg>(1));
         case YOffsetReg::getAddr():
-            return deserializeRegister<YOffsetReg>();
+            return handler(deserializeRegister<YOffsetReg>());
         default:
             break;
         }
-        return RegisterVariant {};
+        return false;
     }
 
 private:

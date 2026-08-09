@@ -44,6 +44,7 @@ VertexParameter VertexPipeline::fetch(const RenderObj& obj, std::size_t i)
 {
     VertexParameter parameter;
     const std::size_t pos = obj.getIndex(i);
+    parameter.sourceIndex = pos;
     parameter.vertex = obj.getVertex(pos);
     parameter.normal = obj.getNormal(pos);
     parameter.color = obj.getColor(pos);

@@ -86,7 +86,7 @@ if (RIX_BUILD_ZYNQ_EMBEDDED_LINUX AND RIX_BUILD_SHARED_LIBRARY)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
-add_compile_definitions(SPDLOG_ACTIVE_LEVEL=3)
+add_compile_definitions(SPDLOG_ACTIVE_LEVEL=2)
 
 if (RIX_BUILD_EXAMPLES)
     add_subdirectory(example)

@@ -1,5 +1,7 @@
 add_executable(stencilShadow main.cpp)
 
+target_include_directories(stencilShadow PRIVATE ${CMAKE_SOURCE_DIR}/lib/gl/math)
+
 target_link_libraries(stencilShadow PRIVATE runner)
 
 if (RIX_BUILD_RPPICO)

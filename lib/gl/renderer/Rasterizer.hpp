@@ -51,7 +51,7 @@ public:
         m_scissorEndY = (height << EDGE_FUNC_SIZE) + m_scissorStartY;
     }
 
-    static float edgeFunctionFloat(const Vec4& a, const Vec4& b, const Vec4& c);
+    static float edgeFunction(const Vec4& a, const Vec4& b, const Vec4& c);
 
     static bool increment(TriangleStreamTypes::TriangleDesc& desc,
         const std::size_t lineStart,
@@ -71,7 +71,7 @@ private:
     static constexpr int32_t EDGE_FUNC_ZERO_P_FIVE = (1 << (EDGE_FUNC_SIZE - 1));
     static constexpr int32_t EDGE_FUNC_ONE_P_ZERO = (1 << EDGE_FUNC_SIZE);
 
-    inline static VecInt edgeFunctionFixPoint(const Vec2i& a, const Vec2i& b, const Vec2i& c);
+    inline static VecInt edgeFunctionX(const Vec2i& a, const Vec2i& b, const Vec2i& c);
 
     int32_t m_scissorStartX { 0 };
     int32_t m_scissorStartY { 0 };

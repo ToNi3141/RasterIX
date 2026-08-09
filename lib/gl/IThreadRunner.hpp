@@ -26,6 +26,7 @@ namespace rr
 class IThreadRunner
 {
 public:
+    virtual ~IThreadRunner() = default;
     virtual void wait() = 0;
     virtual void run(const std::function<void()>& operation) = 0;
     virtual bool isBusy() const = 0;

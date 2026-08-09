@@ -35,14 +35,21 @@ public:
     Mat44(const float* val) { operator=(val); }
     ~Mat44() { }
 
+    static constexpr ValType IDENTITY_MATRIX {
+        { { 1.0f, 0.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f, 0.0f, 0.0f },
+            { 0.0f, 0.0f, 1.0f, 0.0f },
+            { 0.0f, 0.0f, 0.0f, 1.0f } }
+    };
+
     void identity()
     {
-        // clang-format off
-        mat[0][0] = 1.0f; mat[1][0] = 0.0f; mat[2][0] = 0.0f; mat[3][0] = 0.0f;
-        mat[0][1] = 0.0f; mat[1][1] = 1.0f; mat[2][1] = 0.0f; mat[3][1] = 0.0f;
-        mat[0][2] = 0.0f; mat[1][2] = 0.0f; mat[2][2] = 1.0f; mat[3][2] = 0.0f;
-        mat[0][3] = 0.0f; mat[1][3] = 0.0f; mat[2][3] = 0.0f; mat[3][3] = 1.0f;
-        // clang-format on
+        std::copy(IDENTITY_MATRIX.begin(), IDENTITY_MATRIX.end(), mat.begin());
+    }
+
+    bool isIdentity() const
+    {
+        return std::equal(mat.begin(), mat.end(), IDENTITY_MATRIX.begin(), IDENTITY_MATRIX.end());
     }
 
     void transpose()
@@ -91,44 +98,45 @@ public:
         return true;
     }
 
-#if defined(__ARM_NEON)
-    // ARM NEON optimized version which is much faster than the compiler generated code
-    void transform(Vec4& __restrict dst, const Vec4& src) const
-    {
-        const float* matptr = &mat[0][0];
-        float* dstp = dst.data();
-        const float* srcp = src.data();
-        // Optimized transformation function for NEON.
-        // Use of dedicated vmul and vadd to reduce stalling.
-        // https://developer.arm.com/documentation/ddi0409/i/instruction-timing/instruction-specific-scheduling/advanced-simd-floating-point-instructions
-        // A vmul and a vadd have around 6 clocks result delay
-        // a vmla has around 10 clocks result delay which results in more stalling because of data dependencies.
-        // Therefore split vmla in vmul and vadd to reduce the data dependencies and stalling
-        asm volatile(
-            "vld1.32    {d0, d1}, [%1]      \n\t" // q0 = src
+    // The assembler version is still slower than the non neon version from the compiler
+    // #if defined(__ARM_NEON)
+    //     // ARM NEON optimized version which is much faster than the compiler generated code
+    //     void transform(Vec4& __restrict dst, const Vec4& src) const
+    //     {
+    //         const float* matptr = &mat[0][0];
+    //         float* dstp = dst.data();
+    //         const float* srcp = src.data();
+    //         // Optimized transformation function for NEON.
+    //         // Use of dedicated vmul and vadd to reduce stalling.
+    //         // https://developer.arm.com/documentation/ddi0409/i/instruction-timing/instruction-specific-scheduling/advanced-simd-floating-point-instructions
+    //         // A vmul and a vadd have around 6 clocks result delay
+    //         // a vmla has around 10 clocks result delay which results in more stalling because of data dependencies.
+    //         // Therefore split vmla in vmul and vadd to reduce the data dependencies and stalling
+    //         asm volatile(
+    //             "vld1.32    {d0, d1}, [%1]      \n\t" // q0 = src
 
-            "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[0] (first column)
-            "vmul.f32   q13, q9, d0[0]      \n\t" // q13 = mat[0] * src[0]
+    //             "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[0] (first column)
+    //             "vmul.f32   q13, q9, d0[0]      \n\t" // q13 = mat[0] * src[0]
 
-            "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[1] (second column)
-            "vmul.f32   q14, q9, d0[1]      \n\t" // q14 = mat[1] * src[1]
+    //             "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[1] (second column)
+    //             "vmul.f32   q14, q9, d0[1]      \n\t" // q14 = mat[1] * src[1]
 
-            "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[2] (third column)
-            "vadd.f32   q13, q13, q14       \n\t"
-            "vmul.f32   q14, q9, d1[0]      \n\t" // q14 = mat[2] * src[2]
+    //             "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[2] (third column)
+    //             "vadd.f32   q13, q13, q14       \n\t"
+    //             "vmul.f32   q14, q9, d1[0]      \n\t" // q14 = mat[2] * src[2]
 
-            "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[3] (fourth column)
-            "vadd.f32   q13, q13, q14       \n\t"
-            "vmul.f32   q14, q9, d1[1]      \n\t" // q14 = mat[3] * src[3]
+    //             "vld1.32    {d18, d19}, [%0]!   \n\t" // q9 = mat[3] (fourth column)
+    //             "vadd.f32   q13, q13, q14       \n\t"
+    //             "vmul.f32   q14, q9, d1[1]      \n\t" // q14 = mat[3] * src[3]
 
-            "vadd.f32   q13, q13, q14       \n\t"
+    //             "vadd.f32   q13, q13, q14       \n\t"
 
-            "vst1.32    {d26, d27}, [%2]    \n\t" // dst = q13
-            : "+r"(matptr)
-            : "r"(srcp), "r"(dstp)
-            : "q0", "q9", "q13", "q14", "memory");
-    }
-#else
+    //             "vst1.32    {d26, d27}, [%2]    \n\t" // dst = q13
+    //             : "+r"(matptr)
+    //             : "r"(srcp), "r"(dstp)
+    //             : "q0", "q9", "q13", "q14", "memory");
+    //     }
+    // #else
     void transform(Vec4& __restrict dst, const Vec4& src) const
     {
         const float src0 = src[0];
@@ -141,7 +149,7 @@ public:
         dst[2] = src0 * mat[0][2] + src1 * mat[1][2] + src2 * mat[2][2] + src3 * mat[3][2];
         dst[3] = src0 * mat[0][3] + src1 * mat[1][3] + src2 * mat[2][3] + src3 * mat[3][3];
     }
-#endif
+    // #endif
 
     inline Vec4 transform(const Vec4& src) const
     {
@@ -237,8 +245,7 @@ public:
         static constexpr float PI { 3.14159265358979323846f };
         float angle_rad = angle * (PI / 180.0f);
 
-        Vec3 xyz { { x, y, z } };
-        xyz.normalize();
+        const Vec3 xyz = Vec3 { { x, y, z } }.normalize();
 
         const float nx = xyz[0];
         const float ny = xyz[1];

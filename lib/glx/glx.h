@@ -297,6 +297,36 @@ extern "C"
 
 #endif /* GLX_ARB_get_proc_address */
 
+/*
+ * GLX_EXT_swap_control
+ */
+#ifndef GLX_EXT_swap_control
+#define GLX_EXT_swap_control 1
+
+    GLAPI void APIENTRY glXSwapIntervalEXT(Display* dpy, GLXDrawable drawable, int interval);
+    typedef void (*PFNGLXSWAPINTERVALEXTPROC)(Display* dpy, GLXDrawable drawable, int interval);
+
+#endif /* GLX_EXT_swap_control */
+
+/*
+ * GLX_ARB_create_context
+ */
+#ifndef GLX_ARB_create_context
+#define GLX_ARB_create_context 1
+
+#define GLX_CONTEXT_MAJOR_VERSION_ARB 0x2091
+#define GLX_CONTEXT_MINOR_VERSION_ARB 0x2092
+#define GLX_CONTEXT_FLAGS_ARB 0x2094
+#define GLX_CONTEXT_DEBUG_BIT_ARB 0x00000001
+#define GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB 0x00000002
+
+    GLAPI GLXContext APIENTRY glXCreateContextAttribsARB(Display* dpy, GLXFBConfig config,
+        GLXContext share_context, Bool direct,
+        const int* attrib_list);
+    typedef GLXContext (*PFNGLXCREATECONTEXTATTRIBSARBPROC)(Display* dpy, GLXFBConfig config, GLXContext share_context, Bool direct, const int* attrib_list);
+
+#endif /* GLX_ARB_create_context */
+
 #ifdef __cplusplus
 }
 #endif

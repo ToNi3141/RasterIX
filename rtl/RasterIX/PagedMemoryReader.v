@@ -66,7 +66,7 @@ module PagedMemoryReader #(
     localparam LG_BEAT_SIZE = $clog2(BYTES_PER_BEAT);
 
     
-    localparam BEATS = 256 / BYTES_PER_BEAT;
+    localparam BEATS = 16;
 
     localparam INCREMENT = BEATS << LG_BEAT_SIZE;
     initial 

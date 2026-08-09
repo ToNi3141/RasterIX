@@ -59,7 +59,21 @@ GLAPI void APIENTRY impl_glBufferData(GLenum target, GLsizeiptr size, const void
     // Usage is ignored for now
 
     auto& vb = RIXGL::getInstance().vertexBuffer();
-    const bool ret = vb.bufferData(tcb::span<const std::uint8_t>(reinterpret_cast<const std::uint8_t*>(data), size));
+    bool ret = false;
+    if ((data == nullptr) && (size > 0))
+    {
+        // In case the input data is null, temporary allocate and then delete.
+        std::uint8_t* tmp = new std::uint8_t[size];
+        ret = vb.bufferData(tcb::span<const std::uint8_t>(reinterpret_cast<const std::uint8_t*>(tmp), size));
+        if (tmp)
+        {
+            delete[] tmp;
+        }
+    }
+    else
+    {
+        ret = vb.bufferData(tcb::span<const std::uint8_t>(reinterpret_cast<const std::uint8_t*>(data), size));
+    }
     if (!ret)
     {
         SPDLOG_ERROR("glBufferData: out of memory");

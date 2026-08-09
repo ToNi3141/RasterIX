@@ -641,9 +641,9 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
 
     reset(t);
     static constexpr uint32_t OP = 0xd000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0100;
+    static constexpr uint32_t SIZE = 0x0000'0080;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
-    static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
+    static constexpr uint32_t BEATS_PER_TRANSFER = 64 / 4;
 
     // Tell the command parser that we are ready to receive data
     t.m_st0_axis_tready = 1;
@@ -696,7 +696,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         REQUIRE(t.m_st1_axis_tvalid == 0);
         REQUIRE(t.s_st1_axis_tready == 0);
 
-        REQUIRE(t.m_mem_axi_awaddr == 0x8000'0080);
+        REQUIRE(t.m_mem_axi_awaddr == 0x8000'0040);
 
         rr::ut::clk(top);
 
@@ -751,29 +751,11 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
             rr::ut::clk(top);
         }
 
-        // Second transfer
-        // STORE DATA ////////////////////////
-        // Check the last element and initialize the next transfer
-        REQUIRE(t.m_mem_axi_awvalid == 0);
-        REQUIRE(t.m_mem_axi_wvalid == 1);
-        REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 0);
-        REQUIRE(t.m_st0_axis_tvalid == 0);
-        REQUIRE(t.s_st0_axis_tready == 1);
-        REQUIRE(t.m_st1_axis_tvalid == 0);
-        REQUIRE(t.s_st1_axis_tready == 0);
-
-        REQUIRE(t.m_mem_axi_wdata == 31);
-        REQUIRE(t.m_mem_axi_wlast == 1);
-
-        t.s_st0_axis_tdata = 0;
-
-        rr::ut::clk(top);
-
-        // STORE DATA ////////////////////////
-        // Output contains the data from all elemets except the last
-        for (uint32_t i = 1; i < BEATS_PER_TRANSFER; i++)
+        for (uint32_t transfer = 1; transfer < 2; ++transfer)
         {
+            // Next transfer
+            // STORE DATA ////////////////////////
+            // Check the last element and initialize the next transfer
             REQUIRE(t.m_mem_axi_awvalid == 0);
             REQUIRE(t.m_mem_axi_wvalid == 1);
             REQUIRE(t.m_mem_axi_arvalid == 0);
@@ -783,30 +765,51 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
             REQUIRE(t.m_st1_axis_tvalid == 0);
             REQUIRE(t.s_st1_axis_tready == 0);
 
-            REQUIRE(t.m_mem_axi_wdata == i - 1);
-            REQUIRE(t.m_mem_axi_wlast == 0);
+            REQUIRE(t.m_mem_axi_wdata == BEATS_PER_TRANSFER - 1);
+            REQUIRE(t.m_mem_axi_wlast == 1);
 
-            t.s_st0_axis_tdata = i;
+            t.s_st0_axis_tdata = 0;
+
+            rr::ut::clk(top);
+
+            // STORE DATA ////////////////////////
+            // Output contains the data from all elemets except the last
+            for (uint32_t i = 1; i < BEATS_PER_TRANSFER; i++)
+            {
+                REQUIRE(t.m_mem_axi_awvalid == 0);
+                REQUIRE(t.m_mem_axi_wvalid == 1);
+                REQUIRE(t.m_mem_axi_arvalid == 0);
+                REQUIRE(t.m_mem_axi_rready == 0);
+                REQUIRE(t.m_st0_axis_tvalid == 0);
+                REQUIRE(t.s_st0_axis_tready == 1);
+                REQUIRE(t.m_st1_axis_tvalid == 0);
+                REQUIRE(t.s_st1_axis_tready == 0);
+
+                REQUIRE(t.m_mem_axi_wdata == i - 1);
+                REQUIRE(t.m_mem_axi_wlast == 0);
+
+                t.s_st0_axis_tdata = i;
+
+                rr::ut::clk(top);
+            }
+
+            // Second transfer
+            // STORE DATA ////////////////////////
+            // Check the last element
+            REQUIRE(t.m_mem_axi_awvalid == 0);
+            REQUIRE(t.m_mem_axi_wvalid == 1);
+            REQUIRE(t.m_mem_axi_arvalid == 0);
+            REQUIRE(t.m_mem_axi_rready == 0);
+            REQUIRE(t.m_st0_axis_tvalid == 0);
+            REQUIRE(t.s_st0_axis_tready == 0);
+            REQUIRE(t.m_st1_axis_tvalid == 0);
+            REQUIRE(t.s_st1_axis_tready == 0);
+
+            REQUIRE(t.m_mem_axi_wdata == BEATS_PER_TRANSFER - 1);
+            REQUIRE(t.m_mem_axi_wlast == 1);
 
             rr::ut::clk(top);
         }
-
-        // Second transfer
-        // STORE DATA ////////////////////////
-        // Check the last element
-        REQUIRE(t.m_mem_axi_awvalid == 0);
-        REQUIRE(t.m_mem_axi_wvalid == 1);
-        REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 0);
-        REQUIRE(t.m_st0_axis_tvalid == 0);
-        REQUIRE(t.s_st0_axis_tready == 0);
-        REQUIRE(t.m_st1_axis_tvalid == 0);
-        REQUIRE(t.s_st1_axis_tready == 0);
-
-        REQUIRE(t.m_mem_axi_wdata == 31);
-        REQUIRE(t.m_mem_axi_wlast == 1);
-
-        rr::ut::clk(top);
 
         // IDLE /////////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -835,9 +838,9 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
 
     reset(t);
     static constexpr uint32_t OP = 0xe000'0000;
-    static constexpr uint32_t SIZE = 0x0000'0100;
+    static constexpr uint32_t SIZE = 0x0000'0080;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
-    static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
+    static constexpr uint32_t BEATS_PER_TRANSFER = 64 / 4;
 
     // Tell the command parser that we are ready to receive data
     t.m_st0_axis_tready = 1;
@@ -890,7 +893,19 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
         REQUIRE(t.m_st1_axis_tvalid == 0);
         REQUIRE(t.s_st1_axis_tready == 1);
 
-        REQUIRE(t.m_mem_axi_awaddr == 0x180);
+        REQUIRE(t.m_mem_axi_awaddr == 0x140);
+
+        rr::ut::clk(top);
+
+        // STORE ADDR ////////////////////////
+        REQUIRE(t.m_mem_axi_awvalid == 0);
+        REQUIRE(t.m_mem_axi_wvalid == 0);
+        REQUIRE(t.m_mem_axi_arvalid == 0);
+        REQUIRE(t.m_mem_axi_rready == 0);
+        REQUIRE(t.m_st0_axis_tvalid == 0);
+        REQUIRE(t.s_st0_axis_tready == 0);
+        REQUIRE(t.m_st1_axis_tvalid == 0);
+        REQUIRE(t.s_st1_axis_tready == 1);
 
         rr::ut::clk(top);
 
@@ -945,29 +960,11 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
             rr::ut::clk(top);
         }
 
-        // Second transfer
-        // STORE DATA ////////////////////////
-        // Check the last element and initialize the next transfer
-        REQUIRE(t.m_mem_axi_awvalid == 0);
-        REQUIRE(t.m_mem_axi_wvalid == 1);
-        REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 0);
-        REQUIRE(t.m_st0_axis_tvalid == 0);
-        REQUIRE(t.s_st0_axis_tready == 0);
-        REQUIRE(t.m_st1_axis_tvalid == 0);
-        REQUIRE(t.s_st1_axis_tready == 1);
-
-        REQUIRE(t.m_mem_axi_wdata == 31);
-        REQUIRE(t.m_mem_axi_wlast == 1);
-
-        t.s_st1_axis_tdata = 0;
-
-        rr::ut::clk(top);
-
-        // STORE DATA ////////////////////////
-        // Output contains the data from all elemets except the last
-        for (uint32_t i = 1; i < BEATS_PER_TRANSFER; i++)
+        for (uint32_t transfer = 1; transfer < 2; ++transfer)
         {
+            // Next transfer
+            // STORE DATA ////////////////////////
+            // Check the last element and initialize the next transfer
             REQUIRE(t.m_mem_axi_awvalid == 0);
             REQUIRE(t.m_mem_axi_wvalid == 1);
             REQUIRE(t.m_mem_axi_arvalid == 0);
@@ -977,30 +974,51 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
             REQUIRE(t.m_st1_axis_tvalid == 0);
             REQUIRE(t.s_st1_axis_tready == 1);
 
-            REQUIRE(t.m_mem_axi_wdata == i - 1);
-            REQUIRE(t.m_mem_axi_wlast == 0);
+            REQUIRE(t.m_mem_axi_wdata == BEATS_PER_TRANSFER - 1);
+            REQUIRE(t.m_mem_axi_wlast == 1);
 
-            t.s_st1_axis_tdata = i;
+            t.s_st1_axis_tdata = 0;
+
+            rr::ut::clk(top);
+
+            // STORE DATA ////////////////////////
+            // Output contains the data from all elemets except the last
+            for (uint32_t i = 1; i < BEATS_PER_TRANSFER; i++)
+            {
+                REQUIRE(t.m_mem_axi_awvalid == 0);
+                REQUIRE(t.m_mem_axi_wvalid == 1);
+                REQUIRE(t.m_mem_axi_arvalid == 0);
+                REQUIRE(t.m_mem_axi_rready == 0);
+                REQUIRE(t.m_st0_axis_tvalid == 0);
+                REQUIRE(t.s_st0_axis_tready == 0);
+                REQUIRE(t.m_st1_axis_tvalid == 0);
+                REQUIRE(t.s_st1_axis_tready == 1);
+
+                REQUIRE(t.m_mem_axi_wdata == i - 1);
+                REQUIRE(t.m_mem_axi_wlast == 0);
+
+                t.s_st1_axis_tdata = i;
+
+                rr::ut::clk(top);
+            }
+
+            // Second transfer
+            // STORE DATA ////////////////////////
+            // Check the last element
+            REQUIRE(t.m_mem_axi_awvalid == 0);
+            REQUIRE(t.m_mem_axi_wvalid == 1);
+            REQUIRE(t.m_mem_axi_arvalid == 0);
+            REQUIRE(t.m_mem_axi_rready == 0);
+            REQUIRE(t.m_st0_axis_tvalid == 0);
+            REQUIRE(t.s_st0_axis_tready == 0);
+            REQUIRE(t.m_st1_axis_tvalid == 0);
+            REQUIRE(t.s_st1_axis_tready == 0);
+
+            REQUIRE(t.m_mem_axi_wdata == BEATS_PER_TRANSFER - 1);
+            REQUIRE(t.m_mem_axi_wlast == 1);
 
             rr::ut::clk(top);
         }
-
-        // Second transfer
-        // STORE DATA ////////////////////////
-        // Check the last element
-        REQUIRE(t.m_mem_axi_awvalid == 0);
-        REQUIRE(t.m_mem_axi_wvalid == 1);
-        REQUIRE(t.m_mem_axi_arvalid == 0);
-        REQUIRE(t.m_mem_axi_rready == 0);
-        REQUIRE(t.m_st0_axis_tvalid == 0);
-        REQUIRE(t.s_st0_axis_tready == 0);
-        REQUIRE(t.m_st1_axis_tvalid == 0);
-        REQUIRE(t.s_st1_axis_tready == 0);
-
-        REQUIRE(t.m_mem_axi_wdata == 31);
-        REQUIRE(t.m_mem_axi_wlast == 1);
-
-        rr::ut::clk(top);
 
         // IDLE /////////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1031,7 +1049,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
     static constexpr uint32_t OP = 0x7000'0000;
     static constexpr uint32_t SIZE = 0x0000'0100;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
-    static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
+    static constexpr uint32_t BEATS_PER_TRANSFER = 64 / 4;
 
     // Tell the command parser that we are ready to receive data
     t.m_st0_axis_tready = 1;
@@ -1084,7 +1102,35 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         REQUIRE(t.m_st1_axis_tvalid == 0);
         REQUIRE(t.s_st1_axis_tready == 0);
 
+        REQUIRE(t.m_mem_axi_araddr == 0x8000'0040);
+
+        rr::ut::clk(top);
+
+        // LOAD ADDR /////////////////////////
+        REQUIRE(t.m_mem_axi_awvalid == 0);
+        REQUIRE(t.m_mem_axi_wvalid == 0);
+        REQUIRE(t.m_mem_axi_arvalid == 1);
+        REQUIRE(t.m_mem_axi_rready == 1);
+        REQUIRE(t.m_st0_axis_tvalid == 0);
+        REQUIRE(t.s_st0_axis_tready == 0);
+        REQUIRE(t.m_st1_axis_tvalid == 0);
+        REQUIRE(t.s_st1_axis_tready == 0);
+
         REQUIRE(t.m_mem_axi_araddr == 0x8000'0080);
+
+        rr::ut::clk(top);
+
+        // LOAD ADDR /////////////////////////
+        REQUIRE(t.m_mem_axi_awvalid == 0);
+        REQUIRE(t.m_mem_axi_wvalid == 0);
+        REQUIRE(t.m_mem_axi_arvalid == 1);
+        REQUIRE(t.m_mem_axi_rready == 1);
+        REQUIRE(t.m_st0_axis_tvalid == 0);
+        REQUIRE(t.s_st0_axis_tready == 0);
+        REQUIRE(t.m_st1_axis_tvalid == 0);
+        REQUIRE(t.s_st1_axis_tready == 0);
+
+        REQUIRE(t.m_mem_axi_araddr == 0x8000'00c0);
 
         rr::ut::clk(top);
 
@@ -1121,7 +1167,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
 
         // LOAD DATA /////////////////////////
         // Output contains the data from all elemets except the last
-        for (uint32_t i = 1; i < BEATS_PER_TRANSFER * 2; i++)
+        for (uint32_t i = 1; i < BEATS_PER_TRANSFER * 4; i++)
         {
             REQUIRE(t.m_mem_axi_awvalid == 0);
             REQUIRE(t.m_mem_axi_wvalid == 0);
@@ -1185,7 +1231,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
     static constexpr uint32_t OP = 0xb000'0000;
     static constexpr uint32_t SIZE = 0x0000'0100;
     static constexpr uint32_t COMMAND = OP | SIZE; // Stream 256 bytes from one stream interface to another
-    static constexpr uint32_t BEATS_PER_TRANSFER = 128 / 4;
+    static constexpr uint32_t BEATS_PER_TRANSFER = 64 / 4;
 
     // Tell the command parser that we are ready to receive data
     t.m_st0_axis_tready = 1;
@@ -1238,7 +1284,35 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.m_st1_axis_tvalid == 0);
         REQUIRE(t.s_st1_axis_tready == 0);
 
+        REQUIRE(t.m_mem_axi_araddr == 0x8000'0040);
+
+        rr::ut::clk(top);
+
+        // LOAD ADDR /////////////////////////
+        REQUIRE(t.m_mem_axi_awvalid == 0);
+        REQUIRE(t.m_mem_axi_wvalid == 0);
+        REQUIRE(t.m_mem_axi_arvalid == 1);
+        REQUIRE(t.m_mem_axi_rready == 1);
+        REQUIRE(t.m_st0_axis_tvalid == 0);
+        REQUIRE(t.s_st0_axis_tready == 0);
+        REQUIRE(t.m_st1_axis_tvalid == 0);
+        REQUIRE(t.s_st1_axis_tready == 0);
+
         REQUIRE(t.m_mem_axi_araddr == 0x8000'0080);
+
+        rr::ut::clk(top);
+
+        // LOAD ADDR /////////////////////////
+        REQUIRE(t.m_mem_axi_awvalid == 0);
+        REQUIRE(t.m_mem_axi_wvalid == 0);
+        REQUIRE(t.m_mem_axi_arvalid == 1);
+        REQUIRE(t.m_mem_axi_rready == 1);
+        REQUIRE(t.m_st0_axis_tvalid == 0);
+        REQUIRE(t.s_st0_axis_tready == 0);
+        REQUIRE(t.m_st1_axis_tvalid == 0);
+        REQUIRE(t.s_st1_axis_tready == 0);
+
+        REQUIRE(t.m_mem_axi_araddr == 0x8000'00c0);
 
         rr::ut::clk(top);
 
@@ -1275,7 +1349,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
 
         // LOAD DATA /////////////////////////
         // Output contains the data from all elemets except the last
-        for (uint32_t i = 1; i < BEATS_PER_TRANSFER * 2; i++)
+        for (uint32_t i = 1; i < BEATS_PER_TRANSFER * 4; i++)
         {
             REQUIRE(t.m_mem_axi_awvalid == 0);
             REQUIRE(t.m_mem_axi_wvalid == 0);

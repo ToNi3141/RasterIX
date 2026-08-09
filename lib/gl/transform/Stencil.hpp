@@ -43,7 +43,7 @@ public:
 
     StencilReg updateStencilFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
     {
-        const float edgeVal = Rasterizer::edgeFunctionFloat(v0, v1, v2);
+        const float edgeVal = Rasterizer::edgeFunction(v0, v1, v2);
         const StencilFace currentOrientation = (edgeVal <= 0.0f) ? StencilFace::BACK : StencilFace::FRONT;
         if (currentOrientation != StencilFace::FRONT) // The rasterizer expects triangles in CW. OpenGL in CCW. Thats the reason why Front and Back does not match.
         {

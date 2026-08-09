@@ -42,7 +42,7 @@ module Dvi #(
     input  wire             m_mem_axi_arready,
     output wire [ 3 : 0]    m_mem_axi_arqos,
 
-    input  wire [ 7 : 0]    m_mem_axi_rid,
+    input  wire [ 3 : 0]    m_mem_axi_rid,
     input  wire [31 : 0]    m_mem_axi_rdata,
     input  wire [ 1 : 0]    m_mem_axi_rresp,
     input  wire             m_mem_axi_rlast,
@@ -101,7 +101,7 @@ module Dvi #(
         .outport_rvalid_i(m_mem_axi_rvalid),
         .outport_rdata_i(m_mem_axi_rdata),
         .outport_rresp_i(m_mem_axi_rresp),
-        .outport_rid_i(m_mem_axi_rid[0 +: 4]),
+        .outport_rid_i(m_mem_axi_rid),
         .outport_rlast_i(m_mem_axi_rlast),
         .cfg_awready_o(),
         .cfg_wready_o(),

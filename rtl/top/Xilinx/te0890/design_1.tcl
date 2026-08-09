@@ -237,6 +237,8 @@ proc create_root_design { parentCell } {
   set hr_dq [ create_bd_port -dir IO -from 7 -to 0 hr_dq ]
   set hr_rst_l [ create_bd_port -dir O hr_rst_l ]
   set hr_rwds [ create_bd_port -dir IO hr_rwds ]
+  set led1 [ create_bd_port -dir O led1 ]
+  set led2 [ create_bd_port -dir O led2 ]
   set reset [ create_bd_port -dir I -type rst reset ]
   set_property -dict [ list \
    CONFIG.POLARITY {ACTIVE_HIGH} \
@@ -372,6 +374,8 @@ proc create_root_design { parentCell } {
   connect_bd_net -net HyperRamWrapper_0_hr_resetn_o [get_bd_ports hr_rst_l] [get_bd_pins HyperRamWrapper_0/hr_resetn_o]
   connect_bd_net -net Net [get_bd_ports hr_rwds] [get_bd_pins HyperRamWrapper_0/hr_rwds_io]
   connect_bd_net -net Net1 [get_bd_ports hr_dq] [get_bd_pins HyperRamWrapper_0/hr_dq_io]
+  connect_bd_net -net RasterIXSystem_0_perfBusy [get_bd_ports led1] [get_bd_pins RasterIXSystem_0/perfBusy]
+  connect_bd_net -net RasterIXSystem_0_perfTriangleRendering [get_bd_ports led2] [get_bd_pins RasterIXSystem_0/perfTriangleRendering]
   connect_bd_net -net Serial2AXIS_0_serial_cts [get_bd_ports serial_cts] [get_bd_pins Serial2AXIS_0/serial_cts]
   connect_bd_net -net Serial2AXIS_0_serial_miso [get_bd_ports serial_miso] [get_bd_pins Serial2AXIS_0/serial_miso]
   connect_bd_net -net clk_100m_pin_1 [get_bd_ports clk_100m_pin] [get_bd_pins clk_wiz_0/clk_in1]

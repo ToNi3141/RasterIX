@@ -187,5 +187,6 @@ QMAKE_CXXFLAGS += -I$${VERILATOR_CODE_GEN_PATH}/ \
     -I$${VERILATOR_BUS_CONNECTOR_PATH}/../ \
     -I$${VERILATOR_PATH}/include/ \
     -I$${RIXGL_PATH}/ \
+    -I$${RIXGL_PATH}/math \
     -I$${PATH_PREFIX}/lib/utils \
     -I$${PATH_PREFIX}/lib/threadrunner

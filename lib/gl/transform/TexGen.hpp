@@ -56,7 +56,10 @@ public:
         const Vec4& v0,
         const Vec3& n0) const;
 
-    bool isEnabled() const;
+    bool isEnabled() const
+    {
+        return m_data.texGenEnableS || m_data.texGenEnableT || m_data.texGenEnableR;
+    }
 
 private:
     void calculateObjectLinear(Vec4& st0, const Vec4& v0) const;

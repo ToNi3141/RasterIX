@@ -30,12 +30,15 @@ namespace rr::clippinghelper
 class ClippingHelper
 {
 public:
-    inline static TransformingVertexParameter lerp(const float lerpw, const TransformingVertexParameter& curr, const TransformingVertexParameter& next)
+    inline static TransformingVertexParameter lerp(
+        const float lerpw,
+        const TransformingVertexParameter& curr,
+        const TransformingVertexParameter& next)
     {
         TransformingVertexParameter out;
         out.vertex = lerpVert(curr.vertex, next.vertex, lerpw);
         out.colorFront = lerpVert(curr.colorFront, next.colorFront, lerpw);
-        out.colorBack = lerpVert(curr.colorBack, next.colorBack, lerpw);
+        out.colorBack = lerpVert(curr.colorBack, next.colorBack, lerpw); // TODO: Enable or disable it depending of the two side lighting model
         out.tex = lerpTexCoord(curr.tex, next.tex, lerpw);
         return out;
     }
@@ -51,7 +54,10 @@ private:
         return vOut;
     }
 
-    inline static std::array<Vec4, RenderConfig::TMU_COUNT> lerpTexCoord(const std::array<Vec4, RenderConfig::TMU_COUNT>& v0, const std::array<Vec4, RenderConfig::TMU_COUNT>& v1, const float amt)
+    inline static std::array<Vec4, RenderConfig::TMU_COUNT> lerpTexCoord(
+        const std::array<Vec4, RenderConfig::TMU_COUNT>& v0,
+        const std::array<Vec4, RenderConfig::TMU_COUNT>& v1,
+        const float amt)
     {
         std::array<Vec4, RenderConfig::TMU_COUNT> vOut;
         for (std::size_t i = 0; i < vOut.size(); i++)
