@@ -86,7 +86,7 @@ public:
 
 private:
     using PayloadBuffer = std::array<TrDesc, 1>;
-    PayloadBuffer m_buffer {};
+    PayloadBuffer m_buffer;
     PayloadType m_desc {};
     bool m_visible { false };
 };

@@ -18,7 +18,8 @@ class Minimal
     static constexpr bool ENABLE_LIGHT { true };
     static constexpr bool ENABLE_BLACK_WHITE { false };
     static constexpr bool ENABLE_MULTI_TEXTURE { true };
-    static constexpr bool ENABLE_FOG { true };
+    static constexpr bool ENABLE_FOG { false };
+    static constexpr bool ENABLE_CLIPPING_PLANE { false };
 
     static constexpr std::array<float, 4> CLEAR_COLOR { { 135.0f / 255.0f, 206.0f / 255.0f, 235.0f / 255.0f, 0.0f } };
 
@@ -144,6 +145,13 @@ public:
 
         // Scale the cube a bit to make it a bit bigger
         glScalef(1.5f, 1.5f, 1.5f);
+
+        if constexpr (ENABLE_CLIPPING_PLANE)
+        {
+            static constexpr GLdouble clipPlane[] = { 0.0, 1.0, 0.0, 0.0 };
+            glClipPlane(GL_CLIP_PLANE0, clipPlane);
+            glEnable(GL_CLIP_PLANE0);
+        }
 
         // Tex Coords for texture 0
         glActiveTexture(GL_TEXTURE0);

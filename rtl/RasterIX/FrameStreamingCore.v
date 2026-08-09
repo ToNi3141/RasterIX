@@ -177,6 +177,12 @@ module FrameStreamingCore #(
 
     localparam AUTO_LOAD = AUTO_CH_IN != 0 && AUTO_CH_OUT != 0;
 
+    initial begin
+        if (STREAM_WIDTH < 32) begin
+            $error("STREAM_WIDTH must be at least 32");
+        end
+    end
+
     wire                         m_int_axis_tvalid;
     wire                         m_int_axis_tready;
     wire                         m_int_axis_tlast;

@@ -53,7 +53,7 @@ GLAPI void APIENTRY impl_glPixelStorei(GLenum pname, GLint param)
         }
         break;
     default:
-        SPDLOG_ERROR("glPixelStorei pname GL_PACK_ALIGNMENT and param 0x{:X} not supported", param);
+        SPDLOG_WARN("glPixelStorei pname GL_PACK_ALIGNMENT and param 0x{:X} not supported", param);
         RIXGL::getInstance().setError(GL_INVALID_VALUE);
         break;
     }

@@ -1,6 +1,6 @@
 #include "FT60XBusConnector.hpp"
-#include "StdThreadRunner.hpp"
 #include "RIXGL.hpp"
+#include "StdThreadRunner.hpp"
 #include "gl.h"
 #include "glu.h"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"

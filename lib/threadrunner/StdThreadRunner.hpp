@@ -74,7 +74,7 @@ public:
             std::unique_lock<std::mutex> lock { m_mutex };
             m_workCompleted.wait(lock, [this]()
                 { return !m_busy; });
-    
+
             m_operation = operation;
             m_busy = true;
         }

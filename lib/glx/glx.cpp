@@ -17,9 +17,9 @@
 
 #include "glx.h"
 #include "DMAProxyBusConnector.hpp"
-#include "StdThreadRunner.hpp"
 #include "RIXGL.hpp"
 #include "RenderConfigs.hpp"
+#include "StdThreadRunner.hpp"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 #include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <cstdlib>

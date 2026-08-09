@@ -23,9 +23,9 @@
 #else
 #include "FT60XBusConnector.hpp"
 #endif
-#include "StdThreadRunner.hpp"
 #include "NoThreadRunner.hpp"
 #include "RIXGL.hpp"
+#include "StdThreadRunner.hpp"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"
 #include "renderer/threadedvertextransformer/ThreadedVertexTransformer.hpp"
 #include <spdlog/sinks/basic_file_sink.h>
