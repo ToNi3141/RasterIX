@@ -275,6 +275,11 @@ module StreamFramebuffer
         .confClearColor(confClearColor),
         .confXResolution(confXResolution),
         .confYResolution(confYResolution),
+        .confEnableScissor(confEnableScissor),
+        .confScissorStartX(confScissorStartX),
+        .confScissorStartY(confScissorStartY),
+        .confScissorEndX(confScissorEndX),
+        .confScissorEndY(confScissorEndY),
 
         .s_frag_tvalid(s_frag_wvalid),
         .s_frag_tlast(s_frag_wlast),
