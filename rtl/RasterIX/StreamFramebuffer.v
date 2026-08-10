@@ -34,6 +34,11 @@ module StreamFramebuffer
     // Width of ID signal
     parameter ID_WIDTH = 8,
 
+    // Configures the Coalescer instantiated on the memory master port. A value of
+    // 0 or 1 bypasses coalescing entirely. A value greater than 1 coalesces up to
+    // that many beats into a single AXI transaction.
+    parameter MAX_BEATS_TO_COALESCE = 0,
+
     // The maximum size of the screen in power of two
     parameter X_BIT_WIDTH = 11,
     parameter Y_BIT_WIDTH = 11,
@@ -174,6 +179,47 @@ module StreamFramebuffer
     wire                             fetch_mmu_tready;
     wire [ADDR_WIDTH - 1 : 0]        fetch_mmu_taddr;
 
+    // Internal wires between the FramebufferAdapter and the Coalescer
+    wire [ID_WIDTH - 1 : 0]          coal_awid;
+    wire [ADDR_WIDTH - 1 : 0]        coal_awaddr;
+    wire [ 7 : 0]                    coal_awlen;
+    wire [ 2 : 0]                    coal_awsize;
+    wire [ 1 : 0]                    coal_awburst;
+    wire                             coal_awlock;
+    wire [ 3 : 0]                    coal_awcache;
+    wire [ 2 : 0]                    coal_awprot;
+    wire                             coal_awvalid;
+    wire                             coal_awready;
+
+    wire [DATA_WIDTH - 1 : 0]        coal_wdata;
+    wire [STRB_WIDTH - 1 : 0]        coal_wstrb;
+    wire                             coal_wlast;
+    wire                             coal_wvalid;
+    wire                             coal_wready;
+
+    wire [ID_WIDTH - 1 : 0]          coal_bid;
+    wire [ 1 : 0]                    coal_bresp;
+    wire                             coal_bvalid;
+    wire                             coal_bready;
+
+    wire [ID_WIDTH - 1 : 0]          coal_arid;
+    wire [ADDR_WIDTH - 1 : 0]        coal_araddr;
+    wire [ 7 : 0]                    coal_arlen;
+    wire [ 2 : 0]                    coal_arsize;
+    wire [ 1 : 0]                    coal_arburst;
+    wire                             coal_arlock;
+    wire [ 3 : 0]                    coal_arcache;
+    wire [ 2 : 0]                    coal_arprot;
+    wire                             coal_arvalid;
+    wire                             coal_arready;
+
+    wire [ID_WIDTH - 1 : 0]          coal_rid;
+    wire [DATA_WIDTH - 1 : 0]        coal_rdata;
+    wire [ 1 : 0]                    coal_rresp;
+    wire                             coal_rlast;
+    wire                             coal_rvalid;
+    wire                             coal_rready;
+
     FramebufferMMU #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .PIXEL_WIDTH(PIXEL_WIDTH)
@@ -222,23 +268,96 @@ module StreamFramebuffer
         .s_frag_wstrb(write_mmu_tstrb),
         .s_frag_waddr(write_mmu_taddr),
 
-        .m_mem_axi_arid(m_mem_axi_arid),
-        .m_mem_axi_araddr(m_mem_axi_araddr),
-        .m_mem_axi_arlen(m_mem_axi_arlen),
-        .m_mem_axi_arsize(m_mem_axi_arsize),
-        .m_mem_axi_arburst(m_mem_axi_arburst),
-        .m_mem_axi_arlock(m_mem_axi_arlock),
-        .m_mem_axi_arcache(m_mem_axi_arcache),
-        .m_mem_axi_arprot(m_mem_axi_arprot),
-        .m_mem_axi_arvalid(m_mem_axi_arvalid),
-        .m_mem_axi_arready(m_mem_axi_arready),
+        .m_mem_axi_arid(coal_arid),
+        .m_mem_axi_araddr(coal_araddr),
+        .m_mem_axi_arlen(coal_arlen),
+        .m_mem_axi_arsize(coal_arsize),
+        .m_mem_axi_arburst(coal_arburst),
+        .m_mem_axi_arlock(coal_arlock),
+        .m_mem_axi_arcache(coal_arcache),
+        .m_mem_axi_arprot(coal_arprot),
+        .m_mem_axi_arvalid(coal_arvalid),
+        .m_mem_axi_arready(coal_arready),
 
-        .m_mem_axi_rid(m_mem_axi_rid),
-        .m_mem_axi_rdata(m_mem_axi_rdata),
-        .m_mem_axi_rresp(m_mem_axi_rresp),
-        .m_mem_axi_rlast(m_mem_axi_rlast),
-        .m_mem_axi_rvalid(m_mem_axi_rvalid),
-        .m_mem_axi_rready(m_mem_axi_rready),
+        .m_mem_axi_rid(coal_rid),
+        .m_mem_axi_rdata(coal_rdata),
+        .m_mem_axi_rresp(coal_rresp),
+        .m_mem_axi_rlast(coal_rlast),
+        .m_mem_axi_rvalid(coal_rvalid),
+        .m_mem_axi_rready(coal_rready),
+
+        .m_mem_axi_awid(coal_awid),
+        .m_mem_axi_awaddr(coal_awaddr),
+        .m_mem_axi_awlen(coal_awlen),
+        .m_mem_axi_awsize(coal_awsize),
+        .m_mem_axi_awburst(coal_awburst),
+        .m_mem_axi_awlock(coal_awlock),
+        .m_mem_axi_awcache(coal_awcache),
+        .m_mem_axi_awprot(coal_awprot),
+        .m_mem_axi_awvalid(coal_awvalid),
+        .m_mem_axi_awready(coal_awready),
+
+        .m_mem_axi_wdata(coal_wdata),
+        .m_mem_axi_wstrb(coal_wstrb),
+        .m_mem_axi_wlast(coal_wlast),
+        .m_mem_axi_wvalid(coal_wvalid),
+        .m_mem_axi_wready(coal_wready),
+
+        .m_mem_axi_bid(coal_bid),
+        .m_mem_axi_bresp(coal_bresp),
+        .m_mem_axi_bvalid(coal_bvalid),
+        .m_mem_axi_bready(coal_bready)
+    );
+
+    Coalescer #(
+        .ID_WIDTH(ID_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
+        .STRB_WIDTH(STRB_WIDTH),
+        .MAX_BEATS_TO_COALESCE(MAX_BEATS_TO_COALESCE)
+    ) coalescer (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .s_mem_axi_awid(coal_awid),
+        .s_mem_axi_awaddr(coal_awaddr),
+        .s_mem_axi_awlen(coal_awlen),
+        .s_mem_axi_awsize(coal_awsize),
+        .s_mem_axi_awburst(coal_awburst),
+        .s_mem_axi_awlock(coal_awlock),
+        .s_mem_axi_awcache(coal_awcache),
+        .s_mem_axi_awprot(coal_awprot),
+        .s_mem_axi_awvalid(coal_awvalid),
+        .s_mem_axi_awready(coal_awready),
+
+        .s_mem_axi_wdata(coal_wdata),
+        .s_mem_axi_wstrb(coal_wstrb),
+        .s_mem_axi_wlast(coal_wlast),
+        .s_mem_axi_wvalid(coal_wvalid),
+        .s_mem_axi_wready(coal_wready),
+
+        .s_mem_axi_bid(coal_bid),
+        .s_mem_axi_bresp(coal_bresp),
+        .s_mem_axi_bvalid(coal_bvalid),
+        .s_mem_axi_bready(coal_bready),
+
+        .s_mem_axi_arid(coal_arid),
+        .s_mem_axi_araddr(coal_araddr),
+        .s_mem_axi_arlen(coal_arlen),
+        .s_mem_axi_arsize(coal_arsize),
+        .s_mem_axi_arburst(coal_arburst),
+        .s_mem_axi_arlock(coal_arlock),
+        .s_mem_axi_arcache(coal_arcache),
+        .s_mem_axi_arprot(coal_arprot),
+        .s_mem_axi_arvalid(coal_arvalid),
+        .s_mem_axi_arready(coal_arready),
+
+        .s_mem_axi_rid(coal_rid),
+        .s_mem_axi_rdata(coal_rdata),
+        .s_mem_axi_rresp(coal_rresp),
+        .s_mem_axi_rlast(coal_rlast),
+        .s_mem_axi_rvalid(coal_rvalid),
+        .s_mem_axi_rready(coal_rready),
 
         .m_mem_axi_awid(m_mem_axi_awid),
         .m_mem_axi_awaddr(m_mem_axi_awaddr),
@@ -260,7 +379,25 @@ module StreamFramebuffer
         .m_mem_axi_bid(m_mem_axi_bid),
         .m_mem_axi_bresp(m_mem_axi_bresp),
         .m_mem_axi_bvalid(m_mem_axi_bvalid),
-        .m_mem_axi_bready(m_mem_axi_bready)
+        .m_mem_axi_bready(m_mem_axi_bready),
+
+        .m_mem_axi_arid(m_mem_axi_arid),
+        .m_mem_axi_araddr(m_mem_axi_araddr),
+        .m_mem_axi_arlen(m_mem_axi_arlen),
+        .m_mem_axi_arsize(m_mem_axi_arsize),
+        .m_mem_axi_arburst(m_mem_axi_arburst),
+        .m_mem_axi_arlock(m_mem_axi_arlock),
+        .m_mem_axi_arcache(m_mem_axi_arcache),
+        .m_mem_axi_arprot(m_mem_axi_arprot),
+        .m_mem_axi_arvalid(m_mem_axi_arvalid),
+        .m_mem_axi_arready(m_mem_axi_arready),
+
+        .m_mem_axi_rid(m_mem_axi_rid),
+        .m_mem_axi_rdata(m_mem_axi_rdata),
+        .m_mem_axi_rresp(m_mem_axi_rresp),
+        .m_mem_axi_rlast(m_mem_axi_rlast),
+        .m_mem_axi_rvalid(m_mem_axi_rvalid),
+        .m_mem_axi_rready(m_mem_axi_rready)
     );
 
     FramebufferWriterClear #(
