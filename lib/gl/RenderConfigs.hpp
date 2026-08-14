@@ -22,7 +22,7 @@ struct RenderConfig
     static constexpr std::size_t FRAMEBUFFER_SIZE_IN_PIXEL { 1 << FRAMEBUFFER_SIZE_IN_PIXEL_LG };
 
     // Rasterizer settings
-    static constexpr bool USE_FLOAT_INTERPOLATION { RIX_CORE_USE_FLOAT_INTERPOLATION };
+    static constexpr bool ENABLE_ATTRIBUTE_SCALING { RIX_CORE_ENABLE_ATTRIBUTE_SCALING };
 
     // Texture Memory Settings
     static constexpr std::size_t NUMBER_OF_TEXTURE_PAGES { RIX_CORE_NUMBER_OF_TEXTURE_PAGES };
@@ -45,7 +45,7 @@ struct RenderConfig
     static constexpr std::size_t THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE { RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE };
     static constexpr bool ENABLE_VSYNC { RIX_CORE_ENABLE_VSYNC };
     static constexpr std::size_t MAX_VBO_COUNT { RIX_CORE_MAX_VBO_COUNT };
-    static constexpr bool PERFORMANCE_MODE { RIX_CORE_PERFORMANCE_MODE };
+    static constexpr bool AUTOLOAD_INTERNAL_FRAMEBUFFER { RIX_CORE_AUTOLOAD_INTERNAL_FRAMEBUFFER };
     static constexpr bool SOFTWARE_RENDERING { RIX_CORE_SOFTWARE_RENDERING };
 
     static constexpr std::size_t getDisplayLines()
