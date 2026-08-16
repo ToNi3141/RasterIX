@@ -18,11 +18,11 @@
 #if USE_SOFTWARE
 #include "SoftwareRasterizerBusConnector.hpp"
 #include "renderer/softwarerasterizer/SoftwareRasterizer.hpp"
-#include "StdThreadRunner.hpp"
 #endif
 
 #include "ArrayToPtrArray.hpp"
 #include "NoThreadRunner.hpp"
+#include "StdThreadRunner.hpp"
 #include "RenderConfigs.hpp"
 #include "renderer/Renderer.hpp"
 #include "renderer/devicedatauploader/DeviceDataUploader.hpp"

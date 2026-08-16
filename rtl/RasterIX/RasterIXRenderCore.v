@@ -39,15 +39,14 @@ module RasterIXRenderCore #(
     parameter ENABLE_FOG = 1,
 
     // Enables the line mode in the rasterizer. This allows splitting a triangle into multiple lines. 
-    // This is useful when only render partial framebuffers (for instance in the IF config).
+    // This is useful to render partial framebuffers (for instance in the IF config).
     // Works only correctly together with the yOffset which offsets the current screen position.
     parameter LINE_MODE = 0,
     
     // The bit width of the command stream interface
-    // Allowed values: 32, 64, 128, 256 bit
     localparam CMD_STREAM_WIDTH = 32,
 
-    // The maximum size of a texture
+    // The maximum size of a texture in pixel
     parameter MAX_TEXTURE_SIZE = 256,
 
     // Enables FIFOs on the memory read channel. It can improve the performance by reducing stalls in the pipeline.

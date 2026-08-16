@@ -263,8 +263,8 @@ bool Renderer::setScissorBox(const int32_t x, const int32_t y, const uint32_t wi
     ScissorEndReg regEnd;
     regStart.setX(std::clamp(x, static_cast<int32_t>(0), static_cast<int32_t>(m_resolutionX - 1)));
     regStart.setY(std::clamp(y, static_cast<int32_t>(0), static_cast<int32_t>(m_resolutionY - 1)));
-    regEnd.setX(std::clamp(static_cast<int32_t>(x + width), static_cast<int32_t>(0), static_cast<int32_t>(m_resolutionX - 1)));
-    regEnd.setY(std::clamp(static_cast<int32_t>(y + height), static_cast<int32_t>(0), static_cast<int32_t>(m_resolutionY - 1)));
+    regEnd.setX(std::clamp(static_cast<int32_t>(x + width), static_cast<int32_t>(0), static_cast<int32_t>(m_resolutionX)));
+    regEnd.setY(std::clamp(static_cast<int32_t>(y + height), static_cast<int32_t>(0), static_cast<int32_t>(m_resolutionY)));
 
     ret = ret && writeReg(regStart);
     ret = ret && writeReg(regEnd);
