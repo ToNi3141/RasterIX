@@ -120,7 +120,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RIX_CORE_ENABLE_ATTRIBUTE_SCALING      | This enables the scaling of triangle attributes. It is not needed when the floating point interpolation is enabled. In fixpoint interpolation, unscaled attributes can cause overflows. Visible in GL_CLAMP_TO_EDGE. Scaling can fix that, but increases the load on the CPU. |
 | RIX_CORE_NUMBER_OF_TEXTURE_PAGES       | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
 | RIX_CORE_NUMBER_OF_TEXTURES            | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
-| __RIX_CORE_TEXTURE_PAGE_SIZE__         | The size of a texture page in bytes. Typical value is 4096. |
+| __RIX_CORE_TEXTURE_PAGE_SIZE__         | The size of a texture page in bytes. Typical value is 2048. |
 | RIX_CORE_GRAM_MEMORY_LOC               | Offset for the memory location. Typically this value is 0. Can be different when the memory is shared with other hardware, like in the Zynq platform. |
 | RIX_CORE_COLOR_BUFFER_LOC_0            | Location of the used framebuffer, when the RasterIX is off. On linux, usually the address of the buffer used for the fb dev. |
 | RIX_CORE_COLOR_BUFFER_LOC_1            | Location of the first framebuffer. |
