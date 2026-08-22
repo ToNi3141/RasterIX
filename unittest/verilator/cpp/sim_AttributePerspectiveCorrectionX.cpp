@@ -36,16 +36,16 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
 
     top->tex0_s = 0x200000;
     top->tex0_t = 0x400000;
-    top->tex0_q = 0x20000;
+    top->tex0_q = 0x100000;
     top->tex0_mipmap_s = 0x300000;
     top->tex0_mipmap_t = 0x500000;
-    top->tex0_mipmap_q = 0x10000;
+    top->tex0_mipmap_q = 0x100000;
     top->tex1_s = 0x6000000;
     top->tex1_t = 0x7000000;
-    top->tex1_q = 0x800000;
+    top->tex1_q = 0x2000000;
     top->tex1_mipmap_s = 0x9000000;
     top->tex1_mipmap_t = 0x10000000;
-    top->tex1_mipmap_q = 0x110000;
+    top->tex1_mipmap_q = 0x4000000;
     top->depth_w = 0x2000'0000;
     top->depth_z = 0x12340000;
     top->color_r = 0x00080000;
@@ -65,16 +65,16 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
 
     top->tex0_s = 0x250000;
     top->tex0_t = 0x450000;
-    top->tex0_q = 0x25000;
+    top->tex0_q = 0x110000;
     top->tex0_mipmap_s = 0x350000;
     top->tex0_mipmap_t = 0x550000;
-    top->tex0_mipmap_q = 0x15000;
+    top->tex0_mipmap_q = 0x120000;
     top->tex1_s = 0x6500000;
     top->tex1_t = 0x7500000;
-    top->tex1_q = 0x850000;
+    top->tex1_q = 0x2100000;
     top->tex1_mipmap_s = 0x9500000;
     top->tex1_mipmap_t = 0x15000000;
-    top->tex1_mipmap_q = 0x115000;
+    top->tex1_mipmap_q = 0x4100000;
     top->depth_w = 0x1000'0000;
     top->depth_z = 0x22340000;
     top->color_r = 0x00180000;
@@ -87,7 +87,7 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
     top->s_attrb_tvalid = 0;
     top->s_attrb_tpixel = 0;
 
-    for (uint32_t i = 0; i < 14; i++)
+    for (uint32_t i = 0; i < 13; i++)
     {
         rr::ut::clk(top);
     }
@@ -111,14 +111,14 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
 
     CHECK(top->m_attrb_tdepth_w == 0x3f000000);
     CHECK(top->m_attrb_tdepth_z == 0x48d0);
-    CHECK(top->m_attrb_ttexture0_s == 0x7ffff);
-    CHECK(top->m_attrb_ttexture0_t == 0xfffff);
-    CHECK(top->m_attrb_tmipmap0_s == 0x17ffff);
-    CHECK(top->m_attrb_tmipmap0_t == 0x27ffff);
-    CHECK(top->m_attrb_ttexture1_s == 0x5fffa);
-    CHECK(top->m_attrb_ttexture1_t == 0x6fff9);
-    CHECK(top->m_attrb_tmipmap1_s == 0x43c3bf);
-    CHECK(top->m_attrb_tmipmap1_t == 0x787870);
+    CHECK(top->m_attrb_ttexture0_s == 0xffff); // 2.0
+    CHECK(top->m_attrb_ttexture0_t == 0x1ffff); // 4.0
+    CHECK(top->m_attrb_tmipmap0_s == 0x17fff); // 3.0
+    CHECK(top->m_attrb_tmipmap0_t == 0x27fff); // 5.0
+    CHECK(top->m_attrb_ttexture1_s == 0x17fff); // 3.0
+    CHECK(top->m_attrb_ttexture1_t == 0x1bfff); // 3.5
+    CHECK(top->m_attrb_tmipmap1_s == 0x11fff); // 2.25
+    CHECK(top->m_attrb_tmipmap1_t == 0x1ffff); // 4.0
     CHECK(top->m_attrb_tcolor_r == 0x8);
     CHECK(top->m_attrb_tcolor_g == 0x9);
     CHECK(top->m_attrb_tcolor_b == 0x1);
@@ -136,14 +136,14 @@ TEST_CASE("Perspective correction", "[AttributePerspectiveCorrectionX]")
 
     CHECK(top->m_attrb_tdepth_w == 0x3e800000);
     CHECK(top->m_attrb_tdepth_z == 0x88d0);
-    CHECK(top->m_attrb_ttexture0_s == 0x7ffff);
-    CHECK(top->m_attrb_ttexture0_t == 0xeeb3d);
-    CHECK(top->m_attrb_tmipmap0_s == 0x1430c2);
-    CHECK(top->m_attrb_tmipmap0_t == 0x206185);
-    CHECK(top->m_attrb_ttexture1_s == 0x6133e);
-    CHECK(top->m_attrb_ttexture1_t == 0x7099e);
-    CHECK(top->m_attrb_tmipmap1_s == 0x44da16);
-    CHECK(top->m_attrb_tmipmap1_t == 0x9b436c);
+    CHECK(top->m_attrb_ttexture0_s == 0x11696); // 2.176470
+    CHECK(top->m_attrb_ttexture0_t == 0x20787); // 4.058823
+    CHECK(top->m_attrb_tmipmap0_s == 0x178e3); // 2.944444
+    CHECK(top->m_attrb_tmipmap0_t == 0x25c71); // 4.722222
+    CHECK(top->m_attrb_ttexture1_s == 0x187c1); // 3.060606
+    CHECK(top->m_attrb_ttexture1_t == 0x1c5d1); // 3.545454
+    CHECK(top->m_attrb_tmipmap1_s == 0x1256a); // 2.292307
+    CHECK(top->m_attrb_tmipmap1_t == 0x295a9); // 5.169230
     CHECK(top->m_attrb_tcolor_r == 0x18);
     CHECK(top->m_attrb_tcolor_g == 0x19);
     CHECK(top->m_attrb_tcolor_b == 0x31);

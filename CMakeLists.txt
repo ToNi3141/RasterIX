@@ -30,7 +30,7 @@ set(RIX_CORE_MAX_DISPLAY_WIDTH "1024" CACHE STRING "The maximum width of the dis
 set(RIX_CORE_MAX_DISPLAY_HEIGHT "600" CACHE STRING "The maximum height of the display")
 set(RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG "16" CACHE STRING "The log2(size) of the framebuffer in 16 bit words / in pixel")
 # Rasterizer settings
-set(RIX_CORE_USE_FLOAT_INTERPOLATION "false" CACHE STRING "Enables float interpolation")
+set(RIX_CORE_ENABLE_ATTRIBUTE_SCALING "true" CACHE STRING "Enables float interpolation")
 # Texture memory settings
 set(RIX_CORE_NUMBER_OF_TEXTURE_PAGES "7280" CACHE STRING "The number of texture pages")
 set(RIX_CORE_NUMBER_OF_TEXTURES "7280" CACHE STRING "The number of textures (typically less or the same as RIX_CORE_NUMBER_OF_TEXTURE_PAGES)")
@@ -49,7 +49,7 @@ set(RIX_CORE_THREADED_RASTERIZATION "false" CACHE STRING "Enables the threaded r
 set(RIX_CORE_ENABLE_VSYNC "false" CACHE STRING "Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals.")
 set(RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE "1024 * 1024 * 4" CACHE STRING "Sets the size of the display list. Bigger lists are required for the IF config. The EF config allows smaller lists because of intermediate uploads.")
 set(RIX_CORE_MAX_VBO_COUNT "256" CACHE STRING "The maximum number of VBOs")
-set(RIX_CORE_PERFORMANCE_MODE "false" CACHE STRING "Can increase the rendering performance by sacrificing compatibility.")
+set(RIX_CORE_AUTOLOAD_INTERNAL_FRAMEBUFFER "false" CACHE STRING "Can increase the rendering performance by sacrificing compatibility.")
 set(RIX_CORE_SOFTWARE_RENDERING "false" CACHE STRING "Enables the software rendering mode")
 
 set(CMAKE_CXX_STANDARD 17)

@@ -406,7 +406,7 @@ private:
 
     IDevice& m_device;
     TextureManagerType m_textureManager;
-    Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
+    Rasterizer m_rasterizer { RenderConfig::ENABLE_ATTRIBUTE_SCALING };
 
     const std::function<bool(const TransformedTriangle&)> m_drawTriangleLambda = [this](const TransformedTriangle& triangle)
     { return drawTriangle(triangle); };

@@ -587,6 +587,7 @@ module RasterIXCoreIF #(
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
         .ENABLE_FOG(ENABLE_FOG),
+        .LINE_MODE(1),
         .TMU_MEMORY_WIDTH(DATA_WIDTH),
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ENABLE_READ_FIFO(1), // Requires read FIFOs because the internal RAM does not have flow control

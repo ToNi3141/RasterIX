@@ -59,9 +59,7 @@ module Rasterizer
 
     parameter INDEX_WIDTH = 14,
 
-    // Automatically increments the weights during the initialization of the triangle 
-    // to the current screen position
-    parameter RASTERIZER_ENABLE_INITIAL_Y_INC = 1,
+    parameter LINE_MODE = 0,
 
     localparam ATTRIBUTE_SIZE = 32,
 
@@ -123,7 +121,6 @@ module Rasterizer
     localparam RASTERIZER_EDGEWALKER_SEARCH_RIGHT_EDGE = 5;
 
     // Rasterizer variables
-    wire [Y_BIT_WIDTH - 1 : 0]      yLineResolution = yResolution;
     reg  [ 5 : 0]                   rasterizerState;
     reg  [Y_BIT_WIDTH - 1 : 0]      y;
     reg  [Y_BIT_WIDTH - 1 : 0]      yScreen;
@@ -179,55 +176,46 @@ module Rasterizer
             begin
                 x <= bbStart[BB_X_POS +: X_BIT_WIDTH];
 
-                if (RASTERIZER_ENABLE_INITIAL_Y_INC)
+                regW0 <= w0;
+                regW1 <= w1;
+                regW2 <= w2;
+
+                if (LINE_MODE)
                 begin
+                    // Shift the triangle to the current framebuffer line. Everything can be calculated in software if this implementation
+                    // takes too much logic. It can be completely discarded, when the framebuffer is big enough to contain the whole screen. This is only 
+                    // required in the line mode, to handle the offsets in y direction when rendering a new line.
+                    // Check if the current line offset is above the bounding box. Means, the bounding box starts in this line or in lines after this line.
+                    // In any case, set the current yScreen coord to the bounding box start position. If the bounding box start position is in this
+                    // line, then everything is fine. If not, then yScreen will be below yScreenEnd and the rendering of the current triangle is discarded
+                    // for this line.
                     if (yOffset <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])
                     begin
-                        regW0 <= w0;
-                        regW1 <= w1;
-                        regW2 <= w2;
+                        yScreen <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
+                        y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH] - yOffset;
                     end
                     else
                     begin
-                        regW0 <= w0 + ($signed(w0IncY) * lineBBStart);
-                        regW1 <= w1 + ($signed(w1IncY) * lineBBStart);
-                        regW2 <= w2 + ($signed(w2IncY) * lineBBStart);
+                        yScreen <= yOffset;
+                        y <= 0;
+                    end
+
+                    // Check if the bounding box ends in this line. If not, clamp the bounding box end to the end of the current line.
+                    // If the bounding box end in this line, or in a previous line, just set yScreenEnd to the end of the bounding box.
+                    // The the condition occurs that yScreenEnd is smaller than yScreen which results in discarding the triangle for this line.
+                    if ((yOffset + yResolution) <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH])
+                    begin
+                        yScreenEnd <= yOffset + yResolution;
+                    end
+                    else
+                    begin
+                        yScreenEnd <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH];
                     end
                 end
                 else
                 begin
-                    regW0 <= w0;
-                    regW1 <= w1;
-                    regW2 <= w2;
-                end
-
-                // Shift the triangle to the current framebuffer line. Everything can be calculated in software if this implementation
-                // takes too much logic. It can be completely discarded, when the framebuffer is big enough to contain the whole screen. This is only 
-                // required in the line mode, to handle the offsets in y direction when rendering a new line.
-                // Check if the current line offset is above the bounding box. Means, the bounding box starts in this line or in lines after this line.
-                // In any case, set the current yScreen coord to the bounding box start position. If the bounding box start position is in this
-                // line, then everything is fine. If not, then yScreen will be below yScreenEnd and the rendering of the current triangle is discarded
-                // for this line.
-                if (yOffset <= bbStart[BB_Y_POS +: Y_BIT_WIDTH])
-                begin
                     yScreen <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
-                    y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH] - yOffset;
-                end
-                else
-                begin
-                    yScreen <= yOffset;
-                    y <= 0;
-                end
-
-                // Check if the bounding box ends in this line. If not, clamp the bounding box end to the end of the current line.
-                // If the bounding box end in this line, or in a previous line, just set yScreenEnd to the end of the bounding box.
-                // The the condition occurs that yScreenEnd is smaller than yScreen which results in discarding the triangle for this line.
-                if ((yOffset + yLineResolution) <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH])
-                begin
-                    yScreenEnd <= yOffset + yLineResolution;
-                end
-                else
-                begin
+                    y <= bbStart[BB_Y_POS +: Y_BIT_WIDTH];
                     yScreenEnd <= bbEnd[BB_Y_POS +: Y_BIT_WIDTH];
                 end
 
@@ -336,7 +324,7 @@ module Rasterizer
                         // Check that the index never exceeds the borders of the view port
                         if ((y < yResolution) && (x < xResolution))
                         begin
-                            m_rr_tindex <= (((yLineResolution - 1) - y) * xResolution) + x;
+                            m_rr_tindex <= (((yResolution - 1) - y) * xResolution) + x;
                         end
                         /* verilator lint_on WIDTH */
                         

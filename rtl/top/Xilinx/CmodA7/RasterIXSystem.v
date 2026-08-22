@@ -71,7 +71,7 @@ module RasterIXSystem #(
     parameter RIX_ENABLE_TEXTURE_FILTERING = 1,
 
     // Texture page size in bytes.
-    parameter RIX_TEXTURE_PAGE_SIZE = 4096,
+    parameter RIX_TEXTURE_PAGE_SIZE = 2048,
 
     // Enable the fog unit.
     parameter RIX_ENABLE_FOG = 1,

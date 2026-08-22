@@ -261,15 +261,7 @@ private:
             const std::size_t currentScreenPositionEnd = currentScreenPositionStart + resY;
             if (triangleCmd.isInBounds(currentScreenPositionStart, currentScreenPositionEnd))
             {
-                // The floating point rasterizer can automatically increment all attributes
-                if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
-                {
-                    return dispatcher.addCommand(i, triangleCmd);
-                }
-                else
-                {
-                    return dispatcher.addCommand(i, triangleCmd.getIncremented(currentScreenPositionStart, currentScreenPositionEnd));
-                }
+                return dispatcher.addCommand(i, triangleCmd.getIncremented(currentScreenPositionStart, currentScreenPositionEnd));
             }
             return true;
         };
@@ -640,7 +632,7 @@ private:
 
     std::array<std::array<uint8_t, RenderConfig::THREADED_RASTERIZATION_DISPLAY_LIST_BUFFER_SIZE>, NUMBER_OF_DISPLAY_LISTS> m_buffer;
 
-    Rasterizer m_rasterizer { !RenderConfig::USE_FLOAT_INTERPOLATION };
+    Rasterizer m_rasterizer { RenderConfig::ENABLE_ATTRIBUTE_SCALING };
 
     const std::function<bool(const TransformedTriangle&)> m_drawTriangleLambda = [this](const TransformedTriangle& triangle)
     { return addTriangleCmd(triangle); };

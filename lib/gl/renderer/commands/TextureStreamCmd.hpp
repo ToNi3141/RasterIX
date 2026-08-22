@@ -31,8 +31,8 @@ namespace rr
 
 class TextureStreamCmd
 {
-    static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 18 bit
-    static constexpr uint32_t TEXTURE_STREAM_SIZE_MASK { 0x3FFFF }; // size: 18 bit
+    static constexpr uint32_t TEXTURE_STREAM_SIZE_POS { 0 }; // size: 19 bit
+    static constexpr uint32_t TEXTURE_STREAM_SIZE_MASK { 0x7FFFF }; // size: 19 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_POS { 19 }; // size: 2 bit
     static constexpr uint32_t TEXTURE_STREAM_TMU_NR_MASK { 0x3 }; // size: 2 bit
 

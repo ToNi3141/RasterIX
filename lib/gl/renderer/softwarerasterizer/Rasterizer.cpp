@@ -26,24 +26,7 @@ void Rasterizer::init(const TriangleStreamTypes::TriangleDescX& triangle)
 
     m_wXInc = triangle.param.wXInc;
     m_wYInc = triangle.param.wYInc;
-    if constexpr (RenderConfig::USE_FLOAT_INTERPOLATION)
-    {
-        if (m_yOffset <= triangle.param.bbStartY)
-        {
-            m_w = triangle.param.wInit;
-        }
-        else
-        {
-            const int32_t lineBBStartY = m_yOffset - static_cast<int32_t>(triangle.param.bbStartY);
-            m_w = m_wYInc;
-            m_w *= lineBBStartY;
-            m_w += triangle.param.wInit;
-        }
-    }
-    else
-    {
-        m_w = triangle.param.wInit;
-    }
+    m_w = triangle.param.wInit;
 
     if (m_yOffset <= triangle.param.bbStartY)
     {
