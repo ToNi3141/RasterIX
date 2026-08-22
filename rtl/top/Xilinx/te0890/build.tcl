@@ -82,7 +82,7 @@ read_verilog ./../../../../RasterIX/TriangleStreamF2XConverter.v
 read_verilog ./../../../../RasterIX/TrueDualPortRam.v
 read_verilog ./../../../../Float/rtl/float/XRecip.v
 read_verilog ./../../../../Float/rtl/float/ComputeRecip.v
-read_verilog ./../../../../Float/rtl/float/FindExponent.v
+read_verilog ./../../../../Float/rtl/float/LeadingOneFinder.v
 read_verilog ./../../../../Float/rtl/float/FloatAdd.v
 read_verilog ./../../../../Float/rtl/float/FloatRecip.v
 read_verilog ./../../../../Float/rtl/float/FloatFastRecip.v

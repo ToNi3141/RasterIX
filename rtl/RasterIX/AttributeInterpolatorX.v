@@ -18,7 +18,7 @@
 // This module is used to interpolate the triangle attributes based 
 // on the data from the rasterizer. It expects numbers in fix point format.
 // Pipelined: yes
-// Depth: 17 cycles
+// Depth: 16 cycles
 module AttributeInterpolatorX #(
     `include "RasterizerCommands.vh"
     parameter INDEX_WIDTH = 32,
