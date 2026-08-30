@@ -211,6 +211,16 @@ TEST_CASE("Update context, with stall", "[TextureTexelContext]")
     t->m_ready = 0;
     t->s_valid = 0;
     rr::ut::clk(t);
+    CHECK(t->m_valid == 1);
+    CHECK(t->s_ready == 1);
+    CHECK(t->m_texel00 == 12);
+    CHECK(t->m_texel01 == 22);
+    CHECK(t->m_texel10 == 32);
+    CHECK(t->m_texel11 == 42);
+
+    t->m_ready = 1;
+    t->s_valid = 0;
+    rr::ut::clk(t);
     CHECK(t->m_valid == 0);
     CHECK(t->s_ready == 1);
 
@@ -244,7 +254,7 @@ TEST_CASE("Update context, send after context, with stall", "[TextureTexelContex
     t->s_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->s_ready == 0);
+    CHECK(t->s_ready == 1);
     CHECK(t->m_texel00 == 12);
     CHECK(t->m_texel01 == 22);
     CHECK(t->m_texel10 == 30);
@@ -260,7 +270,7 @@ TEST_CASE("Update context, send after context, with stall", "[TextureTexelContex
     CHECK(t->s_ready == 1);
     CHECK(t->m_texel00 == 12);
     CHECK(t->m_texel01 == 22);
-    CHECK(t->m_texel10 == 30);
+    CHECK(t->m_texel10 == 32);
     CHECK(t->m_texel11 == 40);
 
     // Destroy model
@@ -323,12 +333,8 @@ TEST_CASE("send context and stall, update context, send context", "[TextureTexel
     t->s_cmd = 1;
     t->s_valid = 1;
     rr::ut::clk(t);
-    CHECK(t->m_valid == 1);
+    CHECK(t->m_valid == 0);
     CHECK(t->s_ready == 1);
-    CHECK(t->m_texel00 == 12);
-    CHECK(t->m_texel01 == 22);
-    CHECK(t->m_texel10 == 30);
-    CHECK(t->m_texel11 == 40);
 
     t->m_ready = 1;
     t->s_texel_pos = 0b10;
@@ -336,18 +342,18 @@ TEST_CASE("send context and stall, update context, send context", "[TextureTexel
     t->s_cmd = 1;
     t->s_valid = 1;
     rr::ut::clk(t);
-    CHECK(t->m_valid == 0);
-    CHECK(t->s_ready == 1);
-
-    t->m_ready = 1;
-    t->s_valid = 0;
-    rr::ut::clk(t);
     CHECK(t->m_valid == 1);
     CHECK(t->s_ready == 1);
     CHECK(t->m_texel00 == 12);
     CHECK(t->m_texel01 == 22);
     CHECK(t->m_texel10 == 32);
     CHECK(t->m_texel11 == 40);
+
+    t->m_ready = 1;
+    t->s_valid = 0;
+    rr::ut::clk(t);
+    CHECK(t->m_valid == 0);
+    CHECK(t->s_ready == 1);
 
     // Destroy model
     delete t;
@@ -370,7 +376,7 @@ TEST_CASE("Accepted sample remains valid while output is stalled", "[TextureTexe
     t->s_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->s_ready == 0);
+    CHECK(t->s_ready == 1);
     CHECK(t->m_texel00 == 10);
     CHECK(t->m_texel01 == 20);
     CHECK(t->m_texel10 == 30);
@@ -382,10 +388,115 @@ TEST_CASE("Accepted sample remains valid while output is stalled", "[TextureTexe
     t->s_cmd = 0;
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->s_ready == 0);
+    CHECK(t->s_ready == 1);
     CHECK(t->m_texel00 == 10);
     CHECK(t->m_texel01 == 20);
     CHECK(t->m_texel10 == 30);
+    CHECK(t->m_texel11 == 40);
+
+    delete t;
+}
+
+TEST_CASE("Input remains stable until accepted after skid buffer drains", "[TextureTexelContext]")
+{
+    VTextureTexelContext* t = rr::ut::makeTop<VTextureTexelContext>();
+    rr::ut::reset(t);
+
+    createContext(t, { 10, 20, 30, 40 });
+
+    // Create a stalled output and fill the one-entry skid buffer.
+    t->m_ready = 0;
+    t->s_texel_pos = 0b00;
+    t->s_texel = 12;
+    t->s_cmd = 1;
+    t->s_valid = 1;
+    rr::ut::clk(t);
+
+    t->s_texel_pos = 0b01;
+    t->s_texel = 22;
+    t->s_cmd = 1;
+    rr::ut::clk(t);
+    CHECK(t->s_ready == 0);
+
+    // This transaction is not accepted yet. Keep its payload unchanged until
+    // the skid entry is promoted to the output on the next clock edge.
+    t->m_ready = 1;
+    t->s_texel_pos = 0b10;
+    t->s_texel = 32;
+    rr::ut::clk(t);
+    CHECK(t->s_ready == 1);
+    CHECK(t->m_valid == 1);
+    CHECK(t->m_texel00 == 12);
+    CHECK(t->m_texel01 == 22);
+    CHECK(t->m_texel10 == 30);
+    CHECK(t->m_texel11 == 40);
+
+    t->m_ready = 0;
+    rr::ut::clk(t);
+    CHECK(t->s_ready == 0);
+    CHECK(t->m_valid == 1);
+    CHECK(t->m_texel00 == 12);
+    CHECK(t->m_texel01 == 22);
+    CHECK(t->m_texel10 == 30);
+    CHECK(t->m_texel11 == 40);
+
+    // Drain the current output and promote the held third transaction.
+    t->m_ready = 1;
+    rr::ut::clk(t);
+    CHECK(t->s_ready == 1);
+    CHECK(t->m_valid == 1);
+    CHECK(t->m_texel00 == 12);
+    CHECK(t->m_texel01 == 22);
+    CHECK(t->m_texel10 == 32);
+    CHECK(t->m_texel11 == 40);
+
+    delete t;
+}
+
+TEST_CASE("Buffered store-only command updates context without producing output", "[TextureTexelContext]")
+{
+    VTextureTexelContext* t = rr::ut::makeTop<VTextureTexelContext>();
+    rr::ut::reset(t);
+
+    createContext(t, { 10, 20, 30, 40 });
+
+    // Stall a sample output, then queue a store-only update behind it.
+    t->m_ready = 0;
+    t->s_texel_pos = 0b00;
+    t->s_texel = 12;
+    t->s_cmd = 1;
+    t->s_valid = 1;
+    rr::ut::clk(t);
+
+    t->s_texel_pos = 0b01;
+    t->s_texel = 22;
+    t->s_cmd = 0;
+    rr::ut::clk(t);
+    CHECK(t->s_ready == 0);
+    CHECK(t->m_valid == 1);
+    CHECK(t->m_texel00 == 12);
+    CHECK(t->m_texel01 == 20);
+    CHECK(t->m_texel10 == 30);
+    CHECK(t->m_texel11 == 40);
+
+    // The queued store is processed as the prior output is consumed.
+    t->m_ready = 1;
+    t->s_valid = 0;
+    rr::ut::clk(t);
+    CHECK(t->m_valid == 0);
+    CHECK(t->s_ready == 1);
+
+    // A following sample observes the context update from the buffered store.
+    t->m_ready = 0;
+    t->s_texel_pos = 0b10;
+    t->s_texel = 32;
+    t->s_cmd = 1;
+    t->s_valid = 1;
+    rr::ut::clk(t);
+    CHECK(t->m_valid == 1);
+    CHECK(t->m_texel00 == 12);
+    CHECK(t->m_texel01 == 22);
+    CHECK(t->m_texel10 == 32);
     CHECK(t->m_texel11 == 40);
 
     delete t;
