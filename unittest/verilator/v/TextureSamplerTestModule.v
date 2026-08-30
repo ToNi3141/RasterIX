@@ -15,11 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// This is a test module for the TextureSampler and TextureBuffer.
-// It instantiates both of them to have with the TextureBuffer a mock for the TextureSampler to ease the testing.
+// This is a test module for the TextureSampler, TextureBuffer, and TexelColorUnpack.
+// It instantiates the texture path to ease testing the sampler with a real texture buffer.
 module TextureSamplerTestModule #(
     parameter USER_WIDTH = 1,
     parameter STREAM_WIDTH = 32,
+    parameter TEXEL_WIDTH = 16,
 
     localparam TEX_ADDR_WIDTH = 17,
     localparam PIXEL_WIDTH = 32
@@ -64,18 +65,20 @@ module TextureSamplerTestModule #(
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr01;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr10;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texelAddr11;
-    wire [PIXEL_WIDTH - 1 : 0]      texelInput00;
-    wire [PIXEL_WIDTH - 1 : 0]      texelInput01;
-    wire [PIXEL_WIDTH - 1 : 0]      texelInput10;
-    wire [PIXEL_WIDTH - 1 : 0]      texelInput11;
+    wire [TEXEL_WIDTH - 1 : 0]      texelInput00;
+    wire [TEXEL_WIDTH - 1 : 0]      texelInput01;
+    wire [TEXEL_WIDTH - 1 : 0]      texelInput10;
+    wire [TEXEL_WIDTH - 1 : 0]      texelInput11;
+    wire [TEXEL_WIDTH - 1 : 0]      sampledTexel00;
+    wire [TEXEL_WIDTH - 1 : 0]      sampledTexel01;
+    wire [TEXEL_WIDTH - 1 : 0]      sampledTexel10;
+    wire [TEXEL_WIDTH - 1 : 0]      sampledTexel11;
 
     TextureBuffer #(
-        .PIXEL_WIDTH(PIXEL_WIDTH)
+        .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texCache (
         .aclk(aclk),
         .resetn(resetn),
-
-        .confPixelFormat(confPixelFormat),
 
         .texelAddr00(texelAddr00),
         .texelAddr01(texelAddr01),
@@ -94,7 +97,7 @@ module TextureSamplerTestModule #(
 
     TextureSampler #(
         .USER_WIDTH(USER_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH)
+        .TEXEL_WIDTH(TEXEL_WIDTH)
     ) textureSampler (
         .aclk(aclk),
         .resetn(resetn),
@@ -124,12 +127,44 @@ module TextureSamplerTestModule #(
         .m_valid(m_valid),
         .m_ready(m_ready),
         .m_user(m_user),
-        .m_texel00(m_texel00),
-        .m_texel01(m_texel01),
-        .m_texel10(m_texel10),
-        .m_texel11(m_texel11),
+        .m_texel00(sampledTexel00),
+        .m_texel01(sampledTexel01),
+        .m_texel10(sampledTexel10),
+        .m_texel11(sampledTexel11),
         .m_texelSubCoordS(m_texelSubCoordS),
         .m_texelSubCoordT(m_texelSubCoordT)
+    );
+
+    TexelColorUnpack #(
+        .TEXEL_WIDTH(TEXEL_WIDTH)
+    ) texelColorUnpack00 (
+        .confPixelFormat(confPixelFormat),
+        .texelInput(sampledTexel00),
+        .texelOutput(m_texel00)
+    );
+
+    TexelColorUnpack #(
+        .TEXEL_WIDTH(TEXEL_WIDTH)
+    ) texelColorUnpack01 (
+        .confPixelFormat(confPixelFormat),
+        .texelInput(sampledTexel01),
+        .texelOutput(m_texel01)
+    );
+
+    TexelColorUnpack #(
+        .TEXEL_WIDTH(TEXEL_WIDTH)
+    ) texelColorUnpack10 (
+        .confPixelFormat(confPixelFormat),
+        .texelInput(sampledTexel10),
+        .texelOutput(m_texel10)
+    );
+
+    TexelColorUnpack #(
+        .TEXEL_WIDTH(TEXEL_WIDTH)
+    ) texelColorUnpack11 (
+        .confPixelFormat(confPixelFormat),
+        .texelInput(sampledTexel11),
+        .texelOutput(m_texel11)
     );
 
 endmodule

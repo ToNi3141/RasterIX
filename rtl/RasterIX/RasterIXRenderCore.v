@@ -33,6 +33,7 @@ module RasterIXRenderCore #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TMU_MEMORY_WIDTH = 64,
+    parameter TEXEL_WIDTH = 16,
     parameter TEXTURE_PAGE_SIZE = 2048,
 
     // Enables the fogging unit
@@ -567,15 +568,13 @@ module RasterIXRenderCore #(
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr01;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr10;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr11;
-    wire [31 : 0]                   texel0Input00;
-    wire [31 : 0]                   texel0Input01;
-    wire [31 : 0]                   texel0Input10;
-    wire [31 : 0]                   texel0Input11;
+    wire [TEXEL_WIDTH - 1 : 0]      texel0Input00;
+    wire [TEXEL_WIDTH - 1 : 0]      texel0Input01;
+    wire [TEXEL_WIDTH - 1 : 0]      texel0Input10;
+    wire [TEXEL_WIDTH - 1 : 0]      texel0Input11;
     TextureBuffer textureBufferTMU0 (
         .aclk(aclk),
         .resetn(resetn),
-
-        .confPixelFormat(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
 
         .texelAddr00(texel0Addr00),
         .texelAddr01(texel0Addr01),
@@ -593,7 +592,7 @@ module RasterIXRenderCore #(
     );
     defparam textureBufferTMU0.STREAM_WIDTH = TMU_MEMORY_WIDTH;
     defparam textureBufferTMU0.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
-    defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+    defparam textureBufferTMU0.TEXEL_WIDTH = TEXEL_WIDTH;
     defparam textureBufferTMU0.ENABLE_LOD = ENABLE_MIPMAPPING;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -605,10 +604,10 @@ module RasterIXRenderCore #(
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr01;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr10;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr11;
-    wire [31 : 0]                   texel1Input00;
-    wire [31 : 0]                   texel1Input01;
-    wire [31 : 0]                   texel1Input10;
-    wire [31 : 0]                   texel1Input11;
+    wire [TEXEL_WIDTH - 1 : 0]      texel1Input00;
+    wire [TEXEL_WIDTH - 1 : 0]      texel1Input01;
+    wire [TEXEL_WIDTH - 1 : 0]      texel1Input10;
+    wire [TEXEL_WIDTH - 1 : 0]      texel1Input11;
     generate
         if (ENABLE_SECOND_TMU)
         begin
@@ -654,8 +653,6 @@ module RasterIXRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .confPixelFormat(confTMU1TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-
                 .texelAddr00(texel1Addr00),
                 .texelAddr01(texel1Addr01),
                 .texelAddr10(texel1Addr10),
@@ -672,7 +669,7 @@ module RasterIXRenderCore #(
             );
             defparam textureBufferTMU1.STREAM_WIDTH = TMU_MEMORY_WIDTH;
             defparam textureBufferTMU1.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
-            defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+            defparam textureBufferTMU1.TEXEL_WIDTH = TEXEL_WIDTH;
             defparam textureBufferTMU1.ENABLE_LOD = ENABLE_MIPMAPPING;
         end
         else
@@ -1348,6 +1345,7 @@ module RasterIXRenderCore #(
     defparam pixelPipeline.INDEX_WIDTH = INDEX_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_CALC_PRECISION;
+    defparam pixelPipeline.TEXEL_WIDTH = TEXEL_WIDTH;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;

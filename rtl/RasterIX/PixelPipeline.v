@@ -35,6 +35,7 @@ module PixelPipeline
     localparam FLOAT_SIZE = 32,
 
     localparam TEX_ADDR_WIDTH = 17,
+    parameter TEXEL_WIDTH = 16,
 
     parameter ENABLE_SECOND_TMU = 1,
     parameter ENABLE_LOD_CALC = 1,
@@ -98,19 +99,19 @@ module PixelPipeline
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr01,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr10,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr11,
-    input  wire [PIXEL_WIDTH - 1 : 0]               texel0Input00,
-    input  wire [PIXEL_WIDTH - 1 : 0]               texel0Input01,
-    input  wire [PIXEL_WIDTH - 1 : 0]               texel0Input10,
-    input  wire [PIXEL_WIDTH - 1 : 0]               texel0Input11,
+    input  wire [TEXEL_WIDTH - 1 : 0]               texel0Input00,
+    input  wire [TEXEL_WIDTH - 1 : 0]               texel0Input01,
+    input  wire [TEXEL_WIDTH - 1 : 0]               texel0Input10,
+    input  wire [TEXEL_WIDTH - 1 : 0]               texel0Input11,
     // TMU1 texel quad access
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr00,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr01,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr10,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr11,
-    input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input00,
-    input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input01,
-    input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input10,
-    input  wire [PIXEL_WIDTH - 1 : 0]               texel1Input11,
+    input  wire [TEXEL_WIDTH - 1 : 0]               texel1Input00,
+    input  wire [TEXEL_WIDTH - 1 : 0]               texel1Input01,
+    input  wire [TEXEL_WIDTH - 1 : 0]               texel1Input10,
+    input  wire [TEXEL_WIDTH - 1 : 0]               texel1Input11,
 
     input  wire                                     m_frag_tready,
     output wire [PIXEL_WIDTH - 1 : 0]               m_frag_tfragmentColor,
@@ -156,6 +157,7 @@ module PixelPipeline
         .USER_WIDTH(INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + 32 + FLOAT_SIZE + KEEP_WIDTH + 1 + (4 * 32) + PIXEL_WIDTH),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
         .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
+        .TEXEL_WIDTH(TEXEL_WIDTH),
         .ENABLE_LOD_CALC(ENABLE_LOD_CALC),
         .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING)
     ) tmu0 (
@@ -242,6 +244,7 @@ module PixelPipeline
                 .USER_WIDTH(INDEX_WIDTH + (2 * SCREEN_POS_WIDTH) + 32 + FLOAT_SIZE + KEEP_WIDTH + 1),
                 .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
                 .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
+                .TEXEL_WIDTH(TEXEL_WIDTH),
                 .ENABLE_LOD_CALC(ENABLE_LOD_CALC),
                 .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING)
             ) tmu1 (
