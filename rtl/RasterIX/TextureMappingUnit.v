@@ -30,6 +30,7 @@ module TextureMappingUnit
     parameter ENABLE_TEXTURE_FILTERING = 1,
 
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
+    parameter TEXEL_WIDTH = 16,
 
     localparam ADDR_WIDTH = 17 // Based on the maximum texture size, of 256x256 (8 bit x 8 bit) + mipmap levels in PIXEL_WIDTH word addresses
 )
@@ -48,10 +49,10 @@ module TextureMappingUnit
     output wire [ADDR_WIDTH - 1 : 0]    texelAddr01,
     output wire [ADDR_WIDTH - 1 : 0]    texelAddr10,
     output wire [ADDR_WIDTH - 1 : 0]    texelAddr11,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput00,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput01,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput10,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput11,
+    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput00,
+    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput01,
+    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput10,
+    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput11,
 
     // Fragment input
     output wire                         s_ready,
@@ -143,10 +144,10 @@ module TextureMappingUnit
     // Sample Texture
     // Clocks: 5
     ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0]  step1_texel00;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_texel01;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_texel10;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_texel11;
+    wire [TEXEL_WIDTH - 1 : 0]  step1_texel00;
+    wire [TEXEL_WIDTH - 1 : 0]  step1_texel01;
+    wire [TEXEL_WIDTH - 1 : 0]  step1_texel10;
+    wire [TEXEL_WIDTH - 1 : 0]  step1_texel11;
     wire [15 : 0]               step1_texelSubCoordS;
     wire [15 : 0]               step1_texelSubCoordT;
     wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
@@ -154,10 +155,14 @@ module TextureMappingUnit
     wire                        step1_ready;
     wire                        step1_valid;
     wire [USER_WIDTH - 1 : 0]   step1_user;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel00;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel01;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel10;
+    wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel11;
 
     TextureSampler #(
         .USER_WIDTH((2 * PIXEL_WIDTH) + USER_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH)
+        .TEXEL_WIDTH(TEXEL_WIDTH)
     ) textureSampler (
         .aclk(aclk),
         .resetn(resetn),
@@ -203,6 +208,38 @@ module TextureMappingUnit
         .m_texelSubCoordT(step1_texelSubCoordT)
     );
 
+    TexelColorUnpack #(
+        .TEXEL_WIDTH(TEXEL_WIDTH)
+    ) texelColorUnpack00 (
+        .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+        .texelInput(step1_texel00),
+        .texelOutput(step1_unpackedTexel00)
+    );
+
+    TexelColorUnpack #(
+        .TEXEL_WIDTH(TEXEL_WIDTH)
+    ) texelColorUnpack01 (
+        .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+        .texelInput(step1_texel01),
+        .texelOutput(step1_unpackedTexel01)
+    );
+
+    TexelColorUnpack #(
+        .TEXEL_WIDTH(TEXEL_WIDTH)
+    ) texelColorUnpack10 (
+        .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+        .texelInput(step1_texel10),
+        .texelOutput(step1_unpackedTexel10)
+    );
+
+    TexelColorUnpack #(
+        .TEXEL_WIDTH(TEXEL_WIDTH)
+    ) texelColorUnpack11 (
+        .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+        .texelInput(step1_texel11),
+        .texelOutput(step1_unpackedTexel11)
+    );
+
     ////////////////////////////////////////////////////////////////////////////
     // STEP 2
     // Filter Texture
@@ -231,10 +268,10 @@ module TextureMappingUnit
             step1_previousColor,
             step1_user
         }),
-        .s_texel00(step1_texel00),
-        .s_texel01(step1_texel01),
-        .s_texel10(step1_texel10),
-        .s_texel11(step1_texel11),
+        .s_texel00(step1_unpackedTexel00),
+        .s_texel01(step1_unpackedTexel01),
+        .s_texel10(step1_unpackedTexel10),
+        .s_texel11(step1_unpackedTexel11),
         .s_texelSubCoordS(step1_texelSubCoordS),
         .s_texelSubCoordT(step1_texelSubCoordT),
 

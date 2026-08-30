@@ -20,9 +20,9 @@
 // It supports texture sizes from 1x1 to 256x256
 // Delay: 5 clocks
 module TextureSampler #(
-    parameter PIXEL_WIDTH = 32,
+    parameter TEXEL_WIDTH = 16,
     parameter USER_WIDTH = 1,
-    localparam ADDR_WIDTH = 17 // Based on the maximum texture size, of 256x256 (8 bit x 8 bit) + mipmap levels in PIXEL_WIDTH word addresses
+    localparam ADDR_WIDTH = 17 // Based on the maximum texture size, of 256x256 (8 bit x 8 bit) + mipmap levels in texture word addresses
 )
 (
     input  wire                         aclk,
@@ -39,10 +39,10 @@ module TextureSampler #(
     output reg  [ADDR_WIDTH - 1 : 0]    texelAddr01,
     output reg  [ADDR_WIDTH - 1 : 0]    texelAddr10,
     output reg  [ADDR_WIDTH - 1 : 0]    texelAddr11,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput00,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput01,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput10,
-    input  wire [PIXEL_WIDTH - 1 : 0]   texelInput11,
+    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput00,
+    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput01,
+    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput10,
+    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput11,
 
     // Texture Read
     input  wire                         s_valid,
@@ -57,10 +57,10 @@ module TextureSampler #(
     output wire                         m_valid,
     input  wire                         m_ready,
     output wire [USER_WIDTH - 1 : 0]    m_user,
-    output wire [PIXEL_WIDTH - 1 : 0]   m_texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
-    output wire [PIXEL_WIDTH - 1 : 0]   m_texel01, // (1, 0)
-    output wire [PIXEL_WIDTH - 1 : 0]   m_texel10, // (0, 1)
-    output wire [PIXEL_WIDTH - 1 : 0]   m_texel11, // (1, 1)
+    output wire [TEXEL_WIDTH - 1 : 0]   m_texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
+    output wire [TEXEL_WIDTH - 1 : 0]   m_texel01, // (1, 0)
+    output wire [TEXEL_WIDTH - 1 : 0]   m_texel10, // (0, 1)
+    output wire [TEXEL_WIDTH - 1 : 0]   m_texel11, // (1, 1)
     // This is basically the faction of te pixel coordinate and has a range from 0.0 (0x0) to 0.999... (0xffff)
     // The integer part is not required, since the integer part only addresses the pixel and we don't care about that.
     // We just care about the coordinates within the texel quad. And if there the coordinate gets >1.0, that means, we
@@ -268,10 +268,10 @@ module TextureSampler #(
     wire                        step2_clampV;
     wire [15 : 0]               step2_subCoordU; // Q0.16
     wire [15 : 0]               step2_subCoordV; // Q0.16
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_texel00;
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_texel01; 
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_texel10; 
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_texel11; 
+    reg  [TEXEL_WIDTH - 1 : 0]  step2_texel00;
+    reg  [TEXEL_WIDTH - 1 : 0]  step2_texel01;
+    reg  [TEXEL_WIDTH - 1 : 0]  step2_texel10;
+    reg  [TEXEL_WIDTH - 1 : 0]  step2_texel11;
     wire                        step2_valid;
     wire [USER_WIDTH - 1 : 0]   step2_user;
 
@@ -310,10 +310,10 @@ module TextureSampler #(
     // The texture memory has one clock delay and the texture buffer has no flow control.
     // As soon as the destination requires a stall, a pixel from the TextureBuffer must be skidded here.
     reg                         step2_skid = 0;
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_skid_texel00;
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_skid_texel01; 
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_skid_texel10; 
-    reg  [PIXEL_WIDTH - 1 : 0]  step2_skid_texel11; 
+    reg  [TEXEL_WIDTH - 1 : 0]  step2_skid_texel00;
+    reg  [TEXEL_WIDTH - 1 : 0]  step2_skid_texel01;
+    reg  [TEXEL_WIDTH - 1 : 0]  step2_skid_texel10;
+    reg  [TEXEL_WIDTH - 1 : 0]  step2_skid_texel11;
     always @(posedge aclk)
     begin
         if (ce)
@@ -354,10 +354,10 @@ module TextureSampler #(
     //////////////////////////////////////////////
     reg  [15 : 0]               step3_subCoordU; // Q0.16
     reg  [15 : 0]               step3_subCoordV; // Q0.16
-    reg  [PIXEL_WIDTH - 1 : 0]  step3_texel00;
-    reg  [PIXEL_WIDTH - 1 : 0]  step3_texel01; 
-    reg  [PIXEL_WIDTH - 1 : 0]  step3_texel10; 
-    reg  [PIXEL_WIDTH - 1 : 0]  step3_texel11; 
+    reg  [TEXEL_WIDTH - 1 : 0]  step3_texel00;
+    reg  [TEXEL_WIDTH - 1 : 0]  step3_texel01;
+    reg  [TEXEL_WIDTH - 1 : 0]  step3_texel10;
+    reg  [TEXEL_WIDTH - 1 : 0]  step3_texel11;
     reg                         step3_valid;
     reg  [USER_WIDTH - 1 : 0]   step3_user;
 
