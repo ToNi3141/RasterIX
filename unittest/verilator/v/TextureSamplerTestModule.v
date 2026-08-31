@@ -73,6 +73,16 @@ module TextureSamplerTestModule #(
     wire [TEXEL_WIDTH - 1 : 0]      sampledTexel01;
     wire [TEXEL_WIDTH - 1 : 0]      sampledTexel10;
     wire [TEXEL_WIDTH - 1 : 0]      sampledTexel11;
+    wire                            sampledClampU;
+    wire                            sampledClampV;
+    wire                            sampledValid;
+    wire [USER_WIDTH - 1 : 0]       sampledUser;
+    wire [15 : 0]                   sampledSubCoordS;
+    wire [15 : 0]                   sampledSubCoordT;
+    wire [TEXEL_WIDTH - 1 : 0]      clampedTexel00;
+    wire [TEXEL_WIDTH - 1 : 0]      clampedTexel01;
+    wire [TEXEL_WIDTH - 1 : 0]      clampedTexel10;
+    wire [TEXEL_WIDTH - 1 : 0]      clampedTexel11;
 
     TextureBuffer #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
@@ -124,13 +134,45 @@ module TextureSamplerTestModule #(
         .s_clampT(s_clampT),
         .s_textureLod(s_textureLod),
         
-        .m_valid(m_valid),
+        .m_valid(sampledValid),
         .m_ready(m_ready),
-        .m_user(m_user),
+        .m_user(sampledUser),
         .m_texel00(sampledTexel00),
         .m_texel01(sampledTexel01),
         .m_texel10(sampledTexel10),
         .m_texel11(sampledTexel11),
+        .m_clampU(sampledClampU),
+        .m_clampV(sampledClampV),
+        .m_texelSubCoordS(sampledSubCoordS),
+        .m_texelSubCoordT(sampledSubCoordT)
+    );
+
+    TextureClamp #(
+        .TEXEL_WIDTH(TEXEL_WIDTH),
+        .USER_WIDTH(USER_WIDTH)
+    ) textureClamp (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .s_valid(sampledValid),
+        .s_ready(),
+        .s_user(sampledUser),
+        .s_texel00(sampledTexel00),
+        .s_texel01(sampledTexel01),
+        .s_texel10(sampledTexel10),
+        .s_texel11(sampledTexel11),
+        .s_texelSubCoordS(sampledSubCoordS),
+        .s_texelSubCoordT(sampledSubCoordT),
+        .s_clampU(sampledClampU),
+        .s_clampV(sampledClampV),
+
+        .m_ready(m_ready),
+        .m_valid(m_valid),
+        .m_user(m_user),
+        .m_texel00(clampedTexel00),
+        .m_texel01(clampedTexel01),
+        .m_texel10(clampedTexel10),
+        .m_texel11(clampedTexel11),
         .m_texelSubCoordS(m_texelSubCoordS),
         .m_texelSubCoordT(m_texelSubCoordT)
     );
@@ -139,7 +181,7 @@ module TextureSamplerTestModule #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack00 (
         .confPixelFormat(confPixelFormat),
-        .texelInput(sampledTexel00),
+        .texelInput(clampedTexel00),
         .texelOutput(m_texel00)
     );
 
@@ -147,7 +189,7 @@ module TextureSamplerTestModule #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack01 (
         .confPixelFormat(confPixelFormat),
-        .texelInput(sampledTexel01),
+        .texelInput(clampedTexel01),
         .texelOutput(m_texel01)
     );
 
@@ -155,7 +197,7 @@ module TextureSamplerTestModule #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack10 (
         .confPixelFormat(confPixelFormat),
-        .texelInput(sampledTexel10),
+        .texelInput(clampedTexel10),
         .texelOutput(m_texel10)
     );
 
@@ -163,7 +205,7 @@ module TextureSamplerTestModule #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack11 (
         .confPixelFormat(confPixelFormat),
-        .texelInput(sampledTexel11),
+        .texelInput(clampedTexel11),
         .texelOutput(m_texel11)
     );
 
