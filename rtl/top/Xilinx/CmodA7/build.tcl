@@ -75,10 +75,14 @@ read_verilog ./../../../../RasterIX/StreamConcatFifo.v
 read_verilog ./../../../../RasterIX/StreamFramebuffer.v
 read_verilog ./../../../../RasterIX/TestFunc.v
 read_verilog ./../../../../RasterIX/TexEnv.v
+read_verilog ./../../../../RasterIX/TexelColorUnpack.v
 read_verilog ./../../../../RasterIX/TextureBuffer.v
+read_verilog ./../../../../RasterIX/TextureClamp.v
 read_verilog ./../../../../RasterIX/TextureFilter.v
 read_verilog ./../../../../RasterIX/TextureMappingUnit.v
 read_verilog ./../../../../RasterIX/TextureSampler.v
+read_verilog ./../../../../RasterIX/TextureTexelContext.v
+read_verilog ./../../../../RasterIX/TextureTexelContextManager.v
 read_verilog ./../../../../RasterIX/TriangleStreamF2XConverter.v
 read_verilog ./../../../../RasterIX/TrueDualPortRam.v
 read_verilog ./../../../../Float/rtl/float/XRecip.v

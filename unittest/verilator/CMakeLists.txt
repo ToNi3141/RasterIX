@@ -64,7 +64,7 @@ add_verilator_test(simulationILI9486 DisplayController8BitILI9486 ${RTL_DISPLAY}
 add_verilator_test(simulationILI9341 DisplayController8BitILI9341 ${RTL_DISPLAY}/DisplayController8BitILI9341.v)
 add_verilator_test(attributeInterpolator AttributeInterpolator ${RTL_RASTERIX}/AttributeInterpolator.v)
 add_verilator_test(functionInterpolator FunctionInterpolator ${RTL_RASTERIX}/FunctionInterpolator.v)
-add_verilator_test(textureSampler TextureSamplerTestModule ${CMAKE_CURRENT_SOURCE_DIR}/v/TextureSamplerTestModule.v)
+add_verilator_test(textureSampler TextureSampler ${RTL_RASTERIX}/TextureSampler.v)
 add_verilator_test(texelColorUnpack TexelColorUnpack ${RTL_RASTERIX}/TexelColorUnpack.v)
 add_verilator_test(textureClamp TextureClamp ${RTL_RASTERIX}/TextureClamp.v)
 add_verilator_test(colorInterpolator ColorInterpolator ${RTL_RASTERIX}/ColorInterpolator.v)

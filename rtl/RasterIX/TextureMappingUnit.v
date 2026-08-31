@@ -44,11 +44,17 @@ module TextureMappingUnit
     input  wire [31 : 0]                confTextureConfig,
     input  wire                         confEnable,
 
-    // Texture memory access of a texel quad
+    // Texture memory read address channel
+    output wire                         texelAddrValid,
+    input  wire                         texelAddrReady,
     output wire [ADDR_WIDTH - 1 : 0]    texelAddr00,
     output wire [ADDR_WIDTH - 1 : 0]    texelAddr01,
     output wire [ADDR_WIDTH - 1 : 0]    texelAddr10,
     output wire [ADDR_WIDTH - 1 : 0]    texelAddr11,
+
+    // Texture memory read texel channel
+    input  wire                         texelInputValid,
+    output wire                         texelInputReady,
     input  wire [TEXEL_WIDTH - 1 : 0]   texelInput00,
     input  wire [TEXEL_WIDTH - 1 : 0]   texelInput01,
     input  wire [TEXEL_WIDTH - 1 : 0]   texelInput10,
@@ -141,39 +147,25 @@ module TextureMappingUnit
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
-    // Sample Texture
-    // Clocks: 5
+    // Calculate texture addresses
+    // Clocks: 2
     ////////////////////////////////////////////////////////////////////////////
-    wire [TEXEL_WIDTH - 1 : 0]  step1_texel00;
-    wire [TEXEL_WIDTH - 1 : 0]  step1_texel01;
-    wire [TEXEL_WIDTH - 1 : 0]  step1_texel10;
-    wire [TEXEL_WIDTH - 1 : 0]  step1_texel11;
-    wire [15 : 0]               step1_texelSubCoordS;
-    wire [15 : 0]               step1_texelSubCoordT;
     wire [PIXEL_WIDTH - 1 : 0]  step1_primaryColor;
     wire [PIXEL_WIDTH - 1 : 0]  step1_previousColor;
-    wire                        step1_ready;
-    wire                        step1_valid;
     wire [USER_WIDTH - 1 : 0]   step1_user;
-    wire                        step1_clampReady;
-    wire                        step1_clampValid;
-    wire [(2 * PIXEL_WIDTH) + USER_WIDTH - 1 : 0] step1_clampUser;
-    wire [15 : 0]               step1_clampSubCoordS;
-    wire [15 : 0]               step1_clampSubCoordT;
     wire                        step1_clampU;
     wire                        step1_clampV;
-    wire [TEXEL_WIDTH - 1 : 0]  step1_clampedTexel00;
-    wire [TEXEL_WIDTH - 1 : 0]  step1_clampedTexel01;
-    wire [TEXEL_WIDTH - 1 : 0]  step1_clampedTexel10;
-    wire [TEXEL_WIDTH - 1 : 0]  step1_clampedTexel11;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel00;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel01;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel10;
-    wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel11;
+    wire [15 : 0]               step1_subCoordS;
+    wire [15 : 0]               step1_subCoordT;
+    wire                        step1_valid;
+    wire                        step1_ready;
+    wire [ADDR_WIDTH - 1 : 0]   step1_addr00;
+    wire [ADDR_WIDTH - 1 : 0]   step1_addr01;
+    wire [ADDR_WIDTH - 1 : 0]   step1_addr10;
+    wire [ADDR_WIDTH - 1 : 0]   step1_addr11;
 
     TextureSampler #(
-        .USER_WIDTH((2 * PIXEL_WIDTH) + USER_WIDTH),
-        .TEXEL_WIDTH(TEXEL_WIDTH)
+        .USER_WIDTH((2 * PIXEL_WIDTH) + USER_WIDTH)
     ) textureSampler (
         .aclk(aclk),
         .resetn(resetn),
@@ -182,14 +174,10 @@ module TextureMappingUnit
         .textureSizeHeight(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_HEIGHT_POS +: RENDER_CONFIG_TMU_TEXTURE_HEIGHT_SIZE]),
         .enableHalfPixelOffset(ENABLE_TEXTURE_FILTERING & confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]), 
 
-        .texelAddr00(texelAddr00),
-        .texelAddr01(texelAddr01),
-        .texelAddr10(texelAddr10),
-        .texelAddr11(texelAddr11),
-        .texelInput00(texelInput00),
-        .texelInput01(texelInput01),
-        .texelInput10(texelInput10),
-        .texelInput11(texelInput11),
+        .texelAddr00(step1_addr00),
+        .texelAddr01(step1_addr01),
+        .texelAddr10(step1_addr10),
+        .texelAddr11(step1_addr11),
 
         .s_valid(step0_valid),
         .s_ready(step0_ready),
@@ -205,21 +193,174 @@ module TextureMappingUnit
         .s_textureLod(step0_lod),
         
         .m_valid(step1_valid),
-        .m_ready(step1_clampReady),
+        .m_ready(step1_ready),
         .m_user({
             step1_primaryColor,
             step1_previousColor,
             step1_user
         }),
-        .m_texel00(step1_texel00),
-        .m_texel01(step1_texel01),
-        .m_texel10(step1_texel10),
-        .m_texel11(step1_texel11),
         .m_clampU(step1_clampU),
         .m_clampV(step1_clampV),
-        .m_texelSubCoordS(step1_texelSubCoordS),
-        .m_texelSubCoordT(step1_texelSubCoordT)
+        .m_texelSubCoordS(step1_subCoordS),
+        .m_texelSubCoordT(step1_subCoordT)
     );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 2
+    // Broadcast texture addresses and join texture read response with context
+    // Clocks: 2
+    ////////////////////////////////////////////////////////////////////////////
+    localparam ADDRESS_STREAM_WIDTH = 4 * ADDR_WIDTH;
+    localparam CONTEXT_STREAM_WIDTH = (2 * PIXEL_WIDTH) + USER_WIDTH + 1 + 1 + 16 + 16;
+    localparam TEXEL_STREAM_WIDTH = 4 * TEXEL_WIDTH;
+
+    wire                                    step2_ready;
+    wire                                    step2_valid;
+    wire [PIXEL_WIDTH - 1 : 0]              step2_primaryColor;
+    wire [PIXEL_WIDTH - 1 : 0]              step2_previousColor;
+    wire [USER_WIDTH - 1 : 0]               step2_user;
+    wire                                    step2_clampU;
+    wire                                    step2_clampV;
+    wire [15 : 0]                           step2_subCoordS;
+    wire [15 : 0]                           step2_subCoordT;
+    wire [TEXEL_WIDTH - 1 : 0]              step2_texel00;
+    wire [TEXEL_WIDTH - 1 : 0]              step2_texel01;
+    wire [TEXEL_WIDTH - 1 : 0]              step2_texel10;
+    wire [TEXEL_WIDTH - 1 : 0]              step2_texel11;
+
+    wire [ 1 : 0]                           step2_broadcastValid;
+    wire [ 1 : 0]                           step2_broadcastReady;
+    wire [2 * ADDRESS_STREAM_WIDTH - 1 : 0] step2_broadcastData;
+    wire [2 * CONTEXT_STREAM_WIDTH - 1 : 0] step2_broadcastUser;
+    wire                                    step2_contextReady;
+    wire                                    step2_texelReady;
+    axis_broadcast #(
+        .M_COUNT(2),
+        .DATA_WIDTH(ADDRESS_STREAM_WIDTH),
+        .KEEP_ENABLE(0),
+        .LAST_ENABLE(0),
+        .ID_ENABLE(0),
+        .DEST_ENABLE(0),
+        .USER_ENABLE(1),
+        .USER_WIDTH(CONTEXT_STREAM_WIDTH)
+    ) samplerBroadcast (
+        .clk(aclk),
+        .rst(!resetn),
+
+        .s_axis_tdata({
+            step1_addr11,
+            step1_addr10,
+            step1_addr01,
+            step1_addr00
+        }),
+        .s_axis_tkeep(0),
+        .s_axis_tvalid(step1_valid),
+        .s_axis_tready(step1_ready),
+        .s_axis_tlast(1'b0),
+        .s_axis_tid(0),
+        .s_axis_tdest(0),
+        .s_axis_tuser({
+            step1_primaryColor,
+            step1_previousColor,
+            step1_user,
+            step1_clampU,
+            step1_clampV,
+            step1_subCoordS,
+            step1_subCoordT
+        }),
+
+        .m_axis_tdata(step2_broadcastData),
+        .m_axis_tkeep(),
+        .m_axis_tvalid(step2_broadcastValid),
+        .m_axis_tready(step2_broadcastReady),
+        .m_axis_tlast(),
+        .m_axis_tid(),
+        .m_axis_tdest(),
+        .m_axis_tuser(step2_broadcastUser)
+    );
+
+    // Texture Buffer Access
+    assign texelAddrValid = step2_broadcastValid[0];
+    assign step2_broadcastReady[0] = texelAddrReady;
+    assign texelAddr00 = step2_broadcastData[0 +: ADDR_WIDTH];
+    assign texelAddr01 = step2_broadcastData[ADDR_WIDTH +: ADDR_WIDTH];
+    assign texelAddr10 = step2_broadcastData[(2 * ADDR_WIDTH) +: ADDR_WIDTH];
+    assign texelAddr11 = step2_broadcastData[(3 * ADDR_WIDTH) +: ADDR_WIDTH];
+    assign texelInputReady = step2_texelReady;
+
+    assign step2_broadcastReady[1] = step2_contextReady;
+
+    StreamConcatFifo #(
+        .STREAM0_WIDTH(TEXEL_STREAM_WIDTH),
+        .STREAM1_WIDTH(CONTEXT_STREAM_WIDTH),
+        .STREAM2_WIDTH(1), // TODO: Make this channel optional
+        .STREAM3_WIDTH(1), // TODO: Make this channel optional
+        .FIFO_DEPTH0_POW2(1),
+        .FIFO_DEPTH1_POW2(1),
+        .FIFO_DEPTH2_POW2(0),
+        .FIFO_DEPTH3_POW2(0)
+    ) textureReadConcat (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .s_stream0_tenable(1'b1),
+        .s_stream0_tvalid(texelInputValid),
+        .s_stream0_tdata({
+            texelInput11,
+            texelInput10,
+            texelInput01,
+            texelInput00
+        }),
+        .s_stream0_tready(step2_texelReady),
+
+        .s_stream1_tenable(1'b1),
+        .s_stream1_tvalid(step2_broadcastValid[1]),
+        .s_stream1_tdata({
+            step2_broadcastUser[CONTEXT_STREAM_WIDTH +: CONTEXT_STREAM_WIDTH]
+        }),
+        .s_stream1_tready(step2_contextReady),
+
+        .s_stream2_tenable(1'b0),
+        .s_stream2_tvalid(1'b0),
+        .s_stream2_tdata(1'b0),
+        .s_stream2_tready(),
+
+        .s_stream3_tenable(1'b0),
+        .s_stream3_tvalid(1'b0),
+        .s_stream3_tdata(1'b0),
+        .s_stream3_tready(),
+
+        .m_stream_tvalid(step2_valid),
+        .m_stream_tdata({
+            step2_primaryColor,
+            step2_previousColor,
+            step2_user,
+            step2_clampU,
+            step2_clampV,
+            step2_subCoordS,
+            step2_subCoordT,
+            step2_texel11,
+            step2_texel10,
+            step2_texel01,
+            step2_texel00
+        }),
+        .m_stream_tready(step2_ready)
+    );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 3
+    // Clamp texture coordinates
+    // Clocks: 1
+    ////////////////////////////////////////////////////////////////////////////
+    wire                        step3_ready;
+    wire                        step3_valid;
+    wire [(2 * PIXEL_WIDTH) + USER_WIDTH - 1 : 0] step3_user;
+    wire [15 : 0]               step3_subCoordS;
+    wire [15 : 0]               step3_subCoordT;
+    wire [TEXEL_WIDTH - 1 : 0]  step3_texel00;
+    wire [TEXEL_WIDTH - 1 : 0]  step3_texel01;
+    wire [TEXEL_WIDTH - 1 : 0]  step3_texel10;
+    wire [TEXEL_WIDTH - 1 : 0]  step3_texel11;
 
     TextureClamp #(
         .TEXEL_WIDTH(TEXEL_WIDTH),
@@ -228,76 +369,98 @@ module TextureMappingUnit
         .aclk(aclk),
         .resetn(resetn),
 
-        .s_valid(step1_valid),
-        .s_ready(step1_clampReady),
+        .s_valid(step2_valid),
+        .s_ready(step2_ready),
         .s_user({
-            step1_primaryColor,
-            step1_previousColor,
-            step1_user
+            step2_primaryColor,
+            step2_previousColor,
+            step2_user
         }),
-        .s_texel00(step1_texel00),
-        .s_texel01(step1_texel01),
-        .s_texel10(step1_texel10),
-        .s_texel11(step1_texel11),
-        .s_texelSubCoordS(step1_texelSubCoordS),
-        .s_texelSubCoordT(step1_texelSubCoordT),
-        .s_clampU(step1_clampU),
-        .s_clampV(step1_clampV),
+        .s_texel00(step2_texel00),
+        .s_texel01(step2_texel01),
+        .s_texel10(step2_texel10),
+        .s_texel11(step2_texel11),
+        .s_texelSubCoordS(step2_subCoordS),
+        .s_texelSubCoordT(step2_subCoordT),
+        .s_clampU(step2_clampU),
+        .s_clampV(step2_clampV),
 
-        .m_ready(step1_ready),
-        .m_valid(step1_clampValid),
-        .m_user(step1_clampUser),
-        .m_texel00(step1_clampedTexel00),
-        .m_texel01(step1_clampedTexel01),
-        .m_texel10(step1_clampedTexel10),
-        .m_texel11(step1_clampedTexel11),
-        .m_texelSubCoordS(step1_clampSubCoordS),
-        .m_texelSubCoordT(step1_clampSubCoordT)
+        .m_ready(step3_ready),
+        .m_valid(step3_valid),
+        .m_user(step3_user),
+        .m_texel00(step3_texel00),
+        .m_texel01(step3_texel01),
+        .m_texel10(step3_texel10),
+        .m_texel11(step3_texel11),
+        .m_texelSubCoordS(step3_subCoordS),
+        .m_texelSubCoordT(step3_subCoordT)
     );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 4
+    // Unpack texel colors
+    // Clocks: 0
+    ////////////////////////////////////////////////////////////////////////////
+    wire [PIXEL_WIDTH - 1 : 0]  step4_texel00;
+    wire [PIXEL_WIDTH - 1 : 0]  step4_texel01;
+    wire [PIXEL_WIDTH - 1 : 0]  step4_texel10;
+    wire [PIXEL_WIDTH - 1 : 0]  step4_texel11;
+    wire                        step4_ready;
+    wire                        step4_valid;
+    wire [(2 * PIXEL_WIDTH) + USER_WIDTH - 1 : 0] step4_user;
+    wire [15 : 0]               step4_subCoordS;
+    wire [15 : 0]               step4_subCoordT;
+
+    assign step4_user = step3_user;
+    assign step3_ready = step4_ready;
+    assign step4_valid = step3_valid;
+    assign step4_subCoordS = step3_subCoordS;
+    assign step4_subCoordT = step3_subCoordT;
+
 
     TexelColorUnpack #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack00 (
         .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-        .texelInput(step1_clampedTexel00),
-        .texelOutput(step1_unpackedTexel00)
+        .texelInput(step3_texel00),
+        .texelOutput(step4_texel00)
     );
 
     TexelColorUnpack #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack01 (
         .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-        .texelInput(step1_clampedTexel01),
-        .texelOutput(step1_unpackedTexel01)
+        .texelInput(step3_texel01),
+        .texelOutput(step4_texel01)
     );
 
     TexelColorUnpack #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack10 (
         .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-        .texelInput(step1_clampedTexel10),
-        .texelOutput(step1_unpackedTexel10)
+        .texelInput(step3_texel10),
+        .texelOutput(step4_texel10)
     );
 
     TexelColorUnpack #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack11 (
         .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-        .texelInput(step1_clampedTexel11),
-        .texelOutput(step1_unpackedTexel11)
+        .texelInput(step3_texel11),
+        .texelOutput(step4_texel11)
     );
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 2
+    // STEP 5
     // Filter Texture
     // Clocks: 4
     ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0]  step2_primaryColor;
-    wire [PIXEL_WIDTH - 1 : 0]  step2_previousColor;
-    wire [PIXEL_WIDTH - 1 : 0]  step2_texel;
-    wire                        step2_ready;
-    wire                        step2_valid;
-    wire [USER_WIDTH - 1 : 0]   step2_user;
+    wire [PIXEL_WIDTH - 1 : 0]  step5_primaryColor;
+    wire [PIXEL_WIDTH - 1 : 0]  step5_previousColor;
+    wire [PIXEL_WIDTH - 1 : 0]  step5_texel;
+    wire                        step5_ready;
+    wire                        step5_valid;
+    wire [USER_WIDTH - 1 : 0]   step5_user;
 
     TextureFilter #(
         .USER_WIDTH((2 * PIXEL_WIDTH) + USER_WIDTH),
@@ -308,36 +471,36 @@ module TextureMappingUnit
 
         .enable(ENABLE_TEXTURE_FILTERING & confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]),
 
-        .s_valid(step1_clampValid),
-        .s_ready(step1_ready),
-        .s_user(step1_clampUser),
-        .s_texel00(step1_unpackedTexel00),
-        .s_texel01(step1_unpackedTexel01),
-        .s_texel10(step1_unpackedTexel10),
-        .s_texel11(step1_unpackedTexel11),
-        .s_texelSubCoordS(step1_clampSubCoordS),
-        .s_texelSubCoordT(step1_clampSubCoordT),
+        .s_valid(step4_valid),
+        .s_ready(step4_ready),
+        .s_user(step4_user),
+        .s_texel00(step4_texel00),
+        .s_texel01(step4_texel01),
+        .s_texel10(step4_texel10),
+        .s_texel11(step4_texel11),
+        .s_texelSubCoordS(step4_subCoordS),
+        .s_texelSubCoordT(step4_subCoordT),
 
-        .m_valid(step2_valid),
-        .m_ready(step2_ready),
+        .m_valid(step5_valid),
+        .m_ready(step5_ready),
         .m_user({
-            step2_primaryColor,
-            step2_previousColor,
-            step2_user
+            step5_primaryColor,
+            step5_previousColor,
+            step5_user
         }),
-        .m_texel(step2_texel)
+        .m_texel(step5_texel)
     );
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 3
+    // STEP 6
     // Calculate texture environment
     // Clocks: 4
     ////////////////////////////////////////////////////////////////////////////
-    wire [PIXEL_WIDTH - 1 : 0]  step3_texel;
-    wire [PIXEL_WIDTH - 1 : 0]  step3_previousColor;
-    wire                        step3_ready;
-    wire                        step3_valid;
-    wire [USER_WIDTH - 1 : 0]   step3_user;
+    wire [PIXEL_WIDTH - 1 : 0]  step6_texel;
+    wire [PIXEL_WIDTH - 1 : 0]  step6_previousColor;
+    wire                        step6_ready;
+    wire                        step6_valid;
+    wire [USER_WIDTH - 1 : 0]   step6_user;
 
     TexEnv #(
         .USER_WIDTH(PIXEL_WIDTH + USER_WIDTH),
@@ -349,35 +512,35 @@ module TextureMappingUnit
 
         .conf(confFunc),
 
-        .s_valid(step2_valid),
-        .s_ready(step2_ready),
+        .s_valid(step5_valid),
+        .s_ready(step5_ready),
         .s_user({
-            step2_previousColor,
-            step2_user
+            step5_previousColor,
+            step5_user
         }),
-        .s_previousColor(step2_previousColor),
-        .s_texSrcColor(step2_texel),
-        .s_primaryColor(step2_primaryColor),
+        .s_previousColor(step5_previousColor),
+        .s_texSrcColor(step5_texel),
+        .s_primaryColor(step5_primaryColor),
         .s_envColor(confTextureEnvColor),
 
-        .m_valid(step3_valid),
-        .m_ready(step3_ready),
+        .m_valid(step6_valid),
+        .m_ready(step6_ready),
         .m_user({
-            step3_previousColor,
-            step3_user
+            step6_previousColor,
+            step6_user
         }),
-        .m_color(step3_texel)
+        .m_color(step6_texel)
     );
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 3
+    // STEP 7
     // Output final texel color
     // Clocks: 0
     ////////////////////////////////////////////////////////////////////////////
-    assign m_fragmentColor = (confEnable) ? step3_texel : step3_previousColor;
-    assign m_valid = step3_valid;
-    assign m_user = step3_user;
-    assign step3_ready = m_ready;
+    assign m_fragmentColor = (confEnable) ? step6_texel : step6_previousColor;
+    assign m_valid = step6_valid;
+    assign m_user = step6_user;
+    assign step6_ready = m_ready;
 
 endmodule
 

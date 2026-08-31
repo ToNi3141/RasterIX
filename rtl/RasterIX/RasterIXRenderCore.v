@@ -568,19 +568,27 @@ module RasterIXRenderCore #(
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr01;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr10;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr11;
+    wire                            texel0AddrValid;
+    wire                            texel0AddrReady;
     wire [TEXEL_WIDTH - 1 : 0]      texel0Input00;
     wire [TEXEL_WIDTH - 1 : 0]      texel0Input01;
     wire [TEXEL_WIDTH - 1 : 0]      texel0Input10;
     wire [TEXEL_WIDTH - 1 : 0]      texel0Input11;
+    wire                            texel0InputValid;
+    wire                            texel0InputReady;
     TextureBuffer textureBufferTMU0 (
         .aclk(aclk),
         .resetn(resetn),
 
+        .texelAddrValid(texel0AddrValid),
+        .texelAddrReady(texel0AddrReady),
         .texelAddr00(texel0Addr00),
         .texelAddr01(texel0Addr01),
         .texelAddr10(texel0Addr10),
         .texelAddr11(texel0Addr11),
 
+        .texelOutputValid(texel0InputValid),
+        .texelOutputReady(texel0InputReady),
         .texelOutput00(texel0Input00),
         .texelOutput01(texel0Input01),
         .texelOutput10(texel0Input10),
@@ -604,10 +612,14 @@ module RasterIXRenderCore #(
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr01;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr10;
     wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr11;
+    wire                            texel1AddrValid;
+    wire                            texel1AddrReady;
     wire [TEXEL_WIDTH - 1 : 0]      texel1Input00;
     wire [TEXEL_WIDTH - 1 : 0]      texel1Input01;
     wire [TEXEL_WIDTH - 1 : 0]      texel1Input10;
     wire [TEXEL_WIDTH - 1 : 0]      texel1Input11;
+    wire                            texel1InputValid;
+    wire                            texel1InputReady;
     generate
         if (ENABLE_SECOND_TMU)
         begin
@@ -653,11 +665,15 @@ module RasterIXRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
 
+                .texelAddrValid(texel1AddrValid),
+                .texelAddrReady(texel1AddrReady),
                 .texelAddr00(texel1Addr00),
                 .texelAddr01(texel1Addr01),
                 .texelAddr10(texel1Addr10),
                 .texelAddr11(texel1Addr11),
 
+                .texelOutputValid(texel1InputValid),
+                .texelOutputReady(texel1InputReady),
                 .texelOutput00(texel1Input00),
                 .texelOutput01(texel1Input01),
                 .texelOutput10(texel1Input10),
@@ -674,10 +690,12 @@ module RasterIXRenderCore #(
         end
         else
         begin
+            assign texel1AddrReady = 1;
             assign texel1Input00 = 0;
             assign texel1Input01 = 0;
             assign texel1Input10 = 0;
             assign texel1Input11 = 0;
+            assign texel1InputValid = 0;
 
             assign m_tmu1_axi_rready = 1;
             assign m_tmu1_axi_arid = 0;
@@ -1312,21 +1330,29 @@ module RasterIXRenderCore #(
         .s_attrb_tcolor_g(alrp_tcolor_g),
         .s_attrb_tcolor_r(alrp_tcolor_r),
 
+        .texel0AddrValid(texel0AddrValid),
+        .texel0AddrReady(texel0AddrReady),
         .texel0Addr00(texel0Addr00),
         .texel0Addr01(texel0Addr01),
         .texel0Addr10(texel0Addr10),
         .texel0Addr11(texel0Addr11),
 
+        .texel0InputValid(texel0InputValid),
+        .texel0InputReady(texel0InputReady),
         .texel0Input00(texel0Input00),
         .texel0Input01(texel0Input01),
         .texel0Input10(texel0Input10),
         .texel0Input11(texel0Input11),
 
+        .texel1AddrValid(texel1AddrValid),
+        .texel1AddrReady(texel1AddrReady),
         .texel1Addr00(texel1Addr00),
         .texel1Addr01(texel1Addr01),
         .texel1Addr10(texel1Addr10),
         .texel1Addr11(texel1Addr11),
 
+        .texel1InputValid(texel1InputValid),
+        .texel1InputReady(texel1InputReady),
         .texel1Input00(texel1Input00),
         .texel1Input01(texel1Input01),
         .texel1Input10(texel1Input10),

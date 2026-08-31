@@ -15,12 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Gets texel coordinates and then samples a texel quad from the texture memory.
-// It assumes that a memory with a fixed delay of one clock is used.
-// It supports texture sizes from 1x1 to 256x256
-// Delay: 5 clocks
+// Gets texel coordinates and builds the addresses of a texel quad.
+// It supports texture sizes from 1x1 to 256x256.
+// Delay: 2 clocks
 module TextureSampler #(
-    parameter TEXEL_WIDTH = 16,
     parameter USER_WIDTH = 1,
     localparam ADDR_WIDTH = 17 // Based on the maximum texture size, of 256x256 (8 bit x 8 bit) + mipmap levels in texture word addresses
 )
@@ -34,15 +32,11 @@ module TextureSampler #(
     input  wire [ 3 : 0]                textureSizeHeight,
     input  wire                         enableHalfPixelOffset,
 
-    // Texture memory access of a texel quad
+    // Texture memory address of a texel quad
     output reg  [ADDR_WIDTH - 1 : 0]    texelAddr00,
     output reg  [ADDR_WIDTH - 1 : 0]    texelAddr01,
     output reg  [ADDR_WIDTH - 1 : 0]    texelAddr10,
     output reg  [ADDR_WIDTH - 1 : 0]    texelAddr11,
-    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput00,
-    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput01,
-    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput10,
-    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput11,
 
     // Texture Read
     input  wire                         s_valid,
@@ -57,10 +51,6 @@ module TextureSampler #(
     output wire                         m_valid,
     input  wire                         m_ready,
     output wire [USER_WIDTH - 1 : 0]    m_user,
-    output wire [TEXEL_WIDTH - 1 : 0]   m_texel00, // (0, 0), as (s, t). s and t are switched since the address is constructed like {texelT, texelS}
-    output wire [TEXEL_WIDTH - 1 : 0]   m_texel01, // (1, 0)
-    output wire [TEXEL_WIDTH - 1 : 0]   m_texel10, // (0, 1)
-    output wire [TEXEL_WIDTH - 1 : 0]   m_texel11, // (1, 1)
     output wire                         m_clampU,
     output wire                         m_clampV,
     // This is basically the faction of te pixel coordinate and has a range from 0.0 (0x0) to 0.999... (0xffff)
@@ -206,11 +196,11 @@ module TextureSampler #(
 
     //////////////////////////////////////////////
     // STEP 1
-    // Build RAM addresses
+    // Build addresses and output context
     // Clocks: 1
     //////////////////////////////////////////////
-    reg                         step1_clampS;
-    reg                         step1_clampT;
+    reg                         step1_clampU;
+    reg                         step1_clampV;
     reg  [15 : 0]               step1_texelU0; // Q1.15
     reg  [15 : 0]               step1_texelU1; // Q1.15
     reg  [15 : 0]               step1_texelV0; // Q1.15
@@ -226,9 +216,6 @@ module TextureSampler #(
         reg [31 : 0] texelS1; // S16.15
         reg [31 : 0] texelT0; // S16.15
         reg [31 : 0] texelT1; // S16.15
-
-        step1_clampS <= step0_clampS;
-        step1_clampT <= step0_clampT;
 
         if (enableHalfPixelOffset)
         begin
@@ -250,6 +237,13 @@ module TextureSampler #(
         step1_texelV0 = clampTexture(texelT0, step0_clampT);
         step1_texelV1 = clampTexture(texelT1, step0_clampT);
 
+        // Check if this is still needed. I think this is a workaround for an old 
+        // texture buffer, which was not capable to access four times the same address.
+        // But the current texture buffer obviously is to then this signals and the
+        // clamping in TextureClamp should not be needed anymore.
+        step1_clampU <= step0_clampS && ((texelS0[0 +: 16] > texelS1[0 +: 16]) || (!texelS0[15] && texelS1[15]));
+        step1_clampV <= step0_clampT && ((texelT0[0 +: 16] > texelT1[0 +: 16]) || (!texelT0[15] && texelT1[15]));
+
         texelAddr00 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV0[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU0[7 +: 8] >> step0_widthShift });
         texelAddr01 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV0[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU1[7 +: 8] >> step0_widthShift });
         texelAddr10 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV1[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU0[7 +: 8] >> step0_widthShift });
@@ -263,108 +257,14 @@ module TextureSampler #(
 
     //////////////////////////////////////////////
     // STEP 2
-    // Wait for data
-    // Clocks: 2
-    //////////////////////////////////////////////
-    wire                        step2_clampU;
-    wire                        step2_clampV;
-    wire [15 : 0]               step2_subCoordU; // Q0.16
-    wire [15 : 0]               step2_subCoordV; // Q0.16
-    reg  [TEXEL_WIDTH - 1 : 0]  step2_texel00;
-    reg  [TEXEL_WIDTH - 1 : 0]  step2_texel01;
-    reg  [TEXEL_WIDTH - 1 : 0]  step2_texel10;
-    reg  [TEXEL_WIDTH - 1 : 0]  step2_texel11;
-    wire                        step2_valid;
-    wire [USER_WIDTH - 1 : 0]   step2_user;
-
-    // Check if we have to clamp
-    // Check if the texel coordinate is smaller than texel+1. If so, we have an overflow and we have to clamp.
-    // OR, since the texel coordinate is a Q1.15 number, we need a dedicated check for the integer part. Could be,
-    // that just the fraction part overflows but not the whole variable. Therefore also check for it by checking the
-    // most significant bit.
-    wire step2_clampUTmp = step1_clampS && ((step1_texelU0 > step1_texelU1) || (!step1_texelU0[15] && step1_texelU1[15]));
-    wire step2_clampVTmp = step1_clampT && ((step1_texelV0 > step1_texelV1) || (!step1_texelV0[15] && step1_texelV1[15]));
-
-    ValueDelay #( 
-        .VALUE_SIZE(16 + 16 + 1 + 1 + 1 + USER_WIDTH),
-        .DELAY(2)
-    ) step2_delay (
-        .clk(aclk), 
-        .ce(ce), 
-        .in({
-            step1_subCoordU,
-            step1_subCoordV,
-            step2_clampUTmp,
-            step2_clampVTmp,
-            step1_valid,
-            step1_user
-        }), 
-        .out({
-            step2_subCoordU,
-            step2_subCoordV,
-            step2_clampU,
-            step2_clampV,
-            step2_valid,
-            step2_user
-        })
-    );
-
-    // The texture memory has one clock delay and the texture buffer has no flow control.
-    // As soon as the destination requires a stall, a pixel from the TextureBuffer must be skidded here.
-    reg                         step2_skid = 0;
-    reg  [TEXEL_WIDTH - 1 : 0]  step2_skid_texel00;
-    reg  [TEXEL_WIDTH - 1 : 0]  step2_skid_texel01;
-    reg  [TEXEL_WIDTH - 1 : 0]  step2_skid_texel10;
-    reg  [TEXEL_WIDTH - 1 : 0]  step2_skid_texel11;
-    always @(posedge aclk)
-    begin
-        if (ce)
-        begin
-            if (step2_skid)
-            begin
-                step2_skid <= 0;
-                step2_texel00 <= step2_skid_texel00;
-                step2_texel01 <= step2_skid_texel01;
-                step2_texel10 <= step2_skid_texel10;
-                step2_texel11 <= step2_skid_texel11;
-            end
-            else
-            begin
-                step2_texel00 <= texelInput00;
-                step2_texel01 <= texelInput01;
-                step2_texel10 <= texelInput10;
-                step2_texel11 <= texelInput11;
-            end
-        end
-        else
-        begin
-            if (!step2_skid)
-            begin
-                step2_skid <= 1;
-                step2_skid_texel00 <= texelInput00;
-                step2_skid_texel01 <= texelInput01;
-                step2_skid_texel10 <= texelInput10;
-                step2_skid_texel11 <= texelInput11;
-            end
-        end
-    end
-
-    //////////////////////////////////////////////
-    // STEP 3
     // Output
     // Clocks: 0
     //////////////////////////////////////////////
-    assign m_texel00 = step2_texel00;
-    assign m_texel01 = step2_texel01;
-    assign m_texel10 = step2_texel10;
-    assign m_texel11 = step2_texel11;
-    assign m_clampU = step2_clampU;
-    assign m_clampV = step2_clampV;
-
-    assign m_texelSubCoordS = step2_subCoordU;
-    assign m_texelSubCoordT = step2_subCoordV;
-
-    assign m_valid = step2_valid;
-    assign m_user = step2_user;
+    assign m_clampU = step1_clampU;
+    assign m_clampV = step1_clampV;
+    assign m_texelSubCoordS = step1_subCoordU;
+    assign m_texelSubCoordT = step1_subCoordV;
+    assign m_valid = step1_valid;
+    assign m_user = step1_user;
 
 endmodule 
