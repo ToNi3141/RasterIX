@@ -48,11 +48,17 @@ module TextureBuffer #(
     input  wire                             aclk,
     input  wire                             resetn,
 
-    // Texture Read
+    // Texture read address channel
+    input  wire                             texelAddrValid,
+    output wire                             texelAddrReady,
     input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr00,
     input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr01,
     input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr10,
     input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr11,
+
+    // Texture read texel channel
+    output wire                             texelOutputValid,
+    input  wire                             texelOutputReady,
     output wire [TEXEL_WIDTH - 1 : 0]       texelOutput00,
     output wire [TEXEL_WIDTH - 1 : 0]       texelOutput01,
     output wire [TEXEL_WIDTH - 1 : 0]       texelOutput10,
@@ -85,10 +91,11 @@ module TextureBuffer #(
     wire                                memWriteEven;
     wire                                memWriteOdd;
 
-    reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding00;
-    reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding01;
-    reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding10;
-    reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForDecoding11;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForReading00;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForReading01;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForReading10;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]       texelAddrForReading11;
+    reg                                 texelOutputValidReg;
 
     wire [ADDR_WIDTH - 1 : 0]           memReadAddrEven0;
     wire [ADDR_WIDTH - 1 : 0]           memReadAddrOdd0;
@@ -152,20 +159,41 @@ module TextureBuffer #(
     //  Build RAM addresses
     //////////////////////////////////////////////
 
-    // Muxing of the RAM access to query the texels from the even and odd RAMs.
-    // The odd RAM only contains the texels of the odd s coordinates. The even only the texels of an even s
-    assign memReadAddrEven0 = (texelAddr00[0]) ? texelAddr01[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr00[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
-    assign memReadAddrOdd0  = (texelAddr00[0]) ? texelAddr00[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr01[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
-    assign memReadAddrEven1 = (texelAddr10[0]) ? texelAddr11[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr10[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
-    assign memReadAddrOdd1  = (texelAddr10[0]) ? texelAddr10[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddr11[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
+    // The odd RAM only contains the texels of the odd s coordinates. The even only the texels of an even s.
+    wire                                texelAddrTransfer = texelAddrValid && texelAddrReady;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory00 = texelAddrTransfer ? texelAddr00 : texelAddrForReading00;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory01 = texelAddrTransfer ? texelAddr01 : texelAddrForReading01;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory10 = texelAddrTransfer ? texelAddr10 : texelAddrForReading10;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory11 = texelAddrTransfer ? texelAddr11 : texelAddrForReading11;
+
+    assign texelAddrReady = !texelOutputValidReg || texelOutputReady;
+
+    assign memReadAddrEven0 = (texelAddrMemory00[0]) ? texelAddrMemory01[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddrMemory00[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
+    assign memReadAddrOdd0  = (texelAddrMemory00[0]) ? texelAddrMemory00[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddrMemory01[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
+    assign memReadAddrEven1 = (texelAddrMemory10[0]) ? texelAddrMemory11[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddrMemory10[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
+    assign memReadAddrOdd1  = (texelAddrMemory10[0]) ? texelAddrMemory10[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddrMemory11[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
 
     always @(posedge aclk)
     begin
-        // Save decoding information to select the right word from the memory read vector
-        texelAddrForDecoding00 <= texelAddr00;
-        texelAddrForDecoding01 <= texelAddr01;
-        texelAddrForDecoding10 <= texelAddr10;
-        texelAddrForDecoding11 <= texelAddr11;
+        if (!resetn)
+        begin
+            texelOutputValidReg <= 0;
+        end
+        else
+        begin
+            if (texelAddrTransfer)
+            begin
+                texelAddrForReading00 <= texelAddr00;
+                texelAddrForReading01 <= texelAddr01;
+                texelAddrForReading10 <= texelAddr10;
+                texelAddrForReading11 <= texelAddr11;
+            end
+
+            if (!texelOutputValidReg || texelOutputReady)
+            begin
+                texelOutputValidReg <= texelAddrTransfer;
+            end
+        end
     end
 
     //////////////////////////////////////////////
@@ -175,34 +203,34 @@ module TextureBuffer #(
     generate
         if (MEM_WIDTH <= 32)
         begin
-            assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0
-                                                                : memReadDataEven0;
+            assign texelSelect00 = (texelAddrForReading00[0])  ? memReadDataOdd0
+                                                               : memReadDataEven0;
 
-            assign texelSelect01 = (texelAddrForDecoding01[0])  ? memReadDataOdd0
-                                                                : memReadDataEven0;
+            assign texelSelect01 = (texelAddrForReading01[0])  ? memReadDataOdd0
+                                                               : memReadDataEven0;
 
-            assign texelSelect10 = (texelAddrForDecoding10[0])  ? memReadDataOdd1
-                                                                : memReadDataEven1;
+            assign texelSelect10 = (texelAddrForReading10[0])  ? memReadDataOdd1
+                                                               : memReadDataEven1;
 
-            assign texelSelect11 = (texelAddrForDecoding11[0])  ? memReadDataOdd1
-                                                                : memReadDataEven1;
+            assign texelSelect11 = (texelAddrForReading11[0])  ? memReadDataOdd1
+                                                               : memReadDataEven1;
         end
         else 
         begin
             // Bit zero is used to check, if we have to select the RAM with the even or uneven pixel addresses (see also the multiplexing of the memReadAddr*)
             // Since bit zero is already used from the ADDR_WIDTH_DIFF to select the even or uneven ram, we can use the rest of the
             // bits to select the pixel from the vector. Therefore we start at position 1 and select one bit less from ADDR_WIDTH_DIFF to keep the selection in bound.
-            assign texelSelect00 = (texelAddrForDecoding00[0])  ? memReadDataOdd0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH]
-                                                                : memReadDataEven0[texelAddrForDecoding00[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH];
+            assign texelSelect00 = (texelAddrForReading00[0])  ? memReadDataOdd0[texelAddrForReading00[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH]
+                                                               : memReadDataEven0[texelAddrForReading00[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH];
 
-            assign texelSelect01 = (texelAddrForDecoding01[0])  ? memReadDataOdd0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH]
-                                                                : memReadDataEven0[texelAddrForDecoding01[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH];
+            assign texelSelect01 = (texelAddrForReading01[0])  ? memReadDataOdd0[texelAddrForReading01[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH]
+                                                               : memReadDataEven0[texelAddrForReading01[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH];
 
-            assign texelSelect10 = (texelAddrForDecoding10[0])  ? memReadDataOdd1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH]
-                                                                : memReadDataEven1[texelAddrForDecoding10[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH];
+            assign texelSelect10 = (texelAddrForReading10[0])  ? memReadDataOdd1[texelAddrForReading10[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH]
+                                                               : memReadDataEven1[texelAddrForReading10[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH];
 
-            assign texelSelect11 = (texelAddrForDecoding11[0])  ? memReadDataOdd1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH]
-                                                                : memReadDataEven1[texelAddrForDecoding11[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH];
+            assign texelSelect11 = (texelAddrForReading11[0])  ? memReadDataOdd1[texelAddrForReading11[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH]
+                                                               : memReadDataEven1[texelAddrForReading11[1 +: ADDR_WIDTH_DIFF - 1] * TEXEL_WIDTH +: TEXEL_WIDTH];
         end
     endgenerate
 
@@ -210,6 +238,7 @@ module TextureBuffer #(
     assign texelOutput01 = texelSelect01;
     assign texelOutput10 = texelSelect10;
     assign texelOutput11 = texelSelect11;
+    assign texelOutputValid = texelOutputValidReg;
 
     //////////////////////////////////////////////
     // AXIS Interface
