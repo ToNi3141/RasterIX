@@ -66,6 +66,7 @@ add_verilator_test(attributeInterpolator AttributeInterpolator ${RTL_RASTERIX}/A
 add_verilator_test(functionInterpolator FunctionInterpolator ${RTL_RASTERIX}/FunctionInterpolator.v)
 add_verilator_test(textureSampler TextureSamplerTestModule ${CMAKE_CURRENT_SOURCE_DIR}/v/TextureSamplerTestModule.v)
 add_verilator_test(texelColorUnpack TexelColorUnpack ${RTL_RASTERIX}/TexelColorUnpack.v)
+add_verilator_test(textureClamp TextureClamp ${RTL_RASTERIX}/TextureClamp.v)
 add_verilator_test(colorInterpolator ColorInterpolator ${RTL_RASTERIX}/ColorInterpolator.v)
 add_verilator_test(texEnv TexEnv ${RTL_RASTERIX}/TexEnv.v)
 add_verilator_test(stencilOp StencilOp ${RTL_RASTERIX}/StencilOp.v)

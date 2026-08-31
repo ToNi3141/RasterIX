@@ -155,6 +155,17 @@ module TextureMappingUnit
     wire                        step1_ready;
     wire                        step1_valid;
     wire [USER_WIDTH - 1 : 0]   step1_user;
+    wire                        step1_clampReady;
+    wire                        step1_clampValid;
+    wire [(2 * PIXEL_WIDTH) + USER_WIDTH - 1 : 0] step1_clampUser;
+    wire [15 : 0]               step1_clampSubCoordS;
+    wire [15 : 0]               step1_clampSubCoordT;
+    wire                        step1_clampU;
+    wire                        step1_clampV;
+    wire [TEXEL_WIDTH - 1 : 0]  step1_clampedTexel00;
+    wire [TEXEL_WIDTH - 1 : 0]  step1_clampedTexel01;
+    wire [TEXEL_WIDTH - 1 : 0]  step1_clampedTexel10;
+    wire [TEXEL_WIDTH - 1 : 0]  step1_clampedTexel11;
     wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel00;
     wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel01;
     wire [PIXEL_WIDTH - 1 : 0]  step1_unpackedTexel10;
@@ -194,7 +205,7 @@ module TextureMappingUnit
         .s_textureLod(step0_lod),
         
         .m_valid(step1_valid),
-        .m_ready(step1_ready),
+        .m_ready(step1_clampReady),
         .m_user({
             step1_primaryColor,
             step1_previousColor,
@@ -204,15 +215,51 @@ module TextureMappingUnit
         .m_texel01(step1_texel01),
         .m_texel10(step1_texel10),
         .m_texel11(step1_texel11),
+        .m_clampU(step1_clampU),
+        .m_clampV(step1_clampV),
         .m_texelSubCoordS(step1_texelSubCoordS),
         .m_texelSubCoordT(step1_texelSubCoordT)
+    );
+
+    TextureClamp #(
+        .TEXEL_WIDTH(TEXEL_WIDTH),
+        .USER_WIDTH((2 * PIXEL_WIDTH) + USER_WIDTH)
+    ) textureClamp (
+        .aclk(aclk),
+        .resetn(resetn),
+
+        .s_valid(step1_valid),
+        .s_ready(step1_clampReady),
+        .s_user({
+            step1_primaryColor,
+            step1_previousColor,
+            step1_user
+        }),
+        .s_texel00(step1_texel00),
+        .s_texel01(step1_texel01),
+        .s_texel10(step1_texel10),
+        .s_texel11(step1_texel11),
+        .s_texelSubCoordS(step1_texelSubCoordS),
+        .s_texelSubCoordT(step1_texelSubCoordT),
+        .s_clampU(step1_clampU),
+        .s_clampV(step1_clampV),
+
+        .m_ready(step1_ready),
+        .m_valid(step1_clampValid),
+        .m_user(step1_clampUser),
+        .m_texel00(step1_clampedTexel00),
+        .m_texel01(step1_clampedTexel01),
+        .m_texel10(step1_clampedTexel10),
+        .m_texel11(step1_clampedTexel11),
+        .m_texelSubCoordS(step1_clampSubCoordS),
+        .m_texelSubCoordT(step1_clampSubCoordT)
     );
 
     TexelColorUnpack #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack00 (
         .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-        .texelInput(step1_texel00),
+        .texelInput(step1_clampedTexel00),
         .texelOutput(step1_unpackedTexel00)
     );
 
@@ -220,7 +267,7 @@ module TextureMappingUnit
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack01 (
         .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-        .texelInput(step1_texel01),
+        .texelInput(step1_clampedTexel01),
         .texelOutput(step1_unpackedTexel01)
     );
 
@@ -228,7 +275,7 @@ module TextureMappingUnit
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack10 (
         .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-        .texelInput(step1_texel10),
+        .texelInput(step1_clampedTexel10),
         .texelOutput(step1_unpackedTexel10)
     );
 
@@ -236,7 +283,7 @@ module TextureMappingUnit
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) texelColorUnpack11 (
         .confPixelFormat(confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
-        .texelInput(step1_texel11),
+        .texelInput(step1_clampedTexel11),
         .texelOutput(step1_unpackedTexel11)
     );
 
@@ -261,19 +308,15 @@ module TextureMappingUnit
 
         .enable(ENABLE_TEXTURE_FILTERING & confTextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS +: RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_SIZE]),
 
-        .s_valid(step1_valid),
+        .s_valid(step1_clampValid),
         .s_ready(step1_ready),
-        .s_user({
-            step1_primaryColor,
-            step1_previousColor,
-            step1_user
-        }),
+        .s_user(step1_clampUser),
         .s_texel00(step1_unpackedTexel00),
         .s_texel01(step1_unpackedTexel01),
         .s_texel10(step1_unpackedTexel10),
         .s_texel11(step1_unpackedTexel11),
-        .s_texelSubCoordS(step1_texelSubCoordS),
-        .s_texelSubCoordT(step1_texelSubCoordT),
+        .s_texelSubCoordS(step1_clampSubCoordS),
+        .s_texelSubCoordT(step1_clampSubCoordT),
 
         .m_valid(step2_valid),
         .m_ready(step2_ready),

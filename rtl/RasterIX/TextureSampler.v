@@ -61,6 +61,8 @@ module TextureSampler #(
     output wire [TEXEL_WIDTH - 1 : 0]   m_texel01, // (1, 0)
     output wire [TEXEL_WIDTH - 1 : 0]   m_texel10, // (0, 1)
     output wire [TEXEL_WIDTH - 1 : 0]   m_texel11, // (1, 1)
+    output wire                         m_clampU,
+    output wire                         m_clampV,
     // This is basically the faction of te pixel coordinate and has a range from 0.0 (0x0) to 0.999... (0xffff)
     // The integer part is not required, since the integer part only addresses the pixel and we don't care about that.
     // We just care about the coordinates within the texel quad. And if there the coordinate gets >1.0, that means, we
@@ -277,14 +279,14 @@ module TextureSampler #(
 
     // Check if we have to clamp
     // Check if the texel coordinate is smaller than texel+1. If so, we have an overflow and we have to clamp.
-    // OR, since the texel coordinate is a Q1.15 number, we need a dedicated check for the integer part. Could be, 
-    // that just the fraction part overflows but not the whole variable. Therefor also check for it by checking the
+    // OR, since the texel coordinate is a Q1.15 number, we need a dedicated check for the integer part. Could be,
+    // that just the fraction part overflows but not the whole variable. Therefore also check for it by checking the
     // most significant bit.
     wire step2_clampUTmp = step1_clampS && ((step1_texelU0 > step1_texelU1) || (!step1_texelU0[15] && step1_texelU1[15]));
     wire step2_clampVTmp = step1_clampT && ((step1_texelV0 > step1_texelV1) || (!step1_texelV0[15] && step1_texelV1[15]));
 
     ValueDelay #( 
-        .VALUE_SIZE(16 + 16 + 1 + 1 + 1 + USER_WIDTH), 
+        .VALUE_SIZE(16 + 16 + 1 + 1 + 1 + USER_WIDTH),
         .DELAY(2)
     ) step2_delay (
         .clk(aclk), 
@@ -349,52 +351,20 @@ module TextureSampler #(
 
     //////////////////////////////////////////////
     // STEP 3
-    // Clamp texel quad
-    // Clocks: 1
-    //////////////////////////////////////////////
-    reg  [15 : 0]               step3_subCoordU; // Q0.16
-    reg  [15 : 0]               step3_subCoordV; // Q0.16
-    reg  [TEXEL_WIDTH - 1 : 0]  step3_texel00;
-    reg  [TEXEL_WIDTH - 1 : 0]  step3_texel01;
-    reg  [TEXEL_WIDTH - 1 : 0]  step3_texel10;
-    reg  [TEXEL_WIDTH - 1 : 0]  step3_texel11;
-    reg                         step3_valid;
-    reg  [USER_WIDTH - 1 : 0]   step3_user;
-
-    always @(posedge aclk)
-    if (ce) begin : ClampTexelQuad
-        
-        // Clamp texel quad
-        step3_texel00 <= step2_texel00;
-        step3_texel01 <= (step2_clampU) ? step2_texel00 
-                                        : step2_texel01;
-        step3_texel10 <= (step2_clampV) ? step2_texel00 
-                                        : step2_texel10;
-        step3_texel11 <= (step2_clampU) ? (step2_clampV) ? step2_texel00 
-                                                         : step2_texel10
-                                        : (step2_clampV) ? step2_texel01 
-                                                         : step2_texel11;
-
-        step3_subCoordU <= step2_subCoordU;
-        step3_subCoordV <= step2_subCoordV;
-        step3_valid <= step2_valid;
-        step3_user <= step2_user;
-    end
-
-    //////////////////////////////////////////////
-    // STEP 4
     // Output
     // Clocks: 0
     //////////////////////////////////////////////
-    assign m_texel00 = step3_texel00;
-    assign m_texel01 = step3_texel01;
-    assign m_texel10 = step3_texel10;
-    assign m_texel11 = step3_texel11;
+    assign m_texel00 = step2_texel00;
+    assign m_texel01 = step2_texel01;
+    assign m_texel10 = step2_texel10;
+    assign m_texel11 = step2_texel11;
+    assign m_clampU = step2_clampU;
+    assign m_clampV = step2_clampV;
 
-    assign m_texelSubCoordS = step3_subCoordU;
-    assign m_texelSubCoordT = step3_subCoordV;
+    assign m_texelSubCoordS = step2_subCoordU;
+    assign m_texelSubCoordT = step2_subCoordV;
 
-    assign m_valid = step3_valid;
-    assign m_user = step3_user;
+    assign m_valid = step2_valid;
+    assign m_user = step2_user;
 
 endmodule 
