@@ -95,6 +95,8 @@ module PixelPipeline
 
     // Texture access
     // TMU0 texel quad access
+    output wire                                     texel0AddrValid,
+    input  wire                                     texel0AddrReady,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr00,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr01,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel0Addr10,
@@ -103,7 +105,11 @@ module PixelPipeline
     input  wire [TEXEL_WIDTH - 1 : 0]               texel0Input01,
     input  wire [TEXEL_WIDTH - 1 : 0]               texel0Input10,
     input  wire [TEXEL_WIDTH - 1 : 0]               texel0Input11,
+    input  wire                                     texel0InputValid,
+    output wire                                     texel0InputReady,
     // TMU1 texel quad access
+    output wire                                     texel1AddrValid,
+    input  wire                                     texel1AddrReady,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr00,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr01,
     output wire [TEX_ADDR_WIDTH - 1 : 0]            texel1Addr10,
@@ -112,6 +118,8 @@ module PixelPipeline
     input  wire [TEXEL_WIDTH - 1 : 0]               texel1Input01,
     input  wire [TEXEL_WIDTH - 1 : 0]               texel1Input10,
     input  wire [TEXEL_WIDTH - 1 : 0]               texel1Input11,
+    input  wire                                     texel1InputValid,
+    output wire                                     texel1InputReady,
 
     input  wire                                     m_frag_tready,
     output wire [PIXEL_WIDTH - 1 : 0]               m_frag_tfragmentColor,
@@ -169,11 +177,15 @@ module PixelPipeline
         .confTextureConfig(confTMU0TextureConfig),
         .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS]),
 
+        .texelAddrValid(texel0AddrValid),
+        .texelAddrReady(texel0AddrReady),
         .texelAddr00(texel0Addr00),
         .texelAddr01(texel0Addr01),
         .texelAddr10(texel0Addr10),
         .texelAddr11(texel0Addr11),
 
+        .texelInputValid(texel0InputValid),
+        .texelInputReady(texel0InputReady),
         .texelInput00(texel0Input00),
         .texelInput01(texel0Input01),
         .texelInput10(texel0Input10),
@@ -256,11 +268,15 @@ module PixelPipeline
                 .confTextureConfig(confTMU1TextureConfig),
                 .confEnable(confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS]),
 
+                .texelAddrValid(texel1AddrValid),
+                .texelAddrReady(texel1AddrReady),
                 .texelAddr00(texel1Addr00),
                 .texelAddr01(texel1Addr01),
                 .texelAddr10(texel1Addr10),
                 .texelAddr11(texel1Addr11),
 
+                .texelInputValid(texel1InputValid),
+                .texelInputReady(texel1InputReady),
                 .texelInput00(texel1Input00),
                 .texelInput01(texel1Input01),
                 .texelInput10(texel1Input10),
@@ -310,10 +326,12 @@ module PixelPipeline
             assign step2_keep = step1_keep;
             assign step2_last = step1_last;
             assign step1_ready = step2_ready;
+            assign texel1AddrValid = 0;
             assign texel1Addr00 = 0;
             assign texel1Addr01 = 0;
             assign texel1Addr10 = 0;
             assign texel1Addr11 = 0;
+            assign texel1InputReady = 1;
         end
     endgenerate
 
