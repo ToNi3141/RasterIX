@@ -51,8 +51,6 @@ module TextureSampler #(
     output wire                         m_valid,
     input  wire                         m_ready,
     output wire [USER_WIDTH - 1 : 0]    m_user,
-    output wire                         m_clampU,
-    output wire                         m_clampV,
     // This is basically the faction of te pixel coordinate and has a range from 0.0 (0x0) to 0.999... (0xffff)
     // The integer part is not required, since the integer part only addresses the pixel and we don't care about that.
     // We just care about the coordinates within the texel quad. And if there the coordinate gets >1.0, that means, we
@@ -199,8 +197,6 @@ module TextureSampler #(
     // Build addresses and output context
     // Clocks: 1
     //////////////////////////////////////////////
-    reg                         step1_clampU;
-    reg                         step1_clampV;
     reg  [15 : 0]               step1_texelU0; // Q1.15
     reg  [15 : 0]               step1_texelU1; // Q1.15
     reg  [15 : 0]               step1_texelV0; // Q1.15
@@ -237,13 +233,6 @@ module TextureSampler #(
         step1_texelV0 = clampTexture(texelT0, step0_clampT);
         step1_texelV1 = clampTexture(texelT1, step0_clampT);
 
-        // Check if this is still needed. I think this is a workaround for an old 
-        // texture buffer, which was not capable to access four times the same address.
-        // But the current texture buffer obviously is to then this signals and the
-        // clamping in TextureClamp should not be needed anymore.
-        step1_clampU <= step0_clampS && ((texelS0[0 +: 16] > texelS1[0 +: 16]) || (!texelS0[15] && texelS1[15]));
-        step1_clampV <= step0_clampT && ((texelT0[0 +: 16] > texelT1[0 +: 16]) || (!texelT0[15] && texelT1[15]));
-
         texelAddr00 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV0[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU0[7 +: 8] >> step0_widthShift });
         texelAddr01 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV0[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU1[7 +: 8] >> step0_widthShift });
         texelAddr10 <= step0_offset[0 +: 17] + (({ 9'h0, step1_texelV1[7 +: 8] >> step0_heightShift } << step0_width) | { 9'h0, step1_texelU0[7 +: 8] >> step0_widthShift });
@@ -260,8 +249,6 @@ module TextureSampler #(
     // Output
     // Clocks: 0
     //////////////////////////////////////////////
-    assign m_clampU = step1_clampU;
-    assign m_clampV = step1_clampV;
     assign m_texelSubCoordS = step1_subCoordU;
     assign m_texelSubCoordT = step1_subCoordV;
     assign m_valid = step1_valid;
