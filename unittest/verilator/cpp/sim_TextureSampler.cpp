@@ -26,8 +26,6 @@ struct SamplerResult
     std::array<uint32_t, 4> addresses;
     uint16_t subCoordS;
     uint16_t subCoordT;
-    bool clampU = false;
-    bool clampV = false;
 };
 
 void requestTexture(VTextureSampler* top, uint32_t texelS, uint32_t texelT, const SamplerResult& expected)
@@ -50,8 +48,6 @@ void requestTexture(VTextureSampler* top, uint32_t texelS, uint32_t texelT, cons
     REQUIRE(top->texelAddr11 == expected.addresses[3]);
     REQUIRE(top->m_texelSubCoordS == expected.subCoordS);
     REQUIRE(top->m_texelSubCoordT == expected.subCoordT);
-    REQUIRE(top->m_clampU == expected.clampU);
-    REQUIRE(top->m_clampV == expected.clampV);
 
     rr::ut::clk(top);
     REQUIRE(top->m_valid == 0);
@@ -92,14 +88,14 @@ TEST_CASE("Clamp texture addresses at the upper edge", "[TextureSampler]")
     VTextureSampler* top = makeSampler();
 
     top->s_clampS = 1;
-    requestTexture(top, 0x4000, 0x4000, { { 3, 3, 1, 1 }, 0x0000, 0x0000, true, false });
+    requestTexture(top, 0x4000, 0x4000, { { 3, 3, 1, 1 }, 0x0000, 0x0000 });
 
     top->s_clampS = 0;
     top->s_clampT = 1;
-    requestTexture(top, 0x4000, 0x4000, { { 3, 2, 3, 2 }, 0x0000, 0x0000, false, true });
+    requestTexture(top, 0x4000, 0x4000, { { 3, 2, 3, 2 }, 0x0000, 0x0000 });
 
     top->s_clampS = 1;
-    requestTexture(top, 0x4000, 0x4000, { { 3, 3, 3, 3 }, 0x0000, 0x0000, true, true });
+    requestTexture(top, 0x4000, 0x4000, { { 3, 3, 3, 3 }, 0x0000, 0x0000 });
 
     delete top;
 }
@@ -148,7 +144,7 @@ TEST_CASE("Apply half pixel offset", "[TextureSampler]")
 
     top->s_clampS = 1;
     top->s_clampT = 1;
-    requestTexture(top, 0, 0, { { 0, 0, 0, 0 }, 0x8000, 0x8000, true, true });
+    requestTexture(top, 0, 0, { { 0, 0, 0, 0 }, 0x8000, 0x8000 });
 
     delete top;
 }

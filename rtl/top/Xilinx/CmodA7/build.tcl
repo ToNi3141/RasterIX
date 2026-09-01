@@ -77,7 +77,6 @@ read_verilog ./../../../../RasterIX/TestFunc.v
 read_verilog ./../../../../RasterIX/TexEnv.v
 read_verilog ./../../../../RasterIX/TexelColorUnpack.v
 read_verilog ./../../../../RasterIX/TextureBuffer.v
-read_verilog ./../../../../RasterIX/TextureClamp.v
 read_verilog ./../../../../RasterIX/TextureFilter.v
 read_verilog ./../../../../RasterIX/TextureMappingUnit.v
 read_verilog ./../../../../RasterIX/TextureSampler.v
