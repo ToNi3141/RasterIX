@@ -66,6 +66,9 @@ add_verilator_test(attributeInterpolator AttributeInterpolator ${RTL_RASTERIX}/A
 add_verilator_test(functionInterpolator FunctionInterpolator ${RTL_RASTERIX}/FunctionInterpolator.v)
 add_verilator_test(textureSampler TextureSampler ${RTL_RASTERIX}/TextureSampler.v)
 add_verilator_test(textureBuffer TextureBuffer ${RTL_RASTERIX}/TextureBuffer.v)
+add_verilator_test(textureMMU TextureMMU ${RTL_RASTERIX}/TextureMMU.v)
+add_verilator_test(textureMemory TextureMemory ${RTL_RASTERIX}/TextureMemory.v
+    ${RTL_3RDPARTY}/verilog-axis)
 add_verilator_test(texelColorUnpack TexelColorUnpack ${RTL_RASTERIX}/TexelColorUnpack.v)
 add_verilator_test(colorInterpolator ColorInterpolator ${RTL_RASTERIX}/ColorInterpolator.v)
 add_verilator_test(texEnv TexEnv ${RTL_RASTERIX}/TexEnv.v)
