@@ -287,8 +287,8 @@ module TextureMappingUnit
         .STREAM1_WIDTH(CONTEXT_STREAM_WIDTH),
         .STREAM2_WIDTH(1), // TODO: Make this channel optional
         .STREAM3_WIDTH(1), // TODO: Make this channel optional
-        .FIFO_DEPTH0_POW2(1),
-        .FIFO_DEPTH1_POW2(1),
+        .FIFO_DEPTH0_POW2(5),
+        .FIFO_DEPTH1_POW2(5),
         .FIFO_DEPTH2_POW2(0),
         .FIFO_DEPTH3_POW2(0)
     ) textureReadConcat (

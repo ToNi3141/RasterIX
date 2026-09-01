@@ -55,6 +55,8 @@ read_verilog ./../../../../RasterIX/LogicOp.v
 read_verilog ./../../../../RasterIX/MemoryReadRequestGenerator.v
 read_verilog ./../../../../RasterIX/MipmapOptimizedRam.v
 read_verilog ./../../../../RasterIX/PagedMemoryReader.v
+read_verilog ./../../../../RasterIX/TextureMemory.v
+read_verilog ./../../../../RasterIX/TextureMMU.v
 read_verilog ./../../../../RasterIX/PerFragmentPipeline.v
 read_verilog ./../../../../RasterIX/PixelPipeline.v
 read_verilog ./../../../../RasterIX/PixelUtil.vh
