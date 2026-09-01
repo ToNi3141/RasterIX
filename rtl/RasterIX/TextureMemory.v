@@ -168,7 +168,7 @@ module TextureMemory #(
         .s_axis_tlast(s_axis_tlast),
         .s_axis_tdata(s_axis_tdata),
 
-        .s_araddr(bc_araddr_0),
+        .s_araddr(bc_araddr_0 << 1), // Convert from word address to byte address
         .s_arvalid(bc_valid_0),
         .s_arready(bc_ready_0),
 

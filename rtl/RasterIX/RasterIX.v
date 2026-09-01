@@ -48,6 +48,7 @@ module RasterIX #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TEXTURE_PAGE_SIZE = 2048,
+    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 0,
 
     // Enables the fog unit
     parameter ENABLE_FOG = 1,
@@ -164,6 +165,7 @@ module RasterIX #(
                 .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
                 .ENABLE_FOG(ENABLE_FOG),
                 .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
+                .ENABLE_EXTERNAL_TEXTURE_MEMORY(ENABLE_EXTERNAL_TEXTURE_MEMORY),
                 .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
@@ -244,6 +246,7 @@ module RasterIX #(
                 .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
                 .ENABLE_FOG(ENABLE_FOG),
                 .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
+                .ENABLE_EXTERNAL_TEXTURE_MEMORY(ENABLE_EXTERNAL_TEXTURE_MEMORY),
                 .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
