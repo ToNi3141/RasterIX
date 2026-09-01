@@ -18,7 +18,7 @@
 `include "PixelUtil.vh"
 
 module TextureTexelContextManager #(
-    localparam TEX_ADDR_WIDTH = 17
+    parameter TEX_ADDR_WIDTH = 17
 )
 (
     input  wire                             aclk,
