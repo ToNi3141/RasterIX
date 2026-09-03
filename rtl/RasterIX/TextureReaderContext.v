@@ -17,7 +17,7 @@
 
 `include "PixelUtil.vh"
 
-module TextureTexelContext #(
+module TextureReaderContext #(
     parameter TEXEL_WIDTH = 16
 )
 (

@@ -17,7 +17,7 @@
 
 `include "PixelUtil.vh"
 
-module TextureTexelContextManager #(
+module TextureReaderController #(
     parameter TEX_ADDR_WIDTH = 17
 )
 (
@@ -132,6 +132,7 @@ module TextureTexelContextManager #(
 
                 // Check which texels do not match and set the corresponding address
                 // to load them.
+                // TODO: Only check all 4 texel when texture filtering is enabled
                 if (!texel_match[0])
                 begin
                     m_araddr <= r_texel00_next;

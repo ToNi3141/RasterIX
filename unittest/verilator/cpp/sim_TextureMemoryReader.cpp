@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "VTextureMemory.h"
+#include "VTextureMemoryReader.h"
 
 namespace
 {
@@ -15,11 +15,16 @@ constexpr std::size_t MAX_WAIT_CYCLES { 128 };
 using TexelAddresses = std::array<std::uint32_t, 4>;
 using Texels = std::array<std::uint16_t, 4>;
 
+std::uint32_t axiAddressForWord(std::uint32_t wordAddress)
+{
+    return PAGE_BASE + (wordAddress << 1);
+}
+
 class TextureMemoryFixture
 {
 public:
     TextureMemoryFixture()
-        : textureMemory { rr::ut::makeTop<VTextureMemory>() }
+        : textureMemory { rr::ut::makeTop<VTextureMemoryReader>() }
     {
         textureMemory->texelAddrValid = 0;
         textureMemory->texelAddr00 = 0;
@@ -115,7 +120,7 @@ public:
     {
         for (std::size_t texelIndex = 0; texelIndex < addresses.size(); ++texelIndex)
         {
-            acceptRead(PAGE_BASE + addresses[texelIndex]);
+            acceptRead(axiAddressForWord(addresses[texelIndex]));
             sendReadResponse(texels[texelIndex]);
         }
     }
@@ -146,7 +151,7 @@ public:
         textureMemory->texelAddr11 = addresses[3];
     }
 
-    VTextureMemory* textureMemory;
+    VTextureMemoryReader* textureMemory;
 };
 
 std::uint16_t texelForAddress(std::uint32_t physicalAddress)
@@ -156,7 +161,7 @@ std::uint16_t texelForAddress(std::uint32_t physicalAddress)
 
 } // namespace
 
-TEST_CASE("Read texels through TextureMemory", "[TextureMemory]")
+TEST_CASE("Read texels through TextureMemoryReader", "[TextureMemoryReader]")
 {
     TextureMemoryFixture fixture;
     fixture.loadPageTable(PAGE_BASE);
@@ -174,7 +179,7 @@ TEST_CASE("Read texels through TextureMemory", "[TextureMemory]")
     CHECK(fixture.textureMemory->texelOutputValid == 0);
 }
 
-TEST_CASE("Hold an AXI read address while the address channel stalls", "[TextureMemory]")
+TEST_CASE("Hold an AXI read address while the address channel stalls", "[TextureMemoryReader]")
 {
     TextureMemoryFixture fixture;
     fixture.loadPageTable(PAGE_BASE);
@@ -191,7 +196,7 @@ TEST_CASE("Hold an AXI read address while the address channel stalls", "[Texture
     REQUIRE(fixture.textureMemory->m_axi_arvalid == 1);
 
     const auto stalledAddress = fixture.textureMemory->m_axi_araddr;
-    CHECK(stalledAddress == PAGE_BASE + addresses[0]);
+    CHECK(stalledAddress == axiAddressForWord(addresses[0]));
     for (std::size_t stallCycle = 0; stallCycle < 4; ++stallCycle)
     {
         rr::ut::clk(fixture.textureMemory);
@@ -200,11 +205,11 @@ TEST_CASE("Hold an AXI read address while the address channel stalls", "[Texture
         CHECK(fixture.textureMemory->texelOutputValid == 0);
     }
 
-    fixture.acceptRead(PAGE_BASE + addresses[0]);
+    fixture.acceptRead(axiAddressForWord(addresses[0]));
     fixture.sendReadResponse(texels[0]);
     for (std::size_t texelIndex = 1; texelIndex < addresses.size(); ++texelIndex)
     {
-        fixture.acceptRead(PAGE_BASE + addresses[texelIndex]);
+        fixture.acceptRead(axiAddressForWord(addresses[texelIndex]));
         fixture.sendReadResponse(texels[texelIndex]);
     }
 
@@ -212,7 +217,7 @@ TEST_CASE("Hold an AXI read address while the address channel stalls", "[Texture
     fixture.checkOutput(texels);
 }
 
-TEST_CASE("Backpressure AXI read responses while texel output stalls", "[TextureMemory]")
+TEST_CASE("Backpressure AXI read responses while texel output stalls", "[TextureMemoryReader]")
 {
     TextureMemoryFixture fixture;
     fixture.loadPageTable(PAGE_BASE);
