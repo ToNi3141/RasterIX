@@ -67,7 +67,7 @@ add_verilator_test(functionInterpolator FunctionInterpolator ${RTL_RASTERIX}/Fun
 add_verilator_test(textureSampler TextureSampler ${RTL_RASTERIX}/TextureSampler.v)
 add_verilator_test(textureBuffer TextureBuffer ${RTL_RASTERIX}/TextureBuffer.v)
 add_verilator_test(textureMMU TextureMMU ${RTL_RASTERIX}/TextureMMU.v)
-add_verilator_test(textureMemory TextureMemory ${RTL_RASTERIX}/TextureMemory.v
+add_verilator_test(textureMemoryReader TextureMemoryReader ${RTL_RASTERIX}/TextureMemoryReader.v
     ${RTL_3RDPARTY}/verilog-axis)
 add_verilator_test(texelColorUnpack TexelColorUnpack ${RTL_RASTERIX}/TexelColorUnpack.v)
 add_verilator_test(colorInterpolator ColorInterpolator ${RTL_RASTERIX}/ColorInterpolator.v)
@@ -96,5 +96,5 @@ add_verilator_test(coalesceFiFo CoalesceFiFo ${RTL_RASTERIX}/CoalesceFiFo.v)
 add_verilator_test(coalesceAddrGen CoalesceAddrGen ${RTL_RASTERIX}/CoalesceAddrGen.v)
 add_verilator_test(streamSemaphore StreamSemaphore ${RTL_RASTERIX}/StreamSemaphore.v)
 add_verilator_test(axiToAvalonBridge AxiToAvalonBridge ${RTL_UTIL}/AxiToAvalonBridge.v)
-add_verilator_test(textureTexelContextManager TextureTexelContextManager ${RTL_RASTERIX}/TextureTexelContextManager.v)
-add_verilator_test(textureTexelContext TextureTexelContext ${RTL_RASTERIX}/TextureTexelContext.v)
+add_verilator_test(textureReaderController TextureReaderController ${RTL_RASTERIX}/TextureReaderController.v)
+add_verilator_test(textureReaderContext TextureReaderContext ${RTL_RASTERIX}/TextureReaderContext.v)

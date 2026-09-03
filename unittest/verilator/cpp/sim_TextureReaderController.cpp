@@ -22,9 +22,9 @@
 #include <math.h>
 
 // Include model header, generated from Verilating "top.v"
-#include "VTextureTexelContextManager.h"
+#include "VTextureReaderController.h"
 
-void makeCacheHot(VTextureTexelContextManager* t,
+void makeCacheHot(VTextureReaderController* t,
     const std::array<uint32_t, 4>& texels)
 {
     t->invalidate = 1;
@@ -66,9 +66,9 @@ void makeCacheHot(VTextureTexelContextManager* t,
     CHECK(t->s_ar_ready == 1);
 }
 
-TEST_CASE("Test Cold Cache, no stalling", "[TextureTexelContextManager]")
+TEST_CASE("Test Cold Cache, no stalling", "[TextureReaderController]")
 {
-    VTextureTexelContextManager* t = rr::ut::makeTop<VTextureTexelContextManager>();
+    VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
 
     t->invalidate = 0;
@@ -145,9 +145,9 @@ TEST_CASE("Test Cold Cache, no stalling", "[TextureTexelContextManager]")
     delete t;
 }
 
-TEST_CASE("Single miss, no stalling", "[TextureTexelContextManager]")
+TEST_CASE("Single miss, no stalling", "[TextureReaderController]")
 {
-    VTextureTexelContextManager* t = rr::ut::makeTop<VTextureTexelContextManager>();
+    VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
 
     makeCacheHot(t, { 10, 20, 30, 40 });
@@ -212,9 +212,9 @@ TEST_CASE("Single miss, no stalling", "[TextureTexelContextManager]")
     delete t;
 }
 
-TEST_CASE("Two misses, no stalling", "[TextureTexelContextManager]")
+TEST_CASE("Two misses, no stalling", "[TextureReaderController]")
 {
-    VTextureTexelContextManager* t = rr::ut::makeTop<VTextureTexelContextManager>();
+    VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
 
     makeCacheHot(t, { 10, 20, 30, 40 });
@@ -281,9 +281,9 @@ TEST_CASE("Two misses, no stalling", "[TextureTexelContextManager]")
     delete t;
 }
 
-TEST_CASE("Test Cold Cache, with stalling", "[TextureTexelContextManager]")
+TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
 {
-    VTextureTexelContextManager* t = rr::ut::makeTop<VTextureTexelContextManager>();
+    VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
 
     t->invalidate = 0;
@@ -438,9 +438,9 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureTexelContextManager]")
     delete t;
 }
 
-TEST_CASE("Single miss, with stalling", "[TextureTexelContextManager]")
+TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
 {
-    VTextureTexelContextManager* t = rr::ut::makeTop<VTextureTexelContextManager>();
+    VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
 
     makeCacheHot(t, { 10, 20, 30, 40 });
@@ -559,7 +559,7 @@ TEST_CASE("Single miss, with stalling", "[TextureTexelContextManager]")
 
 TEST_CASE("Output remains valid while stalled after source withdraws valid", "[TextureTexelContextManager]")
 {
-    VTextureTexelContextManager* t = rr::ut::makeTop<VTextureTexelContextManager>();
+    VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
 
     makeCacheHot(t, { 10, 20, 30, 40 });
@@ -595,7 +595,7 @@ TEST_CASE("Output remains valid while stalled after source withdraws valid", "[T
 
 TEST_CASE("Invalidate", "[TextureTexelContextManager]")
 {
-    VTextureTexelContextManager* t = rr::ut::makeTop<VTextureTexelContextManager>();
+    VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
 
     // The makeCacheHot already invalidates the cache.

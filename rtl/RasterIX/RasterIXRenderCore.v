@@ -562,7 +562,7 @@ module RasterIXRenderCore #(
             wire                       textureMemory0_axi_rvalid;
             wire                       textureMemory0_axi_rready;
 
-            TextureMemory textureMemoryTMU0 (
+            TextureMemoryReader textureMemoryTMU0 (
                 .aclk(aclk),
                 .resetn(resetn),
 
@@ -768,7 +768,7 @@ module RasterIXRenderCore #(
                 wire                       textureMemory1_axi_rvalid;
                 wire                       textureMemory1_axi_rready;
 
-                TextureMemory textureMemoryTMU1 (
+                TextureMemoryReader textureMemoryTMU1 (
                     .aclk(aclk),
                     .resetn(resetn),
 
