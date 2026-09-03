@@ -22,9 +22,9 @@
 #include <math.h>
 
 // Include model header, generated from Verilating "top.v"
-#include "VTextureTexelContext.h"
+#include "VTextureReaderContext.h"
 
-void createContext(VTextureTexelContext* t, std::array<uint32_t, 4> texels)
+void createContext(VTextureReaderContext* t, std::array<uint32_t, 4> texels)
 {
     t->m_ready = 1;
 
@@ -61,9 +61,9 @@ void createContext(VTextureTexelContext* t, std::array<uint32_t, 4> texels)
     CHECK(t->s_ready == 1);
 }
 
-TEST_CASE("Create context and send it, no stall", "[TextureTexelContext]")
+TEST_CASE("Create context and send it, no stall", "[TextureReaderContext]")
 {
-    VTextureTexelContext* t = rr::ut::makeTop<VTextureTexelContext>();
+    VTextureReaderContext* t = rr::ut::makeTop<VTextureReaderContext>();
     rr::ut::reset(t);
     t->m_ready = 1;
 
@@ -112,9 +112,9 @@ TEST_CASE("Create context and send it, no stall", "[TextureTexelContext]")
     delete t;
 }
 
-TEST_CASE("Update context, with stall", "[TextureTexelContext]")
+TEST_CASE("Update context, with stall", "[TextureReaderContext]")
 {
-    VTextureTexelContext* t = rr::ut::makeTop<VTextureTexelContext>();
+    VTextureReaderContext* t = rr::ut::makeTop<VTextureReaderContext>();
     rr::ut::reset(t);
 
     createContext(t, { 10, 20, 30, 40 });
@@ -228,9 +228,9 @@ TEST_CASE("Update context, with stall", "[TextureTexelContext]")
     delete t;
 }
 
-TEST_CASE("Update context, send after context, with stall", "[TextureTexelContext]")
+TEST_CASE("Update context, send after context, with stall", "[TextureReaderContext]")
 {
-    VTextureTexelContext* t = rr::ut::makeTop<VTextureTexelContext>();
+    VTextureReaderContext* t = rr::ut::makeTop<VTextureReaderContext>();
     rr::ut::reset(t);
 
     createContext(t, { 10, 20, 30, 40 });
@@ -277,9 +277,9 @@ TEST_CASE("Update context, send after context, with stall", "[TextureTexelContex
     delete t;
 }
 
-TEST_CASE("send context and stall, update context, send context", "[TextureTexelContext]")
+TEST_CASE("send context and stall, update context, send context", "[TextureReaderContext]")
 {
-    VTextureTexelContext* t = rr::ut::makeTop<VTextureTexelContext>();
+    VTextureReaderContext* t = rr::ut::makeTop<VTextureReaderContext>();
     rr::ut::reset(t);
 
     createContext(t, { 10, 20, 30, 40 });
@@ -359,9 +359,9 @@ TEST_CASE("send context and stall, update context, send context", "[TextureTexel
     delete t;
 }
 
-TEST_CASE("Accepted sample remains valid while output is stalled", "[TextureTexelContext]")
+TEST_CASE("Accepted sample remains valid while output is stalled", "[TextureReaderContext]")
 {
-    VTextureTexelContext* t = rr::ut::makeTop<VTextureTexelContext>();
+    VTextureReaderContext* t = rr::ut::makeTop<VTextureReaderContext>();
     rr::ut::reset(t);
 
     createContext(t, { 10, 20, 30, 40 });
@@ -399,7 +399,7 @@ TEST_CASE("Accepted sample remains valid while output is stalled", "[TextureTexe
 
 TEST_CASE("Input remains stable until accepted after skid buffer drains", "[TextureTexelContext]")
 {
-    VTextureTexelContext* t = rr::ut::makeTop<VTextureTexelContext>();
+    VTextureReaderContext* t = rr::ut::makeTop<VTextureReaderContext>();
     rr::ut::reset(t);
 
     createContext(t, { 10, 20, 30, 40 });
@@ -455,7 +455,7 @@ TEST_CASE("Input remains stable until accepted after skid buffer drains", "[Text
 
 TEST_CASE("Buffered store-only command updates context without producing output", "[TextureTexelContext]")
 {
-    VTextureTexelContext* t = rr::ut::makeTop<VTextureTexelContext>();
+    VTextureReaderContext* t = rr::ut::makeTop<VTextureReaderContext>();
     rr::ut::reset(t);
 
     createContext(t, { 10, 20, 30, 40 });

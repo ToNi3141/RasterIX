@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-module TextureMemory #(
+module TextureMemoryReader #(
     parameter STREAM_WIDTH = 32,
     parameter TEXEL_WIDTH = 16,
 
@@ -76,7 +76,7 @@ module TextureMemory #(
     wire                            ttcm_cmd;
     wire                            ttcm_valid;
     wire                            ttcm_ready;
-    TextureTexelContextManager #(
+    TextureReaderController #(
         .TEX_ADDR_WIDTH(TEX_ADDR_WIDTH)
     ) textureTexelContextManager_inst (
         .aclk(aclk),
@@ -248,7 +248,7 @@ module TextureMemory #(
         .m_stream_tready(fifo_ready)
     );
 
-    TextureTexelContext #(
+    TextureReaderContext #(
         .TEXEL_WIDTH(TEXEL_WIDTH)
     ) textureTexelContext_inst ( 
         .aclk(aclk),
