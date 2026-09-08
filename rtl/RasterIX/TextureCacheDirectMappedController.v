@@ -73,7 +73,7 @@ module TextureCacheDirectMappedController #(
     // Note: This cache is read only. No write back strategies are required.
     //       This is a direct mapped cache, also no cache replacement policies are needed.
 
-    localparam LOAD_CACHE_ENTRY = 1'b0;
+    localparam READ_CACHE_ENTRY = 1'b0;
     localparam LOAD_CACHE_LINE = 1'b1;
 
     function [TAG_WIDTH - 1 : 0] getTagFromAddress;
@@ -180,7 +180,7 @@ module TextureCacheDirectMappedController #(
             begin            
                 m_valid <= 1'b1;
                 m_addr <= w_addr;
-                m_cmd <= LOAD_CACHE_ENTRY;
+                m_cmd <= READ_CACHE_ENTRY;
                 r_skid_valid <= 1'b0;
 
                 s_arready <= 1'b1;

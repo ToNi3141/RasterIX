@@ -1,0 +1,169 @@
+// RasterIX
+// https://github.com/ToNi3141/RasterIX
+// Copyright (c) 2026 ToNi3141
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+module TextureCacheDirectMappedContext #(
+    parameter TEX_ADDR_WIDTH = 17,
+    parameter TEXEL_WIDTH = 16,
+
+    parameter CACHE_SIZE = 1024,
+    parameter CACHE_LINE_SIZE = 32,
+    localparam CACHE_LINES = CACHE_SIZE / CACHE_LINE_SIZE,
+
+    parameter DATA_WIDTH = 32,
+    parameter ID_WIDTH = 4,
+
+    localparam LG_DATA_BYTES = $clog2(DATA_WIDTH / 8),
+    localparam LG_CACHE_WORDS = $clog2(CACHE_SIZE / (DATA_WIDTH / 8)),
+    localparam TAG_WIDTH = TEX_ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_LINES)
+)
+(
+    input  wire                             aclk,
+    input  wire                             resetn,
+
+    // Input interface
+    input  wire                             s_valid,
+    output reg                              s_ready,
+    input  wire                             s_cmd,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_addr,
+
+    output reg  [TEXEL_WIDTH - 1 : 0]       m_texel,
+    output reg                              m_valid,
+    input  wire                             m_ready,
+
+    // AXI input interface
+    input  wire [ID_WIDTH - 1 : 0]          m_axi_rid,
+    input  wire [DATA_WIDTH - 1 : 0]        m_axi_rdata,
+    input  wire [ 1 : 0]                    m_axi_rresp,
+    input  wire                             m_axi_rlast,
+    input  wire                             m_axi_rvalid,
+    output reg                              m_axi_rready
+);
+    localparam READ_CACHE_ENTRY = 1'b0;
+    localparam LOAD_CACHE_LINE = 1'b1;
+
+    function [TEX_ADDR_WIDTH - 1 : 0] getCacheGroupAddress;
+        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+        begin
+            getCacheGroupAddress = { 
+                { (TEX_ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_SIZE)) { 1'b0 } }, 
+                addr[$clog2(CACHE_LINE_SIZE) +: $clog2(CACHE_SIZE)], 
+                { ( $clog2(CACHE_LINE_SIZE)) { 1'b0 } } };
+        end
+    endfunction
+
+    function [LG_CACHE_WORDS - 1 : 0] getWordAddress;
+        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+        begin
+            getWordAddress = addr[LG_DATA_BYTES +: LG_CACHE_WORDS];
+        end
+    endfunction
+
+    function [TEXEL_WIDTH - 1 : 0] getTexel;
+        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+        reg [DATA_WIDTH - 1 : 0] word;
+        reg [DATA_WIDTH - 1 : 0] shifted_word;
+        integer texel_shift;
+        begin
+            word = r_cache_memory[getWordAddress(addr)];
+            texel_shift = TEXEL_WIDTH * addr[$clog2(TEXEL_WIDTH / 8) +: LG_DATA_BYTES - $clog2(TEXEL_WIDTH / 8)];
+            shifted_word = word >> texel_shift;
+            getTexel = shifted_word[0 +: TEXEL_WIDTH];
+        end
+    endfunction
+
+    reg  [DATA_WIDTH - 1 : 0]       r_cache_memory [0 : (CACHE_SIZE / (DATA_WIDTH / 8)) - 1];
+
+    reg                             r_skid_valid;
+    reg                             r_skid_cmd;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]   r_skid_addr;
+
+    reg  [TEX_ADDR_WIDTH - 1 : 0]   r_i;
+    reg  [TEX_ADDR_WIDTH - 1 : 0]   r_axi_addr;
+
+    wire                            w_cmd = r_skid_valid ? r_skid_cmd : s_cmd;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   w_addr = r_skid_valid ? r_skid_addr : s_addr;
+
+    always @(posedge aclk) 
+    begin
+        if (!resetn) 
+        begin
+            r_skid_valid <= 1'b0;
+            s_ready      <= 1'b1;
+            m_valid      <= 1'b0;
+            m_axi_rready <= 1'b0;
+        end 
+        else 
+        begin
+            if (!m_axi_rready)
+            begin
+                if (!m_valid || (m_valid && m_ready))
+                begin
+                    if (s_valid || r_skid_valid)
+                    begin
+                        if (r_skid_valid)
+                        begin
+                            r_skid_valid <= 1'b0;
+                            s_ready      <= 1'b1;
+                        end
+                        
+                        if (w_cmd == LOAD_CACHE_LINE)
+                        begin
+                            m_axi_rready <= 1'b1;
+                            r_i          <= { TEX_ADDR_WIDTH { 1'b0 } };
+                            r_axi_addr   <= w_addr;
+                            m_valid      <= 1'b0;
+                            s_ready      <= 1'b0;
+                        end
+                        else if (w_cmd == READ_CACHE_ENTRY)
+                        begin
+                            m_texel <= getTexel(w_addr);
+                            m_valid <= 1'b1;
+                        end
+                    end
+                    else
+                    begin
+                        m_valid <= 1'b0;
+                    end
+                end
+                else
+                begin
+                    if (!r_skid_valid)
+                    begin
+                        r_skid_addr  <= s_addr;
+                        r_skid_cmd   <= s_cmd;
+                        r_skid_valid <= s_valid;
+                        s_ready      <= !s_valid;
+                    end
+                end
+            end
+            else
+            begin
+                if (m_axi_rvalid)
+                begin
+                    r_i <= r_i + (DATA_WIDTH / 8);
+                    r_cache_memory[getWordAddress(getCacheGroupAddress(r_axi_addr) + r_i)] <= m_axi_rdata;
+                    if (r_i == (CACHE_LINE_SIZE - (DATA_WIDTH / 8)))
+                    begin
+                        m_axi_rready <= 1'b0;
+                        s_ready <= 1'b1;
+                    end
+                end
+            end
+        end
+    end
+
+endmodule 

@@ -9,7 +9,7 @@ namespace
 {
 constexpr uint32_t CACHE_SIZE = 1024;
 constexpr uint32_t CACHE_LINE_SIZE = 32;
-constexpr uint8_t LOAD_CACHE_ENTRY = 0;
+constexpr uint8_t READ_CACHE_ENTRY = 0;
 constexpr uint8_t LOAD_CACHE_LINE = 1;
 
 void waitForReady(VTextureCacheDirectMappedController* t)
@@ -62,7 +62,7 @@ void fillCache(
 
     rr::ut::clk(t);
     REQUIRE(t->m_valid == 1);
-    REQUIRE(t->m_cmd == LOAD_CACHE_ENTRY);
+    REQUIRE(t->m_cmd == READ_CACHE_ENTRY);
     REQUIRE(t->m_addr == address);
     REQUIRE(t->s_arready == 1);
 
@@ -104,7 +104,7 @@ TEST_CASE("Warm cache produces one entry command per cycle",
         REQUIRE(t->s_arready == 1);
         rr::ut::clk(t);
         CHECK(t->m_valid == 1);
-        CHECK(t->m_cmd == LOAD_CACHE_ENTRY);
+        CHECK(t->m_cmd == READ_CACHE_ENTRY);
         CHECK(t->m_addr == address);
         CHECK(t->s_arready == 1);
         CHECK(t->m_axi_arvalid == 0);
@@ -128,13 +128,13 @@ TEST_CASE("Master backpressure holds a cache command stable",
     REQUIRE(t->s_arready == 1);
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == LOAD_CACHE_ENTRY);
+    CHECK(t->m_cmd == READ_CACHE_ENTRY);
     CHECK(t->m_addr == 1);
 
     t->s_arvalid = 0;
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == LOAD_CACHE_ENTRY);
+    CHECK(t->m_cmd == READ_CACHE_ENTRY);
     CHECK(t->m_addr == 1);
     CHECK(t->s_arready == 1);
 
@@ -173,16 +173,16 @@ TEST_CASE("AXI backpressure blocks the next cache command",
     CHECK(t->m_axi_arvalid == 0);
     CHECK(t->m_valid == 0);
     CHECK(t->s_arready == 0);
-    
+
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == LOAD_CACHE_ENTRY);
+    CHECK(t->m_cmd == READ_CACHE_ENTRY);
     CHECK(t->m_addr == 0);
     CHECK(t->s_arready == 1);
 
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == LOAD_CACHE_ENTRY);
+    CHECK(t->m_cmd == READ_CACHE_ENTRY);
     CHECK(t->m_addr == 2);
     CHECK(t->s_arready == 1);
 
@@ -214,7 +214,7 @@ TEST_CASE("Two cold requests produce two line loads and two entry accesses",
 
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == LOAD_CACHE_ENTRY);
+    CHECK(t->m_cmd == READ_CACHE_ENTRY);
     CHECK(t->m_addr == 0);
     CHECK(t->s_arready == 1);
 
@@ -232,7 +232,7 @@ TEST_CASE("Two cold requests produce two line loads and two entry accesses",
 
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == LOAD_CACHE_ENTRY);
+    CHECK(t->m_cmd == READ_CACHE_ENTRY);
     CHECK(t->m_addr == CACHE_SIZE);
     CHECK(t->s_arready == 1);
 
@@ -266,7 +266,7 @@ TEST_CASE("Every cache index can be filled and reread as a hit",
         t->s_arvalid = 1;
         rr::ut::clk(t);
         CHECK(t->m_valid == 1);
-        CHECK(t->m_cmd == LOAD_CACHE_ENTRY);
+        CHECK(t->m_cmd == READ_CACHE_ENTRY);
         CHECK(t->m_axi_arvalid == 0);
     }
     t->s_arvalid = 0;
