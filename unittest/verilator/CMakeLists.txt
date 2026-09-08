@@ -99,3 +99,4 @@ add_verilator_test(axiToAvalonBridge AxiToAvalonBridge ${RTL_UTIL}/AxiToAvalonBr
 add_verilator_test(textureReaderController TextureReaderController ${RTL_RASTERIX}/TextureReaderController.v)
 add_verilator_test(textureReaderContext TextureReaderContext ${RTL_RASTERIX}/TextureReaderContext.v)
 add_verilator_test(textureCacheDirectMappedController TextureCacheDirectMappedController ${RTL_RASTERIX}/TextureCacheDirectMappedController.v)
+add_verilator_test(textureCacheDirectMappedContext TextureCacheDirectMappedContext ${RTL_RASTERIX}/TextureCacheDirectMappedContext.v)
