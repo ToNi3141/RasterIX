@@ -16,7 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module TextureCacheDirectMapped #(
-    parameter TEX_ADDR_WIDTH = 17,
     parameter TEXEL_WIDTH = 16,
 
     parameter CACHE_SIZE = 1024,
@@ -24,7 +23,7 @@ module TextureCacheDirectMapped #(
 
     parameter DATA_WIDTH = 32,
     parameter ID_WIDTH = 4,
-    parameter ADDR_WIDTH = 32,
+    parameter ADDR_WIDTH = 18,
 
     parameter COMMAND_FIFO_DEPTH_POW2 = 5,
     parameter AXI_R_FIFO_DEPTH_POW2 = 5
@@ -35,7 +34,7 @@ module TextureCacheDirectMapped #(
 
     input wire                              invalidate,
 
-    input wire [TEX_ADDR_WIDTH - 1 : 0]     s_araddr,
+    input wire [ADDR_WIDTH - 1 : 0]         s_araddr,
     input wire                              s_arvalid,
     output wire                             s_arready,
 
@@ -61,13 +60,13 @@ module TextureCacheDirectMapped #(
     input wire                              m_axi_rvalid,
     output wire                             m_axi_rready
 );
-    localparam COMMAND_WIDTH = 1 + TEX_ADDR_WIDTH;
+    localparam COMMAND_WIDTH = 1 + ADDR_WIDTH;
     localparam AXI_R_WIDTH = ID_WIDTH + DATA_WIDTH + 2 + 1;
 
     wire                               controller_valid;
     wire                               controller_ready;
     wire                               controller_cmd;
-    wire [TEX_ADDR_WIDTH - 1 : 0]      controller_addr;
+    wire [ADDR_WIDTH - 1 : 0]          controller_addr;
 
     wire                               context_s_ready;
     wire                               context_m_axi_rready;
@@ -75,7 +74,7 @@ module TextureCacheDirectMapped #(
     wire                               command_fifo_full;
     wire                               command_fifo_empty;
     wire                               command_fifo_cmd;
-    wire [TEX_ADDR_WIDTH - 1 : 0]      command_fifo_addr;
+    wire [ADDR_WIDTH - 1 : 0]          command_fifo_addr;
 
     wire                               axi_r_fifo_full;
     wire                               axi_r_fifo_empty;
@@ -87,12 +86,11 @@ module TextureCacheDirectMapped #(
     assign m_axi_rready = AXI_R_FIFO_DEPTH_POW2 == 0 ? context_m_axi_rready : !axi_r_fifo_full;
 
     TextureCacheDirectMappedController #(
-        .TEX_ADDR_WIDTH(TEX_ADDR_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
         .CACHE_SIZE(CACHE_SIZE),
         .CACHE_LINE_SIZE(CACHE_LINE_SIZE),
         .DATA_WIDTH(DATA_WIDTH),
-        .ID_WIDTH(ID_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
+        .ID_WIDTH(ID_WIDTH)
     ) controller (
         .aclk(aclk),
         .resetn(resetn),
@@ -117,7 +115,7 @@ module TextureCacheDirectMapped #(
     );
 
     TextureCacheDirectMappedContext #(
-        .TEX_ADDR_WIDTH(TEX_ADDR_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
         .TEXEL_WIDTH(TEXEL_WIDTH),
         .CACHE_SIZE(CACHE_SIZE),
         .CACHE_LINE_SIZE(CACHE_LINE_SIZE),

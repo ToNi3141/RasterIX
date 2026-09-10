@@ -16,7 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module TextureCacheDirectMappedContext #(
-    parameter TEX_ADDR_WIDTH = 17,
     parameter TEXEL_WIDTH = 16,
 
     parameter CACHE_SIZE = 1024,
@@ -25,10 +24,11 @@ module TextureCacheDirectMappedContext #(
 
     parameter DATA_WIDTH = 32,
     parameter ID_WIDTH = 4,
+    parameter ADDR_WIDTH = 18,
 
     localparam LG_DATA_BYTES = $clog2(DATA_WIDTH / 8),
     localparam LG_CACHE_WORDS = $clog2(CACHE_SIZE / (DATA_WIDTH / 8)),
-    localparam TAG_WIDTH = TEX_ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_LINES)
+    localparam TAG_WIDTH = ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_LINES)
 )
 (
     input  wire                             aclk,
@@ -38,7 +38,7 @@ module TextureCacheDirectMappedContext #(
     input  wire                             s_valid,
     output reg                              s_ready,
     input  wire                             s_cmd,
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_addr,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_addr,
 
     output reg  [TEXEL_WIDTH - 1 : 0]       m_texel,
     output reg                              m_valid,
@@ -55,25 +55,25 @@ module TextureCacheDirectMappedContext #(
     localparam READ_CACHE_ENTRY = 1'b0;
     localparam LOAD_CACHE_LINE = 1'b1;
 
-    function [TEX_ADDR_WIDTH - 1 : 0] getCacheGroupAddress;
-        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+    function [ADDR_WIDTH - 1 : 0] getCacheGroupAddress;
+        input [ADDR_WIDTH - 1 : 0] addr;
         begin
             getCacheGroupAddress = { 
-                { (TEX_ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_SIZE)) { 1'b0 } }, 
+                { (ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_SIZE)) { 1'b0 } }, 
                 addr[$clog2(CACHE_LINE_SIZE) +: $clog2(CACHE_SIZE)], 
                 { ( $clog2(CACHE_LINE_SIZE)) { 1'b0 } } };
         end
     endfunction
 
     function [LG_CACHE_WORDS - 1 : 0] getWordAddress;
-        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+        input [ADDR_WIDTH - 1 : 0] addr;
         begin
             getWordAddress = addr[LG_DATA_BYTES +: LG_CACHE_WORDS];
         end
     endfunction
 
     function [TEXEL_WIDTH - 1 : 0] getTexel;
-        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+        input [ADDR_WIDTH - 1 : 0] addr;
         reg [DATA_WIDTH - 1 : 0] word;
         reg [DATA_WIDTH - 1 : 0] shifted_word;
         integer texel_shift;
@@ -89,13 +89,13 @@ module TextureCacheDirectMappedContext #(
 
     reg                             r_skid_valid;
     reg                             r_skid_cmd;
-    reg  [TEX_ADDR_WIDTH - 1 : 0]   r_skid_addr;
+    reg  [ADDR_WIDTH - 1 : 0]       r_skid_addr;
 
-    reg  [TEX_ADDR_WIDTH - 1 : 0]   r_i;
-    reg  [TEX_ADDR_WIDTH - 1 : 0]   r_axi_addr;
+    reg  [ADDR_WIDTH - 1 : 0]       r_i;
+    reg  [ADDR_WIDTH - 1 : 0]       r_axi_addr;
 
     wire                            w_cmd = r_skid_valid ? r_skid_cmd : s_cmd;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   w_addr = r_skid_valid ? r_skid_addr : s_addr;
+    wire [ADDR_WIDTH - 1 : 0]       w_addr = r_skid_valid ? r_skid_addr : s_addr;
 
     always @(posedge aclk) 
     begin
@@ -123,7 +123,7 @@ module TextureCacheDirectMappedContext #(
                         if (w_cmd == LOAD_CACHE_LINE)
                         begin
                             m_axi_rready <= 1'b1;
-                            r_i          <= { TEX_ADDR_WIDTH { 1'b0 } };
+                            r_i          <= { ADDR_WIDTH { 1'b0 } };
                             r_axi_addr   <= w_addr;
                             m_valid      <= 1'b0;
                             s_ready      <= 1'b0;
