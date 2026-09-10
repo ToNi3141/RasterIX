@@ -69,48 +69,20 @@ module TextureCacheDirectMapped #(
     wire                               controller_cmd;
     wire [TEX_ADDR_WIDTH - 1 : 0]      controller_addr;
 
-    wire                               context_valid;
-    wire                               context_ready;
-    wire                               context_cmd;
-    wire [TEX_ADDR_WIDTH - 1 : 0]      context_addr;
     wire                               context_s_ready;
     wire                               context_m_axi_rready;
 
-    wire [COMMAND_WIDTH - 1 : 0]       command_fifo_data_in;
-    wire [COMMAND_WIDTH - 1 : 0]       command_fifo_data_out;
     wire                               command_fifo_full;
     wire                               command_fifo_empty;
-    wire                               command_fifo_write;
-    wire                               command_fifo_read;
+    wire                               command_fifo_cmd;
+    wire [TEX_ADDR_WIDTH - 1 : 0]      command_fifo_addr;
 
-    wire [AXI_R_WIDTH - 1 : 0]         axi_r_fifo_data_in;
-    wire [AXI_R_WIDTH - 1 : 0]         axi_r_fifo_data_out;
     wire                               axi_r_fifo_full;
     wire                               axi_r_fifo_empty;
-    wire                               axi_r_fifo_write;
-    wire                               axi_r_fifo_read;
-    wire                               m_axi_rvalid_to_context;
-    wire [ID_WIDTH - 1 : 0]            m_axi_rid_to_context;
-    wire [DATA_WIDTH - 1 : 0]          m_axi_rdata_to_context;
-    wire [1 : 0]                       m_axi_rresp_to_context;
-    wire                               m_axi_rlast_to_context;
-    wire                               m_axi_rready_to_context;
-
-    assign command_fifo_data_in = { controller_addr, controller_cmd };
-    assign { context_addr, context_cmd } = command_fifo_data_out;
-    assign command_fifo_write = controller_valid && controller_ready;
-    assign command_fifo_read = context_valid && context_ready;
-
-    assign axi_r_fifo_data_in = { m_axi_rlast, m_axi_rresp, m_axi_rdata, m_axi_rid };
-    assign { m_axi_rlast_to_context, m_axi_rresp_to_context,
-             m_axi_rdata_to_context, m_axi_rid_to_context } = axi_r_fifo_data_out;
-    assign axi_r_fifo_write = m_axi_rvalid && m_axi_rready;
-    assign axi_r_fifo_read = m_axi_rvalid_to_context && m_axi_rready_to_context;
-
-    assign context_valid = !command_fifo_empty;
-    assign context_ready = context_s_ready;
-    assign m_axi_rvalid_to_context = !axi_r_fifo_empty;
-    assign m_axi_rready_to_context = context_m_axi_rready;
+    wire [ID_WIDTH - 1 : 0]            axi_r_fifo_rid;
+    wire [DATA_WIDTH - 1 : 0]          axi_r_fifo_rdata;
+    wire [1 : 0]                       axi_r_fifo_rresp;
+    wire                               axi_r_fifo_rlast;
 
     assign m_axi_rready = AXI_R_FIFO_DEPTH_POW2 == 0 ? context_m_axi_rready : !axi_r_fifo_full;
 
@@ -154,27 +126,28 @@ module TextureCacheDirectMapped #(
     ) cache_context (
         .aclk(aclk),
         .resetn(resetn),
-        .s_valid(context_valid),
+        .s_valid(!command_fifo_empty),
         .s_ready(context_s_ready),
-        .s_cmd(context_cmd),
-        .s_addr(context_addr),
+        .s_cmd(command_fifo_cmd),
+        .s_addr(command_fifo_addr),
         .m_texel(m_texel),
         .m_valid(m_valid),
         .m_ready(m_ready),
-        .m_axi_rid(m_axi_rid_to_context),
-        .m_axi_rdata(m_axi_rdata_to_context),
-        .m_axi_rresp(m_axi_rresp_to_context),
-        .m_axi_rlast(m_axi_rlast_to_context),
-        .m_axi_rvalid(m_axi_rvalid_to_context),
+        .m_axi_rid(axi_r_fifo_rid),
+        .m_axi_rdata(axi_r_fifo_rdata),
+        .m_axi_rresp(axi_r_fifo_rresp),
+        .m_axi_rlast(axi_r_fifo_rlast),
+        .m_axi_rvalid(!axi_r_fifo_empty),
         .m_axi_rready(context_m_axi_rready)
     );
 
-    assign controller_ready = COMMAND_FIFO_DEPTH_POW2 == 0 ? context_ready : !command_fifo_full;
+    assign controller_ready = COMMAND_FIFO_DEPTH_POW2 == 0 ? context_s_ready : !command_fifo_full;
 
     generate
         if (COMMAND_FIFO_DEPTH_POW2 == 0)
         begin
-            assign command_fifo_data_out = command_fifo_data_in;
+            assign command_fifo_cmd = controller_cmd;
+            assign command_fifo_addr = controller_addr;
             assign command_fifo_empty = !controller_valid;
             assign command_fifo_full = 1'b0;
         end
@@ -189,12 +162,18 @@ module TextureCacheDirectMapped #(
             ) command_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
-                .i_wr(command_fifo_write),
-                .i_data(command_fifo_data_in),
+                .i_wr(controller_valid && controller_ready),
+                .i_data({ 
+                    controller_addr, 
+                    controller_cmd 
+                }),
                 .o_full(command_fifo_full),
                 .o_fill(),
-                .i_rd(command_fifo_read),
-                .o_data(command_fifo_data_out),
+                .i_rd(!command_fifo_empty && context_s_ready),
+                .o_data({ 
+                    command_fifo_addr, 
+                    command_fifo_cmd 
+                }),
                 .o_empty(command_fifo_empty)
             );
         end
@@ -203,7 +182,17 @@ module TextureCacheDirectMapped #(
     generate
         if (AXI_R_FIFO_DEPTH_POW2 == 0)
         begin
-            assign axi_r_fifo_data_out = axi_r_fifo_data_in;
+            assign { 
+                axi_r_fifo_rlast, 
+                axi_r_fifo_rresp,
+                axi_r_fifo_rdata, 
+                axi_r_fifo_rid 
+            } = { 
+                m_axi_rlast, 
+                m_axi_rresp, 
+                m_axi_rdata, 
+                m_axi_rid 
+            };
             assign axi_r_fifo_empty = !m_axi_rvalid;
             assign axi_r_fifo_full = 1'b0;
         end
@@ -218,12 +207,22 @@ module TextureCacheDirectMapped #(
             ) axi_r_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
-                .i_wr(axi_r_fifo_write),
-                .i_data(axi_r_fifo_data_in),
+                .i_wr(m_axi_rvalid && m_axi_rready),
+                .i_data({ 
+                    m_axi_rlast, 
+                    m_axi_rresp, 
+                    m_axi_rdata, 
+                    m_axi_rid 
+                }),
                 .o_full(axi_r_fifo_full),
                 .o_fill(),
-                .i_rd(axi_r_fifo_read),
-                .o_data(axi_r_fifo_data_out),
+                .i_rd(!axi_r_fifo_empty && context_m_axi_rready),
+                .o_data({ 
+                    axi_r_fifo_rlast, 
+                    axi_r_fifo_rresp,
+                    axi_r_fifo_rdata, 
+                    axi_r_fifo_rid 
+                }),
                 .o_empty(axi_r_fifo_empty)
             );
         end
