@@ -115,7 +115,7 @@ TEST_CASE("stalls the slave after the command FIFO fills", "[TextureCacheDirectM
     t->s_arvalid = 1;
 
     bool stalled = false;
-    // 37 because: 33 (fifo + skid) + 2 (context + skid) + 2 (controller + skid) 
+    // 37 because: 33 (fifo + skid) + 2 (context + skid) + 2 (controller + skid)
     for (unsigned requestIndex = 0; requestIndex < 37; ++requestIndex)
     {
         if (!t->s_arready)

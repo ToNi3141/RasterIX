@@ -16,16 +16,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module TextureCacheDirectMappedController #(
-    parameter TEX_ADDR_WIDTH = 17,
     parameter CACHE_SIZE = 1024,
     parameter CACHE_LINE_SIZE = 32,
     localparam CACHE_LINES = CACHE_SIZE / CACHE_LINE_SIZE,
 
     parameter DATA_WIDTH = 16,
     parameter ID_WIDTH = 4,
-    parameter ADDR_WIDTH = 32,
+    parameter ADDR_WIDTH = 18,
 
-    localparam TAG_WIDTH = TEX_ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_LINES),
+    localparam TAG_WIDTH = ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_LINES),
     localparam TAG_ENTRY_WIDTH = TAG_WIDTH + 1,
     localparam INDEX_WIDTH = $clog2(CACHE_LINES)
 )
@@ -36,14 +35,14 @@ module TextureCacheDirectMappedController #(
     input  wire                             invalidate,
 
     // Input interface
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_araddr,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_araddr,
     input  wire                             s_arvalid,
     output reg                              s_arready,
 
     output reg                              m_valid,
     input  wire                             m_ready,
     output reg                              m_cmd,
-    output reg  [TEX_ADDR_WIDTH - 1 : 0]    m_addr,
+    output reg  [ADDR_WIDTH - 1 : 0]        m_addr,
 
     // Output interface
     output wire [ID_WIDTH - 1 : 0]          m_axi_arid,
@@ -77,31 +76,30 @@ module TextureCacheDirectMappedController #(
     localparam LOAD_CACHE_LINE = 1'b1;
 
     function [TAG_WIDTH - 1 : 0] getTagFromAddress;
-        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+        input [ADDR_WIDTH - 1 : 0] addr;
         begin
             getTagFromAddress = addr[$clog2(CACHE_LINE_SIZE) + $clog2(CACHE_LINES) +: TAG_WIDTH];
         end
     endfunction
 
     function [INDEX_WIDTH - 1 : 0] getIndexFromAddress;
-        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+        input [ADDR_WIDTH - 1 : 0] addr;
         begin
             getIndexFromAddress = addr[$clog2(CACHE_LINE_SIZE) +: $clog2(CACHE_LINES)];
         end
     endfunction
 
     function [ADDR_WIDTH - 1 : 0] getBaseAddress;
-        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+        input [ADDR_WIDTH - 1 : 0] addr;
         begin
-            getBaseAddress = { { (ADDR_WIDTH - TEX_ADDR_WIDTH) { 1'b0 } },
-                                addr & { {(TEX_ADDR_WIDTH - $clog2(CACHE_LINE_SIZE)) { 1'b1 }},
-                                         {$clog2(CACHE_LINE_SIZE) { 1'b0 }} } };
+            getBaseAddress = addr & { {(ADDR_WIDTH - $clog2(CACHE_LINE_SIZE)) { 1'b1 }},
+                                      {$clog2(CACHE_LINE_SIZE) { 1'b0 }} };
         end
     endfunction
 
     function [0 : 0] tagMatch;
         input [TAG_ENTRY_WIDTH - 1 : 0] tag_entry;
-        input [TEX_ADDR_WIDTH - 1 : 0] addr;
+        input [ADDR_WIDTH - 1 : 0] addr;
         begin
             tagMatch = (tag_entry[0 +: TAG_WIDTH] == getTagFromAddress(addr)) && tag_entry[TAG_ENTRY_WIDTH - 1];
         end
@@ -121,10 +119,10 @@ module TextureCacheDirectMappedController #(
     reg [INDEX_WIDTH - 1 : 0]       r_i;
 
     reg                             r_skid_valid;
-    reg  [TEX_ADDR_WIDTH - 1 : 0]   r_skid_addr;
+    reg  [ADDR_WIDTH - 1 : 0]       r_skid_addr;
     reg                             r_load_line_pending;
 
-    wire [TEX_ADDR_WIDTH - 1 : 0]   w_addr;
+    wire [ADDR_WIDTH - 1 : 0]       w_addr;
 
 
     assign w_addr = (r_skid_valid) ? r_skid_addr
