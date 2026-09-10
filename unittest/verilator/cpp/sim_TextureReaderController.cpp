@@ -38,26 +38,26 @@ void makeCacheHot(VTextureReaderController* t,
     t->s_ar_texel11 = texels[3];
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == texels[0]);
+    CHECK(t->m_araddr == (texels[0] << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
     t->s_ar_valid = 0;
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == texels[1]);
+    CHECK(t->m_araddr == (texels[1] << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == texels[2]);
+    CHECK(t->m_araddr == (texels[2] << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == texels[3]);
+    CHECK(t->m_araddr == (texels[3] << 1));
     CHECK(t->s_ar_ready == 1);
 
     t->m_ready = 1;
@@ -85,7 +85,7 @@ TEST_CASE("Test Cold Cache, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 10);
+    CHECK(t->m_araddr == (10 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
@@ -98,7 +98,7 @@ TEST_CASE("Test Cold Cache, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b01);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 20);
+    CHECK(t->m_araddr == (20 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
@@ -111,7 +111,7 @@ TEST_CASE("Test Cold Cache, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b10);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 30);
+    CHECK(t->m_araddr == (30 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
@@ -124,7 +124,7 @@ TEST_CASE("Test Cold Cache, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b11);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 40);
+    CHECK(t->m_araddr == (40 << 1));
     CHECK(t->s_ar_ready == 1);
 
     // New cycle
@@ -138,7 +138,7 @@ TEST_CASE("Test Cold Cache, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 12);
+    CHECK(t->m_araddr == (12 << 1));
     CHECK(t->s_ar_ready == 0);
 
     // Destroy model
@@ -163,7 +163,7 @@ TEST_CASE("Single miss, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 12);
+    CHECK(t->m_araddr == (12 << 1));
     CHECK(t->s_ar_ready == 1);
 
     // Second texel cold
@@ -177,7 +177,7 @@ TEST_CASE("Single miss, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b01);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 22);
+    CHECK(t->m_araddr == (22 << 1));
     CHECK(t->s_ar_ready == 1);
 
     // Third texel cold
@@ -191,7 +191,7 @@ TEST_CASE("Single miss, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b10);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 32);
+    CHECK(t->m_araddr == (32 << 1));
     CHECK(t->s_ar_ready == 1);
 
     // Fourth texel cold
@@ -205,7 +205,7 @@ TEST_CASE("Single miss, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b11);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 42);
+    CHECK(t->m_araddr == (42 << 1));
     CHECK(t->s_ar_ready == 1);
 
     // Destroy model
@@ -230,7 +230,7 @@ TEST_CASE("Two misses, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b10);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 32);
+    CHECK(t->m_araddr == (32 << 1));
     CHECK(t->s_ar_ready == 0);
 
     // Second texel cold
@@ -244,7 +244,7 @@ TEST_CASE("Two misses, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b11);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 42);
+    CHECK(t->m_araddr == (42 << 1));
     CHECK(t->s_ar_ready == 1);
 
     // -------------------
@@ -260,7 +260,7 @@ TEST_CASE("Two misses, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 12);
+    CHECK(t->m_araddr == (12 << 1));
     CHECK(t->s_ar_ready == 0);
 
     // Second texel cold
@@ -274,7 +274,7 @@ TEST_CASE("Two misses, no stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b01);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 22);
+    CHECK(t->m_araddr == (22 << 1));
     CHECK(t->s_ar_ready == 1);
 
     // Destroy model
@@ -300,7 +300,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 10);
+    CHECK(t->m_araddr == (10 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 0;
@@ -313,7 +313,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 10);
+    CHECK(t->m_araddr == (10 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
@@ -326,7 +326,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b01);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 20);
+    CHECK(t->m_araddr == (20 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 0;
@@ -339,7 +339,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b01);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 20);
+    CHECK(t->m_araddr == (20 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
@@ -352,7 +352,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b10);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 30);
+    CHECK(t->m_araddr == (30 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 0;
@@ -365,7 +365,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b10);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 30);
+    CHECK(t->m_araddr == (30 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
@@ -378,7 +378,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b11);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 40);
+    CHECK(t->m_araddr == (40 << 1));
     CHECK(t->s_ar_ready == 1);
 
     t->m_ready = 0;
@@ -391,7 +391,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b11);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 40);
+    CHECK(t->m_araddr == (40 << 1));
     CHECK(t->s_ar_ready == 0);
 
     // New cycle
@@ -405,7 +405,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 12);
+    CHECK(t->m_araddr == (12 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 0;
@@ -418,7 +418,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 12);
+    CHECK(t->m_araddr == (12 << 1));
     CHECK(t->s_ar_ready == 0);
 
     t->m_ready = 1;
@@ -431,7 +431,7 @@ TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b01);
     CHECK(t->m_cmd == 0);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 22);
+    CHECK(t->m_araddr == (22 << 1));
     CHECK(t->s_ar_ready == 0);
 
     // Destroy model
@@ -456,7 +456,7 @@ TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 12);
+    CHECK(t->m_araddr == (12 << 1));
     CHECK(t->s_ar_ready == 1);
 
     t->m_ready = 0;
@@ -469,7 +469,7 @@ TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 12);
+    CHECK(t->m_araddr == (12 << 1));
     CHECK(t->s_ar_ready == 0);
 
     // Second texel cold
@@ -483,7 +483,7 @@ TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b01);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 22);
+    CHECK(t->m_araddr == (22 << 1));
     CHECK(t->s_ar_ready == 1);
 
     t->m_ready = 0;
@@ -496,7 +496,7 @@ TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b01);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 22);
+    CHECK(t->m_araddr == (22 << 1));
     CHECK(t->s_ar_ready == 0);
 
     // Third texel cold
@@ -510,7 +510,7 @@ TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b10);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 32);
+    CHECK(t->m_araddr == (32 << 1));
     CHECK(t->s_ar_ready == 1);
 
     t->m_ready = 0;
@@ -523,7 +523,7 @@ TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b10);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 32);
+    CHECK(t->m_araddr == (32 << 1));
     CHECK(t->s_ar_ready == 0);
 
     // Fourth texel cold
@@ -537,7 +537,7 @@ TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b11);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 42);
+    CHECK(t->m_araddr == (42 << 1));
     CHECK(t->s_ar_ready == 1);
 
     t->m_ready = 0;
@@ -550,7 +550,7 @@ TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
     CHECK(t->m_texel_pos == 0b11);
     CHECK(t->m_cmd == 1);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 42);
+    CHECK(t->m_araddr == (42 << 1));
     CHECK(t->s_ar_ready == 0);
 
     // Destroy model
@@ -572,7 +572,7 @@ TEST_CASE("Output remains valid while stalled after source withdraws valid", "[T
     t->s_ar_texel11 = 40;
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 12);
+    CHECK(t->m_araddr == (12 << 1));
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 1);
     CHECK(t->s_ar_ready == 1);
@@ -580,7 +580,7 @@ TEST_CASE("Output remains valid while stalled after source withdraws valid", "[T
     t->s_ar_valid = 0;
     rr::ut::clk(t);
     CHECK(t->m_valid == 1);
-    CHECK(t->m_araddr == 12);
+    CHECK(t->m_araddr == (12 << 1));
     CHECK(t->m_texel_pos == 0b00);
     CHECK(t->m_cmd == 1);
     CHECK(t->s_ar_ready == 1);

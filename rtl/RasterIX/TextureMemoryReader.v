@@ -24,7 +24,8 @@ module TextureMemoryReader #(
     parameter ADDR_WIDTH = 32,
     parameter PAGE_SIZE = 2048,
 
-    localparam TEX_ADDR_WIDTH = 17
+    localparam TEX_ADDR_WIDTH = 17,
+    localparam BYTE_ADDR_WIDTH = TEX_ADDR_WIDTH + 1
 )
 (
     input  wire                             aclk,
@@ -72,12 +73,21 @@ module TextureMemoryReader #(
     output wire                             m_axi_rready
 );
     wire [ 1 : 0]                   ttcm_texel_pos;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   ttcm_araddr;
+    wire [BYTE_ADDR_WIDTH - 1 : 0]  ttcm_araddr;
     wire                            ttcm_cmd;
     wire                            ttcm_valid;
     wire                            ttcm_ready;
+    wire [ID_WIDTH - 1 : 0]         ttcm_arid;
+    wire [ 7 : 0]                   ttcm_arlen;
+    wire [ 2 : 0]                   ttcm_arsize;
+    wire [ 1 : 0]                   ttcm_arburst;
+    wire                            ttcm_arlock;
+    wire [ 3 : 0]                   ttcm_arcache;
+    wire [ 2 : 0]                   ttcm_arprot;
     TextureReaderController #(
-        .TEX_ADDR_WIDTH(TEX_ADDR_WIDTH)
+        .TEX_ADDR_WIDTH(TEX_ADDR_WIDTH),
+        .TEXEL_WIDTH(TEXEL_WIDTH),
+        .ID_WIDTH(ID_WIDTH)
     ) textureTexelContextManager_inst (
         .aclk(aclk),
         .resetn(resetn),
@@ -95,22 +105,29 @@ module TextureMemoryReader #(
         .m_cmd(ttcm_cmd),
         .m_valid(ttcm_valid),
         .m_ready(ttcm_ready),
-        .m_araddr(ttcm_araddr)
+        .m_araddr(ttcm_araddr),
+        .m_arid(ttcm_arid),
+        .m_arlen(ttcm_arlen),
+        .m_arsize(ttcm_arsize),
+        .m_arburst(ttcm_arburst),
+        .m_arlock(ttcm_arlock),
+        .m_arcache(ttcm_arcache),
+        .m_arprot(ttcm_arprot)
     );
 
     wire [ 1 : 0]                   bc_texel_pos_0;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   bc_araddr_0;
+    wire [BYTE_ADDR_WIDTH - 1 : 0]  bc_araddr_0;
     wire                            bc_cmd_0;
     wire                            bc_valid_0;
     wire                            bc_ready_0;
     wire [ 1 : 0]                   bc_texel_pos_1;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   bc_araddr_1;
+    wire [BYTE_ADDR_WIDTH - 1 : 0]  bc_araddr_1;
     wire                            bc_cmd_1;
     wire                            bc_valid_1;
     wire                            bc_ready_1;
     axis_broadcast #(
         .M_COUNT(2),
-        .DATA_WIDTH(2 + TEX_ADDR_WIDTH + 1),
+        .DATA_WIDTH(2 + BYTE_ADDR_WIDTH + 1),
         .KEEP_ENABLE(0),
         .LAST_ENABLE(1),
         .ID_ENABLE(0),
@@ -121,7 +138,7 @@ module TextureMemoryReader #(
         .rst(!resetn),
 
         .s_axis_tdata({
-            ttcm_texel_pos, 
+            ttcm_texel_pos,
             ttcm_araddr, 
             ttcm_cmd
         }),
@@ -150,13 +167,9 @@ module TextureMemoryReader #(
         .m_axis_tuser()
     );
 
-    wire [TEXEL_WIDTH - 1 : 0] mmu_texel;
-    wire                       mmu_valid;
-    wire                       mmu_ready;
     TextureMMU #(
-        .TEX_ADDR_WIDTH(TEX_ADDR_WIDTH),
+        .TEX_ADDR_WIDTH(BYTE_ADDR_WIDTH),
         .PAGE_SIZE(PAGE_SIZE),
-        .DATA_WIDTH(TEXEL_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH)
     ) textureMMU_inst (
@@ -168,13 +181,16 @@ module TextureMemoryReader #(
         .s_axis_tlast(s_axis_tlast),
         .s_axis_tdata(s_axis_tdata),
 
-        .s_araddr(bc_araddr_0 << 1), // Convert from word address to byte address
-        .s_arvalid(bc_valid_0),
-        .s_arready(bc_ready_0),
-
-        .s_rdata(mmu_texel),
-        .s_rvalid(mmu_valid),
-        .s_rready(mmu_ready),
+        .s_axi_araddr(bc_araddr_0),
+        .s_axi_arid(ttcm_arid),
+        .s_axi_arlen(ttcm_arlen),
+        .s_axi_arsize(ttcm_arsize),
+        .s_axi_arburst(ttcm_arburst),
+        .s_axi_arlock(ttcm_arlock),
+        .s_axi_arcache(ttcm_arcache),
+        .s_axi_arprot(ttcm_arprot),
+        .s_axi_arvalid(bc_valid_0),
+        .s_axi_arready(bc_ready_0),
 
         .m_axi_arid(m_axi_arid),
         .m_axi_araddr(m_axi_araddr),
@@ -185,14 +201,7 @@ module TextureMemoryReader #(
         .m_axi_arcache(m_axi_arcache),
         .m_axi_arprot(m_axi_arprot),
         .m_axi_arvalid(m_axi_arvalid),
-        .m_axi_arready(m_axi_arready),
-
-        .m_axi_rid(m_axi_rid),
-        .m_axi_rdata(m_axi_rdata),
-        .m_axi_rresp(m_axi_rresp),
-        .m_axi_rlast(m_axi_rlast),
-        .m_axi_rvalid(m_axi_rvalid),
-        .m_axi_rready(m_axi_rready)
+        .m_axi_arready(m_axi_arready)
     );
 
     wire [TEXEL_WIDTH - 1 : 0]   fifo_texel;
@@ -215,9 +224,9 @@ module TextureMemoryReader #(
         .resetn(resetn),
 
         .s_stream0_tenable(1'b1),
-        .s_stream0_tvalid(mmu_valid),
-        .s_stream0_tdata(mmu_texel),
-        .s_stream0_tready(mmu_ready),
+        .s_stream0_tvalid(m_axi_rvalid),
+        .s_stream0_tdata(m_axi_rdata),
+        .s_stream0_tready(m_axi_rready),
 
         .s_stream1_tenable(1'b1),
         .s_stream1_tvalid(bc_valid_1),

@@ -16,11 +16,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module TextureMMU #(
-    parameter TEX_ADDR_WIDTH = 17,
+    parameter TEX_ADDR_WIDTH = 18,
 
     parameter PAGE_SIZE = 2048,
 
-    parameter DATA_WIDTH = 16,
     parameter ID_WIDTH = 4,
     parameter ADDR_WIDTH = 32
 
@@ -36,13 +35,16 @@ module TextureMMU #(
     input  wire [ADDR_WIDTH - 1 : 0]        s_axis_tdata,
 
     // Input interface
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_araddr,
-    input  wire                             s_arvalid,
-    output wire                             s_arready,
-
-    output wire [DATA_WIDTH - 1 : 0]        s_rdata,
-    output wire                             s_rvalid,
-    input  wire                             s_rready,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_axi_araddr,
+    input  wire [ID_WIDTH - 1 : 0]          s_axi_arid,
+    input  wire [ 7 : 0]                    s_axi_arlen,
+    input  wire [ 2 : 0]                    s_axi_arsize,
+    input  wire [ 1 : 0]                    s_axi_arburst,
+    input  wire                             s_axi_arlock,
+    input  wire [ 3 : 0]                    s_axi_arcache,
+    input  wire [ 2 : 0]                    s_axi_arprot,
+    input  wire                             s_axi_arvalid,
+    output wire                             s_axi_arready,
 
     // Output interface
     output wire [ID_WIDTH - 1 : 0]          m_axi_arid,
@@ -54,14 +56,7 @@ module TextureMMU #(
     output wire [ 3 : 0]                    m_axi_arcache,
     output wire [ 2 : 0]                    m_axi_arprot,
     output wire                             m_axi_arvalid,
-    input  wire                             m_axi_arready,
-
-    input  wire [ID_WIDTH - 1 : 0]          m_axi_rid,
-    input  wire [DATA_WIDTH - 1 : 0]        m_axi_rdata,
-    input  wire [ 1 : 0]                    m_axi_rresp,
-    input  wire                             m_axi_rlast,
-    input  wire                             m_axi_rvalid,
-    output wire                             m_axi_rready
+    input  wire                             m_axi_arready
 );
     localparam PAGE_ENTRIES_LG = TEX_ADDR_WIDTH - $clog2(PAGE_SIZE);
 
@@ -69,24 +64,20 @@ module TextureMMU #(
 
     assign s_axis_tready = 1'b1;
 
-    assign s_rdata = m_axi_rdata;
-    assign s_rvalid = m_axi_rvalid;
-    assign m_axi_rready = s_rready;
-
-    assign m_axi_arid = 0;
+    assign m_axi_arid = s_axi_arid;
     wire [ADDR_WIDTH - 1 : 0] page_offset
         = { { (ADDR_WIDTH - (TEX_ADDR_WIDTH - PAGE_ENTRIES_LG)) { 1'b0 } },
-           s_araddr[0 +: TEX_ADDR_WIDTH - PAGE_ENTRIES_LG] };
-    assign m_axi_araddr = page_table[s_araddr[TEX_ADDR_WIDTH - PAGE_ENTRIES_LG +: PAGE_ENTRIES_LG]]
+            s_axi_araddr[0 +: TEX_ADDR_WIDTH - PAGE_ENTRIES_LG] };
+    assign m_axi_araddr = page_table[s_axi_araddr[TEX_ADDR_WIDTH - PAGE_ENTRIES_LG +: PAGE_ENTRIES_LG]]
                             + page_offset;
-    assign m_axi_arlen = 0; // Single beat
-    assign m_axi_arsize = 3'b001; // 2 bytes per beat
-    assign m_axi_arburst = 2'b01; // INCR burst
-    assign m_axi_arlock = 0;
-    assign m_axi_arcache = 4'b0011; // Normal cacheable
-    assign m_axi_arprot = 3'b000;
-    assign m_axi_arvalid = s_arvalid;
-    assign s_arready = m_axi_arready;
+    assign m_axi_arlen = s_axi_arlen;
+    assign m_axi_arsize = s_axi_arsize;
+    assign m_axi_arburst = s_axi_arburst;
+    assign m_axi_arlock = s_axi_arlock;
+    assign m_axi_arcache = s_axi_arcache;
+    assign m_axi_arprot = s_axi_arprot;
+    assign m_axi_arvalid = s_axi_arvalid;
+    assign s_axi_arready = m_axi_arready;
 
     reg [PAGE_ENTRIES_LG - 1 : 0] page_table_index;
     always @(posedge aclk) 
