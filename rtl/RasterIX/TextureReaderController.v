@@ -18,7 +18,10 @@
 `include "PixelUtil.vh"
 
 module TextureReaderController #(
-    parameter TEX_ADDR_WIDTH = 17
+    parameter TEX_ADDR_WIDTH = 17,
+    parameter TEXEL_WIDTH = 16,
+    parameter ID_WIDTH = 4,
+    localparam BYTE_ADDR_WIDTH = TEX_ADDR_WIDTH + 1
 )
 (
     input  wire                             aclk,
@@ -40,7 +43,16 @@ module TextureReaderController #(
     output reg                              m_cmd, // 1 = store and sample, 0 = store only 
     output reg                              m_valid,
     input  wire                             m_ready,
-    output reg  [TEX_ADDR_WIDTH - 1 : 0]    m_araddr
+    output reg  [BYTE_ADDR_WIDTH - 1 : 0]   m_araddr,
+
+    // AXI read address metadata
+    output wire [ID_WIDTH - 1 : 0]          m_arid,
+    output wire [ 7 : 0]                    m_arlen,
+    output wire [ 2 : 0]                    m_arsize,
+    output wire [ 1 : 0]                    m_arburst,
+    output wire                             m_arlock,
+    output wire [ 3 : 0]                    m_arcache,
+    output wire [ 2 : 0]                    m_arprot
 );
 // The following cases have to be handled:
 // 1. Cache miss: The texel must be cached from memory before it can be used.
@@ -54,6 +66,14 @@ module TextureReaderController #(
     localparam INVALID_TEXEL_ADDR = { TEX_ADDR_WIDTH { 1'b1 } };
     localparam CMD_STORE_AND_SAMPLE = 1;
     localparam CMD_STORE_ONLY       = 0;
+
+    assign m_arid = 0;
+    assign m_arlen = 0;
+    assign m_arsize = 3'($clog2(TEXEL_WIDTH / 8));
+    assign m_arburst = 2'b01;
+    assign m_arlock = 0;
+    assign m_arcache = 4'b0011;
+    assign m_arprot = 3'b000;
 
     reg [TEX_ADDR_WIDTH - 1 : 0] r_texel00;
     reg [TEX_ADDR_WIDTH - 1 : 0] r_texel01;
@@ -135,25 +155,25 @@ module TextureReaderController #(
                 // TODO: Only check all 4 texel when texture filtering is enabled
                 if (!texel_match[0])
                 begin
-                    m_araddr <= r_texel00_next;
+                    m_araddr <= { r_texel00_next, 1'b0 };
                     m_texel_pos <= 2'b00;
                     r_texel00 <= r_texel00_next;
                 end
                 else if (!texel_match[1])
                 begin
-                    m_araddr <= r_texel01_next;
+                    m_araddr <= { r_texel01_next, 1'b0 };
                     m_texel_pos <= 2'b01;
                     r_texel01 <= r_texel01_next;
                 end
                 else if (!texel_match[2])
                 begin
-                    m_araddr <= r_texel10_next;
+                    m_araddr <= { r_texel10_next, 1'b0 };
                     m_texel_pos <= 2'b10;
                     r_texel10 <= r_texel10_next;
                 end
                 else if (!texel_match[3])
                 begin
-                    m_araddr <= r_texel11_next;
+                    m_araddr <= { r_texel11_next, 1'b0 };
                     m_texel_pos <= 2'b11;
                     r_texel11 <= r_texel11_next;
                 end

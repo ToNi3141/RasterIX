@@ -10,7 +10,7 @@ namespace
 {
 
 constexpr std::uint32_t PAGE_SIZE { 2048 };
-constexpr std::size_t PAGE_TABLE_ENTRIES { 64 };
+constexpr std::size_t PAGE_TABLE_ENTRIES { 128 };
 
 void initialize(VTextureMMU* textureMmu)
 {
@@ -18,16 +18,17 @@ void initialize(VTextureMMU* textureMmu)
     textureMmu->s_axis_tlast = 0;
     textureMmu->s_axis_tdata = 0;
 
-    textureMmu->s_araddr = 0;
-    textureMmu->s_arvalid = 0;
-    textureMmu->s_rready = 0;
+    textureMmu->s_axi_araddr = 0;
+    textureMmu->s_axi_arid = 0;
+    textureMmu->s_axi_arlen = 0;
+    textureMmu->s_axi_arsize = 1;
+    textureMmu->s_axi_arburst = 1;
+    textureMmu->s_axi_arlock = 0;
+    textureMmu->s_axi_arcache = 3;
+    textureMmu->s_axi_arprot = 0;
+    textureMmu->s_axi_arvalid = 0;
 
     textureMmu->m_axi_arready = 0;
-    textureMmu->m_axi_rid = 0;
-    textureMmu->m_axi_rdata = 0;
-    textureMmu->m_axi_rresp = 0;
-    textureMmu->m_axi_rlast = 0;
-    textureMmu->m_axi_rvalid = 0;
 
     rr::ut::reset(textureMmu);
 }
@@ -72,8 +73,8 @@ std::uint32_t translate(const std::array<std::uint32_t, EntryCount>& pageTable,
 
 std::uint32_t translate(VTextureMMU* textureMmu, std::uint32_t virtualAddress)
 {
-    textureMmu->s_araddr = virtualAddress;
-    textureMmu->s_arvalid = 1;
+    textureMmu->s_axi_araddr = virtualAddress;
+    textureMmu->s_axi_arvalid = 1;
     rr::ut::clk(textureMmu);
     return textureMmu->m_axi_araddr;
 }
@@ -89,13 +90,20 @@ TEST_CASE("Translate one page-table entry", "[TextureMMU]")
     loadPageTable(textureMmu, pageTable);
 
     constexpr std::uint32_t virtualAddress { 0x00345 };
-    textureMmu->s_arvalid = 1;
-    textureMmu->s_araddr = virtualAddress;
+    textureMmu->s_axi_arvalid = 1;
+    textureMmu->s_axi_araddr = virtualAddress;
     textureMmu->m_axi_arready = 1;
     rr::ut::clk(textureMmu);
     CHECK(textureMmu->m_axi_araddr == translate(pageTable, virtualAddress));
     CHECK(textureMmu->m_axi_arvalid == 1);
-    CHECK(textureMmu->s_arready == 1);
+    CHECK(textureMmu->s_axi_arready == 1);
+    CHECK(textureMmu->m_axi_arid == textureMmu->s_axi_arid);
+    CHECK(textureMmu->m_axi_arlen == textureMmu->s_axi_arlen);
+    CHECK(textureMmu->m_axi_arsize == textureMmu->s_axi_arsize);
+    CHECK(textureMmu->m_axi_arburst == textureMmu->s_axi_arburst);
+    CHECK(textureMmu->m_axi_arlock == textureMmu->s_axi_arlock);
+    CHECK(textureMmu->m_axi_arcache == textureMmu->s_axi_arcache);
+    CHECK(textureMmu->m_axi_arprot == textureMmu->s_axi_arprot);
 
     delete textureMmu;
 }
