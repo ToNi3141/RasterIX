@@ -15,14 +15,14 @@ constexpr uint8_t LOAD_CACHE_LINE = 1;
 void waitForReady(VTextureCacheDirectMappedController* t)
 {
     t->invalidate = 0;
-    t->s_arvalid = 0;
-    t->m_ready = 1;
+    t->s_tc_valid = 0;
+    t->m_tc_ready = 1;
     t->m_axi_arready = 1;
-    for (unsigned cycle = 0; cycle < 64 && !t->s_arready; cycle++)
+    for (unsigned cycle = 0; cycle < 64 && !t->s_tc_ready; cycle++)
     {
         rr::ut::clk(t);
     }
-    REQUIRE(t->s_arready == 1);
+    REQUIRE(t->s_tc_ready == 1);
 }
 
 void checkAxiRequest(VTextureCacheDirectMappedController* t, uint32_t address)
@@ -42,34 +42,34 @@ void fillCache(
     VTextureCacheDirectMappedController* t,
     uint32_t address)
 {
-    t->s_araddr = address;
-    t->s_arvalid = 1;
-    REQUIRE(t->s_arready == 1);
+    t->s_tc_addr = address;
+    t->s_tc_valid = 1;
+    REQUIRE(t->s_tc_ready == 1);
     REQUIRE(t->m_axi_arready == 1);
     rr::ut::clk(t);
 
-    REQUIRE(t->m_valid == 1);
-    REQUIRE(t->m_cmd == LOAD_CACHE_LINE);
-    REQUIRE(t->m_addr == address);
+    REQUIRE(t->m_tc_valid == 1);
+    REQUIRE(t->m_tc_cmd == LOAD_CACHE_LINE);
+    REQUIRE(t->m_tc_addr == address);
     checkAxiRequest(t, address);
-    REQUIRE(t->s_arready == 0);
+    REQUIRE(t->s_tc_ready == 0);
 
     REQUIRE(t->m_axi_arvalid == 1);
     rr::ut::clk(t);
     REQUIRE(t->m_axi_arvalid == 0);
-    REQUIRE(t->m_valid == 0);
-    REQUIRE(t->s_arready == 0);
+    REQUIRE(t->m_tc_valid == 0);
+    REQUIRE(t->s_tc_ready == 0);
 
     rr::ut::clk(t);
-    REQUIRE(t->m_valid == 1);
-    REQUIRE(t->m_cmd == READ_CACHE_ENTRY);
-    REQUIRE(t->m_addr == address);
-    REQUIRE(t->s_arready == 1);
+    REQUIRE(t->m_tc_valid == 1);
+    REQUIRE(t->m_tc_cmd == READ_CACHE_ENTRY);
+    REQUIRE(t->m_tc_addr == address);
+    REQUIRE(t->s_tc_ready == 1);
 
-    t->s_arvalid = 0;
+    t->s_tc_valid = 0;
     rr::ut::clk(t);
-    REQUIRE(t->m_valid == 0);
-    REQUIRE(t->s_arready == 1);
+    REQUIRE(t->m_tc_valid == 0);
+    REQUIRE(t->s_tc_ready == 1);
 }
 
 VTextureCacheDirectMappedController* makeController()
@@ -95,24 +95,24 @@ TEST_CASE("Warm cache produces one entry command per cycle",
     fillCache(t, 32);
 
     t->m_axi_arready = 1;
-    t->m_ready = 1;
+    t->m_tc_ready = 1;
     const std::array<uint32_t, 4> addresses = { 1, 2, 33, 34 };
     for (const auto address : addresses)
     {
-        t->s_araddr = address;
-        t->s_arvalid = 1;
-        REQUIRE(t->s_arready == 1);
+        t->s_tc_addr = address;
+        t->s_tc_valid = 1;
+        REQUIRE(t->s_tc_ready == 1);
         rr::ut::clk(t);
-        CHECK(t->m_valid == 1);
-        CHECK(t->m_cmd == READ_CACHE_ENTRY);
-        CHECK(t->m_addr == address);
-        CHECK(t->s_arready == 1);
+        CHECK(t->m_tc_valid == 1);
+        CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+        CHECK(t->m_tc_addr == address);
+        CHECK(t->s_tc_ready == 1);
         CHECK(t->m_axi_arvalid == 0);
     }
-    t->s_arvalid = 0;
+    t->s_tc_valid = 0;
     rr::ut::clk(t);
-    CHECK(t->m_valid == 0);
-    CHECK(t->s_arready == 1);
+    CHECK(t->m_tc_valid == 0);
+    CHECK(t->s_tc_ready == 1);
 
     delete t;
 }
@@ -122,27 +122,27 @@ TEST_CASE("Master backpressure holds a cache command stable",
     auto* t = makeController();
     fillCache(t, 0);
 
-    t->m_ready = 0;
-    t->s_araddr = 1;
-    t->s_arvalid = 1;
-    REQUIRE(t->s_arready == 1);
+    t->m_tc_ready = 0;
+    t->s_tc_addr = 1;
+    t->s_tc_valid = 1;
+    REQUIRE(t->s_tc_ready == 1);
     rr::ut::clk(t);
-    CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == READ_CACHE_ENTRY);
-    CHECK(t->m_addr == 1);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_tc_addr == 1);
 
-    t->s_arvalid = 0;
+    t->s_tc_valid = 0;
     rr::ut::clk(t);
-    CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == READ_CACHE_ENTRY);
-    CHECK(t->m_addr == 1);
-    CHECK(t->s_arready == 1);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_tc_addr == 1);
+    CHECK(t->s_tc_ready == 1);
 
-    t->m_ready = 1;
-    REQUIRE(t->m_valid == 1);
+    t->m_tc_ready = 1;
+    REQUIRE(t->m_tc_valid == 1);
     rr::ut::clk(t);
-    CHECK(t->m_valid == 0);
-    CHECK(t->s_arready == 1);
+    CHECK(t->m_tc_valid == 0);
+    CHECK(t->s_tc_ready == 1);
     delete t;
 }
 
@@ -150,41 +150,41 @@ TEST_CASE("AXI backpressure blocks the next cache command",
     "[TextureCacheDirectMappedController]")
 {
     auto* t = makeController();
-    REQUIRE(t->s_arready == 1);
+    REQUIRE(t->s_tc_ready == 1);
 
     t->m_axi_arready = 0;
-    t->s_araddr = 0;
-    t->s_arvalid = 1;
+    t->s_tc_addr = 0;
+    t->s_tc_valid = 1;
     rr::ut::clk(t);
     REQUIRE(t->m_axi_arvalid == 1);
-    REQUIRE(t->m_cmd == LOAD_CACHE_LINE);
-    REQUIRE(t->s_arready == 0);
+    REQUIRE(t->m_tc_cmd == LOAD_CACHE_LINE);
+    REQUIRE(t->s_tc_ready == 0);
 
-    t->s_araddr = 2;
-    t->s_arvalid = 1;
+    t->s_tc_addr = 2;
+    t->s_tc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_axi_arvalid == 1);
     CHECK(t->m_axi_araddr == 0);
-    CHECK(t->m_valid == 0);
-    CHECK(t->s_arready == 0);
+    CHECK(t->m_tc_valid == 0);
+    CHECK(t->s_tc_ready == 0);
 
     t->m_axi_arready = 1;
     rr::ut::clk(t);
     CHECK(t->m_axi_arvalid == 0);
-    CHECK(t->m_valid == 0);
-    CHECK(t->s_arready == 0);
+    CHECK(t->m_tc_valid == 0);
+    CHECK(t->s_tc_ready == 0);
 
     rr::ut::clk(t);
-    CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == READ_CACHE_ENTRY);
-    CHECK(t->m_addr == 0);
-    CHECK(t->s_arready == 1);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_tc_addr == 0);
+    CHECK(t->s_tc_ready == 1);
 
     rr::ut::clk(t);
-    CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == READ_CACHE_ENTRY);
-    CHECK(t->m_addr == 2);
-    CHECK(t->s_arready == 1);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_tc_addr == 2);
+    CHECK(t->s_tc_ready == 1);
 
     delete t;
 }
@@ -195,19 +195,19 @@ TEST_CASE("skid buffer retains request order across invalidation",
     auto* t = makeController();
     fillCache(t, 0);
 
-    t->m_ready = 0;
-    t->s_araddr = 1;
-    t->s_arvalid = 1;
-    REQUIRE(t->s_arready == 1);
+    t->m_tc_ready = 0;
+    t->s_tc_addr = 1;
+    t->s_tc_valid = 1;
+    REQUIRE(t->s_tc_ready == 1);
     rr::ut::clk(t);
-    REQUIRE(t->m_valid == 1);
-    CHECK(t->m_addr == 1);
+    REQUIRE(t->m_tc_valid == 1);
+    CHECK(t->m_tc_addr == 1);
 
-    t->s_araddr = 2;
+    t->s_tc_addr = 2;
     rr::ut::clk(t);
-    REQUIRE(t->s_arready == 0);
+    REQUIRE(t->s_tc_ready == 0);
 
-    t->s_araddr = 3;
+    t->s_tc_addr = 3;
     t->invalidate = 1;
     rr::ut::clk(t);
     t->invalidate = 0;
@@ -216,33 +216,33 @@ TEST_CASE("skid buffer retains request order across invalidation",
         rr::ut::clk(t);
     }
 
-    CHECK(t->s_arready == 0);
+    CHECK(t->s_tc_ready == 0);
 
-    t->m_ready = 1;
+    t->m_tc_ready = 1;
     rr::ut::clk(t);
-    REQUIRE(t->m_valid == 1);
-    CHECK(t->m_cmd == LOAD_CACHE_LINE);
-    CHECK(t->m_addr == 2);
-    CHECK(t->s_arready == 0);
-
-    rr::ut::clk(t);
-    CHECK(t->m_valid == 0);
-    CHECK(t->s_arready == 0);
+    REQUIRE(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == LOAD_CACHE_LINE);
+    CHECK(t->m_tc_addr == 2);
+    CHECK(t->s_tc_ready == 0);
 
     rr::ut::clk(t);
-    REQUIRE(t->m_valid == 1);
-    CHECK(t->m_cmd == READ_CACHE_ENTRY);
-    CHECK(t->m_addr == 2);
-    CHECK(t->s_arready == 1);
+    CHECK(t->m_tc_valid == 0);
+    CHECK(t->s_tc_ready == 0);
 
     rr::ut::clk(t);
-    REQUIRE(t->m_valid == 1);
-    CHECK(t->m_cmd == READ_CACHE_ENTRY);
-    CHECK(t->m_addr == 3);
+    REQUIRE(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_tc_addr == 2);
+    CHECK(t->s_tc_ready == 1);
 
-    t->s_arvalid = 0;
     rr::ut::clk(t);
-    CHECK(t->m_valid == 0);
+    REQUIRE(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_tc_addr == 3);
+
+    t->s_tc_valid = 0;
+    rr::ut::clk(t);
+    CHECK(t->m_tc_valid == 0);
     delete t;
 }
 
@@ -250,48 +250,48 @@ TEST_CASE("Two cold requests produce two line loads and two entry accesses",
     "[TextureCacheDirectMappedController]")
 {
     auto* t = makeController();
-    t->m_ready = 1;
+    t->m_tc_ready = 1;
     t->m_axi_arready = 1;
 
-    t->s_araddr = 0;
-    t->s_arvalid = 1;
-    REQUIRE(t->s_arready == 1);
+    t->s_tc_addr = 0;
+    t->s_tc_valid = 1;
+    REQUIRE(t->s_tc_ready == 1);
     rr::ut::clk(t);
-    CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == LOAD_CACHE_LINE);
-    CHECK(t->m_addr == 0);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == LOAD_CACHE_LINE);
+    CHECK(t->m_tc_addr == 0);
     checkAxiRequest(t, 0);
-    CHECK(t->s_arready == 0);
+    CHECK(t->s_tc_ready == 0);
 
-    t->s_araddr = CACHE_SIZE;
+    t->s_tc_addr = CACHE_SIZE;
     rr::ut::clk(t);
     CHECK(t->m_axi_arvalid == 0);
-    CHECK(t->m_valid == 0);
-    CHECK(t->s_arready == 0);
+    CHECK(t->m_tc_valid == 0);
+    CHECK(t->s_tc_ready == 0);
 
     rr::ut::clk(t);
-    CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == READ_CACHE_ENTRY);
-    CHECK(t->m_addr == 0);
-    CHECK(t->s_arready == 1);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_tc_addr == 0);
+    CHECK(t->s_tc_ready == 1);
 
     rr::ut::clk(t);
-    CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == LOAD_CACHE_LINE);
-    CHECK(t->m_addr == CACHE_SIZE);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == LOAD_CACHE_LINE);
+    CHECK(t->m_tc_addr == CACHE_SIZE);
     checkAxiRequest(t, CACHE_SIZE);
-    CHECK(t->s_arready == 0);
-    t->s_arvalid = 0;
+    CHECK(t->s_tc_ready == 0);
+    t->s_tc_valid = 0;
 
     rr::ut::clk(t);
     CHECK(t->m_axi_arvalid == 0);
-    CHECK(t->m_valid == 0);
+    CHECK(t->m_tc_valid == 0);
 
     rr::ut::clk(t);
-    CHECK(t->m_valid == 1);
-    CHECK(t->m_cmd == READ_CACHE_ENTRY);
-    CHECK(t->m_addr == CACHE_SIZE);
-    CHECK(t->s_arready == 1);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_tc_addr == CACHE_SIZE);
+    CHECK(t->s_tc_ready == 1);
 
     delete t;
 }
@@ -315,17 +315,17 @@ TEST_CASE("Every cache index can be filled and reread as a hit",
         fillCache(t, index * CACHE_LINE_SIZE);
     }
 
-    t->m_ready = 1;
+    t->m_tc_ready = 1;
     t->m_axi_arready = 1;
     for (uint32_t index = 0; index < CACHE_SIZE / CACHE_LINE_SIZE; ++index)
     {
-        t->s_araddr = index * CACHE_LINE_SIZE;
-        t->s_arvalid = 1;
+        t->s_tc_addr = index * CACHE_LINE_SIZE;
+        t->s_tc_valid = 1;
         rr::ut::clk(t);
-        CHECK(t->m_valid == 1);
-        CHECK(t->m_cmd == READ_CACHE_ENTRY);
+        CHECK(t->m_tc_valid == 1);
+        CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
         CHECK(t->m_axi_arvalid == 0);
     }
-    t->s_arvalid = 0;
+    t->s_tc_valid = 0;
     delete t;
 }

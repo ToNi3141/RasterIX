@@ -67,10 +67,10 @@ add_verilator_test(functionInterpolator FunctionInterpolator ${RTL_RASTERIX}/Fun
 add_verilator_test(textureSampler TextureSampler ${RTL_RASTERIX}/TextureSampler.v)
 add_verilator_test(textureBuffer TextureBuffer ${RTL_RASTERIX}/TextureBuffer.v)
 add_verilator_test(textureMMU TextureMMU ${RTL_RASTERIX}/TextureMMU.v)
-add_verilator_test(textureMemoryReader TextureMemoryReader ${RTL_RASTERIX}/TextureMemoryReader.v
+add_verilator_test(textureReader TextureReader ${RTL_RASTERIX}/TextureReader.v
     ${RTL_3RDPARTY}/verilog-axis)
 add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/obj_dir_textureMemoryReader/VTextureMemoryReader
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/obj_dir_textureReader/VTextureReader
     APPEND
     DEPENDS
         ${RTL_RASTERIX}/TextureCacheDirectMapped.v

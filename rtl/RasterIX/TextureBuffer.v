@@ -49,20 +49,20 @@ module TextureBuffer #(
     input  wire                             resetn,
 
     // Texture read address channel
-    input  wire                             texelAddrValid,
-    output wire                             texelAddrReady,
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr00,
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr01,
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr10,
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr11,
+    input  wire                             s_tr_valid,
+    output wire                             s_tr_ready,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_tr_addr_00,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_tr_addr_01,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_tr_addr_10,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_tr_addr_11,
 
     // Texture read texel channel
-    output wire                             texelOutputValid,
-    input  wire                             texelOutputReady,
-    output wire [TEXEL_WIDTH - 1 : 0]       texelOutput00,
-    output wire [TEXEL_WIDTH - 1 : 0]       texelOutput01,
-    output wire [TEXEL_WIDTH - 1 : 0]       texelOutput10,
-    output wire [TEXEL_WIDTH - 1 : 0]       texelOutput11,
+    output wire                             m_tr_valid,
+    input  wire                             m_tr_ready,
+    output wire [TEXEL_WIDTH - 1 : 0]       m_tr_texel_00,
+    output wire [TEXEL_WIDTH - 1 : 0]       m_tr_texel_01,
+    output wire [TEXEL_WIDTH - 1 : 0]       m_tr_texel_10,
+    output wire [TEXEL_WIDTH - 1 : 0]       m_tr_texel_11,
 
     // Texture Write
     input  wire                             s_axis_tvalid,
@@ -160,13 +160,13 @@ module TextureBuffer #(
     //////////////////////////////////////////////
 
     // The odd RAM only contains the texels of the odd s coordinates. The even only the texels of an even s.
-    wire                                texelAddrTransfer = texelAddrValid && texelAddrReady;
-    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory00 = texelAddrTransfer ? texelAddr00 : texelAddrForReading00;
-    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory01 = texelAddrTransfer ? texelAddr01 : texelAddrForReading01;
-    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory10 = texelAddrTransfer ? texelAddr10 : texelAddrForReading10;
-    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory11 = texelAddrTransfer ? texelAddr11 : texelAddrForReading11;
+    wire                                texelAddrTransfer = s_tr_valid && s_tr_ready;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory00 = texelAddrTransfer ? s_tr_addr_00 : texelAddrForReading00;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory01 = texelAddrTransfer ? s_tr_addr_01 : texelAddrForReading01;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory10 = texelAddrTransfer ? s_tr_addr_10 : texelAddrForReading10;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       texelAddrMemory11 = texelAddrTransfer ? s_tr_addr_11 : texelAddrForReading11;
 
-    assign texelAddrReady = !texelOutputValidReg || texelOutputReady;
+    assign s_tr_ready = !texelOutputValidReg || m_tr_ready;
 
     assign memReadAddrEven0 = (texelAddrMemory00[0]) ? texelAddrMemory01[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddrMemory00[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
     assign memReadAddrOdd0  = (texelAddrMemory00[0]) ? texelAddrMemory00[ADDR_WIDTH_DIFF +: ADDR_WIDTH] : texelAddrMemory01[ADDR_WIDTH_DIFF +: ADDR_WIDTH];
@@ -183,13 +183,13 @@ module TextureBuffer #(
         begin
             if (texelAddrTransfer)
             begin
-                texelAddrForReading00 <= texelAddr00;
-                texelAddrForReading01 <= texelAddr01;
-                texelAddrForReading10 <= texelAddr10;
-                texelAddrForReading11 <= texelAddr11;
+                texelAddrForReading00 <= s_tr_addr_00;
+                texelAddrForReading01 <= s_tr_addr_01;
+                texelAddrForReading10 <= s_tr_addr_10;
+                texelAddrForReading11 <= s_tr_addr_11;
             end
 
-            if (!texelOutputValidReg || texelOutputReady)
+            if (!texelOutputValidReg || m_tr_ready)
             begin
                 texelOutputValidReg <= texelAddrTransfer;
             end
@@ -234,11 +234,11 @@ module TextureBuffer #(
         end
     endgenerate
 
-    assign texelOutput00 = texelSelect00;
-    assign texelOutput01 = texelSelect01;
-    assign texelOutput10 = texelSelect10;
-    assign texelOutput11 = texelSelect11;
-    assign texelOutputValid = texelOutputValidReg;
+    assign m_tr_texel_00 = texelSelect00;
+    assign m_tr_texel_01 = texelSelect01;
+    assign m_tr_texel_10 = texelSelect10;
+    assign m_tr_texel_11 = texelSelect11;
+    assign m_tr_valid = texelOutputValidReg;
 
     //////////////////////////////////////////////
     // AXIS Interface

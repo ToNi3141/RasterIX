@@ -45,20 +45,20 @@ module TextureMappingUnit
     input  wire                         confEnable,
 
     // Texture memory read address channel
-    output wire                         texelAddrValid,
-    input  wire                         texelAddrReady,
-    output wire [ADDR_WIDTH - 1 : 0]    texelAddr00,
-    output wire [ADDR_WIDTH - 1 : 0]    texelAddr01,
-    output wire [ADDR_WIDTH - 1 : 0]    texelAddr10,
-    output wire [ADDR_WIDTH - 1 : 0]    texelAddr11,
+    output wire                         m_tr_valid,
+    input wire                          m_tr_ready,
+    output wire [ADDR_WIDTH - 1 : 0]    m_tr_addr_00,
+    output wire [ADDR_WIDTH - 1 : 0]    m_tr_addr_01,
+    output wire [ADDR_WIDTH - 1 : 0]    m_tr_addr_10,
+    output wire [ADDR_WIDTH - 1 : 0]    m_tr_addr_11,
 
     // Texture memory read texel channel
-    input  wire                         texelInputValid,
-    output wire                         texelInputReady,
-    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput00,
-    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput01,
-    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput10,
-    input  wire [TEXEL_WIDTH - 1 : 0]   texelInput11,
+    input wire                          s_tr_valid,
+    output wire                         s_tr_ready,
+    input wire [TEXEL_WIDTH - 1 : 0]    s_tr_texel_00,
+    input wire [TEXEL_WIDTH - 1 : 0]    s_tr_texel_01,
+    input wire [TEXEL_WIDTH - 1 : 0]    s_tr_texel_10,
+    input wire [TEXEL_WIDTH - 1 : 0]    s_tr_texel_11,
 
     // Fragment input
     output wire                         s_ready,
@@ -272,13 +272,13 @@ module TextureMappingUnit
     );
 
     // Texture Buffer Access
-    assign texelAddrValid = step2_broadcastValid[0]; // TODO: Enable and disable texture access
-    assign step2_broadcastReady[0] = texelAddrReady;
-    assign texelAddr00 = step2_broadcastData[0 +: ADDR_WIDTH];
-    assign texelAddr01 = step2_broadcastData[ADDR_WIDTH +: ADDR_WIDTH];
-    assign texelAddr10 = step2_broadcastData[(2 * ADDR_WIDTH) +: ADDR_WIDTH];
-    assign texelAddr11 = step2_broadcastData[(3 * ADDR_WIDTH) +: ADDR_WIDTH];
-    assign texelInputReady = step2_texelReady;
+    assign m_tr_valid = step2_broadcastValid[0]; // TODO: Enable and disable texture access
+    assign step2_broadcastReady[0] = m_tr_ready;
+    assign m_tr_addr_00 = step2_broadcastData[0 +: ADDR_WIDTH];
+    assign m_tr_addr_01 = step2_broadcastData[ADDR_WIDTH +: ADDR_WIDTH];
+    assign m_tr_addr_10 = step2_broadcastData[(2 * ADDR_WIDTH) +: ADDR_WIDTH];
+    assign m_tr_addr_11 = step2_broadcastData[(3 * ADDR_WIDTH) +: ADDR_WIDTH];
+    assign s_tr_ready = step2_texelReady;
 
     assign step2_broadcastReady[1] = step2_contextReady;
 
@@ -296,12 +296,12 @@ module TextureMappingUnit
         .resetn(resetn),
 
         .s_stream0_tenable(1'b1),
-        .s_stream0_tvalid(texelInputValid),
+        .s_stream0_tvalid(s_tr_valid),
         .s_stream0_tdata({
-            texelInput11,
-            texelInput10,
-            texelInput01,
-            texelInput00
+            s_tr_texel_11,
+            s_tr_texel_10,
+            s_tr_texel_01,
+            s_tr_texel_00
         }),
         .s_stream0_tready(step2_texelReady),
 

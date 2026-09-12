@@ -25,36 +25,36 @@ void requestTexels(VTextureBuffer* top,
     const std::array<uint32_t, 4>& addresses,
     const std::array<uint16_t, 4>& expected)
 {
-    top->texelAddr00 = addresses[0];
-    top->texelAddr01 = addresses[1];
-    top->texelAddr10 = addresses[2];
-    top->texelAddr11 = addresses[3];
-    top->texelAddrValid = 1;
-    REQUIRE(top->texelAddrReady == 1);
+    top->s_tr_addr_00 = addresses[0];
+    top->s_tr_addr_01 = addresses[1];
+    top->s_tr_addr_10 = addresses[2];
+    top->s_tr_addr_11 = addresses[3];
+    top->s_tr_valid = 1;
+    REQUIRE(top->s_tr_ready == 1);
     rr::ut::clk(top);
-    top->texelAddrValid = 0;
+    top->s_tr_valid = 0;
 
-    for (int cycle = 0; cycle < 3 && !top->texelOutputValid; ++cycle)
+    for (int cycle = 0; cycle < 3 && !top->m_tr_valid; ++cycle)
     {
         rr::ut::clk(top);
     }
 
-    REQUIRE(top->texelOutputValid == 1);
-    REQUIRE(top->texelOutput00 == expected[0]);
-    REQUIRE(top->texelOutput01 == expected[1]);
-    REQUIRE(top->texelOutput10 == expected[2]);
-    REQUIRE(top->texelOutput11 == expected[3]);
+    REQUIRE(top->m_tr_valid == 1);
+    REQUIRE(top->m_tr_texel_00 == expected[0]);
+    REQUIRE(top->m_tr_texel_01 == expected[1]);
+    REQUIRE(top->m_tr_texel_10 == expected[2]);
+    REQUIRE(top->m_tr_texel_11 == expected[3]);
 
     rr::ut::clk(top);
-    REQUIRE(top->texelOutputValid == 0);
+    REQUIRE(top->m_tr_valid == 0);
 }
 
 TEST_CASE("Read repeated texture addresses independently", "[TextureBuffer]")
 {
     VTextureBuffer* top = rr::ut::makeTop<VTextureBuffer>();
     rr::ut::reset(top);
-    top->texelOutputReady = 1;
-    top->texelAddrValid = 0;
+    top->m_tr_ready = 1;
+    top->s_tr_valid = 0;
 
     top->s_axis_tvalid = 1;
     top->s_axis_tlast = 0;

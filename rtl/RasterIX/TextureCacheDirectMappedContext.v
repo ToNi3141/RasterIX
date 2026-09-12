@@ -35,14 +35,14 @@ module TextureCacheDirectMappedContext #(
     input  wire                             resetn,
 
     // Input interface
-    input  wire                             s_valid,
-    output reg                              s_ready,
-    input  wire                             s_cmd,
-    input  wire [ADDR_WIDTH - 1 : 0]        s_addr,
+    input  wire                             s_tc_valid,
+    output reg                              s_tc_ready,
+    input  wire                             s_tc_cmd,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_tc_addr,
 
-    output reg  [TEXEL_WIDTH - 1 : 0]       m_texel,
-    output reg                              m_valid,
-    input  wire                             m_ready,
+    output reg  [TEXEL_WIDTH - 1 : 0]       m_tc_texel,
+    output reg                              m_tc_valid,
+    input  wire                             m_tc_ready,
 
     // AXI input interface
     input  wire [ID_WIDTH - 1 : 0]          m_axi_rid,
@@ -104,30 +104,30 @@ module TextureCacheDirectMappedContext #(
     reg  [ADDR_WIDTH - 1 : 0]       r_i;
     reg  [ADDR_WIDTH - 1 : 0]       r_axi_addr;
 
-    wire                            w_cmd = r_skid_valid ? r_skid_cmd : s_cmd;
-    wire [ADDR_WIDTH - 1 : 0]       w_addr = r_skid_valid ? r_skid_addr : s_addr;
+    wire                            w_cmd = r_skid_valid ? r_skid_cmd : s_tc_cmd;
+    wire [ADDR_WIDTH - 1 : 0]       w_addr = r_skid_valid ? r_skid_addr : s_tc_addr;
 
     always @(posedge aclk) 
     begin
         if (!resetn) 
         begin
             r_skid_valid <= 1'b0;
-            s_ready      <= 1'b1;
-            m_valid      <= 1'b0;
+            s_tc_ready   <= 1'b1;
+            m_tc_valid   <= 1'b0;
             m_axi_rready <= 1'b0;
         end 
         else 
         begin
             if (!m_axi_rready)
             begin
-                if (!m_valid || (m_valid && m_ready))
+                if (!m_tc_valid || (m_tc_valid && m_tc_ready))
                 begin
-                    if (s_valid || r_skid_valid)
+                    if (s_tc_valid || r_skid_valid)
                     begin
                         if (r_skid_valid)
                         begin
                             r_skid_valid <= 1'b0;
-                            s_ready      <= 1'b1;
+                            s_tc_ready   <= 1'b1;
                         end
                         
                         if (w_cmd == LOAD_CACHE_LINE)
@@ -135,28 +135,28 @@ module TextureCacheDirectMappedContext #(
                             m_axi_rready <= 1'b1;
                             r_i          <= { ADDR_WIDTH { 1'b0 } };
                             r_axi_addr   <= w_addr;
-                            m_valid      <= 1'b0;
-                            s_ready      <= 1'b0;
+                            m_tc_valid   <= 1'b0;
+                            s_tc_ready   <= 1'b0;
                         end
                         else if (w_cmd == READ_CACHE_ENTRY)
                         begin
-                            m_texel <= getTexel(w_addr);
-                            m_valid <= 1'b1;
+                            m_tc_texel <= getTexel(w_addr);
+                            m_tc_valid <= 1'b1;
                         end
                     end
                     else
                     begin
-                        m_valid <= 1'b0;
+                        m_tc_valid <= 1'b0;
                     end
                 end
                 else
                 begin
                     if (!r_skid_valid)
                     begin
-                        r_skid_addr  <= s_addr;
-                        r_skid_cmd   <= s_cmd;
-                        r_skid_valid <= s_valid;
-                        s_ready      <= !s_valid;
+                        r_skid_addr  <= s_tc_addr;
+                        r_skid_cmd   <= s_tc_cmd;
+                        r_skid_valid <= s_tc_valid;
+                        s_tc_ready   <= !s_tc_valid;
                     end
                 end
             end
@@ -169,7 +169,7 @@ module TextureCacheDirectMappedContext #(
                     if (r_i == (CACHE_LINE_SIZE - (DATA_WIDTH / 8)))
                     begin
                         m_axi_rready <= 1'b0;
-                        s_ready <= 1'b1;
+                        s_tc_ready <= 1'b1;
                     end
                 end
             end
