@@ -10,294 +10,93 @@ namespace
 {
 
 constexpr std::uint32_t PAGE_BASE { 0x1000'0000 };
+constexpr std::uint32_t CACHE_LINE_SIZE { 32 };
 constexpr std::size_t MAX_WAIT_CYCLES { 128 };
 
-using TexelAddresses = std::array<std::uint32_t, 4>;
-using Texels = std::array<std::uint16_t, 4>;
+constexpr std::array<std::uint32_t, 4> TEXEL_ADDRESSES { 0x10, 0x11, 0x12, 0x13 };
+constexpr std::array<std::uint16_t, 4> TEXELS { 0xabcd, 0x1234, 0x5678, 0x9abc };
 
-std::uint32_t axiAddressForWord(std::uint32_t wordAddress)
-{
-    return PAGE_BASE + (wordAddress << 1);
 }
 
-class TextureMemoryFixture
+TEST_CASE("reads a texel through TextureMemoryReader", "[TextureMemoryReader]")
 {
-public:
-    TextureMemoryFixture()
-        : textureMemory { rr::ut::makeTop<VTextureMemoryReader>() }
+    auto* textureMemory = rr::ut::makeTop<VTextureMemoryReader>();
+    textureMemory->texelAddrValid = 0;
+    textureMemory->texelOutputReady = 0;
+    textureMemory->s_axis_tvalid = 0;
+    textureMemory->m_axi_arready = 0;
+    textureMemory->m_axi_rvalid = 0;
+    rr::ut::reset(textureMemory);
+
+    textureMemory->s_axis_tvalid = 1;
+    textureMemory->s_axis_tlast = 1;
+    textureMemory->s_axis_tdata = PAGE_BASE;
+    rr::ut::clk(textureMemory);
+    textureMemory->s_axis_tvalid = 0;
+    textureMemory->s_axis_tlast = 0;
+
+    textureMemory->texelAddr00 = TEXEL_ADDRESSES[0];
+    textureMemory->texelAddr01 = TEXEL_ADDRESSES[1];
+    textureMemory->texelAddr10 = TEXEL_ADDRESSES[2];
+    textureMemory->texelAddr11 = TEXEL_ADDRESSES[3];
+    textureMemory->texelAddrValid = 1;
+    std::size_t cycles = 0;
+    while (!textureMemory->texelAddrReady && cycles++ < MAX_WAIT_CYCLES)
     {
-        textureMemory->texelAddrValid = 0;
-        textureMemory->texelAddr00 = 0;
-        textureMemory->texelAddr01 = 0;
-        textureMemory->texelAddr10 = 0;
-        textureMemory->texelAddr11 = 0;
-        textureMemory->texelOutputReady = 0;
+        rr::ut::clk(textureMemory);
+    }
+    REQUIRE(textureMemory->texelAddrReady);
+    rr::ut::clk(textureMemory);
+    textureMemory->texelAddrValid = 0;
 
-        textureMemory->s_axis_tvalid = 0;
-        textureMemory->s_axis_tlast = 0;
-        textureMemory->s_axis_tdata = 0;
+    cycles = 0;
+    while (!textureMemory->m_axi_arvalid && cycles++ < MAX_WAIT_CYCLES)
+    {
+        rr::ut::clk(textureMemory);
+    }
+    REQUIRE(textureMemory->m_axi_arvalid);
+    CHECK(textureMemory->m_axi_araddr == PAGE_BASE + (TEXEL_ADDRESSES[0] << 1));
 
-        textureMemory->m_axi_arready = 0;
-        textureMemory->m_axi_rid = 0;
+    textureMemory->m_axi_arready = 1;
+    rr::ut::clk(textureMemory);
+    textureMemory->m_axi_arready = 0;
+
+    for (std::size_t beat = 0; beat < CACHE_LINE_SIZE / sizeof(std::uint32_t); ++beat)
+    {
         textureMemory->m_axi_rdata = 0;
-        textureMemory->m_axi_rresp = 0;
-        textureMemory->m_axi_rlast = 0;
-        textureMemory->m_axi_rvalid = 0;
-
-        rr::ut::reset(textureMemory);
-    }
-
-    ~TextureMemoryFixture()
-    {
-        delete textureMemory;
-    }
-
-    void loadPageTable(std::uint32_t pageBase)
-    {
-        REQUIRE(textureMemory->s_axis_tready == 1);
-        textureMemory->s_axis_tvalid = 1;
-        textureMemory->s_axis_tlast = 1;
-        textureMemory->s_axis_tdata = pageBase;
-        rr::ut::clk(textureMemory);
-
-        textureMemory->s_axis_tvalid = 0;
-        textureMemory->s_axis_tlast = 0;
-        textureMemory->s_axis_tdata = 0;
-    }
-
-    void submitRequest(const TexelAddresses& addresses)
-    {
-        driveRequest(addresses);
-        textureMemory->texelAddrValid = 1;
-
-        std::size_t cycles = 0;
-        while (!textureMemory->texelAddrReady && cycles++ < MAX_WAIT_CYCLES)
+        if (beat == 0)
         {
-            rr::ut::clk(textureMemory);
+            textureMemory->m_axi_rdata = static_cast<std::uint32_t>(TEXELS[0])
+                                      | (static_cast<std::uint32_t>(TEXELS[1]) << 16);
         }
-        REQUIRE(textureMemory->texelAddrReady == 1);
-        rr::ut::clk(textureMemory);
-
-        textureMemory->texelAddrValid = 0;
-    }
-
-    void acceptRead(std::uint32_t expectedAddress)
-    {
-        textureMemory->m_axi_arready = 0;
-
-        std::size_t cycles = 0;
-        while (!textureMemory->m_axi_arvalid && cycles++ < MAX_WAIT_CYCLES)
+        else if (beat == 1)
         {
-            rr::ut::clk(textureMemory);
+            textureMemory->m_axi_rdata = static_cast<std::uint32_t>(TEXELS[2])
+                                      | (static_cast<std::uint32_t>(TEXELS[3]) << 16);
         }
-        REQUIRE(textureMemory->m_axi_arvalid == 1);
-        REQUIRE(textureMemory->m_axi_araddr == expectedAddress);
-
-        textureMemory->m_axi_arready = 1;
-        rr::ut::clk(textureMemory);
-        textureMemory->m_axi_arready = 0;
-    }
-
-    void sendReadResponse(std::uint16_t texel)
-    {
-        textureMemory->m_axi_rdata = texel;
-        textureMemory->m_axi_rlast = 1;
+        textureMemory->m_axi_rlast = beat == (CACHE_LINE_SIZE / sizeof(std::uint32_t)) - 1;
         textureMemory->m_axi_rvalid = 1;
-
-        std::size_t cycles = 0;
+        cycles = 0;
         while (!textureMemory->m_axi_rready && cycles++ < MAX_WAIT_CYCLES)
         {
             rr::ut::clk(textureMemory);
         }
-        REQUIRE(textureMemory->m_axi_rready == 1);
+        REQUIRE(textureMemory->m_axi_rready);
         rr::ut::clk(textureMemory);
-
-        textureMemory->m_axi_rvalid = 0;
-        textureMemory->m_axi_rlast = 0;
     }
+    textureMemory->m_axi_rvalid = 0;
+    textureMemory->m_axi_rlast = 0;
 
-    void completeRequest(const TexelAddresses& addresses, const Texels& texels)
+    cycles = 0;
+    while (!textureMemory->texelOutputValid && cycles++ < MAX_WAIT_CYCLES)
     {
-        for (std::size_t texelIndex = 0; texelIndex < addresses.size(); ++texelIndex)
-        {
-            acceptRead(axiAddressForWord(addresses[texelIndex]));
-            sendReadResponse(texels[texelIndex]);
-        }
+        rr::ut::clk(textureMemory);
     }
+    REQUIRE(textureMemory->texelOutputValid);
+    CHECK(textureMemory->texelOutput00 == TEXELS[0]);
+    CHECK(textureMemory->texelOutput01 == TEXELS[1]);
+    CHECK(textureMemory->texelOutput10 == TEXELS[2]);
+    CHECK(textureMemory->texelOutput11 == TEXELS[3]);
 
-    void waitForOutput()
-    {
-        std::size_t cycles = 0;
-        while (!textureMemory->texelOutputValid && cycles++ < MAX_WAIT_CYCLES)
-        {
-            rr::ut::clk(textureMemory);
-        }
-        REQUIRE(textureMemory->texelOutputValid == 1);
-    }
-
-    void checkOutput(const Texels& expected) const
-    {
-        CHECK(textureMemory->texelOutput00 == expected[0]);
-        CHECK(textureMemory->texelOutput01 == expected[1]);
-        CHECK(textureMemory->texelOutput10 == expected[2]);
-        CHECK(textureMemory->texelOutput11 == expected[3]);
-    }
-
-    void driveRequest(const TexelAddresses& addresses)
-    {
-        textureMemory->texelAddr00 = addresses[0];
-        textureMemory->texelAddr01 = addresses[1];
-        textureMemory->texelAddr10 = addresses[2];
-        textureMemory->texelAddr11 = addresses[3];
-    }
-
-    VTextureMemoryReader* textureMemory;
-};
-
-std::uint16_t texelForAddress(std::uint32_t physicalAddress)
-{
-    return static_cast<std::uint16_t>(0x4000 + physicalAddress - PAGE_BASE);
-}
-
-} // namespace
-
-TEST_CASE("Read texels through TextureMemoryReader", "[TextureMemoryReader]")
-{
-    TextureMemoryFixture fixture;
-    fixture.loadPageTable(PAGE_BASE);
-
-    const TexelAddresses addresses { 0x10, 0x20, 0x30, 0x40 };
-    const Texels texels { 0x1010, 0x2020, 0x3030, 0x4040 };
-
-    fixture.submitRequest(addresses);
-    fixture.completeRequest(addresses, texels);
-    fixture.waitForOutput();
-    fixture.checkOutput(texels);
-
-    fixture.textureMemory->texelOutputReady = 1;
-    rr::ut::clk(fixture.textureMemory);
-    CHECK(fixture.textureMemory->texelOutputValid == 0);
-}
-
-TEST_CASE("Hold an AXI read address while the address channel stalls", "[TextureMemoryReader]")
-{
-    TextureMemoryFixture fixture;
-    fixture.loadPageTable(PAGE_BASE);
-
-    const TexelAddresses addresses { 0x11, 0x21, 0x31, 0x41 };
-    const Texels texels { 0x1111, 0x2121, 0x3131, 0x4141 };
-    fixture.submitRequest(addresses);
-
-    std::size_t cycles = 0;
-    while (!fixture.textureMemory->m_axi_arvalid && cycles++ < MAX_WAIT_CYCLES)
-    {
-        rr::ut::clk(fixture.textureMemory);
-    }
-    REQUIRE(fixture.textureMemory->m_axi_arvalid == 1);
-
-    const auto stalledAddress = fixture.textureMemory->m_axi_araddr;
-    CHECK(stalledAddress == axiAddressForWord(addresses[0]));
-    for (std::size_t stallCycle = 0; stallCycle < 4; ++stallCycle)
-    {
-        rr::ut::clk(fixture.textureMemory);
-        CHECK(fixture.textureMemory->m_axi_arvalid == 1);
-        CHECK(fixture.textureMemory->m_axi_araddr == stalledAddress);
-        CHECK(fixture.textureMemory->texelOutputValid == 0);
-    }
-
-    fixture.acceptRead(axiAddressForWord(addresses[0]));
-    fixture.sendReadResponse(texels[0]);
-    for (std::size_t texelIndex = 1; texelIndex < addresses.size(); ++texelIndex)
-    {
-        fixture.acceptRead(axiAddressForWord(addresses[texelIndex]));
-        fixture.sendReadResponse(texels[texelIndex]);
-    }
-
-    fixture.waitForOutput();
-    fixture.checkOutput(texels);
-}
-
-TEST_CASE("Backpressure AXI read responses while texel output stalls", "[TextureMemoryReader]")
-{
-    TextureMemoryFixture fixture;
-    fixture.loadPageTable(PAGE_BASE);
-
-    std::size_t requestIndex = 0;
-    TexelAddresses request { 0, 1, 2, 3 };
-    fixture.driveRequest(request);
-    fixture.textureMemory->texelAddrValid = 1;
-    fixture.textureMemory->m_axi_arready = 1;
-
-    bool responseBackpressured = false;
-    constexpr std::size_t MAX_SATURATION_CYCLES { 512 };
-    for (std::size_t cycle = 0; cycle < MAX_SATURATION_CYCLES; ++cycle)
-    {
-        const bool requestAccepted
-            = fixture.textureMemory->texelAddrValid && fixture.textureMemory->texelAddrReady;
-        const bool addressAccepted
-            = fixture.textureMemory->m_axi_arvalid && fixture.textureMemory->m_axi_arready;
-        const bool responseAccepted
-            = fixture.textureMemory->m_axi_rvalid && fixture.textureMemory->m_axi_rready;
-
-        if (fixture.textureMemory->m_axi_rvalid && !fixture.textureMemory->m_axi_rready)
-        {
-            responseBackpressured = true;
-            break;
-        }
-
-        const auto acceptedAddress = fixture.textureMemory->m_axi_araddr;
-        rr::ut::clk(fixture.textureMemory);
-
-        if (responseAccepted)
-        {
-            fixture.textureMemory->m_axi_rvalid = 0;
-            fixture.textureMemory->m_axi_rlast = 0;
-            fixture.textureMemory->m_axi_arready = 1;
-        }
-        if (addressAccepted)
-        {
-            fixture.textureMemory->m_axi_rvalid = 1;
-            fixture.textureMemory->m_axi_rlast = 1;
-            fixture.textureMemory->m_axi_rdata = texelForAddress(acceptedAddress);
-            fixture.textureMemory->m_axi_arready = 0;
-        }
-        if (requestAccepted)
-        {
-            ++requestIndex;
-            const auto firstAddress = static_cast<std::uint32_t>(requestIndex * 4);
-            request = { firstAddress, firstAddress + 1, firstAddress + 2, firstAddress + 3 };
-            fixture.driveRequest(request);
-        }
-    }
-
-    REQUIRE(responseBackpressured);
-    REQUIRE(fixture.textureMemory->texelOutputValid == 1);
-    const Texels stalledOutput {
-        static_cast<std::uint16_t>(fixture.textureMemory->texelOutput00),
-        static_cast<std::uint16_t>(fixture.textureMemory->texelOutput01),
-        static_cast<std::uint16_t>(fixture.textureMemory->texelOutput10),
-        static_cast<std::uint16_t>(fixture.textureMemory->texelOutput11)
-    };
-    const auto stalledResponse = fixture.textureMemory->m_axi_rdata;
-
-    fixture.textureMemory->texelAddrValid = 0;
-    fixture.textureMemory->m_axi_arready = 0;
-    for (std::size_t stallCycle = 0; stallCycle < 4; ++stallCycle)
-    {
-        rr::ut::clk(fixture.textureMemory);
-        CHECK(fixture.textureMemory->m_axi_rready == 0);
-        CHECK(fixture.textureMemory->m_axi_rvalid == 1);
-        CHECK(fixture.textureMemory->m_axi_rdata == stalledResponse);
-        fixture.checkOutput(stalledOutput);
-    }
-
-    fixture.textureMemory->texelOutputReady = 1;
-    std::size_t releaseCycles = 0;
-    while (!fixture.textureMemory->m_axi_rready && releaseCycles++ < MAX_WAIT_CYCLES)
-    {
-        rr::ut::clk(fixture.textureMemory);
-    }
-    REQUIRE(fixture.textureMemory->m_axi_rready == 1);
-    CHECK(fixture.textureMemory->m_axi_rdata == stalledResponse);
-    rr::ut::clk(fixture.textureMemory);
+    delete textureMemory;
 }

@@ -74,12 +74,22 @@ module TextureCacheDirectMappedContext #(
 
     function [TEXEL_WIDTH - 1 : 0] getTexel;
         input [ADDR_WIDTH - 1 : 0] addr;
+        localparam TEXEL_OFFSET_WIDTH = (DATA_WIDTH / TEXEL_WIDTH) > 1
+                                      ? $clog2(DATA_WIDTH / TEXEL_WIDTH)
+                                      : 1;
         reg [DATA_WIDTH - 1 : 0] word;
         reg [DATA_WIDTH - 1 : 0] shifted_word;
         integer texel_shift;
         begin
             word = r_cache_memory[getWordAddress(addr)];
-            texel_shift = TEXEL_WIDTH * addr[$clog2(TEXEL_WIDTH / 8) +: LG_DATA_BYTES - $clog2(TEXEL_WIDTH / 8)];
+            if (DATA_WIDTH == TEXEL_WIDTH)
+            begin
+                texel_shift = 0;
+            end
+            else
+            begin
+                texel_shift = TEXEL_WIDTH * addr[$clog2(TEXEL_WIDTH / 8) +: TEXEL_OFFSET_WIDTH];
+            end
             shifted_word = word >> texel_shift;
             getTexel = shifted_word[0 +: TEXEL_WIDTH];
         end

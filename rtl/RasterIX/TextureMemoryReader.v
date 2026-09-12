@@ -17,13 +17,14 @@
 
 
 module TextureMemoryReader #(
-    parameter STREAM_WIDTH = 32,
+    parameter DATA_WIDTH = 32,
     parameter TEXEL_WIDTH = 16,
 
     parameter ID_WIDTH = 4,
     parameter ADDR_WIDTH = 32,
     parameter PAGE_SIZE = 2048,
 
+    localparam STREAM_WIDTH = 32,
     localparam TEX_ADDR_WIDTH = 17,
     localparam BYTE_ADDR_WIDTH = TEX_ADDR_WIDTH + 1
 )
@@ -51,7 +52,7 @@ module TextureMemoryReader #(
     input  wire                             s_axis_tvalid,
     output wire                             s_axis_tready,
     input  wire                             s_axis_tlast,
-    input  wire [ADDR_WIDTH - 1 : 0]        s_axis_tdata,
+    input  wire [STREAM_WIDTH - 1 : 0]      s_axis_tdata,
 
     // AXI memory interface
     output wire [ID_WIDTH - 1 : 0]          m_axi_arid,
@@ -66,7 +67,7 @@ module TextureMemoryReader #(
     input  wire                             m_axi_arready,
 
     input  wire [ID_WIDTH - 1 : 0]          m_axi_rid,
-    input  wire [TEXEL_WIDTH - 1 : 0]       m_axi_rdata,
+    input  wire [DATA_WIDTH - 1 : 0]        m_axi_rdata,
     input  wire [ 1 : 0]                    m_axi_rresp,
     input  wire                             m_axi_rlast,
     input  wire                             m_axi_rvalid,
@@ -125,6 +126,19 @@ module TextureMemoryReader #(
     wire                            bc_cmd_1;
     wire                            bc_valid_1;
     wire                            bc_ready_1;
+    wire [ID_WIDTH - 1 : 0]         cache_axi_arid;
+    wire [BYTE_ADDR_WIDTH - 1 : 0]  cache_axi_araddr;
+    wire [ 7 : 0]                   cache_axi_arlen;
+    wire [ 2 : 0]                   cache_axi_arsize;
+    wire [ 1 : 0]                   cache_axi_arburst;
+    wire                            cache_axi_arlock;
+    wire [ 3 : 0]                   cache_axi_arcache;
+    wire [ 2 : 0]                   cache_axi_arprot;
+    wire                            cache_axi_arvalid;
+    wire                            cache_axi_arready;
+    wire [TEXEL_WIDTH - 1 : 0]      cache_texel;
+    wire                            cache_valid;
+    wire                            cache_ready;
     axis_broadcast #(
         .M_COUNT(2),
         .DATA_WIDTH(2 + BYTE_ADDR_WIDTH + 1),
@@ -167,6 +181,44 @@ module TextureMemoryReader #(
         .m_axis_tuser()
     );
 
+    TextureCacheDirectMapped #(
+        .TEXEL_WIDTH(TEXEL_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
+        .ID_WIDTH(ID_WIDTH),
+        .ADDR_WIDTH(BYTE_ADDR_WIDTH),
+        .CACHE_SIZE(1024)
+    ) textureCacheDirectMapped_inst (
+        .aclk(aclk),
+        .resetn(resetn),
+        .invalidate(s_axis_tvalid),
+
+        .s_araddr(bc_araddr_0),
+        .s_arvalid(bc_valid_0),
+        .s_arready(bc_ready_0),
+
+        .m_texel(cache_texel),
+        .m_valid(cache_valid),
+        .m_ready(cache_ready),
+
+        .m_axi_arid(cache_axi_arid),
+        .m_axi_araddr(cache_axi_araddr),
+        .m_axi_arlen(cache_axi_arlen),
+        .m_axi_arsize(cache_axi_arsize),
+        .m_axi_arburst(cache_axi_arburst),
+        .m_axi_arlock(cache_axi_arlock),
+        .m_axi_arcache(cache_axi_arcache),
+        .m_axi_arprot(cache_axi_arprot),
+        .m_axi_arvalid(cache_axi_arvalid),
+        .m_axi_arready(cache_axi_arready),
+
+        .m_axi_rid(m_axi_rid),
+        .m_axi_rdata(m_axi_rdata),
+        .m_axi_rresp(m_axi_rresp),
+        .m_axi_rlast(m_axi_rlast),
+        .m_axi_rvalid(m_axi_rvalid),
+        .m_axi_rready(m_axi_rready)
+    );
+
     TextureMMU #(
         .TEX_ADDR_WIDTH(BYTE_ADDR_WIDTH),
         .PAGE_SIZE(PAGE_SIZE),
@@ -181,16 +233,16 @@ module TextureMemoryReader #(
         .s_axis_tlast(s_axis_tlast),
         .s_axis_tdata(s_axis_tdata),
 
-        .s_axi_araddr(bc_araddr_0),
-        .s_axi_arid(ttcm_arid),
-        .s_axi_arlen(ttcm_arlen),
-        .s_axi_arsize(ttcm_arsize),
-        .s_axi_arburst(ttcm_arburst),
-        .s_axi_arlock(ttcm_arlock),
-        .s_axi_arcache(ttcm_arcache),
-        .s_axi_arprot(ttcm_arprot),
-        .s_axi_arvalid(bc_valid_0),
-        .s_axi_arready(bc_ready_0),
+        .s_axi_araddr(cache_axi_araddr),
+        .s_axi_arid(cache_axi_arid),
+        .s_axi_arlen(cache_axi_arlen),
+        .s_axi_arsize(cache_axi_arsize),
+        .s_axi_arburst(cache_axi_arburst),
+        .s_axi_arlock(cache_axi_arlock),
+        .s_axi_arcache(cache_axi_arcache),
+        .s_axi_arprot(cache_axi_arprot),
+        .s_axi_arvalid(cache_axi_arvalid),
+        .s_axi_arready(cache_axi_arready),
 
         .m_axi_arid(m_axi_arid),
         .m_axi_araddr(m_axi_araddr),
@@ -224,9 +276,9 @@ module TextureMemoryReader #(
         .resetn(resetn),
 
         .s_stream0_tenable(1'b1),
-        .s_stream0_tvalid(m_axi_rvalid),
-        .s_stream0_tdata(m_axi_rdata),
-        .s_stream0_tready(m_axi_rready),
+        .s_stream0_tvalid(cache_valid),
+        .s_stream0_tdata(cache_texel),
+        .s_stream0_tready(cache_ready),
 
         .s_stream1_tenable(1'b1),
         .s_stream1_tvalid(bc_valid_1),

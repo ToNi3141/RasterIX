@@ -26,7 +26,8 @@ module TextureCacheDirectMappedController #(
 
     localparam TAG_WIDTH = ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_LINES),
     localparam TAG_ENTRY_WIDTH = TAG_WIDTH + 1,
-    localparam INDEX_WIDTH = $clog2(CACHE_LINES)
+    localparam INDEX_WIDTH = $clog2(CACHE_LINES),
+    localparam ARSIZE = $clog2(DATA_WIDTH / 8)
 )
 (
     input  wire                             aclk,
@@ -107,7 +108,7 @@ module TextureCacheDirectMappedController #(
 
     assign m_axi_arid = 0;
     assign m_axi_arlen = (CACHE_LINE_SIZE / (DATA_WIDTH / 8)) - 1;
-    assign m_axi_arsize = $clog2(DATA_WIDTH / 8)[0 +: 3];
+    assign m_axi_arsize = ARSIZE[0 +: 3];
     assign m_axi_arburst = 2'b01; // INCR burst type
     assign m_axi_arlock = 0;
     assign m_axi_arcache = 0;
@@ -156,9 +157,10 @@ module TextureCacheDirectMappedController #(
                 begin
                     r_invalidate <= 1'b0;
                     r_i <= { INDEX_WIDTH { 1'b0 } };
+                    s_arready <= !r_skid_valid;
                 end
                 
-                if (s_arvalid)
+                if (s_arvalid && s_arready)
                 begin
                     r_skid_valid <= 1'b1;
                     r_skid_addr <= s_araddr;

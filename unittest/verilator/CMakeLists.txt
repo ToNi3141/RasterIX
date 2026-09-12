@@ -46,7 +46,7 @@ function(add_verilator_test TEST_NAME TOP_MODULE VERILOG_FILE)
             ${VERILOG_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
         COMMAND make -C ${OBJ_DIR} -f V${TOP_MODULE}.mk
-        DEPENDS ${VERILOG_FILE} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
+        DEPENDS ${VERILOG_FILE} ${EXTRA_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/cpp/general.hpp
         COMMENT "Verilating and building ${TOP_MODULE}..."
         VERBATIM
@@ -69,6 +69,20 @@ add_verilator_test(textureBuffer TextureBuffer ${RTL_RASTERIX}/TextureBuffer.v)
 add_verilator_test(textureMMU TextureMMU ${RTL_RASTERIX}/TextureMMU.v)
 add_verilator_test(textureMemoryReader TextureMemoryReader ${RTL_RASTERIX}/TextureMemoryReader.v
     ${RTL_3RDPARTY}/verilog-axis)
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/obj_dir_textureMemoryReader/VTextureMemoryReader
+    APPEND
+    DEPENDS
+        ${RTL_RASTERIX}/TextureCacheDirectMapped.v
+        ${RTL_RASTERIX}/TextureCacheDirectMappedController.v
+        ${RTL_RASTERIX}/TextureCacheDirectMappedContext.v
+        ${RTL_RASTERIX}/TextureMMU.v
+        ${RTL_RASTERIX}/TextureReaderController.v
+        ${RTL_RASTERIX}/TextureReaderContext.v
+        ${RTL_RASTERIX}/StreamConcatFifo.v
+        ${RTL_3RDPARTY}/sfifo.v
+        ${RTL_3RDPARTY}/verilog-axis/axis_broadcast.v
+)
 add_verilator_test(texelColorUnpack TexelColorUnpack ${RTL_RASTERIX}/TexelColorUnpack.v)
 add_verilator_test(colorInterpolator ColorInterpolator ${RTL_RASTERIX}/ColorInterpolator.v)
 add_verilator_test(texEnv TexEnv ${RTL_RASTERIX}/TexEnv.v)

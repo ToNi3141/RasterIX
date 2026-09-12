@@ -21,7 +21,8 @@ module TextureReaderController #(
     parameter TEX_ADDR_WIDTH = 17,
     parameter TEXEL_WIDTH = 16,
     parameter ID_WIDTH = 4,
-    localparam BYTE_ADDR_WIDTH = TEX_ADDR_WIDTH + 1
+    localparam BYTE_ADDR_WIDTH = TEX_ADDR_WIDTH + 1,
+    localparam ARSIZE = $clog2(TEXEL_WIDTH / 8)
 )
 (
     input  wire                             aclk,
@@ -69,7 +70,7 @@ module TextureReaderController #(
 
     assign m_arid = 0;
     assign m_arlen = 0;
-    assign m_arsize = 3'($clog2(TEXEL_WIDTH / 8));
+    assign m_arsize = ARSIZE[0 +: 3];
     assign m_arburst = 2'b01;
     assign m_arlock = 0;
     assign m_arcache = 4'b0011;
