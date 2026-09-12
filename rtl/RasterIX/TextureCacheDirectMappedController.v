@@ -36,14 +36,14 @@ module TextureCacheDirectMappedController #(
     input  wire                             invalidate,
 
     // Input interface
-    input  wire [ADDR_WIDTH - 1 : 0]        s_araddr,
-    input  wire                             s_arvalid,
-    output reg                              s_arready,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_tc_addr,
+    input  wire                             s_tc_valid,
+    output reg                              s_tc_ready,
 
-    output reg                              m_valid,
-    input  wire                             m_ready,
-    output reg                              m_cmd,
-    output reg  [ADDR_WIDTH - 1 : 0]        m_addr,
+    output reg                              m_tc_valid,
+    input  wire                             m_tc_ready,
+    output reg                              m_tc_cmd,
+    output reg  [ADDR_WIDTH - 1 : 0]        m_tc_addr,
 
     // Output interface
     output wire [ID_WIDTH - 1 : 0]          m_axi_arid,
@@ -127,7 +127,7 @@ module TextureCacheDirectMappedController #(
 
 
     assign w_addr = (r_skid_valid) ? r_skid_addr
-                                   : s_araddr;
+                                   : s_tc_addr;
 
     
 
@@ -139,8 +139,8 @@ module TextureCacheDirectMappedController #(
             r_i <= { INDEX_WIDTH { 1'b0 } };
             r_skid_valid <= 1'b0;
             r_load_line_pending <= 1'b0;
-            s_arready <= 1'b0;
-            m_valid <= 1'b0;
+            s_tc_ready <= 1'b0;
+            m_tc_valid <= 1'b0;
             m_axi_arvalid <= 1'b0;
         end 
         else 
@@ -157,43 +157,43 @@ module TextureCacheDirectMappedController #(
                 begin
                     r_invalidate <= 1'b0;
                     r_i <= { INDEX_WIDTH { 1'b0 } };
-                    s_arready <= !r_skid_valid;
+                    s_tc_ready <= !r_skid_valid;
                 end
                 
-                if (s_arvalid && s_arready)
+                if (s_tc_valid && s_tc_ready)
                 begin
                     r_skid_valid <= 1'b1;
-                    r_skid_addr <= s_araddr;
-                    s_arready <= 1'b0;
+                    r_skid_addr <= s_tc_addr;
+                    s_tc_ready <= 1'b0;
                 end
-                if (m_valid && m_ready)
+                if (m_tc_valid && m_tc_ready)
                 begin
-                    m_valid <= 1'b0;
+                    m_tc_valid <= 1'b0;
                 end
             end
-            else if (r_load_line_pending && m_valid && m_ready)
+            else if (r_load_line_pending && m_tc_valid && m_tc_ready)
             begin
                 r_load_line_pending <= 1'b0;
-                m_valid <= 1'b0;
+                m_tc_valid <= 1'b0;
             end
-            else if ((s_arvalid || r_skid_valid) && (!m_valid || m_ready) && !m_axi_arvalid)
+            else if ((s_tc_valid || r_skid_valid) && (!m_tc_valid || m_tc_ready) && !m_axi_arvalid)
             begin            
-                m_valid <= 1'b1;
-                m_addr <= w_addr;
-                m_cmd <= READ_CACHE_ENTRY;
+                m_tc_valid <= 1'b1;
+                m_tc_addr <= w_addr;
+                m_tc_cmd <= READ_CACHE_ENTRY;
                 r_skid_valid <= 1'b0;
 
-                s_arready <= 1'b1;
+                s_tc_ready <= 1'b1;
 
                 // Check for cache miss
                 if (!tagMatch(r_tag_entires[getIndexFromAddress(w_addr)], w_addr)) 
                 begin
-                    m_cmd <= LOAD_CACHE_LINE;
+                    m_tc_cmd <= LOAD_CACHE_LINE;
                     
                     r_skid_valid <= 1'b1;
                     r_skid_addr <= w_addr;
                     r_load_line_pending <= 1'b1;
-                    s_arready <= 1'b0;
+                    s_tc_ready <= 1'b0;
                     
                     m_axi_arvalid <= 1'b1;
                     m_axi_araddr <= getBaseAddress(w_addr);
@@ -201,16 +201,16 @@ module TextureCacheDirectMappedController #(
                     r_tag_entires[getIndexFromAddress(w_addr)] <= { 1'b1, getTagFromAddress(w_addr) };
                 end
             end
-            else if (m_valid && !m_ready && s_arvalid && s_arready)
+            else if (m_tc_valid && !m_tc_ready && s_tc_valid && s_tc_ready)
             begin
                 r_skid_addr <= w_addr;
                 r_skid_valid <= 1'b1;
-                s_arready <= 1'b0;
+                s_tc_ready <= 1'b0;
             end
-            else if (!s_arvalid && !r_skid_valid && (!m_valid || m_ready))
+            else if (!s_tc_valid && !r_skid_valid && (!m_tc_valid || m_tc_ready))
             begin
-                m_valid <= 1'b0;
-                s_arready <= 1'b1;
+                m_tc_valid <= 1'b0;
+                s_tc_ready <= 1'b1;
                 r_skid_valid <= 1'b0;
             end
         end

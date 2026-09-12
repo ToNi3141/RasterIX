@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-module TextureMemoryReader #(
+module TextureReader #(
     parameter DATA_WIDTH = 32,
     parameter TEXEL_WIDTH = 16,
 
@@ -33,20 +33,20 @@ module TextureMemoryReader #(
     input  wire                             resetn,
 
     // Texture read address channel
-    input  wire                             texelAddrValid,
-    output wire                             texelAddrReady,
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr00,
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr01,
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr10,
-    input  wire [TEX_ADDR_WIDTH - 1 : 0]    texelAddr11,
+    input  wire                             s_tr_valid,
+    output wire                             s_tr_ready,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_tr_addr_00,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_tr_addr_01,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_tr_addr_10,
+    input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_tr_addr_11,
 
     // Texture read texel channel
-    output wire                             texelOutputValid,
-    input  wire                             texelOutputReady,
-    output wire [TEXEL_WIDTH - 1 : 0]       texelOutput00,
-    output wire [TEXEL_WIDTH - 1 : 0]       texelOutput01,
-    output wire [TEXEL_WIDTH - 1 : 0]       texelOutput10,
-    output wire [TEXEL_WIDTH - 1 : 0]       texelOutput11,
+    output wire                             m_tr_valid,
+    input  wire                             m_tr_ready,
+    output wire [TEXEL_WIDTH - 1 : 0]       m_tr_texel_00,
+    output wire [TEXEL_WIDTH - 1 : 0]       m_tr_texel_01,
+    output wire [TEXEL_WIDTH - 1 : 0]       m_tr_texel_10,
+    output wire [TEXEL_WIDTH - 1 : 0]       m_tr_texel_11,
 
     // Page table interface
     input  wire                             s_axis_tvalid,
@@ -95,18 +95,18 @@ module TextureMemoryReader #(
 
         .invalidate(s_axis_tvalid), // As soon as a new page table is set, invalidate the cache
 
-        .s_ar_texel00(texelAddr00),
-        .s_ar_texel01(texelAddr01),
-        .s_ar_texel10(texelAddr10),
-        .s_ar_texel11(texelAddr11),
-        .s_ar_valid(texelAddrValid),
-        .s_ar_ready(texelAddrReady),
+        .s_tr_texel_00(s_tr_addr_00),
+        .s_tr_texel_01(s_tr_addr_01),
+        .s_tr_texel_10(s_tr_addr_10),
+        .s_tr_texel_11(s_tr_addr_11),
+        .s_tr_valid(s_tr_valid),
+        .s_tr_ready(s_tr_ready),
 
-        .m_texel_pos(ttcm_texel_pos),
-        .m_cmd(ttcm_cmd),
-        .m_valid(ttcm_valid),
-        .m_ready(ttcm_ready),
-        .m_araddr(ttcm_araddr),
+        .m_tr_texel_pos(ttcm_texel_pos),
+        .m_tr_cmd(ttcm_cmd),
+        .m_tr_valid(ttcm_valid),
+        .m_tr_ready(ttcm_ready),
+        .m_tr_addr(ttcm_araddr),
         .m_arid(ttcm_arid),
         .m_arlen(ttcm_arlen),
         .m_arsize(ttcm_arsize),
@@ -192,13 +192,13 @@ module TextureMemoryReader #(
         .resetn(resetn),
         .invalidate(s_axis_tvalid),
 
-        .s_araddr(bc_araddr_0),
-        .s_arvalid(bc_valid_0),
-        .s_arready(bc_ready_0),
+        .s_tc_addr(bc_araddr_0),
+        .s_tc_valid(bc_valid_0),
+        .s_tc_ready(bc_ready_0),
 
-        .m_texel(cache_texel),
-        .m_valid(cache_valid),
-        .m_ready(cache_ready),
+        .m_tc_texel(cache_texel),
+        .m_tc_valid(cache_valid),
+        .m_tc_ready(cache_ready),
 
         .m_axi_arid(cache_axi_arid),
         .m_axi_araddr(cache_axi_araddr),
@@ -315,18 +315,18 @@ module TextureMemoryReader #(
         .aclk(aclk),
         .resetn(resetn),
         
-        .s_texel_pos(fifo_texel_pos),
-        .s_texel(fifo_texel),
-        .s_cmd(fifo_cmd),
-        .s_valid(fifo_valid),
-        .s_ready(fifo_ready),
+        .s_tr_texel_pos(fifo_texel_pos),
+        .s_tr_texel(fifo_texel),
+        .s_tr_cmd(fifo_cmd),
+        .s_tr_valid(fifo_valid),
+        .s_tr_ready(fifo_ready),
 
-        .m_texel00(texelOutput00),
-        .m_texel01(texelOutput01),
-        .m_texel10(texelOutput10),
-        .m_texel11(texelOutput11),
-        .m_valid(texelOutputValid),
-        .m_ready(texelOutputReady)
+        .m_tr_texel_00(m_tr_texel_00),
+        .m_tr_texel_01(m_tr_texel_01),
+        .m_tr_texel_10(m_tr_texel_10),
+        .m_tr_texel_11(m_tr_texel_11),
+        .m_tr_valid(m_tr_valid),
+        .m_tr_ready(m_tr_ready)
     );
 
 endmodule 

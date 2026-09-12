@@ -25,19 +25,19 @@ module TextureReaderContext #(
     input  wire                         resetn,
 
     // Interface to the texture texel cache
-    input  wire [ 1 : 0]                s_texel_pos,
-    input  wire [TEXEL_WIDTH - 1 : 0]   s_texel,
-    input  wire                         s_cmd, // 1 = store and sample, 0 = store only 
-    input  wire                         s_valid,
-    output reg                          s_ready,
+    input  wire [ 1 : 0]                s_tr_texel_pos,
+    input  wire [TEXEL_WIDTH - 1 : 0]   s_tr_texel,
+    input  wire                         s_tr_cmd, // 1 = store and sample, 0 = store only
+    input  wire                         s_tr_valid,
+    output reg                          s_tr_ready,
     
     // Texture Read
-    output reg  [TEXEL_WIDTH - 1 : 0]   m_texel00,
-    output reg  [TEXEL_WIDTH - 1 : 0]   m_texel01,
-    output reg  [TEXEL_WIDTH - 1 : 0]   m_texel10,
-    output reg  [TEXEL_WIDTH - 1 : 0]   m_texel11,
-    output reg                          m_valid,
-    input  wire                         m_ready
+    output reg  [TEXEL_WIDTH - 1 : 0]   m_tr_texel_00,
+    output reg  [TEXEL_WIDTH - 1 : 0]   m_tr_texel_01,
+    output reg  [TEXEL_WIDTH - 1 : 0]   m_tr_texel_10,
+    output reg  [TEXEL_WIDTH - 1 : 0]   m_tr_texel_11,
+    output reg                          m_tr_valid,
+    input  wire                         m_tr_ready
 );
     localparam CMD_STORE_AND_SAMPLE = 1;
     localparam CMD_STORE_ONLY       = 0;
@@ -52,24 +52,24 @@ module TextureReaderContext #(
     reg  [TEXEL_WIDTH - 1 : 0] r_skid_texel;
     reg                        r_skid_cmd;
 
-    wire [ 1 : 0]              w_texel_pos = r_skid_valid ? r_skid_texel_pos : s_texel_pos;
-    wire [TEXEL_WIDTH - 1 : 0] w_texel     = r_skid_valid ? r_skid_texel     : s_texel;
-    wire                       w_cmd       = r_skid_valid ? r_skid_cmd       : s_cmd;
-    wire                       w_valid     = r_skid_valid ? 1'b1             : s_valid;
+    wire [ 1 : 0]              w_texel_pos = r_skid_valid ? r_skid_texel_pos : s_tr_texel_pos;
+    wire [TEXEL_WIDTH - 1 : 0] w_texel     = r_skid_valid ? r_skid_texel     : s_tr_texel;
+    wire                       w_cmd       = r_skid_valid ? r_skid_cmd       : s_tr_cmd;
+    wire                       w_valid     = r_skid_valid ? 1'b1             : s_tr_valid;
 
     always @(posedge aclk)
     begin
         if (!resetn)
         begin
-            m_valid      <= 1'b0;
-            s_ready      <= 1'b1;
+            m_tr_valid      <= 1'b0;
+            s_tr_ready      <= 1'b1;
             r_skid_valid <= 1'b0;
         end
         else
         begin
-            if (!m_valid || (m_valid && m_ready))
+            if (!m_tr_valid || (m_tr_valid && m_tr_ready))
             begin
-                if (s_valid || r_skid_valid)
+                if (s_tr_valid || r_skid_valid)
                 begin
                     case (w_texel_pos)
                         2'b00: r_texel00 = w_texel;
@@ -80,37 +80,37 @@ module TextureReaderContext #(
 
                     if (w_cmd == CMD_STORE_AND_SAMPLE)
                     begin
-                        m_texel00 <= r_texel00;
-                        m_texel01 <= r_texel01;
-                        m_texel10 <= r_texel10;
-                        m_texel11 <= r_texel11;
-                        m_valid   <= 1'b1;
+                        m_tr_texel_00 <= r_texel00;
+                        m_tr_texel_01 <= r_texel01;
+                        m_tr_texel_10 <= r_texel10;
+                        m_tr_texel_11 <= r_texel11;
+                        m_tr_valid   <= 1'b1;
                     end
                     else
                     begin
-                        m_valid <= 1'b0;
+                        m_tr_valid <= 1'b0;
                     end
 
                     if (r_skid_valid)
                     begin
                         r_skid_valid <= 1'b0;
-                        s_ready      <= 1'b1;
+                        s_tr_ready      <= 1'b1;
                     end
                 end
                 else
                 begin
-                    m_valid <= 1'b0;
+                    m_tr_valid <= 1'b0;
                 end
             end
             else
             begin
                 if (!r_skid_valid)
                 begin
-                    r_skid_texel_pos <= s_texel_pos;
-                    r_skid_texel     <= s_texel;
-                    r_skid_cmd       <= s_cmd;
-                    r_skid_valid     <= s_valid;
-                    s_ready          <= !s_valid;
+                    r_skid_texel_pos <= s_tr_texel_pos;
+                    r_skid_texel     <= s_tr_texel;
+                    r_skid_cmd       <= s_tr_cmd;
+                    r_skid_valid     <= s_tr_valid;
+                    s_tr_ready          <= !s_tr_valid;
                 end
             end
         end

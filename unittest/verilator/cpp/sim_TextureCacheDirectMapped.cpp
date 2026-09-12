@@ -15,9 +15,9 @@ VTextureCacheDirectMapped* makeCache()
 {
     auto* t = rr::ut::makeTop<VTextureCacheDirectMapped>();
     t->invalidate = 0;
-    t->s_araddr = 0;
-    t->s_arvalid = 0;
-    t->m_ready = 1;
+    t->s_tc_addr = 0;
+    t->s_tc_valid = 0;
+    t->m_tc_ready = 1;
     t->m_axi_arready = 1;
     t->m_axi_rid = 0;
     t->m_axi_rdata = 0;
@@ -25,24 +25,24 @@ VTextureCacheDirectMapped* makeCache()
     t->m_axi_rlast = 0;
     t->m_axi_rvalid = 0;
     rr::ut::reset(t);
-    for (unsigned cycle = 0; cycle < 64 && !t->s_arready; ++cycle)
+    for (unsigned cycle = 0; cycle < 64 && !t->s_tc_ready; ++cycle)
     {
         rr::ut::clk(t);
     }
-    REQUIRE(t->s_arready == 1);
+    REQUIRE(t->s_tc_ready == 1);
     return t;
 }
 
 void request(VTextureCacheDirectMapped* t, uint32_t address)
 {
-    t->s_araddr = address;
-    t->s_arvalid = 1;
-    while (!t->s_arready)
+    t->s_tc_addr = address;
+    t->s_tc_valid = 1;
+    while (!t->s_tc_ready)
     {
         rr::ut::clk(t);
     }
     rr::ut::clk(t);
-    t->s_arvalid = 0;
+    t->s_tc_valid = 0;
 }
 
 void checkAxiReadRequest(VTextureCacheDirectMapped* t, uint32_t address)
@@ -75,11 +75,11 @@ void warmLine(VTextureCacheDirectMapped* t)
 {
     request(t, 0);
     provideLine(t, { 0x11223344, 0, 0, 0, 0, 0, 0, 0 });
-    for (unsigned cycle = 0; cycle < 16 && !t->m_valid; ++cycle)
+    for (unsigned cycle = 0; cycle < 16 && !t->m_tc_valid; ++cycle)
     {
         rr::ut::clk(t);
     }
-    REQUIRE(t->m_valid == 1);
+    REQUIRE(t->m_tc_valid == 1);
     rr::ut::clk(t);
 }
 }
@@ -96,12 +96,12 @@ TEST_CASE("loads a cache line and returns the requested texel", "[TextureCacheDi
     rr::ut::clk(t);
     provideLine(t, { 0x11223344, 0, 0, 0, 0, 0, 0, 0 });
 
-    for (unsigned cycle = 0; cycle < 16 && !t->m_valid; ++cycle)
+    for (unsigned cycle = 0; cycle < 16 && !t->m_tc_valid; ++cycle)
     {
         rr::ut::clk(t);
     }
-    REQUIRE(t->m_valid == 1);
-    CHECK(t->m_texel == 0x3344);
+    REQUIRE(t->m_tc_valid == 1);
+    CHECK(t->m_tc_texel == 0x3344);
 
     delete t;
 }
@@ -110,15 +110,15 @@ TEST_CASE("stalls the slave after the command FIFO fills", "[TextureCacheDirectM
 {
     auto* t = makeCache();
     warmLine(t);
-    t->m_ready = 0;
-    t->s_araddr = 0;
-    t->s_arvalid = 1;
+    t->m_tc_ready = 0;
+    t->s_tc_addr = 0;
+    t->s_tc_valid = 1;
 
     bool stalled = false;
     // 37 because: 33 (fifo + skid) + 2 (context + skid) + 2 (controller + skid)
     for (unsigned requestIndex = 0; requestIndex < 37; ++requestIndex)
     {
-        if (!t->s_arready)
+        if (!t->s_tc_ready)
         {
             stalled = true;
             break;
@@ -126,22 +126,22 @@ TEST_CASE("stalls the slave after the command FIFO fills", "[TextureCacheDirectM
         rr::ut::clk(t);
     }
     CHECK(stalled);
-    CHECK(t->s_arready == 0);
+    CHECK(t->s_tc_ready == 0);
 
-    t->s_arvalid = 0;
-    t->m_ready = 1;
-    for (unsigned cycle = 0; cycle < 64 && !t->s_arready; ++cycle)
+    t->s_tc_valid = 0;
+    t->m_tc_ready = 1;
+    for (unsigned cycle = 0; cycle < 64 && !t->s_tc_ready; ++cycle)
     {
         rr::ut::clk(t);
     }
-    CHECK(t->s_arready == 1);
+    CHECK(t->s_tc_ready == 1);
     delete t;
 }
 
 TEST_CASE("stalls AXI R when the cache output is blocked", "[TextureCacheDirectMapped]")
 {
     auto* t = makeCache();
-    t->m_ready = 0;
+    t->m_tc_ready = 0;
     t->m_axi_rvalid = 1;
     t->m_axi_rdata = 0xabcdef01;
 

@@ -530,38 +530,38 @@ module RasterIXRenderCore #(
     wire                                axis_tmu0_tvalid;
     wire                                axis_tmu0_tlast;
     wire  [TMU_MEMORY_WIDTH - 1 : 0]    axis_tmu0_tdata;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr00;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr01;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr10;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr11;
-    wire                            texel0AddrValid;
-    wire                            texel0AddrReady;
-    wire [TEXEL_WIDTH - 1 : 0]      texel0Input00;
-    wire [TEXEL_WIDTH - 1 : 0]      texel0Input01;
-    wire [TEXEL_WIDTH - 1 : 0]      texel0Input10;
-    wire [TEXEL_WIDTH - 1 : 0]      texel0Input11;
-    wire                            texel0InputValid;
-    wire                            texel0InputReady;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_00;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_01;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_10;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_11;
+    wire                                tr0_valid;
+    wire                                tr0_ready;
+    wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_00;
+    wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_01;
+    wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_10;
+    wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_11;
+    wire                                tr0_texel_valid;
+    wire                                tr0_texel_ready;
     generate
         if (ENABLE_EXTERNAL_TEXTURE_MEMORY)
         begin
-            TextureMemoryReader textureMemoryTMU0 (
+            TextureReader textureMemoryTMU0 (
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .texelAddrValid(texel0AddrValid),
-                .texelAddrReady(texel0AddrReady),
-                .texelAddr00(texel0Addr00),
-                .texelAddr01(texel0Addr01),
-                .texelAddr10(texel0Addr10),
-                .texelAddr11(texel0Addr11),
+                .s_tr_valid(tr0_valid),
+                .s_tr_ready(tr0_ready),
+                .s_tr_addr_00(tr0_addr_00),
+                .s_tr_addr_01(tr0_addr_01),
+                .s_tr_addr_10(tr0_addr_10),
+                .s_tr_addr_11(tr0_addr_11),
 
-                .texelOutputValid(texel0InputValid),
-                .texelOutputReady(texel0InputReady),
-                .texelOutput00(texel0Input00),
-                .texelOutput01(texel0Input01),
-                .texelOutput10(texel0Input10),
-                .texelOutput11(texel0Input11),
+                .m_tr_valid(tr0_texel_valid),
+                .m_tr_ready(tr0_texel_ready),
+                .m_tr_texel_00(tr0_texel_00),
+                .m_tr_texel_01(tr0_texel_01),
+                .m_tr_texel_10(tr0_texel_10),
+                .m_tr_texel_11(tr0_texel_11),
 
                 .s_axis_tvalid(cmd_tmu0_axis_tvalid),
                 .s_axis_tready(cmd_tmu0_axis_tready),
@@ -633,19 +633,19 @@ module RasterIXRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .texelAddrValid(texel0AddrValid),
-                .texelAddrReady(texel0AddrReady),
-                .texelAddr00(texel0Addr00),
-                .texelAddr01(texel0Addr01),
-                .texelAddr10(texel0Addr10),
-                .texelAddr11(texel0Addr11),
+                .s_tr_valid(tr0_valid),
+                .s_tr_ready(tr0_ready),
+                .s_tr_addr_00(tr0_addr_00),
+                .s_tr_addr_01(tr0_addr_01),
+                .s_tr_addr_10(tr0_addr_10),
+                .s_tr_addr_11(tr0_addr_11),
 
-                .texelOutputValid(texel0InputValid),
-                .texelOutputReady(texel0InputReady),
-                .texelOutput00(texel0Input00),
-                .texelOutput01(texel0Input01),
-                .texelOutput10(texel0Input10),
-                .texelOutput11(texel0Input11),
+                .m_tr_valid(tr0_texel_valid),
+                .m_tr_ready(tr0_texel_ready),
+                .m_tr_texel_00(tr0_texel_00),
+                .m_tr_texel_01(tr0_texel_01),
+                .m_tr_texel_10(tr0_texel_10),
+                .m_tr_texel_11(tr0_texel_11),
 
                 .s_axis_tvalid(axis_tmu0_tvalid),
                 .s_axis_tlast(axis_tmu0_tlast),
@@ -663,40 +663,40 @@ module RasterIXRenderCore #(
     // Memory area where the texture is stored
     // Clocks: n/a
     ////////////////////////////////////////////////////////////////////////////
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr00;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr01;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr10;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr11;
-    wire                            texel1AddrValid;
-    wire                            texel1AddrReady;
-    wire [TEXEL_WIDTH - 1 : 0]      texel1Input00;
-    wire [TEXEL_WIDTH - 1 : 0]      texel1Input01;
-    wire [TEXEL_WIDTH - 1 : 0]      texel1Input10;
-    wire [TEXEL_WIDTH - 1 : 0]      texel1Input11;
-    wire                            texel1InputValid;
-    wire                            texel1InputReady;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   tr1_addr_00;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   tr1_addr_01;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   tr1_addr_10;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   tr1_addr_11;
+    wire                            tr1_valid;
+    wire                            tr1_ready;
+    wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_00;
+    wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_01;
+    wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_10;
+    wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_11;
+    wire                            tr1_texel_valid;
+    wire                            tr1_texel_ready;
     generate
         if (ENABLE_SECOND_TMU)
         begin
             if (ENABLE_EXTERNAL_TEXTURE_MEMORY)
             begin
-                TextureMemoryReader textureMemoryTMU1 (
+                TextureReader textureMemoryTMU1 (
                     .aclk(aclk),
                     .resetn(resetn),
 
-                    .texelAddrValid(texel1AddrValid),
-                    .texelAddrReady(texel1AddrReady),
-                    .texelAddr00(texel1Addr00),
-                    .texelAddr01(texel1Addr01),
-                    .texelAddr10(texel1Addr10),
-                    .texelAddr11(texel1Addr11),
+                    .s_tr_valid(tr1_valid),
+                    .s_tr_ready(tr1_ready),
+                    .s_tr_addr_00(tr1_addr_00),
+                    .s_tr_addr_01(tr1_addr_01),
+                    .s_tr_addr_10(tr1_addr_10),
+                    .s_tr_addr_11(tr1_addr_11),
 
-                    .texelOutputValid(texel1InputValid),
-                    .texelOutputReady(texel1InputReady),
-                    .texelOutput00(texel1Input00),
-                    .texelOutput01(texel1Input01),
-                    .texelOutput10(texel1Input10),
-                    .texelOutput11(texel1Input11),
+                    .m_tr_valid(tr1_texel_valid),
+                    .m_tr_ready(tr1_texel_ready),
+                    .m_tr_texel_00(tr1_texel_00),
+                    .m_tr_texel_01(tr1_texel_01),
+                    .m_tr_texel_10(tr1_texel_10),
+                    .m_tr_texel_11(tr1_texel_11),
 
                     .s_axis_tvalid(cmd_tmu1_axis_tvalid),
                     .s_axis_tready(cmd_tmu1_axis_tready),
@@ -771,19 +771,19 @@ module RasterIXRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .texelAddrValid(texel1AddrValid),
-                .texelAddrReady(texel1AddrReady),
-                .texelAddr00(texel1Addr00),
-                .texelAddr01(texel1Addr01),
-                .texelAddr10(texel1Addr10),
-                .texelAddr11(texel1Addr11),
+                .s_tr_valid(tr1_valid),
+                .s_tr_ready(tr1_ready),
+                .s_tr_addr_00(tr1_addr_00),
+                .s_tr_addr_01(tr1_addr_01),
+                .s_tr_addr_10(tr1_addr_10),
+                .s_tr_addr_11(tr1_addr_11),
 
-                .texelOutputValid(texel1InputValid),
-                .texelOutputReady(texel1InputReady),
-                .texelOutput00(texel1Input00),
-                .texelOutput01(texel1Input01),
-                .texelOutput10(texel1Input10),
-                .texelOutput11(texel1Input11),
+                .m_tr_valid(tr1_texel_valid),
+                .m_tr_ready(tr1_texel_ready),
+                .m_tr_texel_00(tr1_texel_00),
+                .m_tr_texel_01(tr1_texel_01),
+                .m_tr_texel_10(tr1_texel_10),
+                .m_tr_texel_11(tr1_texel_11),
 
                 .s_axis_tvalid(axis_tmu1_tvalid),
                 .s_axis_tlast(axis_tmu1_tlast),
@@ -797,12 +797,12 @@ module RasterIXRenderCore #(
         end
         else
         begin
-            assign texel1AddrReady = 1;
-            assign texel1Input00 = 0;
-            assign texel1Input01 = 0;
-            assign texel1Input10 = 0;
-            assign texel1Input11 = 0;
-            assign texel1InputValid = 0;
+            assign tr1_ready = 1;
+            assign tr1_texel_00 = 0;
+            assign tr1_texel_01 = 0;
+            assign tr1_texel_10 = 0;
+            assign tr1_texel_11 = 0;
+            assign tr1_texel_valid = 0;
 
             assign m_tmu1_axi_rready = 1;
             assign m_tmu1_axi_arid = 0;
@@ -1437,33 +1437,33 @@ module RasterIXRenderCore #(
         .s_attrb_tcolor_g(alrp_tcolor_g),
         .s_attrb_tcolor_r(alrp_tcolor_r),
 
-        .texel0AddrValid(texel0AddrValid),
-        .texel0AddrReady(texel0AddrReady),
-        .texel0Addr00(texel0Addr00),
-        .texel0Addr01(texel0Addr01),
-        .texel0Addr10(texel0Addr10),
-        .texel0Addr11(texel0Addr11),
+        .m_tr0_valid(tr0_valid),
+        .m_tr0_ready(tr0_ready),
+        .m_tr0_addr_00(tr0_addr_00),
+        .m_tr0_addr_01(tr0_addr_01),
+        .m_tr0_addr_10(tr0_addr_10),
+        .m_tr0_addr_11(tr0_addr_11),
 
-        .texel0InputValid(texel0InputValid),
-        .texel0InputReady(texel0InputReady),
-        .texel0Input00(texel0Input00),
-        .texel0Input01(texel0Input01),
-        .texel0Input10(texel0Input10),
-        .texel0Input11(texel0Input11),
+        .s_tr0_valid(tr0_texel_valid),
+        .s_tr0_ready(tr0_texel_ready),
+        .s_tr0_texel_00(tr0_texel_00),
+        .s_tr0_texel_01(tr0_texel_01),
+        .s_tr0_texel_10(tr0_texel_10),
+        .s_tr0_texel_11(tr0_texel_11),
 
-        .texel1AddrValid(texel1AddrValid),
-        .texel1AddrReady(texel1AddrReady),
-        .texel1Addr00(texel1Addr00),
-        .texel1Addr01(texel1Addr01),
-        .texel1Addr10(texel1Addr10),
-        .texel1Addr11(texel1Addr11),
+        .m_tr1_valid(tr1_valid),
+        .m_tr1_ready(tr1_ready),
+        .m_tr1_addr_00(tr1_addr_00),
+        .m_tr1_addr_01(tr1_addr_01),
+        .m_tr1_addr_10(tr1_addr_10),
+        .m_tr1_addr_11(tr1_addr_11),
 
-        .texel1InputValid(texel1InputValid),
-        .texel1InputReady(texel1InputReady),
-        .texel1Input00(texel1Input00),
-        .texel1Input01(texel1Input01),
-        .texel1Input10(texel1Input10),
-        .texel1Input11(texel1Input11),
+        .s_tr1_valid(tr1_texel_valid),
+        .s_tr1_ready(tr1_texel_ready),
+        .s_tr1_texel_00(tr1_texel_00),
+        .s_tr1_texel_01(tr1_texel_01),
+        .s_tr1_texel_10(tr1_texel_10),
+        .s_tr1_texel_11(tr1_texel_11),
 
         .m_frag_tready(framebuffer_tready),
         .m_frag_tvalid(framebuffer_tvalid),
