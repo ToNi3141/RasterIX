@@ -189,6 +189,63 @@ TEST_CASE("AXI backpressure blocks the next cache command",
     delete t;
 }
 
+TEST_CASE("skid buffer retains request order across invalidation",
+    "[TextureCacheDirectMappedController]")
+{
+    auto* t = makeController();
+    fillCache(t, 0);
+
+    t->m_ready = 0;
+    t->s_araddr = 1;
+    t->s_arvalid = 1;
+    REQUIRE(t->s_arready == 1);
+    rr::ut::clk(t);
+    REQUIRE(t->m_valid == 1);
+    CHECK(t->m_addr == 1);
+
+    t->s_araddr = 2;
+    rr::ut::clk(t);
+    REQUIRE(t->s_arready == 0);
+
+    t->s_araddr = 3;
+    t->invalidate = 1;
+    rr::ut::clk(t);
+    t->invalidate = 0;
+    for (uint32_t index = 1; index < CACHE_SIZE / CACHE_LINE_SIZE; ++index)
+    {
+        rr::ut::clk(t);
+    }
+
+    CHECK(t->s_arready == 0);
+
+    t->m_ready = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->m_valid == 1);
+    CHECK(t->m_cmd == LOAD_CACHE_LINE);
+    CHECK(t->m_addr == 2);
+    CHECK(t->s_arready == 0);
+
+    rr::ut::clk(t);
+    CHECK(t->m_valid == 0);
+    CHECK(t->s_arready == 0);
+
+    rr::ut::clk(t);
+    REQUIRE(t->m_valid == 1);
+    CHECK(t->m_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_addr == 2);
+    CHECK(t->s_arready == 1);
+
+    rr::ut::clk(t);
+    REQUIRE(t->m_valid == 1);
+    CHECK(t->m_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_addr == 3);
+
+    t->s_arvalid = 0;
+    rr::ut::clk(t);
+    CHECK(t->m_valid == 0);
+    delete t;
+}
+
 TEST_CASE("Two cold requests produce two line loads and two entry accesses",
     "[TextureCacheDirectMappedController]")
 {
