@@ -36,6 +36,7 @@ module RasterIXRenderCore #(
     parameter TEXEL_WIDTH = 16,
     parameter TEXTURE_PAGE_SIZE = 2048,
     parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 0,
+    parameter CACHE_SIZE = 1024,
 
     // Enables the fogging unit
     parameter ENABLE_FOG = 1,
@@ -590,6 +591,7 @@ module RasterIXRenderCore #(
             defparam textureMemoryTMU0.ID_WIDTH = ID_WIDTH;
             defparam textureMemoryTMU0.ADDR_WIDTH = ADDR_WIDTH;
             defparam textureMemoryTMU0.PAGE_SIZE = TEXTURE_PAGE_SIZE;
+            defparam textureMemoryTMU0.CACHE_SIZE = CACHE_SIZE;
 
         end
         else
@@ -725,6 +727,7 @@ module RasterIXRenderCore #(
                 defparam textureMemoryTMU1.ID_WIDTH = ID_WIDTH;
                 defparam textureMemoryTMU1.ADDR_WIDTH = ADDR_WIDTH;
                 defparam textureMemoryTMU1.PAGE_SIZE = TEXTURE_PAGE_SIZE;
+                defparam textureMemoryTMU1.CACHE_SIZE = CACHE_SIZE;
 
             end
             else

@@ -54,6 +54,7 @@ module RasterIXCoreIF #(
     parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TEXTURE_PAGE_SIZE = 2048,
     parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 0,
+    parameter CACHE_SIZE = 1024,
 
     // Enables the fog unit
     parameter ENABLE_FOG = 1,
@@ -586,6 +587,7 @@ module RasterIXCoreIF #(
         .ID_WIDTH(ID_WIDTH),
         .TMU_COUNT(TMU_COUNT),
         .ENABLE_EXTERNAL_TEXTURE_MEMORY(ENABLE_EXTERNAL_TEXTURE_MEMORY),
+        .CACHE_SIZE(CACHE_SIZE),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
         .ENABLE_FOG(ENABLE_FOG),

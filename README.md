@@ -26,6 +26,7 @@ With a typical configuration, the core requires __around 11k LUTs__ on a Xilinx 
   - 64 bit memory bus
   - 256px textures
   - 1 TMU
+  - no external texture memory
   - mip mapping
   - depth buffer
   - stencil buffer
@@ -39,6 +40,7 @@ The core can blow up to __around 36k LUTs__ on a Xilinx Series 7 device when eve
   - 128 bit memory bus
   - 256px textures
   - 2 TMUs
+  - no external texture memoryd
   - mip mapping
   - depth buffer
   - stencil buffer
@@ -52,6 +54,7 @@ A minimal configuration can get the utilization down to __around 4.5k LUTs__ on 
   - 32bit memory bus
   - 128px textures
   - 1 TMU
+  - no external texture memory
   - no mip mapping
   - no depth buffer
   - no stencil buffer
@@ -160,6 +163,8 @@ Note: Bold options are required to be equal to the software counterparts.
 | ENABLE_DEPTH_BUFFER                       | if/ef   | Enables the depth buffer unit. The depth buffer is 16 bit wide. |
 | __TMU_COUNT__                             | if/ef   | Number of TMU the hardware shall contain. Valid values are 1 and 2. |
 | __TEXTURE_PAGE_SIZE__                     | if/ef   | The page size of the texture memory. |
+| CACHE_SIZE                                | if/ef   | Size of the direct-mapped texture cache in bytes. Used when external texture memory is enabled. |
+| ENABLE_EXTERNAL_TEXTURE_MEMORY            | if/ef   | Uses external memory for texture data and enables the texture cache. When disabled, texture data is stored in FPGA memory. |
 | __ENABLE_MIPMAPPING__                     | if/ef   | Enables the mip map unit. |
 | __MAX_TEXTURE_SIZE__                      | if/ef   | Size of the texture buffer. Valid values: 256, 128, 64, 32. For instance, a 256 texture requires 256 * 256 * 2 bytes of FPGA RAM. Additional RAM is required when __ENABLE_MIPMAPPING__ is selected |
 | ENABLE_TEXTURE_FILTERING                  | if/ef   | Enables the texture filter unit. |
