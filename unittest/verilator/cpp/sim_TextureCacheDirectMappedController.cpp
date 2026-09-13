@@ -306,6 +306,32 @@ TEST_CASE("Conflicting direct-map addresses replace the tag",
     delete t;
 }
 
+TEST_CASE("Invalidation clears the final cache tag",
+    "[TextureCacheDirectMappedController]")
+{
+    auto* t = makeController();
+    constexpr uint32_t CACHE_LINES = CACHE_SIZE / CACHE_LINE_SIZE;
+    for (uint32_t index = 0; index < CACHE_LINES; ++index)
+    {
+        fillCache(t, index * CACHE_LINE_SIZE);
+    }
+
+    t->invalidate = 1;
+    rr::ut::clk(t);
+    t->invalidate = 0;
+    for (uint32_t index = 1; index < CACHE_LINES; ++index)
+    {
+        rr::ut::clk(t);
+    }
+    REQUIRE(t->s_tc_ready == 1);
+
+    for (uint32_t index = 0; index < CACHE_LINES; ++index)
+    {
+        fillCache(t, index * CACHE_LINE_SIZE);
+    }
+    delete t;
+}
+
 TEST_CASE("Every cache index can be filled and reread as a hit",
     "[TextureCacheDirectMappedController]")
 {
