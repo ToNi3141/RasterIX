@@ -23,6 +23,7 @@ module TextureReader #(
     parameter ID_WIDTH = 4,
     parameter ADDR_WIDTH = 32,
     parameter PAGE_SIZE = 2048,
+    parameter CACHE_SIZE = 1024,
 
     localparam STREAM_WIDTH = 32,
     localparam TEX_ADDR_WIDTH = 17,
@@ -186,7 +187,7 @@ module TextureReader #(
         .DATA_WIDTH(DATA_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .ADDR_WIDTH(BYTE_ADDR_WIDTH),
-        .CACHE_SIZE(1024)
+        .CACHE_SIZE(CACHE_SIZE)
     ) textureCacheDirectMapped_inst (
         .aclk(aclk),
         .resetn(resetn),
