@@ -155,6 +155,7 @@ module TextureCacheDirectMappedController #(
                 end
                 else
                 begin
+                    r_tag_entires[r_i] <= { TAG_ENTRY_WIDTH { 1'b0 } };
                     r_invalidate <= 1'b0;
                     r_i <= { INDEX_WIDTH { 1'b0 } };
                     s_tc_ready <= !r_skid_valid;
