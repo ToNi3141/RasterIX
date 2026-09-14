@@ -232,7 +232,8 @@ module Rasterizer
                 // A rasterization cycle is only executed if the shader is free. Otherwise the rasterizer will stall
                 if (m_rr_tready)
                 begin
-                    if (yScreen < yScreenEnd)
+                    if ((yScreen < yScreenEnd) && 
+                        (y < yResolution)) // Check that the index never exceeds the borders of the view port
                     begin
                         case (edgeWalkingState)
                         RASTERIZER_EDGEWALKER_INIT:
@@ -322,7 +323,7 @@ module Rasterizer
 
                         /* verilator lint_off WIDTH */
                         // Check that the index never exceeds the borders of the view port
-                        if ((y < yResolution) && (x < xResolution))
+                        if (x < xResolution)
                         begin
                             m_rr_tindex <= (((yResolution - 1) - y) * xResolution) + x;
                         end
