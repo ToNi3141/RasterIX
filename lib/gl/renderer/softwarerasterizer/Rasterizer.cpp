@@ -28,6 +28,14 @@ void Rasterizer::init(const TriangleStreamTypes::TriangleDescX& triangle)
     m_wYInc = triangle.param.wYInc;
     m_w = triangle.param.wInit;
 
+    m_edgeInclusive.reset();
+    if ((m_wXInc[0] > 0) || ((m_wXInc[0] == 0) && (m_wYInc[0] > 0)))
+        m_edgeInclusive.set(0);
+    if ((m_wXInc[1] > 0) || ((m_wXInc[1] == 0) && (m_wYInc[1] > 0)))
+        m_edgeInclusive.set(1);
+    if ((m_wXInc[2] > 0) || ((m_wXInc[2] == 0) && (m_wYInc[2] > 0)))
+        m_edgeInclusive.set(2);
+
     if (m_yOffset <= triangle.param.bbStartY)
     {
         m_yScreen = triangle.param.bbStartY;
