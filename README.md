@@ -117,10 +117,10 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RIX_CORE_MAX_DISPLAY_WIDTH             | The maximum width if the screen. All integers are valid like 1024. To be most memory efficient, this should fit to your display resolution. |
 | RIX_CORE_MAX_DISPLAY_HEIGHT            | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
 | __RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG__ | The log2(size) of the framebuffer in pixel. For the `rixef` variant, use a value which fits at least the whole screen like log2(1024 * 600) + 1. For the `rixif` variant, use the same value configured in the FPGA. A valid value could be 16. |
-| __RIX_CORE_USE_FLOAT_INTERPOLATION__   | If `true`, it uploads triangle parameters in floating point format. If `false`, it uploads triangle parameters in fixed point format. Must be equal to the FPGA configuration. |
+| RIX_CORE_ENABLE_ATTRIBUTE_SCALING      | This enables the scaling of triangle attributes. It is not needed when the floating point interpolation is enabled. In fixpoint interpolation, unscaled attributes can cause overflows. Visible in GL_CLAMP_TO_EDGE. Scaling can fix that, but increases the load on the CPU. |
 | RIX_CORE_NUMBER_OF_TEXTURE_PAGES       | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
 | RIX_CORE_NUMBER_OF_TEXTURES            | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |
-| __RIX_CORE_TEXTURE_PAGE_SIZE__         | The size of a texture page in bytes. Typical value is 4096. |
+| __RIX_CORE_TEXTURE_PAGE_SIZE__         | The size of a texture page in bytes. Typical value is 2048. |
 | RIX_CORE_GRAM_MEMORY_LOC               | Offset for the memory location. Typically this value is 0. Can be different when the memory is shared with other hardware, like in the Zynq platform. |
 | RIX_CORE_COLOR_BUFFER_LOC_0            | Location of the used framebuffer, when the RasterIX is off. On linux, usually the address of the buffer used for the fb dev. |
 | RIX_CORE_COLOR_BUFFER_LOC_1            | Location of the first framebuffer. |
@@ -131,7 +131,7 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | RIX_CORE_THREADED_RASTERIZATION_DISPLAY_LIST_SIZE | Sets the size of the display list. A good value is a size similar of `IDevice::requestDisplayListBuffer().size()`. Most of the times smaller lists are also working perfectly fine. |
 | RIX_CORE_ENABLE_VSYNC                  | Enables vsync. Requires two framebuffers and a display hardware, which supports the vsync signals. |
 | MAX_VBO_COUNT                          | Max usable VBOs (Vertex Buffer Objects). Default is 256. VBOs are used mainly for compatibility with OpenGL, but do not provide performance advantages in this driver. |
-| RIX_CORE_PERFORMANCE_MODE              | Enables the performance mode which exchanges compatibility with performance optimizations. For instance, the intermediate display upload (where a frame is split in several display lists, when a display list overflows) will break on the `rixif` config, because the depth and stencil buffer are not reloaded. |
+| RIX_CORE_AUTOLOAD_INTERNAL_FRAMEBUFFER | Automatically loads the framebuffer (depth and stencil) from RAM into the internal framebuffer. This increases the compatibility of the `rixif` config in tradeoff for performance. Without this, the intermediate upload does not work correctly. (unused in `rixef`) |
 | RIX_CORE_SOFTWARE_RENDERING            | This enables a software rendering mode. Only available under windows with WGL. When this mode is active, no FPGA hardware is required. |
 
 ## How to use the Core
@@ -180,7 +180,7 @@ The core comes in two variants: `RasterIX_IF` and `RasterIX_EF`. `IF` stands for
 `RasterIX_IF`: This variant is usually faster because it loosely depends on the memory subsystem of your FPGA. Rendering is executed entirely in the FPGA's static RAM resources. The drawback is the occupation of significant RAM resources on both the FPGA and the host. For a reasonable performance, at least 1/8 of a framebuffer needs to fit into the FPGA. The driver will automatically split the displaylists depending of the amount of memory is used in the FPGA.
 
 Because the framebuffer is split into several smaller ones, the host requires a display list for each partial framebuffer and must keep the display list in memory until rendering is complete. For a picture with reasonable complexity, you can assume that the host requires several MB of memory just for the display lists. 
-In non RIX_CORE_PERFORMANCE_MODE intermediate uploads are supported, but decreasing the performance.
+Only in RIX_CORE_AUTOLOAD_INTERNAL_FRAMEBUFFER intermediate uploads are supported, but decreasing the performance.
 
 `RasterIX_EF`: The performance of this variant heavily depends on the performance of your memory subsystem, because all framebuffers are stored in system memory (typically DRAM). While latency is not critical for performance, the number of memory requests the system can handle is much more important. This is a significant bottleneck for this design, especially with the Xilinx MIG (making it about three times slower than `RasterIX_IF`). Another limitation of the memory subsystem/AXI bus (the strobe of the AXI bus works only byte-wise, not bit-wise) is that stencil and color masks do not work correctly, and the color buffer does not support an alpha channel.
 

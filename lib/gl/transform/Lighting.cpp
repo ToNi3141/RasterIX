@@ -118,7 +118,7 @@ Vec4 LightingCalc::calculateLight(
 
     const float att = calculateAttenuation(lightConfig, v0);
     const float specular = calculateSpecular(nDotDir, n0, dirVertexToLight, materialSpecularExponent);
-    const float spot = calculateSpotlight(lightConfig, v0, dirVertexToLight);
+    const float spot = calculateSpotlight(lightConfig, dirVertexToLight);
 
     const Vec4 ambientColor = lightConfig.ambientColor * materialAmbientColor;
     const Vec4 colorLightSpecular = lightConfig.specularColor * materialSpecularColor * specular;
@@ -204,7 +204,7 @@ float LightingCalc::calculateSpecular(
     return specular * f;
 }
 
-float LightingCalc::calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec4& v0, const Vec3& dirLightToVertex) const
+float LightingCalc::calculateSpotlight(const LightingData::LightConfig& lightConfig, const Vec3& dirLightToVertex) const
 {
     float spot = 1.0;
     if (lightConfig.spotlightCutoff != 180.0f)

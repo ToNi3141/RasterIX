@@ -33,9 +33,6 @@ template <class RenderConfig>
 class TextureMemoryManager
 {
 public:
-    static constexpr std::size_t TEXTURE_PAGE_SIZE { RenderConfig::TEXTURE_PAGE_SIZE };
-    static constexpr std::size_t MAX_PAGES_PER_TEXTURE { static_cast<std::size_t>((static_cast<float>(RenderConfig::MAX_TEXTURE_SIZE * RenderConfig::MAX_TEXTURE_SIZE * 2.0f * 1.33f) / static_cast<float>(RenderConfig::TEXTURE_PAGE_SIZE)) + 1.0f) };
-
     TextureMemoryManager()
     {
     }
@@ -114,7 +111,7 @@ public:
 
         // Allocate memory pages
         const std::size_t textureSize = m_textures[textureSlot].getTextureSize();
-        const std::size_t texturePages = (textureSize / TEXTURE_PAGE_SIZE) + ((textureSize % TEXTURE_PAGE_SIZE) ? 1 : 0);
+        const std::size_t texturePages = (textureSize / RenderConfig::TEXTURE_PAGE_SIZE) + ((textureSize % RenderConfig::TEXTURE_PAGE_SIZE) ? 1 : 0);
         SPDLOG_DEBUG("Use number of pages: {}", texturePages);
         ret = allocPages(m_textures[textureSlot], texturePages);
         if (!ret)
@@ -290,13 +287,13 @@ public:
             TextureEntry& textureEntry = m_textureEntryFlags[i];
             if (textureEntry.requiresUpload)
             {
-                std::array<uint8_t, TEXTURE_PAGE_SIZE> buffer;
+                std::array<uint8_t, RenderConfig::TEXTURE_PAGE_SIZE> buffer;
                 std::size_t j = 0;
                 for (tcb::span<const uint8_t> b = texture.getPageData(j, buffer); !b.empty(); b = texture.getPageData(++j, buffer))
                 {
                     if (m_pageTable[texture.pageTable[j]].requiresUpload)
                     {
-                        ret = ret && uploader(static_cast<std::size_t>(texture.pageTable[j]) * TEXTURE_PAGE_SIZE, { buffer });
+                        ret = ret && uploader(static_cast<std::size_t>(texture.pageTable[j]) * RenderConfig::TEXTURE_PAGE_SIZE, { buffer });
                         if (ret)
                         {
                             m_pageTable[texture.pageTable[j]].requiresUpload = false;
@@ -340,7 +337,7 @@ private:
 
     struct Texture
     {
-        std::array<std::size_t, MAX_PAGES_PER_TEXTURE> pageTable {};
+        std::array<std::size_t, RenderConfig::getMaxTexturePages()> pageTable {};
         std::size_t pages { 0 };
         TextureObject textures {};
         TmuTextureReg tmuConfig {};

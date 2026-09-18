@@ -113,50 +113,6 @@ module Coalescer #(
     output wire                                 m_mem_axi_rready
 );
 
-    wire [ID_WIDTH - 1 : 0]     mem_axi_awid;
-    wire [ADDR_WIDTH - 1 : 0]   mem_axi_awaddr;
-    wire [ 7 : 0]               mem_axi_awlen; 
-    wire [ 2 : 0]               mem_axi_awsize; 
-    wire [ 1 : 0]               mem_axi_awburst; 
-    wire                        mem_axi_awlock;
-    wire [ 3 : 0]               mem_axi_awcache;
-    wire [ 2 : 0]               mem_axi_awprot; 
-    wire                        mem_axi_awvalid;
-    wire                        mem_axi_awready;
-
-    // Read Channel
-    CoalesceAddrGen #(
-        .ID_WIDTH(ID_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(DATA_WIDTH),
-        .MAX_BEATS_TO_COALESCE(MAX_BEATS_TO_COALESCE)
-    ) coalesce_addr_read_gen_inst (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .s_mem_axi_axid(s_mem_axi_arid),
-        .s_mem_axi_axaddr(s_mem_axi_araddr),
-        .s_mem_axi_axlen(s_mem_axi_arlen),
-        .s_mem_axi_axsize(s_mem_axi_arsize),
-        .s_mem_axi_axburst(s_mem_axi_arburst),
-        .s_mem_axi_axlock(s_mem_axi_arlock),
-        .s_mem_axi_axcache(s_mem_axi_arcache),
-        .s_mem_axi_axprot(s_mem_axi_arprot),
-        .s_mem_axi_axvalid(s_mem_axi_arvalid),
-        .s_mem_axi_axready(s_mem_axi_arready),
-
-        .m_mem_axi_axid(m_mem_axi_arid),
-        .m_mem_axi_axaddr(m_mem_axi_araddr),
-        .m_mem_axi_axlen(m_mem_axi_arlen),
-        .m_mem_axi_axsize(m_mem_axi_arsize),
-        .m_mem_axi_axburst(m_mem_axi_arburst),
-        .m_mem_axi_axlock(m_mem_axi_arlock),
-        .m_mem_axi_axcache(m_mem_axi_arcache),
-        .m_mem_axi_axprot(m_mem_axi_arprot),
-        .m_mem_axi_axvalid(m_mem_axi_arvalid),
-        .m_mem_axi_axready(m_mem_axi_arready)
-    );
-
     assign s_mem_axi_rdata = m_mem_axi_rdata;
     assign s_mem_axi_rid = m_mem_axi_rid;
     assign s_mem_axi_rresp = m_mem_axi_rresp;
@@ -164,92 +120,177 @@ module Coalescer #(
     assign s_mem_axi_rvalid = m_mem_axi_rvalid;
     assign m_mem_axi_rready = s_mem_axi_rready;
 
-    // Write Channel
-    CoalesceAddrGen #(
-        .ID_WIDTH(ID_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(DATA_WIDTH),
-        .MAX_BEATS_TO_COALESCE(MAX_BEATS_TO_COALESCE)
-    ) coalesce_addr_write_gen_inst (
-        .aclk(aclk),
-        .resetn(resetn),
+    generate
+        if (MAX_BEATS_TO_COALESCE > 1)
+        begin : gen_coalesce
+            wire [ID_WIDTH - 1 : 0]     mem_axi_awid;
+            wire [ADDR_WIDTH - 1 : 0]   mem_axi_awaddr;
+            wire [ 7 : 0]               mem_axi_awlen; 
+            wire [ 2 : 0]               mem_axi_awsize; 
+            wire [ 1 : 0]               mem_axi_awburst; 
+            wire                        mem_axi_awlock;
+            wire [ 3 : 0]               mem_axi_awcache;
+            wire [ 2 : 0]               mem_axi_awprot; 
+            wire                        mem_axi_awvalid;
+            wire                        mem_axi_awready;
 
-        .s_mem_axi_axid(s_mem_axi_awid),
-        .s_mem_axi_axaddr(s_mem_axi_awaddr),
-        .s_mem_axi_axlen(s_mem_axi_awlen),
-        .s_mem_axi_axsize(s_mem_axi_awsize),
-        .s_mem_axi_axburst(s_mem_axi_awburst),
-        .s_mem_axi_axlock(s_mem_axi_awlock),
-        .s_mem_axi_axcache(s_mem_axi_awcache),
-        .s_mem_axi_axprot(s_mem_axi_awprot),
-        .s_mem_axi_axvalid(s_mem_axi_awvalid),
-        .s_mem_axi_axready(s_mem_axi_awready),
+            // Read Channel
+            CoalesceAddrGen #(
+                .ID_WIDTH(ID_WIDTH),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .DATA_WIDTH(DATA_WIDTH),
+                .MAX_BEATS_TO_COALESCE(MAX_BEATS_TO_COALESCE)
+            ) coalesce_addr_read_gen_inst (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .m_mem_axi_axid(mem_axi_awid),
-        .m_mem_axi_axaddr(mem_axi_awaddr),
-        .m_mem_axi_axlen(mem_axi_awlen),
-        .m_mem_axi_axsize(mem_axi_awsize),
-        .m_mem_axi_axburst(mem_axi_awburst),
-        .m_mem_axi_axlock(mem_axi_awlock),
-        .m_mem_axi_axcache(mem_axi_awcache),
-        .m_mem_axi_axprot(mem_axi_awprot),
-        .m_mem_axi_axvalid(mem_axi_awvalid),
-        .m_mem_axi_axready(mem_axi_awready)
-    );
+                .s_mem_axi_axid(s_mem_axi_arid),
+                .s_mem_axi_axaddr(s_mem_axi_araddr),
+                .s_mem_axi_axlen(s_mem_axi_arlen),
+                .s_mem_axi_axsize(s_mem_axi_arsize),
+                .s_mem_axi_axburst(s_mem_axi_arburst),
+                .s_mem_axi_axlock(s_mem_axi_arlock),
+                .s_mem_axi_axcache(s_mem_axi_arcache),
+                .s_mem_axi_axprot(s_mem_axi_arprot),
+                .s_mem_axi_axvalid(s_mem_axi_arvalid),
+                .s_mem_axi_axready(s_mem_axi_arready),
 
-    CoalesceFiFo #(
-        .ID_WIDTH(ID_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .DATA_WIDTH(DATA_WIDTH),
-        .STRB_WIDTH(STRB_WIDTH),
-        .MAX_BEATS_TO_COALESCE(MAX_BEATS_TO_COALESCE)
-    ) coalesce_fifo_write_inst (
-        .aclk(aclk),
-        .resetn(resetn),
+                .m_mem_axi_axid(m_mem_axi_arid),
+                .m_mem_axi_axaddr(m_mem_axi_araddr),
+                .m_mem_axi_axlen(m_mem_axi_arlen),
+                .m_mem_axi_axsize(m_mem_axi_arsize),
+                .m_mem_axi_axburst(m_mem_axi_arburst),
+                .m_mem_axi_axlock(m_mem_axi_arlock),
+                .m_mem_axi_axcache(m_mem_axi_arcache),
+                .m_mem_axi_axprot(m_mem_axi_arprot),
+                .m_mem_axi_axvalid(m_mem_axi_arvalid),
+                .m_mem_axi_axready(m_mem_axi_arready)
+            );
 
-        .s_mem_axi_awid(mem_axi_awid),
-        .s_mem_axi_awaddr(mem_axi_awaddr),
-        .s_mem_axi_awlen(mem_axi_awlen),
-        .s_mem_axi_awsize(mem_axi_awsize),
-        .s_mem_axi_awburst(mem_axi_awburst),
-        .s_mem_axi_awlock(mem_axi_awlock),
-        .s_mem_axi_awcache(mem_axi_awcache),
-        .s_mem_axi_awprot(mem_axi_awprot),
-        .s_mem_axi_awvalid(mem_axi_awvalid),
-        .s_mem_axi_awready(mem_axi_awready),
+            // Write Channel
+            CoalesceAddrGen #(
+                .ID_WIDTH(ID_WIDTH),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .DATA_WIDTH(DATA_WIDTH),
+                .MAX_BEATS_TO_COALESCE(MAX_BEATS_TO_COALESCE)
+            ) coalesce_addr_write_gen_inst (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .s_mem_axi_wdata(s_mem_axi_wdata),
-        .s_mem_axi_wstrb(s_mem_axi_wstrb),
-        .s_mem_axi_wlast(s_mem_axi_wlast),
-        .s_mem_axi_wvalid(s_mem_axi_wvalid),
-        .s_mem_axi_wready(s_mem_axi_wready),
+                .s_mem_axi_axid(s_mem_axi_awid),
+                .s_mem_axi_axaddr(s_mem_axi_awaddr),
+                .s_mem_axi_axlen(s_mem_axi_awlen),
+                .s_mem_axi_axsize(s_mem_axi_awsize),
+                .s_mem_axi_axburst(s_mem_axi_awburst),
+                .s_mem_axi_axlock(s_mem_axi_awlock),
+                .s_mem_axi_axcache(s_mem_axi_awcache),
+                .s_mem_axi_axprot(s_mem_axi_awprot),
+                .s_mem_axi_axvalid(s_mem_axi_awvalid),
+                .s_mem_axi_axready(s_mem_axi_awready),
 
-        .s_mem_axi_bid(s_mem_axi_bid),
-        .s_mem_axi_bresp(s_mem_axi_bresp),
-        .s_mem_axi_bvalid(s_mem_axi_bvalid),
-        .s_mem_axi_bready(s_mem_axi_bready),
+                .m_mem_axi_axid(mem_axi_awid),
+                .m_mem_axi_axaddr(mem_axi_awaddr),
+                .m_mem_axi_axlen(mem_axi_awlen),
+                .m_mem_axi_axsize(mem_axi_awsize),
+                .m_mem_axi_axburst(mem_axi_awburst),
+                .m_mem_axi_axlock(mem_axi_awlock),
+                .m_mem_axi_axcache(mem_axi_awcache),
+                .m_mem_axi_axprot(mem_axi_awprot),
+                .m_mem_axi_axvalid(mem_axi_awvalid),
+                .m_mem_axi_axready(mem_axi_awready)
+            );
 
-        .m_mem_axi_awid(m_mem_axi_awid),
-        .m_mem_axi_awaddr(m_mem_axi_awaddr),
-        .m_mem_axi_awlen(m_mem_axi_awlen),
-        .m_mem_axi_awsize(m_mem_axi_awsize),
-        .m_mem_axi_awburst(m_mem_axi_awburst),
-        .m_mem_axi_awlock(m_mem_axi_awlock),
-        .m_mem_axi_awcache(m_mem_axi_awcache),
-        .m_mem_axi_awprot(m_mem_axi_awprot),
-        .m_mem_axi_awvalid(m_mem_axi_awvalid),
-        .m_mem_axi_awready(m_mem_axi_awready),
+            CoalesceFiFo #(
+                .ID_WIDTH(ID_WIDTH),
+                .ADDR_WIDTH(ADDR_WIDTH),
+                .DATA_WIDTH(DATA_WIDTH),
+                .STRB_WIDTH(STRB_WIDTH),
+                .MAX_BEATS_TO_COALESCE(MAX_BEATS_TO_COALESCE)
+            ) coalesce_fifo_write_inst (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .m_mem_axi_wdata(m_mem_axi_wdata),
-        .m_mem_axi_wstrb(m_mem_axi_wstrb),
-        .m_mem_axi_wlast(m_mem_axi_wlast),
-        .m_mem_axi_wvalid(m_mem_axi_wvalid),
-        .m_mem_axi_wready(m_mem_axi_wready),
+                .s_mem_axi_awid(mem_axi_awid),
+                .s_mem_axi_awaddr(mem_axi_awaddr),
+                .s_mem_axi_awlen(mem_axi_awlen),
+                .s_mem_axi_awsize(mem_axi_awsize),
+                .s_mem_axi_awburst(mem_axi_awburst),
+                .s_mem_axi_awlock(mem_axi_awlock),
+                .s_mem_axi_awcache(mem_axi_awcache),
+                .s_mem_axi_awprot(mem_axi_awprot),
+                .s_mem_axi_awvalid(mem_axi_awvalid),
+                .s_mem_axi_awready(mem_axi_awready),
 
-        .m_mem_axi_bid(m_mem_axi_bid),
-        .m_mem_axi_bresp(m_mem_axi_bresp),
-        .m_mem_axi_bvalid(m_mem_axi_bvalid),
-        .m_mem_axi_bready(m_mem_axi_bready)
-    );
-  
+                .s_mem_axi_wdata(s_mem_axi_wdata),
+                .s_mem_axi_wstrb(s_mem_axi_wstrb),
+                .s_mem_axi_wlast(s_mem_axi_wlast),
+                .s_mem_axi_wvalid(s_mem_axi_wvalid),
+                .s_mem_axi_wready(s_mem_axi_wready),
+
+                .s_mem_axi_bid(s_mem_axi_bid),
+                .s_mem_axi_bresp(s_mem_axi_bresp),
+                .s_mem_axi_bvalid(s_mem_axi_bvalid),
+                .s_mem_axi_bready(s_mem_axi_bready),
+
+                .m_mem_axi_awid(m_mem_axi_awid),
+                .m_mem_axi_awaddr(m_mem_axi_awaddr),
+                .m_mem_axi_awlen(m_mem_axi_awlen),
+                .m_mem_axi_awsize(m_mem_axi_awsize),
+                .m_mem_axi_awburst(m_mem_axi_awburst),
+                .m_mem_axi_awlock(m_mem_axi_awlock),
+                .m_mem_axi_awcache(m_mem_axi_awcache),
+                .m_mem_axi_awprot(m_mem_axi_awprot),
+                .m_mem_axi_awvalid(m_mem_axi_awvalid),
+                .m_mem_axi_awready(m_mem_axi_awready),
+
+                .m_mem_axi_wdata(m_mem_axi_wdata),
+                .m_mem_axi_wstrb(m_mem_axi_wstrb),
+                .m_mem_axi_wlast(m_mem_axi_wlast),
+                .m_mem_axi_wvalid(m_mem_axi_wvalid),
+                .m_mem_axi_wready(m_mem_axi_wready),
+
+                .m_mem_axi_bid(m_mem_axi_bid),
+                .m_mem_axi_bresp(m_mem_axi_bresp),
+                .m_mem_axi_bvalid(m_mem_axi_bvalid),
+                .m_mem_axi_bready(m_mem_axi_bready)
+            );
+        end
+        else
+        begin : gen_bypass
+            // Bypass coalescing entirely: connect slave AW/W/B/AR channels directly to master
+            assign m_mem_axi_awid = s_mem_axi_awid;
+            assign m_mem_axi_awaddr = s_mem_axi_awaddr;
+            assign m_mem_axi_awlen = s_mem_axi_awlen;
+            assign m_mem_axi_awsize = s_mem_axi_awsize;
+            assign m_mem_axi_awburst = s_mem_axi_awburst;
+            assign m_mem_axi_awlock = s_mem_axi_awlock;
+            assign m_mem_axi_awcache = s_mem_axi_awcache;
+            assign m_mem_axi_awprot = s_mem_axi_awprot;
+            assign m_mem_axi_awvalid = s_mem_axi_awvalid;
+            assign s_mem_axi_awready = m_mem_axi_awready;
+
+            assign m_mem_axi_wdata = s_mem_axi_wdata;
+            assign m_mem_axi_wstrb = s_mem_axi_wstrb;
+            assign m_mem_axi_wlast = s_mem_axi_wlast;
+            assign m_mem_axi_wvalid = s_mem_axi_wvalid;
+            assign s_mem_axi_wready = m_mem_axi_wready;
+
+            assign s_mem_axi_bid = m_mem_axi_bid;
+            assign s_mem_axi_bresp = m_mem_axi_bresp;
+            assign s_mem_axi_bvalid = m_mem_axi_bvalid;
+            assign m_mem_axi_bready = s_mem_axi_bready;
+
+            assign m_mem_axi_arid = s_mem_axi_arid;
+            assign m_mem_axi_araddr = s_mem_axi_araddr;
+            assign m_mem_axi_arlen = s_mem_axi_arlen;
+            assign m_mem_axi_arsize = s_mem_axi_arsize;
+            assign m_mem_axi_arburst = s_mem_axi_arburst;
+            assign m_mem_axi_arlock = s_mem_axi_arlock;
+            assign m_mem_axi_arcache = s_mem_axi_arcache;
+            assign m_mem_axi_arprot = s_mem_axi_arprot;
+            assign m_mem_axi_arvalid = s_mem_axi_arvalid;
+            assign s_mem_axi_arready = m_mem_axi_arready;
+        end
+    endgenerate
+
 endmodule

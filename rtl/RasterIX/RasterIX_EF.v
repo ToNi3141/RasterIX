@@ -29,7 +29,7 @@ module RasterIX_EF #(
     parameter TMU_COUNT = 2,
     parameter ENABLE_MIPMAPPING = 1,
     parameter ENABLE_TEXTURE_FILTERING = 1,
-    parameter TEXTURE_PAGE_SIZE = 4096,
+    parameter TEXTURE_PAGE_SIZE = 2048,
 
     // Enables the fog unit
     parameter ENABLE_FOG = 1,

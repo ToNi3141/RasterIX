@@ -37,12 +37,16 @@ module RasterIXRenderCore #(
 
     // Enables the fogging unit
     parameter ENABLE_FOG = 1,
+
+    // Enables the line mode in the rasterizer. This allows splitting a triangle into multiple lines. 
+    // This is useful to render partial framebuffers (for instance in the IF config).
+    // Works only correctly together with the yOffset which offsets the current screen position.
+    parameter LINE_MODE = 0,
     
     // The bit width of the command stream interface
-    // Allowed values: 32, 64, 128, 256 bit
     localparam CMD_STREAM_WIDTH = 32,
 
-    // The maximum size of a texture
+    // The maximum size of a texture in pixel
     parameter MAX_TEXTURE_SIZE = 256,
 
     // Enables FIFOs on the memory read channel. It can improve the performance by reducing stalls in the pipeline.
@@ -747,7 +751,7 @@ module RasterIXRenderCore #(
     defparam rasterizer.X_BIT_WIDTH = SCREEN_POS_WIDTH;
     defparam rasterizer.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
     defparam rasterizer.INDEX_WIDTH = INDEX_WIDTH;
-    defparam rasterizer.RASTERIZER_ENABLE_INITIAL_Y_INC = RASTERIZER_ENABLE_FLOAT_INTERPOLATION;
+    defparam rasterizer.LINE_MODE = LINE_MODE;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1

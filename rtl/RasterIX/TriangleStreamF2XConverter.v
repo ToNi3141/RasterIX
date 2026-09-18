@@ -125,7 +125,15 @@ module TriangleStreamF2XConverter #(
         .MANTISSA_SIZE(FLOAT_SIZE - 9),
         .EXPONENT_SIZE(8), 
         .INT_SIZE(CMD_STREAM_WIDTH),
-        .DELAY(0)
+        .DELAY(0),
+        // Values here are used for accumulation of the incremental values.
+        // This is some dark fix point magic, and can result in the correct
+        // result even if the converted value is out of range.
+        // Instead of 0, this returns the LSb's of the converted value, 
+        // which is enough for the accumulator to get the correct result.
+        // Without this, narrow triangles can result in a wrong color, 
+        // depth or texture value.
+        .OVERFLOW_WRAP(1)
     ) convertStream (
         .clk(aclk),
         .ce(1),
