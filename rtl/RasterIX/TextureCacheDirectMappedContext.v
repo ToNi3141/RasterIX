@@ -21,6 +21,11 @@ module TextureCacheDirectMappedContext #(
     parameter CACHE_SIZE = 1024,
     parameter CACHE_LINE_SIZE = 32,
     localparam CACHE_LINES = CACHE_SIZE / CACHE_LINE_SIZE,
+    // This option enables fetching of cache lines while they are loaded.
+    // This requires dual port RAM. Is this option disabled, the cache waits
+    // until the while cache line is loaded before serving new requests.
+    // In this case, single port memory is sufficient.
+    parameter ENABLE_EARLY_FETCH = 0,
 
     parameter DATA_WIDTH = 32,
     parameter ID_WIDTH = 4,
@@ -61,8 +66,20 @@ module TextureCacheDirectMappedContext #(
             getCacheGroupAddress = { 
                 { (ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_SIZE)) { 1'b0 } }, 
                 addr[$clog2(CACHE_LINE_SIZE) +: $clog2(CACHE_SIZE)], 
-                { ( $clog2(CACHE_LINE_SIZE)) { 1'b0 } } };
+                { ( $clog2(CACHE_LINE_SIZE)) { 1'b0 } } 
+            };
         end
+    endfunction
+
+    function [ADDR_WIDTH - 1 : 0] getByteAddress;
+        input [ADDR_WIDTH - 1 : 0] addr;
+        begin
+            getByteAddress = {
+                { (ADDR_WIDTH - $clog2(CACHE_LINE_SIZE)) { 1'b0 } }, 
+                addr[0 +: $clog2(CACHE_LINE_SIZE)]
+            }; 
+        end
+        
     endfunction
 
     function [LG_CACHE_WORDS - 1 : 0] getWordAddress;
@@ -118,59 +135,75 @@ module TextureCacheDirectMappedContext #(
         end 
         else 
         begin
-            if (!m_axi_rready)
+            if ((ENABLE_EARLY_FETCH || !m_axi_rready) && 
+                (!m_tc_valid || (m_tc_valid && m_tc_ready)))
             begin
-                if (!m_tc_valid || (m_tc_valid && m_tc_ready))
+                if (s_tc_valid || r_skid_valid)
                 begin
-                    if (s_tc_valid || r_skid_valid)
+                    if (r_skid_valid)
                     begin
-                        if (r_skid_valid)
+                        r_skid_valid <= 1'b0;
+                        s_tc_ready   <= 1'b1;
+                    end
+                    
+                    if (w_cmd == LOAD_CACHE_LINE)
+                    begin
+                        if (m_axi_rready)
                         begin
-                            r_skid_valid <= 1'b0;
-                            s_tc_ready   <= 1'b1;
+                            r_skid_addr  <= w_addr;
+                            r_skid_cmd   <= w_cmd;
+                            r_skid_valid <= 1'b1;
+                            m_tc_valid   <= 1'b0;
+                            s_tc_ready   <= 1'b0;
                         end
-                        
-                        if (w_cmd == LOAD_CACHE_LINE)
+                        else
                         begin
                             m_axi_rready <= 1'b1;
                             r_i          <= { ADDR_WIDTH { 1'b0 } };
                             r_axi_addr   <= w_addr;
                             m_tc_valid   <= 1'b0;
-                            s_tc_ready   <= 1'b0;
                         end
-                        else if (w_cmd == READ_CACHE_ENTRY)
+                    end
+                    else if (w_cmd == READ_CACHE_ENTRY)
+                    begin
+                        if (m_axi_rready && (getWordAddress(r_i) <= getWordAddress(getByteAddress(w_addr))))
+                        begin
+                            r_skid_addr  <= w_addr;
+                            r_skid_cmd   <= w_cmd;
+                            r_skid_valid <= 1'b1;
+                            s_tc_ready   <= 1'b0;
+                            m_tc_valid   <= 1'b0;
+                        end
+                        else
                         begin
                             m_tc_texel <= getTexel(w_addr);
                             m_tc_valid <= 1'b1;
                         end
                     end
-                    else
-                    begin
-                        m_tc_valid <= 1'b0;
-                    end
                 end
                 else
                 begin
-                    if (!r_skid_valid)
-                    begin
-                        r_skid_addr  <= s_tc_addr;
-                        r_skid_cmd   <= s_tc_cmd;
-                        r_skid_valid <= s_tc_valid;
-                        s_tc_ready   <= !s_tc_valid;
-                    end
+                    m_tc_valid <= 1'b0;
                 end
             end
             else
             begin
-                if (m_axi_rvalid)
+                if (!r_skid_valid)
                 begin
-                    r_i <= r_i + (DATA_WIDTH / 8);
-                    r_cache_memory[getWordAddress(getCacheGroupAddress(r_axi_addr) + r_i)] <= m_axi_rdata;
-                    if (r_i == (CACHE_LINE_SIZE - (DATA_WIDTH / 8)))
-                    begin
-                        m_axi_rready <= 1'b0;
-                        s_tc_ready <= 1'b1;
-                    end
+                    r_skid_addr  <= s_tc_addr;
+                    r_skid_cmd   <= s_tc_cmd;
+                    r_skid_valid <= s_tc_valid;
+                    s_tc_ready   <= !s_tc_valid;
+                end
+            end
+
+            if (m_axi_rready && m_axi_rvalid)
+            begin
+                r_i <= r_i + (DATA_WIDTH / 8);
+                r_cache_memory[getWordAddress(getCacheGroupAddress(r_axi_addr) + r_i)] <= m_axi_rdata;
+                if (r_i == (CACHE_LINE_SIZE - (DATA_WIDTH / 8)))
+                begin
+                    m_axi_rready <= 1'b0;
                 end
             end
         end

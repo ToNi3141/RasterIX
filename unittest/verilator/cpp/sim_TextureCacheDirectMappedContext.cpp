@@ -36,9 +36,10 @@ void loadLine(VTextureCacheDirectMappedContext* t, uint32_t address, const std::
     t->s_tc_valid = 1;
     REQUIRE(t->s_tc_ready == 1);
     rr::ut::clk(t);
-    CHECK(t->s_tc_ready == 0);
+    CHECK(t->s_tc_ready == 1);
     CHECK(t->m_axi_rready == 1);
     CHECK(t->m_tc_valid == 0);
+    t->s_tc_valid = 0;
 
     for (uint32_t beat = 0; beat < LINE_BEATS; ++beat)
     {
@@ -153,7 +154,7 @@ TEST_CASE("skid buffer preserves a queued cache-line load", "[TextureCacheDirect
     rr::ut::clk(t);
     CHECK(t->m_tc_valid == 0);
     CHECK(t->m_axi_rready == 1);
-    CHECK(t->s_tc_ready == 0);
+    CHECK(t->s_tc_ready == 1);
 
     const std::array<uint32_t, LINE_BEATS> data = {
         0xaabbccdd, 0, 0, 0, 0, 0, 0, 0
@@ -176,5 +177,41 @@ TEST_CASE("skid buffer preserves a queued cache-line load", "[TextureCacheDirect
     rr::ut::clk(t);
     CHECK(t->m_tc_valid == 1);
     CHECK(t->m_tc_texel == 0xccdd);
+    delete t;
+}
+
+TEST_CASE("does not advertise a full skid buffer after the final AXI beat", "[TextureCacheDirectMappedContext]")
+{
+    auto* t = makeContext();
+    t->s_tc_addr = 0;
+    t->s_tc_cmd = LOAD_CACHE_LINE;
+    t->s_tc_valid = 1;
+    rr::ut::clk(t);
+    t->s_tc_valid = 0;
+
+    for (uint32_t beat = 0; beat < LINE_BEATS - 1; ++beat)
+    {
+        t->m_axi_rdata = 0;
+        t->m_axi_rvalid = 1;
+        t->m_axi_rlast = 0;
+        rr::ut::clk(t);
+    }
+
+    t->s_tc_addr = 28;
+    t->s_tc_cmd = READ_CACHE_ENTRY;
+    t->s_tc_valid = 1;
+    t->m_axi_rdata = 0x11223344;
+    t->m_axi_rlast = 1;
+    rr::ut::clk(t);
+    CHECK(t->s_tc_ready == 0);
+    CHECK(t->m_tc_valid == 0);
+
+    t->s_tc_valid = 0;
+    t->m_axi_rvalid = 0;
+    t->m_axi_rlast = 0;
+    rr::ut::clk(t);
+    CHECK(t->s_tc_ready == 1);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_texel == 0x3344);
     delete t;
 }

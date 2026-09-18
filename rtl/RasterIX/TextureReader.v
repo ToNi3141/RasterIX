@@ -187,7 +187,8 @@ module TextureReader #(
         .DATA_WIDTH(DATA_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .ADDR_WIDTH(BYTE_ADDR_WIDTH),
-        .CACHE_SIZE(CACHE_SIZE)
+        .CACHE_SIZE(CACHE_SIZE),
+        .ENABLE_EARLY_FETCH(1)
     ) textureCacheDirectMapped_inst (
         .aclk(aclk),
         .resetn(resetn),

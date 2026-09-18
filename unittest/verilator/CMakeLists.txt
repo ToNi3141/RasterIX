@@ -114,5 +114,11 @@ add_verilator_test(textureReaderController TextureReaderController ${RTL_RASTERI
 add_verilator_test(textureReaderContext TextureReaderContext ${RTL_RASTERIX}/TextureReaderContext.v)
 add_verilator_test(textureCacheDirectMappedController TextureCacheDirectMappedController ${RTL_RASTERIX}/TextureCacheDirectMappedController.v)
 add_verilator_test(textureCacheDirectMappedContext TextureCacheDirectMappedContext ${RTL_RASTERIX}/TextureCacheDirectMappedContext.v)
+add_verilator_test(textureCacheDirectMappedContextEarlyFetch TextureCacheDirectMappedContextEarlyFetch ${CMAKE_CURRENT_SOURCE_DIR}/TextureCacheDirectMappedContextEarlyFetch.v)
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/obj_dir_textureCacheDirectMappedContextEarlyFetch/VTextureCacheDirectMappedContextEarlyFetch
+    APPEND
+    DEPENDS ${RTL_RASTERIX}/TextureCacheDirectMappedContext.v
+)
 add_verilator_test(textureCacheDirectMapped TextureCacheDirectMapped ${RTL_RASTERIX}/TextureCacheDirectMapped.v
     ${RTL_3RDPARTY})

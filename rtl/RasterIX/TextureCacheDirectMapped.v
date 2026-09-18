@@ -20,6 +20,7 @@ module TextureCacheDirectMapped #(
 
     parameter CACHE_SIZE = 1024,
     parameter CACHE_LINE_SIZE = 32,
+    parameter ENABLE_EARLY_FETCH = 1,
 
     parameter DATA_WIDTH = 32,
     parameter ID_WIDTH = 4,
@@ -119,6 +120,7 @@ module TextureCacheDirectMapped #(
         .TEXEL_WIDTH(TEXEL_WIDTH),
         .CACHE_SIZE(CACHE_SIZE),
         .CACHE_LINE_SIZE(CACHE_LINE_SIZE),
+        .ENABLE_EARLY_FETCH(ENABLE_EARLY_FETCH),
         .DATA_WIDTH(DATA_WIDTH),
         .ID_WIDTH(ID_WIDTH)
     ) cache_context (

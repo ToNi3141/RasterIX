@@ -73,13 +73,12 @@ void provideLine(VTextureCacheDirectMapped* t, const std::array<uint32_t, LINE_B
 
 void warmLine(VTextureCacheDirectMapped* t)
 {
+    t->m_tc_ready = 0;
     request(t, 0);
     provideLine(t, { 0x11223344, 0, 0, 0, 0, 0, 0, 0 });
-    for (unsigned cycle = 0; cycle < 16 && !t->m_tc_valid; ++cycle)
-    {
-        rr::ut::clk(t);
-    }
     REQUIRE(t->m_tc_valid == 1);
+    CHECK(t->m_tc_texel == 0x3344);
+    t->m_tc_ready = 1;
     rr::ut::clk(t);
 }
 }
@@ -87,6 +86,7 @@ void warmLine(VTextureCacheDirectMapped* t)
 TEST_CASE("loads a cache line and returns the requested texel", "[TextureCacheDirectMapped]")
 {
     auto* t = makeCache();
+    t->m_tc_ready = 0;
     t->m_axi_arready = 0;
     request(t, 0);
 
@@ -95,11 +95,6 @@ TEST_CASE("loads a cache line and returns the requested texel", "[TextureCacheDi
     t->m_axi_arready = 1;
     rr::ut::clk(t);
     provideLine(t, { 0x11223344, 0, 0, 0, 0, 0, 0, 0 });
-
-    for (unsigned cycle = 0; cycle < 16 && !t->m_tc_valid; ++cycle)
-    {
-        rr::ut::clk(t);
-    }
     REQUIRE(t->m_tc_valid == 1);
     CHECK(t->m_tc_texel == 0x3344);
 
