@@ -75,11 +75,64 @@ void fillCache(
 VTextureCacheDirectMappedController* makeController()
 {
     auto* t = rr::ut::makeTop<VTextureCacheDirectMappedController>();
+    t->enable = 1;
     rr::ut::reset(t);
     waitForReady(t);
     return t;
 }
 }
+TEST_CASE("Disabled cache access does not emit an AXI request",
+    "[TextureCacheDirectMappedController]")
+{
+    auto* t = makeController();
+    t->enable = 0;
+    t->m_axi_arready = 0;
+    t->s_tc_addr = 45;
+    t->s_tc_valid = 1;
+    REQUIRE(t->s_tc_ready == 1);
+
+    rr::ut::clk(t);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == READ_CACHE_ENTRY);
+    CHECK(t->m_tc_addr == 45);
+    CHECK(t->m_axi_arvalid == 0);
+    CHECK(t->s_tc_ready == 1);
+
+    t->s_tc_valid = 0;
+    rr::ut::clk(t);
+    CHECK(t->m_tc_valid == 0);
+
+    t->enable = 1;
+    t->s_tc_addr = 45;
+    t->s_tc_valid = 1;
+    rr::ut::clk(t);
+    CHECK(t->m_tc_valid == 1);
+    CHECK(t->m_tc_cmd == LOAD_CACHE_LINE);
+    CHECK(t->m_axi_arvalid == 1);
+    delete t;
+}
+
+TEST_CASE("Disabling a pending AXI request preserves the request",
+    "[TextureCacheDirectMappedController]")
+{
+    auto* t = makeController();
+    t->m_axi_arready = 0;
+    t->s_tc_addr = 45;
+    t->s_tc_valid = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->m_axi_arvalid == 1);
+
+    t->enable = 0;
+    rr::ut::clk(t);
+    CHECK(t->m_axi_arvalid == 1);
+    CHECK(t->m_axi_araddr == (45 & ~(CACHE_LINE_SIZE - 1)));
+
+    t->m_axi_arready = 1;
+    rr::ut::clk(t);
+    CHECK(t->m_axi_arvalid == 0);
+    delete t;
+}
+
 TEST_CASE("Cold access emits line load, entry access, and one AXI request",
     "[TextureCacheDirectMappedController]")
 {

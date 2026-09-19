@@ -14,6 +14,7 @@ constexpr uint32_t LINE_BEATS = CACHE_LINE_SIZE / DATA_BYTES;
 VTextureCacheDirectMapped* makeCache()
 {
     auto* t = rr::ut::makeTop<VTextureCacheDirectMapped>();
+    t->enable = 1;
     t->invalidate = 0;
     t->s_tc_addr = 0;
     t->s_tc_valid = 0;

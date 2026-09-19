@@ -21,6 +21,7 @@ constexpr std::array<std::uint16_t, 4> TEXELS { 0xabcd, 0x1234, 0x5678, 0x9abc }
 TEST_CASE("reads a texel through TextureReader", "[TextureReader]")
 {
     auto* textureMemory = rr::ut::makeTop<VTextureReader>();
+    textureMemory->enable = 1;
     textureMemory->s_tr_valid = 0;
     textureMemory->m_tr_ready = 0;
     textureMemory->s_axis_tvalid = 0;

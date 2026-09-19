@@ -32,6 +32,7 @@ module TextureReader #(
 (
     input  wire                             aclk,
     input  wire                             resetn,
+    input  wire                             enable,
 
     // Texture read address channel
     input  wire                             s_tr_valid,
@@ -193,6 +194,7 @@ module TextureReader #(
         .aclk(aclk),
         .resetn(resetn),
         .invalidate(s_axis_tvalid),
+        .enable(enable),
 
         .s_tc_addr(bc_araddr_0),
         .s_tc_valid(bc_valid_0),

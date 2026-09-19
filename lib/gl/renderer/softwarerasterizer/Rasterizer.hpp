@@ -146,6 +146,10 @@ private:
     Vec3i m_w {};
     Vec3i m_wXInc {};
     Vec3i m_wYInc {};
+
+    // This fixes overlapping edges when drawing triangles which share the same edge.
+    // This is only relevant for transparent triangles. It does not appear as a line,
+    // instead only a few pixels along the edge might be drawn twice.
     std::bitset<3> m_edgeInclusive {};
 
     int32_t m_x {};

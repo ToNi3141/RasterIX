@@ -34,6 +34,7 @@ module TextureCacheDirectMapped #(
     input wire                              resetn,
 
     input wire                              invalidate,
+    input wire                              enable,
 
     input wire [ADDR_WIDTH - 1 : 0]         s_tc_addr,
     input wire                              s_tc_valid,
@@ -96,6 +97,7 @@ module TextureCacheDirectMapped #(
         .aclk(aclk),
         .resetn(resetn),
         .invalidate(invalidate),
+        .enable(enable),
         .s_tc_addr(s_tc_addr),
         .s_tc_valid(s_tc_valid),
         .s_tc_ready(s_tc_ready),

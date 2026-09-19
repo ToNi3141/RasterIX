@@ -34,6 +34,7 @@ module TextureCacheDirectMappedController #(
     input  wire                             resetn,
 
     input  wire                             invalidate,
+    input  wire                             enable,
 
     // Input interface
     input  wire [ADDR_WIDTH - 1 : 0]        s_tc_addr,
@@ -102,7 +103,7 @@ module TextureCacheDirectMappedController #(
         input [TAG_ENTRY_WIDTH - 1 : 0] tag_entry;
         input [ADDR_WIDTH - 1 : 0] addr;
         begin
-            tagMatch = (tag_entry[0 +: TAG_WIDTH] == getTagFromAddress(addr)) && tag_entry[TAG_ENTRY_WIDTH - 1];
+            tagMatch = !enable || ((tag_entry[0 +: TAG_WIDTH] == getTagFromAddress(addr)) && tag_entry[TAG_ENTRY_WIDTH - 1]);
         end
     endfunction
 

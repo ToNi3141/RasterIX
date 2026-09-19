@@ -543,12 +543,20 @@ module RasterIXRenderCore #(
     wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_11;
     wire                                tr0_texel_valid;
     wire                                tr0_texel_ready;
+    wire textureCacheEnableTmu0 = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS] &&
+        ((confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_SIZE] == SRC_TEXTURE));
     generate
         if (ENABLE_EXTERNAL_TEXTURE_MEMORY)
         begin
             TextureReader textureMemoryTMU0 (
                 .aclk(aclk),
                 .resetn(resetn),
+                .enable(textureCacheEnableTmu0),
 
                 .s_tr_valid(tr0_valid),
                 .s_tr_ready(tr0_ready),
@@ -677,6 +685,13 @@ module RasterIXRenderCore #(
     wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_11;
     wire                            tr1_texel_valid;
     wire                            tr1_texel_ready;
+    wire textureCacheEnableTmu1 = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS] &&
+        ((confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_SIZE] == SRC_TEXTURE));
     generate
         if (ENABLE_SECOND_TMU)
         begin
@@ -685,6 +700,7 @@ module RasterIXRenderCore #(
                 TextureReader textureMemoryTMU1 (
                     .aclk(aclk),
                     .resetn(resetn),
+                    .enable(textureCacheEnableTmu1),
 
                     .s_tr_valid(tr1_valid),
                     .s_tr_ready(tr1_ready),
