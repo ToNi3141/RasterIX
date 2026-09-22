@@ -615,7 +615,7 @@ module RasterIXRenderCore #(
                 .s_axis_tvalid(cmd_tmu0_axis_tvalid),
                 .s_axis_tready(cmd_tmu0_axis_tready),
                 .s_axis_tlast(cmd_xxx_axis_tlast),
-                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: 32]),
+                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: ADDR_WIDTH]),
 
                 .m_mem_axi_arid(m_tmu0_axi_arid),
                 .m_mem_axi_araddr(m_tmu0_axi_araddr),
@@ -762,7 +762,7 @@ module RasterIXRenderCore #(
                 .s_axis_tvalid(cmd_tmu1_axis_tvalid),
                 .s_axis_tready(cmd_tmu1_axis_tready),
                 .s_axis_tlast(cmd_xxx_axis_tlast),
-                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: 32]),
+                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: ADDR_WIDTH]),
 
                 .m_mem_axi_arid(m_tmu1_axi_arid),
                 .m_mem_axi_araddr(m_tmu1_axi_araddr),

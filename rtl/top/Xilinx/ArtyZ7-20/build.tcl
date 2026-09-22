@@ -1,7 +1,10 @@
-set SYNTH_OUT ./synth_[lindex $argv 0]
+set SYNTH_OUT ./synth-[lindex $argv 0]
 set REPORT_PATH ./reports
 set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
-file delete -force $SYNTH_OUT
+if {[file exists $SYNTH_OUT]} {
+	set ARCHIVE_OUT ./synth-[clock format [clock seconds] -format {%Y-%m-%d-%H-%M}]
+	file rename -force $SYNTH_OUT $ARCHIVE_OUT
+}
 file mkdir $SYNTH_OUT
 
 # Change to synth directory as build directory

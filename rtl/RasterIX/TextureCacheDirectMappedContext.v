@@ -64,8 +64,8 @@ module TextureCacheDirectMappedContext #(
         input [ADDR_WIDTH - 1 : 0] addr;
         begin
             getCacheGroupAddress = { 
-                { (ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_SIZE)) { 1'b0 } }, 
-                addr[$clog2(CACHE_LINE_SIZE) +: $clog2(CACHE_SIZE)], 
+                { (ADDR_WIDTH - $clog2(CACHE_LINE_SIZE) - $clog2(CACHE_LINES)) { 1'b0 } }, 
+                addr[$clog2(CACHE_LINE_SIZE) +: $clog2(CACHE_LINES)], 
                 { ( $clog2(CACHE_LINE_SIZE)) { 1'b0 } } 
             };
         end

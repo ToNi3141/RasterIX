@@ -22,7 +22,6 @@ module TextureMMU #(
 
     parameter ID_WIDTH = 4,
     parameter ADDR_WIDTH = 32
-
 )
 (
     input  wire                             aclk,
@@ -99,5 +98,4 @@ module TextureMMU #(
             end
         end
     end
-
 endmodule 

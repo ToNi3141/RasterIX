@@ -58,22 +58,6 @@ module TextureCacheDirectMappedController #(
     output reg                              m_axi_arvalid,
     input  wire                             m_axi_arready
 );
-    // Direct mapped cache. The cache is split into two modules:
-    //    - Cache Controller: Controls the cache misses and loading of cache lines from memory
-    //    - Cache Context: Stores the actual cache lines, loads the data from the cache and provides it to is master interface.
-    // 1. Cache miss:
-    //    - Slave port stalls
-    //    - Memory request is issued
-    //    - Cache load command is send to the context
-    //    - Cache access command is send to the context
-    // 2. Cache hit:
-    //    - Cache access command is send immediately to the context
-    //    - Do skid buffering if necessary
-    // 3. Invalidate complete cache:
-    //    - Remove in a loop all tags. This can take several clock cycles.
-    // Note: This cache is read only. No write back strategies are required.
-    //       This is a direct mapped cache, also no cache replacement policies are needed.
-
     localparam READ_CACHE_ENTRY = 1'b0;
     localparam LOAD_CACHE_LINE = 1'b1;
 
@@ -130,8 +114,6 @@ module TextureCacheDirectMappedController #(
     assign w_addr = (r_skid_valid) ? r_skid_addr
                                    : s_tc_addr;
 
-    
-
     always @(posedge aclk) 
     begin
         if (!resetn) 
@@ -187,7 +169,6 @@ module TextureCacheDirectMappedController #(
 
                 s_tc_ready <= 1'b1;
 
-                // Check for cache miss
                 if (!tagMatch(r_tag_entires[getIndexFromAddress(w_addr)], w_addr)) 
                 begin
                     m_tc_cmd <= LOAD_CACHE_LINE;

@@ -272,7 +272,7 @@ module TextureMappingUnit
     );
 
     // Texture Buffer Access
-    assign m_tr_valid = step2_broadcastValid[0]; // TODO: Enable and disable texture access
+    assign m_tr_valid = step2_broadcastValid[0];
     assign step2_broadcastReady[0] = m_tr_ready;
     assign m_tr_addr_00 = step2_broadcastData[0 +: ADDR_WIDTH];
     assign m_tr_addr_01 = step2_broadcastData[ADDR_WIDTH +: ADDR_WIDTH];
@@ -346,7 +346,6 @@ module TextureMappingUnit
     wire [PIXEL_WIDTH - 1 : 0]  step3_texel01;
     wire [PIXEL_WIDTH - 1 : 0]  step3_texel10;
     wire [PIXEL_WIDTH - 1 : 0]  step3_texel11;
-
 
     TexelColorUnpack #(
         .TEXEL_WIDTH(TEXEL_WIDTH)

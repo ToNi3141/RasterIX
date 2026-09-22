@@ -55,15 +55,6 @@ module TextureReaderController #(
     output wire [ 3 : 0]                    m_arcache,
     output wire [ 2 : 0]                    m_arprot
 );
-// The following cases have to be handled:
-// 1. Cache miss: The texel must be cached from memory before it can be used.
-//    r_cmd[2] is set to 0 as long as not at least three texel samples have been cached.
-// 2. Cache hit: The texel can be used directly from the cache.
-//    Still producing a read request but should be handled immediately from the cache.
-//    Reason: The texture texel cache will concatenate the the stream from the
-//    Cache and from this module. So it requires a data on both streams simultaneously.
-// 3. Invalidate: The cache must be invalidated when requested sets all addresses to ~0 (all bits set).
-
     localparam INVALID_TEXEL_ADDR = { TEX_ADDR_WIDTH { 1'b1 } };
     localparam CMD_STORE_AND_SAMPLE = 1;
     localparam CMD_STORE_ONLY       = 0;

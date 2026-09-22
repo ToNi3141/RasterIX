@@ -27,7 +27,8 @@ module TextureReader #(
 
     localparam STREAM_WIDTH = 32,
     localparam TEX_ADDR_WIDTH = 17,
-    localparam BYTE_ADDR_WIDTH = TEX_ADDR_WIDTH + 1
+    localparam BYTE_ADDR_WIDTH = TEX_ADDR_WIDTH + 1,
+    localparam FIFO_DEPTH_LG = 5 // Maximum number of texel requests
 )
 (
     input  wire                             aclk,
@@ -189,7 +190,9 @@ module TextureReader #(
         .ID_WIDTH(ID_WIDTH),
         .ADDR_WIDTH(BYTE_ADDR_WIDTH),
         .CACHE_SIZE(CACHE_SIZE),
-        .ENABLE_EARLY_FETCH(1)
+        .ENABLE_EARLY_FETCH(1),
+        .COMMAND_FIFO_DEPTH_POW2(FIFO_DEPTH_LG),
+        .AXI_R_FIFO_DEPTH_POW2(FIFO_DEPTH_LG)
     ) textureCacheDirectMapped_inst (
         .aclk(aclk),
         .resetn(resetn),
@@ -271,8 +274,8 @@ module TextureReader #(
         .STREAM2_WIDTH(1),
         .STREAM3_WIDTH(1),
 
-        .FIFO_DEPTH0_POW2(5),
-        .FIFO_DEPTH1_POW2(5),
+        .FIFO_DEPTH0_POW2(FIFO_DEPTH_LG),
+        .FIFO_DEPTH1_POW2(FIFO_DEPTH_LG),
         .FIFO_DEPTH2_POW2(0),
         .FIFO_DEPTH3_POW2(0)
     ) stream_concat_fifo_inst (
