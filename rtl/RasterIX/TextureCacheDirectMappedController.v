@@ -66,33 +66,33 @@ module TextureCacheDirectMappedController #(
     localparam READ_CACHE_ENTRY = 1'b0;
     localparam LOAD_CACHE_LINE = 1'b1;
 
-    function [TAG_WIDTH - 1 : 0] getTagFromAddress;
+    function [TAG_WIDTH - 1 : 0] GetTagFromAddress;
         input [ADDR_WIDTH - 1 : 0] addr;
         begin
-            getTagFromAddress = addr[$clog2(CACHE_LINE_SIZE) + $clog2(CACHE_LINES) +: TAG_WIDTH];
+            GetTagFromAddress = addr[$clog2(CACHE_LINE_SIZE) + $clog2(CACHE_LINES) +: TAG_WIDTH];
         end
     endfunction
 
-    function [INDEX_WIDTH - 1 : 0] getIndexFromAddress;
+    function [INDEX_WIDTH - 1 : 0] GetIndexFromAddress;
         input [ADDR_WIDTH - 1 : 0] addr;
         begin
-            getIndexFromAddress = addr[$clog2(CACHE_LINE_SIZE) +: $clog2(CACHE_LINES)];
+            GetIndexFromAddress = addr[$clog2(CACHE_LINE_SIZE) +: $clog2(CACHE_LINES)];
         end
     endfunction
 
-    function [ADDR_WIDTH - 1 : 0] getBaseAddress;
+    function [ADDR_WIDTH - 1 : 0] GetBaseAddress;
         input [ADDR_WIDTH - 1 : 0] addr;
         begin
-            getBaseAddress = addr & { {(ADDR_WIDTH - $clog2(CACHE_LINE_SIZE)) { 1'b1 }},
+            GetBaseAddress = addr & { {(ADDR_WIDTH - $clog2(CACHE_LINE_SIZE)) { 1'b1 }},
                                       {$clog2(CACHE_LINE_SIZE) { 1'b0 }} };
         end
     endfunction
 
-    function [0 : 0] tagMatch;
-        input [TAG_ENTRY_WIDTH - 1 : 0] tag_entry;
+    function [0 : 0] TagMatch;
+        input [TAG_ENTRY_WIDTH - 1 : 0] tagEntry;
         input [ADDR_WIDTH - 1 : 0] addr;
         begin
-            tagMatch = !enable || ((tag_entry[0 +: TAG_WIDTH] == getTagFromAddress(addr)) && tag_entry[TAG_ENTRY_WIDTH - 1]);
+            TagMatch = !enable || ((tagEntry[0 +: TAG_WIDTH] == GetTagFromAddress(addr)) && tagEntry[TAG_ENTRY_WIDTH - 1]);
         end
     endfunction
 
@@ -104,54 +104,54 @@ module TextureCacheDirectMappedController #(
     assign m_axi_arcache = 0;
     assign m_axi_arprot = 0;
 
-    reg [TAG_ENTRY_WIDTH - 1 : 0]   r_tag_entires [0 : CACHE_LINES - 1];
+    reg [TAG_ENTRY_WIDTH - 1 : 0]   rTagEntries [0 : CACHE_LINES - 1];
 
-    reg                             r_invalidate;
-    reg [INDEX_WIDTH - 1 : 0]       r_i;
+    reg                             rInvalidate;
+    reg [INDEX_WIDTH - 1 : 0]       rI;
 
-    reg                             r_skid_valid;
-    reg  [ADDR_WIDTH - 1 : 0]       r_skid_addr;
-    reg                             r_load_line_pending;
+    reg                             rSkidValid;
+    reg  [ADDR_WIDTH - 1 : 0]       rSkidAddr;
+    reg                             rLoadLinePending;
 
-    wire [ADDR_WIDTH - 1 : 0]       w_addr;
+    wire [ADDR_WIDTH - 1 : 0]       wAddr;
 
-    assign w_addr = (r_skid_valid) ? r_skid_addr
-                                   : s_tc_addr;
+    assign wAddr = (rSkidValid) ? rSkidAddr
+                                : s_tc_addr;
 
     always @(posedge aclk) 
     begin
         if (!resetn) 
         begin
-            r_invalidate <= 1'b1;
-            r_i <= { INDEX_WIDTH { 1'b0 } };
-            r_skid_valid <= 1'b0;
-            r_load_line_pending <= 1'b0;
+            rInvalidate <= 1'b1;
+            rI <= { INDEX_WIDTH { 1'b0 } };
+            rSkidValid <= 1'b0;
+            rLoadLinePending <= 1'b0;
             s_tc_ready <= 1'b0;
             m_tc_valid <= 1'b0;
             m_axi_arvalid <= 1'b0;
         end 
         else 
         begin
-            if (invalidate || r_invalidate)
+            if (invalidate || rInvalidate)
             begin
-                r_invalidate <= 1'b1;
-                if (r_i != { INDEX_WIDTH { 1'b1 } })
+                rInvalidate <= 1'b1;
+                if (rI != { INDEX_WIDTH { 1'b1 } })
                 begin
-                    r_i <= r_i + 1'b1;
-                    r_tag_entires[r_i] <= { TAG_ENTRY_WIDTH { 1'b0 } };
+                    rI <= rI + 1'b1;
+                    rTagEntries[rI] <= { TAG_ENTRY_WIDTH { 1'b0 } };
                 end
                 else
                 begin
-                    r_tag_entires[r_i] <= { TAG_ENTRY_WIDTH { 1'b0 } };
-                    r_invalidate <= 1'b0;
-                    r_i <= { INDEX_WIDTH { 1'b0 } };
-                    s_tc_ready <= !r_skid_valid;
+                    rTagEntries[rI] <= { TAG_ENTRY_WIDTH { 1'b0 } };
+                    rInvalidate <= 1'b0;
+                    rI <= { INDEX_WIDTH { 1'b0 } };
+                    s_tc_ready <= !rSkidValid;
                 end
                 
                 if (s_tc_valid && s_tc_ready)
                 begin
-                    r_skid_valid <= 1'b1;
-                    r_skid_addr <= s_tc_addr;
+                    rSkidValid <= 1'b1;
+                    rSkidAddr <= s_tc_addr;
                     s_tc_ready <= 1'b0;
                 end
                 if (m_tc_valid && m_tc_ready)
@@ -159,46 +159,46 @@ module TextureCacheDirectMappedController #(
                     m_tc_valid <= 1'b0;
                 end
             end
-            else if (r_load_line_pending && m_tc_valid && m_tc_ready)
+            else if (rLoadLinePending && m_tc_valid && m_tc_ready)
             begin
-                r_load_line_pending <= 1'b0;
+                rLoadLinePending <= 1'b0;
                 m_tc_valid <= 1'b0;
             end
-            else if ((s_tc_valid || r_skid_valid) && (!m_tc_valid || m_tc_ready) && !m_axi_arvalid)
+            else if ((s_tc_valid || rSkidValid) && (!m_tc_valid || m_tc_ready) && !m_axi_arvalid)
             begin            
                 m_tc_valid <= 1'b1;
-                m_tc_addr <= w_addr;
+                m_tc_addr <= wAddr;
                 m_tc_cmd <= READ_CACHE_ENTRY;
-                r_skid_valid <= 1'b0;
+                rSkidValid <= 1'b0;
 
                 s_tc_ready <= 1'b1;
 
-                if (!tagMatch(r_tag_entires[getIndexFromAddress(w_addr)], w_addr)) 
+                if (!TagMatch(rTagEntries[GetIndexFromAddress(wAddr)], wAddr))
                 begin
                     m_tc_cmd <= LOAD_CACHE_LINE;
                     
-                    r_skid_valid <= 1'b1;
-                    r_skid_addr <= w_addr;
-                    r_load_line_pending <= 1'b1;
+                    rSkidValid <= 1'b1;
+                    rSkidAddr <= wAddr;
+                    rLoadLinePending <= 1'b1;
                     s_tc_ready <= 1'b0;
                     
                     m_axi_arvalid <= 1'b1;
-                    m_axi_araddr <= getBaseAddress(w_addr);
+                    m_axi_araddr <= GetBaseAddress(wAddr);
                     
-                    r_tag_entires[getIndexFromAddress(w_addr)] <= { 1'b1, getTagFromAddress(w_addr) };
+                    rTagEntries[GetIndexFromAddress(wAddr)] <= { 1'b1, GetTagFromAddress(wAddr) };
                 end
             end
             else if (m_tc_valid && !m_tc_ready && s_tc_valid && s_tc_ready)
             begin
-                r_skid_addr <= w_addr;
-                r_skid_valid <= 1'b1;
+                rSkidAddr <= wAddr;
+                rSkidValid <= 1'b1;
                 s_tc_ready <= 1'b0;
             end
-            else if (!s_tc_valid && !r_skid_valid && (!m_tc_valid || m_tc_ready))
+            else if (!s_tc_valid && !rSkidValid && (!m_tc_valid || m_tc_ready))
             begin
                 m_tc_valid <= 1'b0;
                 s_tc_ready <= 1'b1;
-                r_skid_valid <= 1'b0;
+                rSkidValid <= 1'b0;
             end
         end
 

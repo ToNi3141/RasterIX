@@ -28,37 +28,37 @@ void createContext(VTextureReaderContext* t, std::array<uint32_t, 4> texels)
 {
     t->m_tr_ready = 1;
 
-    t->s_tr_texel_pos = 0b00;
-    t->s_tr_texel = texels[0];
-    t->s_tr_cmd = 0;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b00;
+    t->s_trc_texel = texels[0];
+    t->s_trc_cmd = 0;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
-    t->s_tr_texel_pos = 0b01;
-    t->s_tr_texel = texels[1];
-    t->s_tr_cmd = 0;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b01;
+    t->s_trc_texel = texels[1];
+    t->s_trc_cmd = 0;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = texels[2];
-    t->s_tr_cmd = 0;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = texels[2];
+    t->s_trc_cmd = 0;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
-    t->s_tr_texel_pos = 0b11;
-    t->s_tr_texel = texels[3];
-    t->s_tr_cmd = 0;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b11;
+    t->s_trc_texel = texels[3];
+    t->s_trc_cmd = 0;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 }
 
 TEST_CASE("Create context and send it, no stall", "[TextureReaderContext]")
@@ -67,46 +67,46 @@ TEST_CASE("Create context and send it, no stall", "[TextureReaderContext]")
     rr::ut::reset(t);
     t->m_tr_ready = 1;
 
-    t->s_tr_texel_pos = 0b00;
-    t->s_tr_texel = 10;
-    t->s_tr_cmd = 0;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b00;
+    t->s_trc_texel = 10;
+    t->s_trc_cmd = 0;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
-    t->s_tr_texel_pos = 0b01;
-    t->s_tr_texel = 20;
-    t->s_tr_cmd = 0;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b01;
+    t->s_trc_texel = 20;
+    t->s_trc_cmd = 0;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = 30;
-    t->s_tr_cmd = 0;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = 30;
+    t->s_trc_cmd = 0;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
-    t->s_tr_texel_pos = 0b11;
-    t->s_tr_texel = 40;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b11;
+    t->s_trc_texel = 40;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 10);
     CHECK(t->m_tr_texel_01 == 20);
     CHECK(t->m_tr_texel_10 == 30);
     CHECK(t->m_tr_texel_11 == 40);
 
-    t->s_tr_valid = 0;
+    t->s_trc_valid = 0;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
     // Destroy model
     delete t;
@@ -118,111 +118,111 @@ TEST_CASE("Update context, with stall", "[TextureReaderContext]")
     rr::ut::reset(t);
 
     createContext(t, { 10, 20, 30, 40 });
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b00;
-    t->s_tr_texel = 12;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b00;
+    t->s_trc_texel = 12;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 20);
     CHECK(t->m_tr_texel_10 == 30);
     CHECK(t->m_tr_texel_11 == 40);
 
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b01;
-    t->s_tr_texel = 22;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b01;
+    t->s_trc_texel = 22;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 0);
+    CHECK(t->s_trc_ready == 0);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 20);
     CHECK(t->m_tr_texel_10 == 30);
     CHECK(t->m_tr_texel_11 == 40);
 
     t->m_tr_ready = 1;
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = 32;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = 32;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
     CHECK(t->m_tr_texel_10 == 30);
     CHECK(t->m_tr_texel_11 == 40);
 
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = 32;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = 32;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 0);
+    CHECK(t->s_trc_ready == 0);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
     CHECK(t->m_tr_texel_10 == 30);
     CHECK(t->m_tr_texel_11 == 40);
 
     t->m_tr_ready = 1;
-    t->s_tr_texel_pos = 0b11;
-    t->s_tr_texel = 42;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b11;
+    t->s_trc_texel = 42;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
     CHECK(t->m_tr_texel_10 == 32);
     CHECK(t->m_tr_texel_11 == 40);
 
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b11;
-    t->s_tr_texel = 42;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b11;
+    t->s_trc_texel = 42;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 0);
+    CHECK(t->s_trc_ready == 0);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
     CHECK(t->m_tr_texel_10 == 32);
     CHECK(t->m_tr_texel_11 == 40);
 
     t->m_tr_ready = 1;
-    t->s_tr_valid = 0;
+    t->s_trc_valid = 0;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
     CHECK(t->m_tr_texel_10 == 32);
     CHECK(t->m_tr_texel_11 == 42);
 
     t->m_tr_ready = 0;
-    t->s_tr_valid = 0;
+    t->s_trc_valid = 0;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
     CHECK(t->m_tr_texel_10 == 32);
     CHECK(t->m_tr_texel_11 == 42);
 
     t->m_tr_ready = 1;
-    t->s_tr_valid = 0;
+    t->s_trc_valid = 0;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
     // Destroy model
     delete t;
@@ -234,40 +234,40 @@ TEST_CASE("Update context, send after context, with stall", "[TextureReaderConte
     rr::ut::reset(t);
 
     createContext(t, { 10, 20, 30, 40 });
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
     // Only update context
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b00;
-    t->s_tr_texel = 12;
-    t->s_tr_cmd = 0;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b00;
+    t->s_trc_texel = 12;
+    t->s_trc_cmd = 0;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
     // Update context and send
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b01;
-    t->s_tr_texel = 22;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b01;
+    t->s_trc_texel = 22;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
     CHECK(t->m_tr_texel_10 == 30);
     CHECK(t->m_tr_texel_11 == 40);
 
     t->m_tr_ready = 1;
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = 32;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = 32;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
     CHECK(t->m_tr_texel_10 == 32);
@@ -283,17 +283,17 @@ TEST_CASE("send context and stall, update context, send context", "[TextureReade
     rr::ut::reset(t);
 
     createContext(t, { 10, 20, 30, 40 });
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
     // Send context
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b00;
-    t->s_tr_texel = 12;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b00;
+    t->s_trc_texel = 12;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 20);
     CHECK(t->m_tr_texel_10 == 30);
@@ -301,13 +301,13 @@ TEST_CASE("send context and stall, update context, send context", "[TextureReade
 
     // Update context
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b01;
-    t->s_tr_texel = 22;
-    t->s_tr_cmd = 0;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b01;
+    t->s_trc_texel = 22;
+    t->s_trc_cmd = 0;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 0);
+    CHECK(t->s_trc_ready == 0);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 20);
     CHECK(t->m_tr_texel_10 == 30);
@@ -315,45 +315,45 @@ TEST_CASE("send context and stall, update context, send context", "[TextureReade
 
     // Update context and send
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = 32;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = 32;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 0);
+    CHECK(t->s_trc_ready == 0);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 20);
     CHECK(t->m_tr_texel_10 == 30);
     CHECK(t->m_tr_texel_11 == 40);
 
     t->m_tr_ready = 1;
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = 32;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = 32;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
     t->m_tr_ready = 1;
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = 32;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = 32;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
     CHECK(t->m_tr_texel_10 == 32);
     CHECK(t->m_tr_texel_11 == 40);
 
     t->m_tr_ready = 1;
-    t->s_tr_valid = 0;
+    t->s_trc_valid = 0;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
     // Destroy model
     delete t;
@@ -366,17 +366,17 @@ TEST_CASE("Accepted sample remains valid while output is stalled", "[TextureRead
 
     createContext(t, { 10, 20, 30, 40 });
 
-    // s_tr_ready is sampled before the rising edge. The request is therefore
+    // s_trc_ready is sampled before the rising edge. The request is therefore
     // accepted even though m_tr_ready has dropped and the output will stall.
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b11;
-    t->s_tr_texel = 40;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b11;
+    t->s_trc_texel = 40;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 10);
     CHECK(t->m_tr_texel_01 == 20);
     CHECK(t->m_tr_texel_10 == 30);
@@ -384,11 +384,11 @@ TEST_CASE("Accepted sample remains valid while output is stalled", "[TextureRead
 
     // The input transaction completed on the preceding edge. An AXI master
     // may now advance while the module retains the stalled output.
-    t->s_tr_valid = 0;
-    t->s_tr_cmd = 0;
+    t->s_trc_valid = 0;
+    t->s_trc_cmd = 0;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_texel_00 == 10);
     CHECK(t->m_tr_texel_01 == 20);
     CHECK(t->m_tr_texel_10 == 30);
@@ -406,25 +406,25 @@ TEST_CASE("Input remains stable until accepted after skid buffer drains", "[Text
 
     // Create a stalled output and fill the one-entry skid buffer.
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b00;
-    t->s_tr_texel = 12;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b00;
+    t->s_trc_texel = 12;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
 
-    t->s_tr_texel_pos = 0b01;
-    t->s_tr_texel = 22;
-    t->s_tr_cmd = 1;
+    t->s_trc_texel_pos = 0b01;
+    t->s_trc_texel = 22;
+    t->s_trc_cmd = 1;
     rr::ut::clk(t);
-    CHECK(t->s_tr_ready == 0);
+    CHECK(t->s_trc_ready == 0);
 
     // This transaction is not accepted yet. Keep its payload unchanged until
     // the skid entry is promoted to the output on the next clock edge.
     t->m_tr_ready = 1;
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = 32;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = 32;
     rr::ut::clk(t);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_valid == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
@@ -433,7 +433,7 @@ TEST_CASE("Input remains stable until accepted after skid buffer drains", "[Text
 
     t->m_tr_ready = 0;
     rr::ut::clk(t);
-    CHECK(t->s_tr_ready == 0);
+    CHECK(t->s_trc_ready == 0);
     CHECK(t->m_tr_valid == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
@@ -443,7 +443,7 @@ TEST_CASE("Input remains stable until accepted after skid buffer drains", "[Text
     // Drain the current output and promote the held third transaction.
     t->m_tr_ready = 1;
     rr::ut::clk(t);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
     CHECK(t->m_tr_valid == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 22);
@@ -462,17 +462,17 @@ TEST_CASE("Buffered store-only command updates context without producing output"
 
     // Stall a sample output, then queue a store-only update behind it.
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b00;
-    t->s_tr_texel = 12;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b00;
+    t->s_trc_texel = 12;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
 
-    t->s_tr_texel_pos = 0b01;
-    t->s_tr_texel = 22;
-    t->s_tr_cmd = 0;
+    t->s_trc_texel_pos = 0b01;
+    t->s_trc_texel = 22;
+    t->s_trc_cmd = 0;
     rr::ut::clk(t);
-    CHECK(t->s_tr_ready == 0);
+    CHECK(t->s_trc_ready == 0);
     CHECK(t->m_tr_valid == 1);
     CHECK(t->m_tr_texel_00 == 12);
     CHECK(t->m_tr_texel_01 == 20);
@@ -481,17 +481,17 @@ TEST_CASE("Buffered store-only command updates context without producing output"
 
     // The queued store is processed as the prior output is consumed.
     t->m_tr_ready = 1;
-    t->s_tr_valid = 0;
+    t->s_trc_valid = 0;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 0);
-    CHECK(t->s_tr_ready == 1);
+    CHECK(t->s_trc_ready == 1);
 
     // A following sample observes the context update from the buffered store.
     t->m_tr_ready = 0;
-    t->s_tr_texel_pos = 0b10;
-    t->s_tr_texel = 32;
-    t->s_tr_cmd = 1;
-    t->s_tr_valid = 1;
+    t->s_trc_texel_pos = 0b10;
+    t->s_trc_texel = 32;
+    t->s_trc_cmd = 1;
+    t->s_trc_valid = 1;
     rr::ut::clk(t);
     CHECK(t->m_tr_valid == 1);
     CHECK(t->m_tr_texel_00 == 12);

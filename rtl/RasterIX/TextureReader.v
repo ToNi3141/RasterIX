@@ -81,18 +81,11 @@ module TextureReader #(
     input  wire                             m_axi_rvalid,
     output wire                             m_axi_rready
 );
-    wire [ 1 : 0]                   ttcm_texel_pos;
-    wire [BYTE_ADDR_WIDTH - 1 : 0]  ttcm_araddr;
-    wire                            ttcm_cmd;
-    wire                            ttcm_valid;
-    wire                            ttcm_ready;
-    wire [ID_WIDTH - 1 : 0]         ttcm_arid;
-    wire [ 7 : 0]                   ttcm_arlen;
-    wire [ 2 : 0]                   ttcm_arsize;
-    wire [ 1 : 0]                   ttcm_arburst;
-    wire                            ttcm_arlock;
-    wire [ 3 : 0]                   ttcm_arcache;
-    wire [ 2 : 0]                   ttcm_arprot;
+    wire [ 1 : 0]                   ttcmTexelPos;
+    wire [BYTE_ADDR_WIDTH - 1 : 0]  ttcmAddr;
+    wire                            ttcmCmd;
+    wire                            ttcmValid;
+    wire                            ttcmReady;
     TextureReaderController #(
         .TEX_ADDR_WIDTH(TEX_ADDR_WIDTH),
         .TEXEL_WIDTH(TEXEL_WIDTH),
@@ -111,43 +104,36 @@ module TextureReader #(
         .s_tr_valid(s_tr_valid),
         .s_tr_ready(s_tr_ready),
 
-        .m_tr_texel_pos(ttcm_texel_pos),
-        .m_tr_cmd(ttcm_cmd),
-        .m_tr_valid(ttcm_valid),
-        .m_tr_ready(ttcm_ready),
-        .m_tr_addr(ttcm_araddr),
-        .m_arid(ttcm_arid),
-        .m_arlen(ttcm_arlen),
-        .m_arsize(ttcm_arsize),
-        .m_arburst(ttcm_arburst),
-        .m_arlock(ttcm_arlock),
-        .m_arcache(ttcm_arcache),
-        .m_arprot(ttcm_arprot)
+        .m_trc_texel_pos(ttcmTexelPos),
+        .m_trc_cmd(ttcmCmd),
+        .m_trc_valid(ttcmValid),
+        .m_trc_ready(ttcmReady),
+        .m_trc_addr(ttcmAddr)
     );
 
-    wire [ 1 : 0]                   bc_texel_pos_0;
-    wire [BYTE_ADDR_WIDTH - 1 : 0]  bc_araddr_0;
-    wire                            bc_cmd_0;
-    wire                            bc_valid_0;
-    wire                            bc_ready_0;
-    wire [ 1 : 0]                   bc_texel_pos_1;
-    wire [BYTE_ADDR_WIDTH - 1 : 0]  bc_araddr_1;
-    wire                            bc_cmd_1;
-    wire                            bc_valid_1;
-    wire                            bc_ready_1;
-    wire [ID_WIDTH - 1 : 0]         cache_axi_arid;
-    wire [BYTE_ADDR_WIDTH - 1 : 0]  cache_axi_araddr;
-    wire [ 7 : 0]                   cache_axi_arlen;
-    wire [ 2 : 0]                   cache_axi_arsize;
-    wire [ 1 : 0]                   cache_axi_arburst;
-    wire                            cache_axi_arlock;
-    wire [ 3 : 0]                   cache_axi_arcache;
-    wire [ 2 : 0]                   cache_axi_arprot;
-    wire                            cache_axi_arvalid;
-    wire                            cache_axi_arready;
-    wire [TEXEL_WIDTH - 1 : 0]      cache_texel;
-    wire                            cache_valid;
-    wire                            cache_ready;
+    wire [ 1 : 0]                   bcTexelPos0;
+    wire [BYTE_ADDR_WIDTH - 1 : 0]  bcAddr0;
+    wire                            bcCmd0;
+    wire                            bcValid0;
+    wire                            bcReady0;
+    wire [ 1 : 0]                   bcTexelPos1;
+    wire [BYTE_ADDR_WIDTH - 1 : 0]  bcAddr1;
+    wire                            bcCmd1;
+    wire                            bcValid1;
+    wire                            bcReady1;
+    wire [ID_WIDTH - 1 : 0]         cacheAxiId;
+    wire [BYTE_ADDR_WIDTH - 1 : 0]  cacheAxiAddr;
+    wire [ 7 : 0]                   cacheAxiLen;
+    wire [ 2 : 0]                   cacheAxiSize;
+    wire [ 1 : 0]                   cacheAxiBurst;
+    wire                            cacheAxiLock;
+    wire [ 3 : 0]                   cacheAxiCache;
+    wire [ 2 : 0]                   cacheAxiProt;
+    wire                            cacheAxiValid;
+    wire                            cacheAxiReady;
+    wire [TEXEL_WIDTH - 1 : 0]      cacheTexel;
+    wire                            cacheValid;
+    wire                            cacheReady;
     axis_broadcast #(
         .M_COUNT(2),
         .DATA_WIDTH(2 + BYTE_ADDR_WIDTH + 1),
@@ -161,29 +147,29 @@ module TextureReader #(
         .rst(!resetn),
 
         .s_axis_tdata({
-            ttcm_texel_pos,
-            ttcm_araddr, 
-            ttcm_cmd
+            ttcmTexelPos,
+            ttcmAddr,
+            ttcmCmd
         }),
         .s_axis_tkeep(~0),
-        .s_axis_tvalid(ttcm_valid),
-        .s_axis_tready(ttcm_ready),
+        .s_axis_tvalid(ttcmValid),
+        .s_axis_tready(ttcmReady),
         .s_axis_tlast(1),
         .s_axis_tid(0),
         .s_axis_tdest(0),
         .s_axis_tuser(0),
 
         .m_axis_tdata({
-            bc_texel_pos_1,
-            bc_araddr_1,
-            bc_cmd_1,
-            bc_texel_pos_0,
-            bc_araddr_0,
-            bc_cmd_0
+            bcTexelPos1,
+            bcAddr1,
+            bcCmd1,
+            bcTexelPos0,
+            bcAddr0,
+            bcCmd0
         }),
         .m_axis_tkeep(),
-        .m_axis_tvalid({ bc_valid_1, bc_valid_0 }),
-        .m_axis_tready({ bc_ready_1, bc_ready_0 }),
+        .m_axis_tvalid({ bcValid1, bcValid0 }),
+        .m_axis_tready({ bcReady1, bcReady0 }),
         .m_axis_tlast(),
         .m_axis_tid(),
         .m_axis_tdest(),
@@ -205,24 +191,24 @@ module TextureReader #(
         .invalidate(s_axis_tvalid),
         .enable(enable),
 
-        .s_tc_addr(bc_araddr_0),
-        .s_tc_valid(bc_valid_0),
-        .s_tc_ready(bc_ready_0),
+        .s_tc_addr(bcAddr0),
+        .s_tc_valid(bcValid0),
+        .s_tc_ready(bcReady0),
 
-        .m_tc_texel(cache_texel),
-        .m_tc_valid(cache_valid),
-        .m_tc_ready(cache_ready),
+        .m_tc_texel(cacheTexel),
+        .m_tc_valid(cacheValid),
+        .m_tc_ready(cacheReady),
 
-        .m_axi_arid(cache_axi_arid),
-        .m_axi_araddr(cache_axi_araddr),
-        .m_axi_arlen(cache_axi_arlen),
-        .m_axi_arsize(cache_axi_arsize),
-        .m_axi_arburst(cache_axi_arburst),
-        .m_axi_arlock(cache_axi_arlock),
-        .m_axi_arcache(cache_axi_arcache),
-        .m_axi_arprot(cache_axi_arprot),
-        .m_axi_arvalid(cache_axi_arvalid),
-        .m_axi_arready(cache_axi_arready),
+        .m_axi_arid(cacheAxiId),
+        .m_axi_araddr(cacheAxiAddr),
+        .m_axi_arlen(cacheAxiLen),
+        .m_axi_arsize(cacheAxiSize),
+        .m_axi_arburst(cacheAxiBurst),
+        .m_axi_arlock(cacheAxiLock),
+        .m_axi_arcache(cacheAxiCache),
+        .m_axi_arprot(cacheAxiProt),
+        .m_axi_arvalid(cacheAxiValid),
+        .m_axi_arready(cacheAxiReady),
 
         .m_axi_rid(m_axi_rid),
         .m_axi_rdata(m_axi_rdata),
@@ -246,16 +232,16 @@ module TextureReader #(
         .s_axis_tlast(s_axis_tlast),
         .s_axis_tdata(s_axis_tdata),
 
-        .s_axi_araddr(cache_axi_araddr),
-        .s_axi_arid(cache_axi_arid),
-        .s_axi_arlen(cache_axi_arlen),
-        .s_axi_arsize(cache_axi_arsize),
-        .s_axi_arburst(cache_axi_arburst),
-        .s_axi_arlock(cache_axi_arlock),
-        .s_axi_arcache(cache_axi_arcache),
-        .s_axi_arprot(cache_axi_arprot),
-        .s_axi_arvalid(cache_axi_arvalid),
-        .s_axi_arready(cache_axi_arready),
+        .s_axi_araddr(cacheAxiAddr),
+        .s_axi_arid(cacheAxiId),
+        .s_axi_arlen(cacheAxiLen),
+        .s_axi_arsize(cacheAxiSize),
+        .s_axi_arburst(cacheAxiBurst),
+        .s_axi_arlock(cacheAxiLock),
+        .s_axi_arcache(cacheAxiCache),
+        .s_axi_arprot(cacheAxiProt),
+        .s_axi_arvalid(cacheAxiValid),
+        .s_axi_arready(cacheAxiReady),
 
         .m_axi_arid(m_axi_arid),
         .m_axi_araddr(m_axi_araddr),
@@ -269,11 +255,11 @@ module TextureReader #(
         .m_axi_arready(m_axi_arready)
     );
 
-    wire [TEXEL_WIDTH - 1 : 0]   fifo_texel;
-    wire [ 1 : 0]                fifo_texel_pos;
-    wire                         fifo_cmd;
-    wire                         fifo_valid;
-    wire                         fifo_ready;
+    wire [TEXEL_WIDTH - 1 : 0]   fifoTexel;
+    wire [ 1 : 0]                fifoTexelPos;
+    wire                         fifoCmd;
+    wire                         fifoValid;
+    wire                         fifoReady;
     StreamConcatFifo #(
         .STREAM0_WIDTH(TEXEL_WIDTH),
         .STREAM1_WIDTH(2 + 1),
@@ -289,17 +275,17 @@ module TextureReader #(
         .resetn(resetn),
 
         .s_stream0_tenable(1'b1),
-        .s_stream0_tvalid(cache_valid),
-        .s_stream0_tdata(cache_texel),
-        .s_stream0_tready(cache_ready),
+        .s_stream0_tvalid(cacheValid),
+        .s_stream0_tdata(cacheTexel),
+        .s_stream0_tready(cacheReady),
 
         .s_stream1_tenable(1'b1),
-        .s_stream1_tvalid(bc_valid_1),
+        .s_stream1_tvalid(bcValid1),
         .s_stream1_tdata({ 
-            bc_texel_pos_1, 
-            bc_cmd_1 
+            bcTexelPos1,
+            bcCmd1
         }),
-        .s_stream1_tready(bc_ready_1),
+        .s_stream1_tready(bcReady1),
 
         .s_stream2_tenable(1'b0),
         .s_stream2_tvalid(1'b0),
@@ -311,15 +297,15 @@ module TextureReader #(
         .s_stream3_tdata(1'b0),
         .s_stream3_tready(),
 
-        .m_stream_tvalid(fifo_valid),
+        .m_stream_tvalid(fifoValid),
         .m_stream_tdata({
             1'b0,
             1'b0,
-            fifo_texel_pos, 
-            fifo_cmd,
-            fifo_texel
+            fifoTexelPos,
+            fifoCmd,
+            fifoTexel
         }),
-        .m_stream_tready(fifo_ready)
+        .m_stream_tready(fifoReady)
     );
 
     TextureReaderContext #(
@@ -328,11 +314,11 @@ module TextureReader #(
         .aclk(aclk),
         .resetn(resetn),
         
-        .s_tr_texel_pos(fifo_texel_pos),
-        .s_tr_texel(fifo_texel),
-        .s_tr_cmd(fifo_cmd),
-        .s_tr_valid(fifo_valid),
-        .s_tr_ready(fifo_ready),
+        .s_trc_texel_pos(fifoTexelPos),
+        .s_trc_texel(fifoTexel),
+        .s_trc_cmd(fifoCmd),
+        .s_trc_valid(fifoValid),
+        .s_trc_ready(fifoReady),
 
         .m_tr_texel_00(m_tr_texel_00),
         .m_tr_texel_01(m_tr_texel_01),

@@ -41,80 +41,63 @@ module TextureReaderController #(
     input  wire                             s_tr_valid,
     output reg                              s_tr_ready,
 
-    // Interface to the texture texel cache
-    output reg  [ 1 : 0]                    m_tr_texel_pos,
-    output reg                              m_tr_cmd, // 1 = store and sample, 0 = store only
-    output reg                              m_tr_valid,
-    input  wire                             m_tr_ready,
-    output reg  [BYTE_ADDR_WIDTH - 1 : 0]   m_tr_addr,
-
-    // AXI read address metadata
-    output wire [ID_WIDTH - 1 : 0]          m_arid,
-    output wire [ 7 : 0]                    m_arlen,
-    output wire [ 2 : 0]                    m_arsize,
-    output wire [ 1 : 0]                    m_arburst,
-    output wire                             m_arlock,
-    output wire [ 3 : 0]                    m_arcache,
-    output wire [ 2 : 0]                    m_arprot
+    // Interface to the TextureReaderContext
+    output reg  [ 1 : 0]                    m_trc_texel_pos,
+    output reg                              m_trc_cmd, // 1 = store and sample, 0 = store only
+    output reg                              m_trc_valid,
+    input  wire                             m_trc_ready,
+    output reg  [BYTE_ADDR_WIDTH - 1 : 0]   m_trc_addr
 );
     localparam INVALID_TEXEL_ADDR = { TEX_ADDR_WIDTH { 1'b1 } };
     localparam CMD_STORE_AND_SAMPLE = 1;
     localparam CMD_STORE_ONLY       = 0;
 
-    assign m_arid = 0;
-    assign m_arlen = 0;
-    assign m_arsize = ARSIZE[0 +: 3];
-    assign m_arburst = 2'b01;
-    assign m_arlock = 0;
-    assign m_arcache = 4'b0011;
-    assign m_arprot = 3'b000;
+    reg [TEX_ADDR_WIDTH - 1 : 0] rTexel00;
+    reg [TEX_ADDR_WIDTH - 1 : 0] rTexel01;
+    reg [TEX_ADDR_WIDTH - 1 : 0] rTexel10;
+    reg [TEX_ADDR_WIDTH - 1 : 0] rTexel11;
 
-    reg [TEX_ADDR_WIDTH - 1 : 0] r_texel00;
-    reg [TEX_ADDR_WIDTH - 1 : 0] r_texel01;
-    reg [TEX_ADDR_WIDTH - 1 : 0] r_texel10;
-    reg [TEX_ADDR_WIDTH - 1 : 0] r_texel11;
+    reg                          rSkidValid;
+    reg [TEX_ADDR_WIDTH - 1 : 0] rTexel00Skid;
+    reg [TEX_ADDR_WIDTH - 1 : 0] rTexel01Skid;
+    reg [TEX_ADDR_WIDTH - 1 : 0] rTexel10Skid;
+    reg [TEX_ADDR_WIDTH - 1 : 0] rTexel11Skid;
 
-    reg                          r_skid_valid;
-    reg [TEX_ADDR_WIDTH - 1 : 0] r_texel00_skid;
-    reg [TEX_ADDR_WIDTH - 1 : 0] r_texel01_skid;
-    reg [TEX_ADDR_WIDTH - 1 : 0] r_texel10_skid;
-    reg [TEX_ADDR_WIDTH - 1 : 0] r_texel11_skid;
+    wire [TEX_ADDR_WIDTH - 1 : 0] rTexel00Next = (rSkidValid) ? rTexel00Skid : s_tr_texel_00;
+    wire [TEX_ADDR_WIDTH - 1 : 0] rTexel01Next = (rSkidValid) ? rTexel01Skid : s_tr_texel_01;
+    wire [TEX_ADDR_WIDTH - 1 : 0] rTexel10Next = (rSkidValid) ? rTexel10Skid : s_tr_texel_10;
+    wire [TEX_ADDR_WIDTH - 1 : 0] rTexel11Next = (rSkidValid) ? rTexel11Skid : s_tr_texel_11;
 
-    wire [TEX_ADDR_WIDTH - 1 : 0] r_texel00_next = (r_skid_valid) ? r_texel00_skid : s_tr_texel_00;
-    wire [TEX_ADDR_WIDTH - 1 : 0] r_texel01_next = (r_skid_valid) ? r_texel01_skid : s_tr_texel_01;
-    wire [TEX_ADDR_WIDTH - 1 : 0] r_texel10_next = (r_skid_valid) ? r_texel10_skid : s_tr_texel_10;
-    wire [TEX_ADDR_WIDTH - 1 : 0] r_texel11_next = (r_skid_valid) ? r_texel11_skid : s_tr_texel_11;
-
-    wire [3 : 0] texel_match = { 
-        ((r_texel11_next == r_texel11) || nearest), 
-        ((r_texel10_next == r_texel10) || nearest), 
-        ((r_texel01_next == r_texel01) || nearest), 
-        (r_texel00_next == r_texel00) 
+    wire [3 : 0] texelMatch = {
+        ((rTexel11Next == rTexel11) || nearest),
+        ((rTexel10Next == rTexel10) || nearest),
+        ((rTexel01Next == rTexel01) || nearest),
+        (rTexel00Next == rTexel00)
     };
 
     always @(posedge aclk)
     begin
         if (!resetn || invalidate) 
         begin
-            r_texel00 <= INVALID_TEXEL_ADDR;
-            r_texel01 <= INVALID_TEXEL_ADDR;
-            r_texel10 <= INVALID_TEXEL_ADDR;
-            r_texel11 <= INVALID_TEXEL_ADDR;
+            rTexel00 <= INVALID_TEXEL_ADDR;
+            rTexel01 <= INVALID_TEXEL_ADDR;
+            rTexel10 <= INVALID_TEXEL_ADDR;
+            rTexel11 <= INVALID_TEXEL_ADDR;
 
             if (!resetn)
             begin
                 s_tr_ready <= 1;
-                r_skid_valid <= 0;
-                m_tr_valid <= 0;
+                rSkidValid <= 0;
+                m_trc_valid <= 0;
             end
         end 
         else 
         begin
-            if ((s_tr_valid || r_skid_valid) && (!m_tr_valid || m_tr_ready))
+            if ((s_tr_valid || rSkidValid) && (!m_trc_valid || m_trc_ready))
             begin
-                m_tr_valid <= 1;
+                m_trc_valid <= 1;
 
-                case (texel_match)
+                case (texelMatch)
                     // All texels or at least one does not match
                     // One texel loading is always for free
                     4'b1111, 
@@ -123,68 +106,68 @@ module TextureReaderController #(
                     4'b1011,
                     4'b0111:
                     begin
-                        m_tr_cmd <= CMD_STORE_AND_SAMPLE;
+                        m_trc_cmd <= CMD_STORE_AND_SAMPLE;
                         s_tr_ready <= 1;
-                        r_skid_valid <= 0;
+                        rSkidValid <= 0;
                     end
                     // More than one does not match. Now we need a stall
                     default:
                     begin
-                        m_tr_cmd <= CMD_STORE_ONLY;
+                        m_trc_cmd <= CMD_STORE_ONLY;
                         s_tr_ready <= 0;
-                        r_skid_valid <= 1;
+                        rSkidValid <= 1;
 
-                        if (!r_skid_valid)
+                        if (!rSkidValid)
                         begin
-                            r_texel00_skid <= s_tr_texel_00;
-                            r_texel01_skid <= s_tr_texel_01;
-                            r_texel10_skid <= s_tr_texel_10;
-                            r_texel11_skid <= s_tr_texel_11;
+                            rTexel00Skid <= s_tr_texel_00;
+                            rTexel01Skid <= s_tr_texel_01;
+                            rTexel10Skid <= s_tr_texel_10;
+                            rTexel11Skid <= s_tr_texel_11;
                         end
                     end
                 endcase
 
                 // Check which texels do not match and set the corresponding address
                 // to load them.
-                if (!texel_match[0])
+                if (!texelMatch[0])
                 begin
-                    m_tr_addr <= { r_texel00_next, 1'b0 };
-                    m_tr_texel_pos <= 2'b00;
-                    r_texel00 <= r_texel00_next;
+                    m_trc_addr <= { rTexel00Next, 1'b0 };
+                    m_trc_texel_pos <= 2'b00;
+                    rTexel00 <= rTexel00Next;
                 end
-                else if (!texel_match[1])
+                else if (!texelMatch[1])
                 begin
-                    m_tr_addr <= { r_texel01_next, 1'b0 };
-                    m_tr_texel_pos <= 2'b01;
-                    r_texel01 <= r_texel01_next;
+                    m_trc_addr <= { rTexel01Next, 1'b0 };
+                    m_trc_texel_pos <= 2'b01;
+                    rTexel01 <= rTexel01Next;
                 end
-                else if (!texel_match[2])
+                else if (!texelMatch[2])
                 begin
-                    m_tr_addr <= { r_texel10_next, 1'b0 };
-                    m_tr_texel_pos <= 2'b10;
-                    r_texel10 <= r_texel10_next;
+                    m_trc_addr <= { rTexel10Next, 1'b0 };
+                    m_trc_texel_pos <= 2'b10;
+                    rTexel10 <= rTexel10Next;
                 end
-                else if (!texel_match[3])
+                else if (!texelMatch[3])
                 begin
-                    m_tr_addr <= { r_texel11_next, 1'b0 };
-                    m_tr_texel_pos <= 2'b11;
-                    r_texel11 <= r_texel11_next;
+                    m_trc_addr <= { rTexel11Next, 1'b0 };
+                    m_trc_texel_pos <= 2'b11;
+                    rTexel11 <= rTexel11Next;
                 end
             end
-            else if (m_tr_valid && !m_tr_ready && s_tr_valid && s_tr_ready)
+            else if (m_trc_valid && !m_trc_ready && s_tr_valid && s_tr_ready)
             begin
-                r_texel00_skid <= s_tr_texel_00;
-                r_texel01_skid <= s_tr_texel_01;
-                r_texel10_skid <= s_tr_texel_10;
-                r_texel11_skid <= s_tr_texel_11;
-                r_skid_valid <= 1;
+                rTexel00Skid <= s_tr_texel_00;
+                rTexel01Skid <= s_tr_texel_01;
+                rTexel10Skid <= s_tr_texel_10;
+                rTexel11Skid <= s_tr_texel_11;
+                rSkidValid <= 1;
                 s_tr_ready <= 0;
             end
-            else if (!s_tr_valid && !r_skid_valid && (!m_tr_valid || m_tr_ready))
+            else if (!s_tr_valid && !rSkidValid && (!m_trc_valid || m_trc_ready))
             begin
-                m_tr_valid <= 0;
+                m_trc_valid <= 0;
                 s_tr_ready <= 1;
-                r_skid_valid <= 0;
+                rSkidValid <= 0;
             end
         end
     end

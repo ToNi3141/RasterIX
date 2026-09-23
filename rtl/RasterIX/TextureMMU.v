@@ -63,16 +63,16 @@ module TextureMMU #(
 );
     localparam PAGE_ENTRIES_LG = TEX_ADDR_WIDTH - $clog2(PAGE_SIZE);
 
-    reg [ADDR_WIDTH - 1 : 0] page_table [0 : (1 << PAGE_ENTRIES_LG) - 1];
+    reg [ADDR_WIDTH - 1 : 0] pageTable [0 : (1 << PAGE_ENTRIES_LG) - 1];
 
     assign s_axis_tready = 1'b1;
 
     assign m_axi_arid = s_axi_arid;
-    wire [ADDR_WIDTH - 1 : 0] page_offset
+    wire [ADDR_WIDTH - 1 : 0] pageOffset
         = { { (ADDR_WIDTH - (TEX_ADDR_WIDTH - PAGE_ENTRIES_LG)) { 1'b0 } },
             s_axi_araddr[0 +: TEX_ADDR_WIDTH - PAGE_ENTRIES_LG] };
-    assign m_axi_araddr = page_table[s_axi_araddr[TEX_ADDR_WIDTH - PAGE_ENTRIES_LG +: PAGE_ENTRIES_LG]]
-                            + page_offset;
+    assign m_axi_araddr = pageTable[s_axi_araddr[TEX_ADDR_WIDTH - PAGE_ENTRIES_LG +: PAGE_ENTRIES_LG]]
+                            + pageOffset;
     assign m_axi_arlen = s_axi_arlen;
     assign m_axi_arsize = s_axi_arsize;
     assign m_axi_arburst = s_axi_arburst;
@@ -82,22 +82,22 @@ module TextureMMU #(
     assign m_axi_arvalid = s_axi_arvalid;
     assign s_axi_arready = m_axi_arready;
 
-    reg [PAGE_ENTRIES_LG - 1 : 0] page_table_index;
+    reg [PAGE_ENTRIES_LG - 1 : 0] pageTableIndex;
     always @(posedge aclk) 
     begin
         if (!resetn) 
         begin
-            page_table_index <= 0;
+            pageTableIndex <= 0;
         end 
         else 
         begin
             if (s_axis_tvalid)
             begin
-                page_table[page_table_index] <= s_axis_tdata[ADDR_WIDTH - 1 : 0];
-                page_table_index <= page_table_index + 1;
+                pageTable[pageTableIndex] <= s_axis_tdata[ADDR_WIDTH - 1 : 0];
+                pageTableIndex <= pageTableIndex + 1;
                 if (s_axis_tlast)
                 begin
-                    page_table_index <= 0;
+                    pageTableIndex <= 0;
                 end
             end
         end
