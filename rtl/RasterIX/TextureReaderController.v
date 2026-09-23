@@ -30,6 +30,7 @@ module TextureReaderController #(
 
     // Control
     input  wire                             invalidate,
+    input  wire                             nearest,
 
     // Texture Read
     input  wire [TEX_ADDR_WIDTH - 1 : 0]    s_tr_texel_00,
@@ -84,9 +85,9 @@ module TextureReaderController #(
     wire [TEX_ADDR_WIDTH - 1 : 0] r_texel11_next = (r_skid_valid) ? r_texel11_skid : s_tr_texel_11;
 
     wire [3 : 0] texel_match = { 
-        (r_texel11_next == r_texel11), 
-        (r_texel10_next == r_texel10), 
-        (r_texel01_next == r_texel01), 
+        ((r_texel11_next == r_texel11) || nearest), 
+        ((r_texel10_next == r_texel10) || nearest), 
+        ((r_texel01_next == r_texel01) || nearest), 
         (r_texel00_next == r_texel00) 
     };
 
@@ -144,7 +145,6 @@ module TextureReaderController #(
 
                 // Check which texels do not match and set the corresponding address
                 // to load them.
-                // TODO: Only check all 4 texel when texture filtering is enabled
                 if (!texel_match[0])
                 begin
                     m_tr_addr <= { r_texel00_next, 1'b0 };

@@ -557,6 +557,7 @@ module RasterIXRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
                 .enable(textureCacheEnableTmu0),
+                .nearest(!confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS]),
 
                 .s_tr_valid(tr0_valid),
                 .s_tr_ready(tr0_ready),
@@ -701,6 +702,7 @@ module RasterIXRenderCore #(
                     .aclk(aclk),
                     .resetn(resetn),
                     .enable(textureCacheEnableTmu1),
+                    .nearest(!confTMU1TextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS]),
 
                     .s_tr_valid(tr1_valid),
                     .s_tr_ready(tr1_ready),

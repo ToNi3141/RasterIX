@@ -34,6 +34,7 @@ module TextureReader #(
     input  wire                             aclk,
     input  wire                             resetn,
     input  wire                             enable,
+    input  wire                             nearest,
 
     // Texture read address channel
     input  wire                             s_tr_valid,
@@ -97,6 +98,7 @@ module TextureReader #(
         .resetn(resetn),
 
         .invalidate(s_axis_tvalid), // As soon as a new page table is set, invalidate the cache
+        .nearest(nearest),
 
         .s_tr_texel_00(s_tr_addr_00),
         .s_tr_texel_01(s_tr_addr_01),

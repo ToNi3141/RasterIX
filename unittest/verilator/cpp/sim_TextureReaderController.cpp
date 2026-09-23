@@ -70,6 +70,7 @@ TEST_CASE("Test Cold Cache, no stalling", "[TextureReaderController]")
 {
     VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
+    t->nearest = 0;
 
     t->invalidate = 0;
     CHECK(t->m_tr_valid == 0);
@@ -149,6 +150,7 @@ TEST_CASE("Single miss, no stalling", "[TextureReaderController]")
 {
     VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
+    t->nearest = 0;
 
     makeCacheHot(t, { 10, 20, 30, 40 });
 
@@ -216,6 +218,7 @@ TEST_CASE("Two misses, no stalling", "[TextureReaderController]")
 {
     VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
+    t->nearest = 0;
 
     makeCacheHot(t, { 10, 20, 30, 40 });
 
@@ -281,10 +284,57 @@ TEST_CASE("Two misses, no stalling", "[TextureReaderController]")
     delete t;
 }
 
+TEST_CASE("Nearest filtering only reads texel00", "[TextureReaderController]")
+{
+    VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
+    rr::ut::reset(t);
+
+    t->nearest = 1;
+    t->m_tr_ready = 1;
+    t->s_tr_valid = 1;
+    t->s_tr_texel_00 = 10;
+    t->s_tr_texel_01 = 20;
+    t->s_tr_texel_10 = 30;
+    t->s_tr_texel_11 = 40;
+    rr::ut::clk(t);
+    CHECK(t->m_tr_texel_pos == 0b00);
+    CHECK(t->m_tr_cmd == 1);
+    CHECK(t->m_tr_valid == 1);
+    CHECK(t->m_tr_addr == (10 << 1));
+    CHECK(t->s_tr_ready == 1);
+
+    // Changing only the other texels must not trigger reads or backpressure.
+    t->s_tr_texel_00 = 10;
+    t->s_tr_texel_01 = 21;
+    t->s_tr_texel_10 = 31;
+    t->s_tr_texel_11 = 41;
+    rr::ut::clk(t);
+    CHECK(t->m_tr_texel_pos == 0b00);
+    CHECK(t->m_tr_cmd == 1);
+    CHECK(t->m_tr_valid == 1);
+    CHECK(t->m_tr_addr == (10 << 1));
+    CHECK(t->s_tr_ready == 1);
+
+    // Texel00 is still checked and remains the only possible memory read.
+    t->s_tr_texel_00 = 11;
+    t->s_tr_texel_01 = 22;
+    t->s_tr_texel_10 = 32;
+    t->s_tr_texel_11 = 42;
+    rr::ut::clk(t);
+    CHECK(t->m_tr_texel_pos == 0b00);
+    CHECK(t->m_tr_cmd == 1);
+    CHECK(t->m_tr_valid == 1);
+    CHECK(t->m_tr_addr == (11 << 1));
+    CHECK(t->s_tr_ready == 1);
+
+    delete t;
+}
+
 TEST_CASE("Test Cold Cache, with stalling", "[TextureReaderController]")
 {
     VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
+    t->nearest = 0;
 
     t->invalidate = 0;
     CHECK(t->m_tr_valid == 0);
@@ -442,6 +492,7 @@ TEST_CASE("Single miss, with stalling", "[TextureReaderController]")
 {
     VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
+    t->nearest = 0;
 
     makeCacheHot(t, { 10, 20, 30, 40 });
 
@@ -561,6 +612,7 @@ TEST_CASE("Output remains valid while stalled after source withdraws valid", "[T
 {
     VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
+    t->nearest = 0;
 
     makeCacheHot(t, { 10, 20, 30, 40 });
 
@@ -597,6 +649,7 @@ TEST_CASE("Invalidate", "[TextureTexelContextManager]")
 {
     VTextureReaderController* t = rr::ut::makeTop<VTextureReaderController>();
     rr::ut::reset(t);
+    t->nearest = 0;
 
     // The makeCacheHot already invalidates the cache.
     // When invalidation correctly works, then two makeCacheHot must also work.
