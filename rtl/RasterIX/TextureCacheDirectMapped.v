@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Direct-mapped texture cache which interfaces with the AXI memory system.
+// This cache is read only. It has no write back policy implemented.
+// Pipelined: yes
+// Depth: 1
 module TextureCacheDirectMapped #(
     parameter TEXEL_WIDTH = 16,
 

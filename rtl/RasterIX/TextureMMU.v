@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Texture MMU (Memory Management Unit) which contains a complete 
+// page table to translate a complete texture from virtual to physical addresses.
+// Pipelined: n/a
+// Depth: combinational
 module TextureMMU #(
     parameter TEX_ADDR_WIDTH = 18,
 

@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "PixelUtil.vh"
-
+// Unpacks texel colors from the internal format to the external 32-bit RGBA format.
+// Supports RGB565, RGBA5551, and RGBA4444 internal formats.
+// Pipelined: n/a
+// Depth: combinational
 module TexelColorUnpack #(
     parameter TEXEL_WIDTH = 16,
 
@@ -31,6 +33,7 @@ module TexelColorUnpack #(
     output wire [PIXEL_WIDTH - 1 : 0] texelOutput
 );
 `include "RegisterAndDescriptorDefines.vh"
+`include "PixelUtil.vh"
 
     initial
     begin

@@ -15,6 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Direct-mapped texture cache controller which manages the cache.
+// It checks for cache hits and misses and loads new data into the 
+// context or overwrites data from the context (TextureCacheDirectMappedContext).
+// Pipelined: yes
+// Depth: 1
 module TextureCacheDirectMappedController #(
     parameter CACHE_SIZE = 1024,
     parameter CACHE_LINE_SIZE = 32,
@@ -109,7 +114,6 @@ module TextureCacheDirectMappedController #(
     reg                             r_load_line_pending;
 
     wire [ADDR_WIDTH - 1 : 0]       w_addr;
-
 
     assign w_addr = (r_skid_valid) ? r_skid_addr
                                    : s_tc_addr;

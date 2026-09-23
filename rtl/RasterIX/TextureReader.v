@@ -15,7 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+// Texture reader which reads a texture from the memory.
+// It implements a MMU for translating virtual texture addresses to physical memory addresses.
+// It implements a cache to optimize performance
+// Pipelined: yes
+// Depth: heavily depends on cache hits and memory latency
 module TextureReader #(
     parameter DATA_WIDTH = 32,
     parameter TEXEL_WIDTH = 16,

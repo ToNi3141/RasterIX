@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Direct-mapped texture cache context which manages the cache and handles read requests.
+// This is the counterpart to the TextureCacheDirectMappedController which manages the cache.
+// Pipelined: yes
+// Depth: 1
 module TextureCacheDirectMappedContext #(
     parameter TEXEL_WIDTH = 16,
 

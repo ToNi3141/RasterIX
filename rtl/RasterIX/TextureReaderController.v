@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-`include "PixelUtil.vh"
-
+// Texture reader controller which manages the texture reader context and handles read requests.
+// Pipelined: yes
+// Depth: 1
 module TextureReaderController #(
     parameter TEX_ADDR_WIDTH = 17,
     parameter TEXEL_WIDTH = 16,
