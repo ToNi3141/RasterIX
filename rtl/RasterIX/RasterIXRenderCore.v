@@ -530,7 +530,7 @@ module RasterIXRenderCore #(
     ////////////////////////////////////////////////////////////////////////////
     wire                                axis_tmu0_tvalid;
     wire                                axis_tmu0_tlast;
-    wire  [TMU_MEMORY_WIDTH - 1 : 0]    axis_tmu0_tdata;
+    wire [TMU_MEMORY_WIDTH - 1 : 0]     axis_tmu0_tdata;
     wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_00;
     wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_01;
     wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_10;
@@ -543,7 +543,8 @@ module RasterIXRenderCore #(
     wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_11;
     wire                                tr0_texel_valid;
     wire                                tr0_texel_ready;
-    wire textureCacheEnableTmu0 = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS] &&
+    wire textureCacheEnableTmu0 = ENABLE_TEXTURE_FILTERING && 
+        confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS] &&
         ((confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_SIZE] == SRC_TEXTURE) ||
          (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_SIZE] == SRC_TEXTURE) ||
          (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_SIZE] == SRC_TEXTURE) ||
@@ -686,7 +687,8 @@ module RasterIXRenderCore #(
     wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_11;
     wire                            tr1_texel_valid;
     wire                            tr1_texel_ready;
-    wire textureCacheEnableTmu1 = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS] &&
+    wire textureCacheEnableTmu1 = ENABLE_TEXTURE_FILTERING &&
+        confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS] &&
         ((confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_SIZE] == SRC_TEXTURE) ||
          (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_SIZE] == SRC_TEXTURE) ||
          (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_SIZE] == SRC_TEXTURE) ||

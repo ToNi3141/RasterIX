@@ -32,7 +32,8 @@ module TextureMappingUnit
     localparam PIXEL_WIDTH = 4 * SUB_PIXEL_WIDTH,
     parameter TEXEL_WIDTH = 16,
 
-    localparam ADDR_WIDTH = 17 // Based on the maximum texture size, of 256x256 (8 bit x 8 bit) + mipmap levels in PIXEL_WIDTH word addresses
+    localparam ADDR_WIDTH = 17, // Based on the maximum texture size, of 256x256 (8 bit x 8 bit) + mipmap levels in PIXEL_WIDTH word addresses
+    localparam FIFO_DEPTH_LG = 5 // Maximum number of on the fly texels
 )
 (
     input  wire                         aclk,
@@ -287,8 +288,8 @@ module TextureMappingUnit
         .STREAM1_WIDTH(CONTEXT_STREAM_WIDTH),
         .STREAM2_WIDTH(1), // TODO: Make this channel optional
         .STREAM3_WIDTH(1), // TODO: Make this channel optional
-        .FIFO_DEPTH0_POW2(5),
-        .FIFO_DEPTH1_POW2(5),
+        .FIFO_DEPTH0_POW2(FIFO_DEPTH_LG),
+        .FIFO_DEPTH1_POW2(FIFO_DEPTH_LG),
         .FIFO_DEPTH2_POW2(0),
         .FIFO_DEPTH3_POW2(0)
     ) textureReadConcat (
