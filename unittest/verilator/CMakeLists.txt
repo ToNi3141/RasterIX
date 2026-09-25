@@ -46,7 +46,7 @@ function(add_verilator_test TEST_NAME TOP_MODULE VERILOG_FILE)
             ${VERILOG_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
         COMMAND make -C ${OBJ_DIR} -f V${TOP_MODULE}.mk
-        DEPENDS ${VERILOG_FILE} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
+        DEPENDS ${VERILOG_FILE} ${EXTRA_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/cpp/general.hpp
         COMMENT "Verilating and building ${TOP_MODULE}..."
         VERBATIM
@@ -64,7 +64,26 @@ add_verilator_test(simulationILI9486 DisplayController8BitILI9486 ${RTL_DISPLAY}
 add_verilator_test(simulationILI9341 DisplayController8BitILI9341 ${RTL_DISPLAY}/DisplayController8BitILI9341.v)
 add_verilator_test(attributeInterpolator AttributeInterpolator ${RTL_RASTERIX}/AttributeInterpolator.v)
 add_verilator_test(functionInterpolator FunctionInterpolator ${RTL_RASTERIX}/FunctionInterpolator.v)
-add_verilator_test(textureSampler TextureSamplerTestModule ${CMAKE_CURRENT_SOURCE_DIR}/v/TextureSamplerTestModule.v)
+add_verilator_test(textureSampler TextureSampler ${RTL_RASTERIX}/TextureSampler.v)
+add_verilator_test(textureBuffer TextureBuffer ${RTL_RASTERIX}/TextureBuffer.v)
+add_verilator_test(textureMMU TextureMMU ${RTL_RASTERIX}/TextureMMU.v)
+add_verilator_test(textureReader TextureReader ${RTL_RASTERIX}/TextureReader.v
+    ${RTL_3RDPARTY}/verilog-axis)
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/obj_dir_textureReader/VTextureReader
+    APPEND
+    DEPENDS
+        ${RTL_RASTERIX}/TextureCacheDirectMapped.v
+        ${RTL_RASTERIX}/TextureCacheDirectMappedController.v
+        ${RTL_RASTERIX}/TextureCacheDirectMappedContext.v
+        ${RTL_RASTERIX}/TextureMMU.v
+        ${RTL_RASTERIX}/TextureReaderController.v
+        ${RTL_RASTERIX}/TextureReaderContext.v
+        ${RTL_RASTERIX}/StreamConcatFifo.v
+        ${RTL_3RDPARTY}/sfifo.v
+        ${RTL_3RDPARTY}/verilog-axis/axis_broadcast.v
+)
+add_verilator_test(texelColorUnpack TexelColorUnpack ${RTL_RASTERIX}/TexelColorUnpack.v)
 add_verilator_test(colorInterpolator ColorInterpolator ${RTL_RASTERIX}/ColorInterpolator.v)
 add_verilator_test(texEnv TexEnv ${RTL_RASTERIX}/TexEnv.v)
 add_verilator_test(stencilOp StencilOp ${RTL_RASTERIX}/StencilOp.v)
@@ -91,3 +110,15 @@ add_verilator_test(coalesceFiFo CoalesceFiFo ${RTL_RASTERIX}/CoalesceFiFo.v)
 add_verilator_test(coalesceAddrGen CoalesceAddrGen ${RTL_RASTERIX}/CoalesceAddrGen.v)
 add_verilator_test(streamSemaphore StreamSemaphore ${RTL_RASTERIX}/StreamSemaphore.v)
 add_verilator_test(axiToAvalonBridge AxiToAvalonBridge ${RTL_UTIL}/AxiToAvalonBridge.v)
+add_verilator_test(textureReaderController TextureReaderController ${RTL_RASTERIX}/TextureReaderController.v)
+add_verilator_test(textureReaderContext TextureReaderContext ${RTL_RASTERIX}/TextureReaderContext.v)
+add_verilator_test(textureCacheDirectMappedController TextureCacheDirectMappedController ${RTL_RASTERIX}/TextureCacheDirectMappedController.v)
+add_verilator_test(textureCacheDirectMappedContext TextureCacheDirectMappedContext ${RTL_RASTERIX}/TextureCacheDirectMappedContext.v)
+add_verilator_test(textureCacheDirectMappedContextEarlyFetch TextureCacheDirectMappedContextEarlyFetch ${CMAKE_CURRENT_SOURCE_DIR}/TextureCacheDirectMappedContextEarlyFetch.v)
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/obj_dir_textureCacheDirectMappedContextEarlyFetch/VTextureCacheDirectMappedContextEarlyFetch
+    APPEND
+    DEPENDS ${RTL_RASTERIX}/TextureCacheDirectMappedContext.v
+)
+add_verilator_test(textureCacheDirectMapped TextureCacheDirectMapped ${RTL_RASTERIX}/TextureCacheDirectMapped.v
+    ${RTL_3RDPARTY})

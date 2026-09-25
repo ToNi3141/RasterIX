@@ -210,6 +210,7 @@
         },
         {
             "name": "native",
+            "hidden": true,
             "displayName": "Native build",
             "description": "Native build to be used on a desktop computer",
             "binaryDir": "${sourceDir}/build/native",
@@ -236,6 +237,7 @@
         },
         {
             "name": "win32",
+            "hidden": true,
             "displayName": "Win32 build",
             "description": "Native native build for Windows resulting in a 32bit wgl dll",
             "binaryDir": "${sourceDir}/build/win32",
@@ -283,6 +285,7 @@
         },
         {
             "name": "rppico",
+            "hidden": true,
             "displayName": "rppico build",
             "description": "rppico build to be used for the Raspberry Pi Pico",
             "binaryDir": "${sourceDir}/build/rppico",
@@ -311,6 +314,7 @@
         },
         {
             "name": "zynq_embedded_linux",
+            "hidden": true,
             "displayName": "Zynq embedded linux build",
             "description": "Build for an zynq embedded linux device",
             "binaryDir": "${sourceDir}/build/zynq",

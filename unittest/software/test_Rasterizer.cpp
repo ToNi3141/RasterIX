@@ -373,7 +373,7 @@ TEST_CASE("Rasterizer edge on boundary (w == 0)", "[Rasterizer]")
     auto desc = createTriangleDesc(
         5, 5, 6, 6,
         Vec3i { 0, 0, 0 }, // All edge functions exactly zero
-        Vec3i { 0, 0, 0 },
+        Vec3i { 1, 1, 1 }, // Positive x increment makes zero edges inclusive
         Vec3i { 0, 0, 0 });
 
     rasterizer.init(desc);
@@ -383,4 +383,19 @@ TEST_CASE("Rasterizer edge on boundary (w == 0)", "[Rasterizer]")
     REQUIRE(fragments.size() == 1);
     REQUIRE(fragments[0].spx == 5);
     REQUIRE(fragments[0].spy == 5);
+}
+
+TEST_CASE("Rasterizer shared edge ownership", "[Rasterizer]")
+{
+    ResolutionData resolution { 20, 20 };
+    Rasterizer rasterizer(resolution);
+
+    auto desc = createTriangleDesc(
+        5, 5, 6, 6,
+        Vec3i { 0, 1, 1 },
+        Vec3i { -1, 1, 0 }, // Negative x increment makes edge 0 exclusive
+        Vec3i { 0, 0, 0 });
+    rasterizer.init(desc);
+    auto fragments = collectFragments(rasterizer);
+    REQUIRE(fragments.empty());
 }

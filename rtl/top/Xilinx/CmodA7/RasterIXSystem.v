@@ -73,6 +73,9 @@ module RasterIXSystem #(
     // Texture page size in bytes.
     parameter RIX_TEXTURE_PAGE_SIZE = 2048,
 
+    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 1,
+    parameter CACHE_SIZE = 1024 * 8,
+
     // Enable the fog unit.
     parameter RIX_ENABLE_FOG = 1,
 
@@ -375,6 +378,8 @@ module RasterIXSystem #(
         .ENABLE_MIPMAPPING                    (RIX_ENABLE_MIPMAPPING),
         .ENABLE_TEXTURE_FILTERING             (RIX_ENABLE_TEXTURE_FILTERING),
         .TEXTURE_PAGE_SIZE                    (RIX_TEXTURE_PAGE_SIZE),
+        .ENABLE_EXTERNAL_TEXTURE_MEMORY       (ENABLE_EXTERNAL_TEXTURE_MEMORY),
+        .CACHE_SIZE                           (CACHE_SIZE),
         .ENABLE_FOG                           (RIX_ENABLE_FOG),
         .MAX_TEXTURE_SIZE                     (RIX_MAX_TEXTURE_SIZE),
         .ADDR_WIDTH                           (ADDR_WIDTH),

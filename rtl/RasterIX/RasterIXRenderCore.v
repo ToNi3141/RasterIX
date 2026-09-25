@@ -33,7 +33,10 @@ module RasterIXRenderCore #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TMU_MEMORY_WIDTH = 64,
+    parameter TEXEL_WIDTH = 16,
     parameter TEXTURE_PAGE_SIZE = 2048,
+    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 0,
+    parameter CACHE_SIZE = 1024,
 
     // Enables the fogging unit
     parameter ENABLE_FOG = 1,
@@ -528,90 +531,225 @@ module RasterIXRenderCore #(
     wire                                axis_tmu0_tvalid;
     wire                                axis_tmu0_tlast;
     wire  [TMU_MEMORY_WIDTH - 1 : 0]    axis_tmu0_tdata;
-    PagedMemoryReader pagedMemoryReaderTmu0 (
-        .aclk(aclk),
-        .resetn(resetn),
+    wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_00;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_01;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_10;
+    wire [TEX_ADDR_WIDTH - 1 : 0]       tr0_addr_11;
+    wire                                tr0_valid;
+    wire                                tr0_ready;
+    wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_00;
+    wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_01;
+    wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_10;
+    wire [TEXEL_WIDTH - 1 : 0]          tr0_texel_11;
+    wire                                tr0_texel_valid;
+    wire                                tr0_texel_ready;
+    wire textureCacheEnableTmu0 = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU0_POS] &&
+        ((confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_SIZE] == SRC_TEXTURE) ||
+         (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_SIZE] == SRC_TEXTURE));
+    generate
+        if (ENABLE_EXTERNAL_TEXTURE_MEMORY)
+        begin
+            TextureReader textureMemoryTMU0 (
+                .aclk(aclk),
+                .resetn(resetn),
+                .enable(textureCacheEnableTmu0),
+                .nearest(!confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS]),
 
-        .m_axis_tvalid(axis_tmu0_tvalid),
-        .m_axis_tlast(axis_tmu0_tlast),
-        .m_axis_tdata(axis_tmu0_tdata),
+                .s_tr_valid(tr0_valid),
+                .s_tr_ready(tr0_ready),
+                .s_tr_addr_00(tr0_addr_00),
+                .s_tr_addr_01(tr0_addr_01),
+                .s_tr_addr_10(tr0_addr_10),
+                .s_tr_addr_11(tr0_addr_11),
 
-        .s_axis_tvalid(cmd_tmu0_axis_tvalid),
-        .s_axis_tready(cmd_tmu0_axis_tready),
-        .s_axis_tlast(cmd_xxx_axis_tlast),
-        .s_axis_tdata(cmd_xxx_axis_tdata[0 +: 32]),
+                .m_tr_valid(tr0_texel_valid),
+                .m_tr_ready(tr0_texel_ready),
+                .m_tr_texel_00(tr0_texel_00),
+                .m_tr_texel_01(tr0_texel_01),
+                .m_tr_texel_10(tr0_texel_10),
+                .m_tr_texel_11(tr0_texel_11),
 
-        .m_mem_axi_arid(m_tmu0_axi_arid),
-        .m_mem_axi_araddr(m_tmu0_axi_araddr),
-        .m_mem_axi_arlen(m_tmu0_axi_arlen),
-        .m_mem_axi_arsize(m_tmu0_axi_arsize),
-        .m_mem_axi_arburst(m_tmu0_axi_arburst),
-        .m_mem_axi_arlock(m_tmu0_axi_arlock),
-        .m_mem_axi_arcache(m_tmu0_axi_arcache),
-        .m_mem_axi_arprot(m_tmu0_axi_arprot),
-        .m_mem_axi_arvalid(m_tmu0_axi_arvalid),
-        .m_mem_axi_arready(m_tmu0_axi_arready),
-        .m_mem_axi_rid(m_tmu0_axi_rid),
-        .m_mem_axi_rdata(m_tmu0_axi_rdata),
-        .m_mem_axi_rresp(m_tmu0_axi_rresp),
-        .m_mem_axi_rlast(m_tmu0_axi_rlast),
-        .m_mem_axi_rvalid(m_tmu0_axi_rvalid),
-        .m_mem_axi_rready(m_tmu0_axi_rready)
-    );
-    defparam pagedMemoryReaderTmu0.DATA_WIDTH = TMU_MEMORY_WIDTH;
-    defparam pagedMemoryReaderTmu0.ADDR_WIDTH = ADDR_WIDTH;
-    defparam pagedMemoryReaderTmu0.ID_WIDTH = ID_WIDTH;
-    defparam pagedMemoryReaderTmu0.PAGE_SIZE = TEXTURE_PAGE_SIZE;
-    
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr00;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr01;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr10;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel0Addr11;
-    wire [31 : 0]                   texel0Input00;
-    wire [31 : 0]                   texel0Input01;
-    wire [31 : 0]                   texel0Input10;
-    wire [31 : 0]                   texel0Input11;
-    TextureBuffer textureBufferTMU0 (
-        .aclk(aclk),
-        .resetn(resetn),
+                .s_axis_tvalid(cmd_tmu0_axis_tvalid),
+                .s_axis_tready(cmd_tmu0_axis_tready),
+                .s_axis_tlast(cmd_xxx_axis_tlast),
+                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: ADDR_WIDTH]),
 
-        .confPixelFormat(confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+                .m_axi_arid(m_tmu0_axi_arid),
+                .m_axi_araddr(m_tmu0_axi_araddr),
+                .m_axi_arlen(m_tmu0_axi_arlen),
+                .m_axi_arsize(m_tmu0_axi_arsize),
+                .m_axi_arburst(m_tmu0_axi_arburst),
+                .m_axi_arlock(m_tmu0_axi_arlock),
+                .m_axi_arcache(m_tmu0_axi_arcache),
+                .m_axi_arprot(m_tmu0_axi_arprot),
+                .m_axi_arvalid(m_tmu0_axi_arvalid),
+                .m_axi_arready(m_tmu0_axi_arready),
+                .m_axi_rid(m_tmu0_axi_rid),
+                .m_axi_rdata(m_tmu0_axi_rdata),
+                .m_axi_rresp(m_tmu0_axi_rresp),
+                .m_axi_rlast(m_tmu0_axi_rlast),
+                .m_axi_rvalid(m_tmu0_axi_rvalid),
+                .m_axi_rready(m_tmu0_axi_rready)
+            );
+            defparam textureMemoryTMU0.DATA_WIDTH = TMU_MEMORY_WIDTH;
+            defparam textureMemoryTMU0.TEXEL_WIDTH = TEXEL_WIDTH;
+            defparam textureMemoryTMU0.ID_WIDTH = ID_WIDTH;
+            defparam textureMemoryTMU0.ADDR_WIDTH = ADDR_WIDTH;
+            defparam textureMemoryTMU0.PAGE_SIZE = TEXTURE_PAGE_SIZE;
+            defparam textureMemoryTMU0.CACHE_SIZE = CACHE_SIZE;
 
-        .texelAddr00(texel0Addr00),
-        .texelAddr01(texel0Addr01),
-        .texelAddr10(texel0Addr10),
-        .texelAddr11(texel0Addr11),
+        end
+        else
+        begin
+            PagedMemoryReader pagedMemoryReaderTmu0 (
+                .aclk(aclk),
+                .resetn(resetn),
 
-        .texelOutput00(texel0Input00),
-        .texelOutput01(texel0Input01),
-        .texelOutput10(texel0Input10),
-        .texelOutput11(texel0Input11),
+                .m_axis_tvalid(axis_tmu0_tvalid),
+                .m_axis_tlast(axis_tmu0_tlast),
+                .m_axis_tdata(axis_tmu0_tdata),
 
-        .s_axis_tvalid(axis_tmu0_tvalid),
-        .s_axis_tlast(axis_tmu0_tlast),
-        .s_axis_tdata(axis_tmu0_tdata)
-    );
-    defparam textureBufferTMU0.STREAM_WIDTH = TMU_MEMORY_WIDTH;
-    defparam textureBufferTMU0.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
-    defparam textureBufferTMU0.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
-    defparam textureBufferTMU0.ENABLE_LOD = ENABLE_MIPMAPPING;
+                .s_axis_tvalid(cmd_tmu0_axis_tvalid),
+                .s_axis_tready(cmd_tmu0_axis_tready),
+                .s_axis_tlast(cmd_xxx_axis_tlast),
+                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: ADDR_WIDTH]),
+
+                .m_mem_axi_arid(m_tmu0_axi_arid),
+                .m_mem_axi_araddr(m_tmu0_axi_araddr),
+                .m_mem_axi_arlen(m_tmu0_axi_arlen),
+                .m_mem_axi_arsize(m_tmu0_axi_arsize),
+                .m_mem_axi_arburst(m_tmu0_axi_arburst),
+                .m_mem_axi_arlock(m_tmu0_axi_arlock),
+                .m_mem_axi_arcache(m_tmu0_axi_arcache),
+                .m_mem_axi_arprot(m_tmu0_axi_arprot),
+                .m_mem_axi_arvalid(m_tmu0_axi_arvalid),
+                .m_mem_axi_arready(m_tmu0_axi_arready),
+                .m_mem_axi_rid(m_tmu0_axi_rid),
+                .m_mem_axi_rdata(m_tmu0_axi_rdata),
+                .m_mem_axi_rresp(m_tmu0_axi_rresp),
+                .m_mem_axi_rlast(m_tmu0_axi_rlast),
+                .m_mem_axi_rvalid(m_tmu0_axi_rvalid),
+                .m_mem_axi_rready(m_tmu0_axi_rready)
+            );
+            defparam pagedMemoryReaderTmu0.DATA_WIDTH = TMU_MEMORY_WIDTH;
+            defparam pagedMemoryReaderTmu0.ADDR_WIDTH = ADDR_WIDTH;
+            defparam pagedMemoryReaderTmu0.ID_WIDTH = ID_WIDTH;
+            defparam pagedMemoryReaderTmu0.PAGE_SIZE = TEXTURE_PAGE_SIZE;
+
+            TextureBuffer textureBufferTMU0 (
+                .aclk(aclk),
+                .resetn(resetn),
+
+                .s_tr_valid(tr0_valid),
+                .s_tr_ready(tr0_ready),
+                .s_tr_addr_00(tr0_addr_00),
+                .s_tr_addr_01(tr0_addr_01),
+                .s_tr_addr_10(tr0_addr_10),
+                .s_tr_addr_11(tr0_addr_11),
+
+                .m_tr_valid(tr0_texel_valid),
+                .m_tr_ready(tr0_texel_ready),
+                .m_tr_texel_00(tr0_texel_00),
+                .m_tr_texel_01(tr0_texel_01),
+                .m_tr_texel_10(tr0_texel_10),
+                .m_tr_texel_11(tr0_texel_11),
+
+                .s_axis_tvalid(axis_tmu0_tvalid),
+                .s_axis_tlast(axis_tmu0_tlast),
+                .s_axis_tdata(axis_tmu0_tdata)
+            );
+            defparam textureBufferTMU0.STREAM_WIDTH = TMU_MEMORY_WIDTH;
+            defparam textureBufferTMU0.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
+            defparam textureBufferTMU0.TEXEL_WIDTH = TEXEL_WIDTH;
+            defparam textureBufferTMU0.ENABLE_LOD = ENABLE_MIPMAPPING;
+        end
+    endgenerate
 
     ////////////////////////////////////////////////////////////////////////////
     // Texture Mapping Unit Buffer 1
     // Memory area where the texture is stored
     // Clocks: n/a
     ////////////////////////////////////////////////////////////////////////////
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr00;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr01;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr10;
-    wire [TEX_ADDR_WIDTH - 1 : 0]   texel1Addr11;
-    wire [31 : 0]                   texel1Input00;
-    wire [31 : 0]                   texel1Input01;
-    wire [31 : 0]                   texel1Input10;
-    wire [31 : 0]                   texel1Input11;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   tr1_addr_00;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   tr1_addr_01;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   tr1_addr_10;
+    wire [TEX_ADDR_WIDTH - 1 : 0]   tr1_addr_11;
+    wire                            tr1_valid;
+    wire                            tr1_ready;
+    wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_00;
+    wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_01;
+    wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_10;
+    wire [TEXEL_WIDTH - 1 : 0]      tr1_texel_11;
+    wire                            tr1_texel_valid;
+    wire                            tr1_texel_ready;
+    wire textureCacheEnableTmu1 = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_TMU1_POS] &&
+        ((confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB0_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB1_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_RGB2_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA0_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_SIZE] == SRC_TEXTURE) ||
+         (confTMU1TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_SIZE] == SRC_TEXTURE));
     generate
         if (ENABLE_SECOND_TMU)
         begin
+            if (ENABLE_EXTERNAL_TEXTURE_MEMORY)
+            begin
+                TextureReader textureMemoryTMU1 (
+                    .aclk(aclk),
+                    .resetn(resetn),
+                    .enable(textureCacheEnableTmu1),
+                    .nearest(!confTMU1TextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS]),
+
+                    .s_tr_valid(tr1_valid),
+                    .s_tr_ready(tr1_ready),
+                    .s_tr_addr_00(tr1_addr_00),
+                    .s_tr_addr_01(tr1_addr_01),
+                    .s_tr_addr_10(tr1_addr_10),
+                    .s_tr_addr_11(tr1_addr_11),
+
+                    .m_tr_valid(tr1_texel_valid),
+                    .m_tr_ready(tr1_texel_ready),
+                    .m_tr_texel_00(tr1_texel_00),
+                    .m_tr_texel_01(tr1_texel_01),
+                    .m_tr_texel_10(tr1_texel_10),
+                    .m_tr_texel_11(tr1_texel_11),
+
+                    .s_axis_tvalid(cmd_tmu1_axis_tvalid),
+                    .s_axis_tready(cmd_tmu1_axis_tready),
+                    .s_axis_tlast(cmd_xxx_axis_tlast),
+                    .s_axis_tdata(cmd_xxx_axis_tdata[0 +: ADDR_WIDTH]),
+
+                    .m_axi_arid(m_tmu1_axi_arid),
+                    .m_axi_araddr(m_tmu1_axi_araddr),
+                    .m_axi_arlen(m_tmu1_axi_arlen),
+                    .m_axi_arsize(m_tmu1_axi_arsize),
+                    .m_axi_arburst(m_tmu1_axi_arburst),
+                    .m_axi_arlock(m_tmu1_axi_arlock),
+                    .m_axi_arcache(m_tmu1_axi_arcache),
+                    .m_axi_arprot(m_tmu1_axi_arprot),
+                    .m_axi_arvalid(m_tmu1_axi_arvalid),
+                    .m_axi_arready(m_tmu1_axi_arready),
+                    .m_axi_rid(m_tmu1_axi_rid),
+                    .m_axi_rdata(m_tmu1_axi_rdata),
+                    .m_axi_rresp(m_tmu1_axi_rresp),
+                    .m_axi_rlast(m_tmu1_axi_rlast),
+                    .m_axi_rvalid(m_tmu1_axi_rvalid),
+                    .m_axi_rready(m_tmu1_axi_rready)
+                );
+                defparam textureMemoryTMU1.DATA_WIDTH = TMU_MEMORY_WIDTH;
+                defparam textureMemoryTMU1.TEXEL_WIDTH = TEXEL_WIDTH;
+                defparam textureMemoryTMU1.ID_WIDTH = ID_WIDTH;
+                defparam textureMemoryTMU1.ADDR_WIDTH = ADDR_WIDTH;
+                defparam textureMemoryTMU1.PAGE_SIZE = TEXTURE_PAGE_SIZE;
+                defparam textureMemoryTMU1.CACHE_SIZE = CACHE_SIZE;
+
+            end
+            else
+            begin
             wire                                axis_tmu1_tvalid;
             wire                                axis_tmu1_tlast;
             wire  [TMU_MEMORY_WIDTH - 1 : 0]    axis_tmu1_tdata;
@@ -626,7 +764,7 @@ module RasterIXRenderCore #(
                 .s_axis_tvalid(cmd_tmu1_axis_tvalid),
                 .s_axis_tready(cmd_tmu1_axis_tready),
                 .s_axis_tlast(cmd_xxx_axis_tlast),
-                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: 32]),
+                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: ADDR_WIDTH]),
 
                 .m_mem_axi_arid(m_tmu1_axi_arid),
                 .m_mem_axi_araddr(m_tmu1_axi_araddr),
@@ -654,17 +792,19 @@ module RasterIXRenderCore #(
                 .aclk(aclk),
                 .resetn(resetn),
 
-                .confPixelFormat(confTMU1TextureConfig[RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_POS +: RENDER_CONFIG_TMU_TEXTURE_PIXEL_FORMAT_SIZE]),
+                .s_tr_valid(tr1_valid),
+                .s_tr_ready(tr1_ready),
+                .s_tr_addr_00(tr1_addr_00),
+                .s_tr_addr_01(tr1_addr_01),
+                .s_tr_addr_10(tr1_addr_10),
+                .s_tr_addr_11(tr1_addr_11),
 
-                .texelAddr00(texel1Addr00),
-                .texelAddr01(texel1Addr01),
-                .texelAddr10(texel1Addr10),
-                .texelAddr11(texel1Addr11),
-
-                .texelOutput00(texel1Input00),
-                .texelOutput01(texel1Input01),
-                .texelOutput10(texel1Input10),
-                .texelOutput11(texel1Input11),
+                .m_tr_valid(tr1_texel_valid),
+                .m_tr_ready(tr1_texel_ready),
+                .m_tr_texel_00(tr1_texel_00),
+                .m_tr_texel_01(tr1_texel_01),
+                .m_tr_texel_10(tr1_texel_10),
+                .m_tr_texel_11(tr1_texel_11),
 
                 .s_axis_tvalid(axis_tmu1_tvalid),
                 .s_axis_tlast(axis_tmu1_tlast),
@@ -672,15 +812,18 @@ module RasterIXRenderCore #(
             );
             defparam textureBufferTMU1.STREAM_WIDTH = TMU_MEMORY_WIDTH;
             defparam textureBufferTMU1.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
-            defparam textureBufferTMU1.PIXEL_WIDTH = COLOR_NUMBER_OF_SUB_PIXEL * COLOR_SUB_PIXEL_WIDTH;
+            defparam textureBufferTMU1.TEXEL_WIDTH = TEXEL_WIDTH;
             defparam textureBufferTMU1.ENABLE_LOD = ENABLE_MIPMAPPING;
+            end
         end
         else
         begin
-            assign texel1Input00 = 0;
-            assign texel1Input01 = 0;
-            assign texel1Input10 = 0;
-            assign texel1Input11 = 0;
+            assign tr1_ready = 1;
+            assign tr1_texel_00 = 0;
+            assign tr1_texel_01 = 0;
+            assign tr1_texel_10 = 0;
+            assign tr1_texel_11 = 0;
+            assign tr1_texel_valid = 0;
 
             assign m_tmu1_axi_rready = 1;
             assign m_tmu1_axi_arid = 0;
@@ -1315,25 +1458,33 @@ module RasterIXRenderCore #(
         .s_attrb_tcolor_g(alrp_tcolor_g),
         .s_attrb_tcolor_r(alrp_tcolor_r),
 
-        .texel0Addr00(texel0Addr00),
-        .texel0Addr01(texel0Addr01),
-        .texel0Addr10(texel0Addr10),
-        .texel0Addr11(texel0Addr11),
+        .m_tr0_valid(tr0_valid),
+        .m_tr0_ready(tr0_ready),
+        .m_tr0_addr_00(tr0_addr_00),
+        .m_tr0_addr_01(tr0_addr_01),
+        .m_tr0_addr_10(tr0_addr_10),
+        .m_tr0_addr_11(tr0_addr_11),
 
-        .texel0Input00(texel0Input00),
-        .texel0Input01(texel0Input01),
-        .texel0Input10(texel0Input10),
-        .texel0Input11(texel0Input11),
+        .s_tr0_valid(tr0_texel_valid),
+        .s_tr0_ready(tr0_texel_ready),
+        .s_tr0_texel_00(tr0_texel_00),
+        .s_tr0_texel_01(tr0_texel_01),
+        .s_tr0_texel_10(tr0_texel_10),
+        .s_tr0_texel_11(tr0_texel_11),
 
-        .texel1Addr00(texel1Addr00),
-        .texel1Addr01(texel1Addr01),
-        .texel1Addr10(texel1Addr10),
-        .texel1Addr11(texel1Addr11),
+        .m_tr1_valid(tr1_valid),
+        .m_tr1_ready(tr1_ready),
+        .m_tr1_addr_00(tr1_addr_00),
+        .m_tr1_addr_01(tr1_addr_01),
+        .m_tr1_addr_10(tr1_addr_10),
+        .m_tr1_addr_11(tr1_addr_11),
 
-        .texel1Input00(texel1Input00),
-        .texel1Input01(texel1Input01),
-        .texel1Input10(texel1Input10),
-        .texel1Input11(texel1Input11),
+        .s_tr1_valid(tr1_texel_valid),
+        .s_tr1_ready(tr1_texel_ready),
+        .s_tr1_texel_00(tr1_texel_00),
+        .s_tr1_texel_01(tr1_texel_01),
+        .s_tr1_texel_10(tr1_texel_10),
+        .s_tr1_texel_11(tr1_texel_11),
 
         .m_frag_tready(framebuffer_tready),
         .m_frag_tvalid(framebuffer_tvalid),
@@ -1348,6 +1499,7 @@ module RasterIXRenderCore #(
     defparam pixelPipeline.INDEX_WIDTH = INDEX_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam pixelPipeline.SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_CALC_PRECISION;
+    defparam pixelPipeline.TEXEL_WIDTH = TEXEL_WIDTH;
     defparam pixelPipeline.ENABLE_SECOND_TMU = ENABLE_SECOND_TMU;
     defparam pixelPipeline.SCREEN_POS_WIDTH = SCREEN_POS_WIDTH;
     defparam pixelPipeline.ENABLE_LOD_CALC = ENABLE_MIPMAPPING;
