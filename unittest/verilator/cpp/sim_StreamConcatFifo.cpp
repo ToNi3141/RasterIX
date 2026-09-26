@@ -79,11 +79,15 @@ TEST_CASE("Check stream concatenation", "[StreamConcatFifo]")
         t->s_stream3_tvalid = 1;
         t->s_stream3_tdata = 3;
         rr::ut::clk(t);
-        CHECK(t->m_stream_tvalid == 1);
-        CHECK(t->m_stream_tdata == 0x03020100);
+        CHECK(t->m_stream_tvalid == 0);
         CHECK(t->s_stream3_tready == 1);
 
+        // A byte written into an empty fifo becomes readable one cycle later
         t->s_stream3_tvalid = 0;
+        rr::ut::clk(t);
+        CHECK(t->m_stream_tvalid == 1);
+        CHECK(t->m_stream_tdata == 0x03020100);
+
         rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
     }
@@ -119,8 +123,7 @@ TEST_CASE("Check stream interruption", "[StreamConcatFifo]")
     t->s_stream3_tvalid = 1;
     t->s_stream3_tdata = 3;
     rr::ut::clk(t);
-    CHECK(t->m_stream_tvalid == 1);
-    CHECK(t->m_stream_tdata == 0x03020100);
+    CHECK(t->m_stream_tvalid == 0); // Readable one cycle later
     CHECK(t->s_stream0_tready == 1);
     CHECK(t->s_stream1_tready == 1);
     CHECK(t->s_stream2_tready == 1);
@@ -179,7 +182,7 @@ TEST_CASE("Check full", "[StreamConcatFifo]")
         t->s_stream3_tvalid = 1;
         t->s_stream3_tdata = 3;
         rr::ut::clk(t);
-        CHECK(t->m_stream_tvalid == 1);
+        CHECK(t->m_stream_tvalid == (i > 0)); // The first entry is readable one cycle later
         CHECK(t->s_stream0_tready == 1);
         CHECK(t->s_stream1_tready == 1);
         CHECK(t->s_stream2_tready == 1);
@@ -253,11 +256,15 @@ TEST_CASE("Check read while channels are disabled", "[StreamConcatFifo]")
         t->s_stream3_tvalid = 1;
         t->s_stream3_tdata = 3;
         rr::ut::clk(t);
-        CHECK(t->m_stream_tvalid == 1);
-        CHECK(t->m_stream_tdata == 0x03000100);
+        CHECK(t->m_stream_tvalid == 0);
         CHECK(t->s_stream3_tready == 1);
 
+        // A byte written into an empty fifo becomes readable one cycle later
         t->s_stream3_tvalid = 0;
+        rr::ut::clk(t);
+        CHECK(t->m_stream_tvalid == 1);
+        CHECK(t->m_stream_tdata == 0x03000100);
+
         rr::ut::clk(t);
         CHECK(t->m_stream_tvalid == 0);
     }

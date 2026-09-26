@@ -90,7 +90,8 @@ module StreamConcatFifo
                 .LGFLEN(FIFO_DEPTH0_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(FIFO_DEPTH0_POW2 < 2)
             ) stream0_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
@@ -121,7 +122,8 @@ module StreamConcatFifo
                 .LGFLEN(FIFO_DEPTH1_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(FIFO_DEPTH1_POW2 < 2)
             ) stream1_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
@@ -152,7 +154,8 @@ module StreamConcatFifo
                 .LGFLEN(FIFO_DEPTH2_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(FIFO_DEPTH2_POW2 < 2)
             ) stream2_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
@@ -183,7 +186,8 @@ module StreamConcatFifo
                 .LGFLEN(FIFO_DEPTH3_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(FIFO_DEPTH3_POW2 < 2)
             ) stream3_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),

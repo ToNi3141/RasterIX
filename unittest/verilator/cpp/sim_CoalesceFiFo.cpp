@@ -151,6 +151,11 @@ TEST_CASE("Test Skid Buffer", "[VCoalesceFiFo]")
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
 
+    // A word written into an empty fifo becomes readable one cycle later
+    t->s_mem_axi_wvalid = 0;
+    rr::ut::clk(t);
+    REQUIRE(t->m_mem_axi_wvalid == 0);
+
     // Forward from fifo to master and push second transaction
     t->s_mem_axi_wvalid = 1;
     t->s_mem_axi_wdata = 0xCAFEBABE;
@@ -297,10 +302,21 @@ TEST_CASE("Test Burst", "[VCoalesceFiFo]")
     REQUIRE(t->s_mem_axi_wready == 1);
     REQUIRE(t->m_mem_axi_wvalid == 0);
 
-    // Push second transaction, fetch first
+    // Push second transaction, the first is not yet readable (written into an empty fifo)
     t->m_mem_axi_wready = 1;
     t->s_mem_axi_wvalid = 1;
     t->s_mem_axi_wdata = 0xCAFEBABE;
+    t->s_mem_axi_wstrb = 0xF;
+    t->s_mem_axi_wlast = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->s_mem_axi_awready == 0);
+    REQUIRE(t->s_mem_axi_wready == 1);
+    REQUIRE(t->m_mem_axi_wvalid == 0);
+
+    // Push third transaction, fetch first
+    t->m_mem_axi_wready = 1;
+    t->s_mem_axi_wvalid = 1;
+    t->s_mem_axi_wdata = 0xDEADC0DE;
     t->s_mem_axi_wstrb = 0xF;
     t->s_mem_axi_wlast = 1;
     rr::ut::clk(t);
@@ -311,12 +327,9 @@ TEST_CASE("Test Burst", "[VCoalesceFiFo]")
     REQUIRE(t->m_mem_axi_wstrb == 0xF);
     REQUIRE(t->m_mem_axi_wlast == 0);
 
-    // Push third transaction, fetch second
+    // No push. fetch second
     t->m_mem_axi_wready = 1;
-    t->s_mem_axi_wvalid = 1;
-    t->s_mem_axi_wdata = 0xDEADC0DE;
-    t->s_mem_axi_wstrb = 0xF;
-    t->s_mem_axi_wlast = 1;
+    t->s_mem_axi_wvalid = 0;
     rr::ut::clk(t);
     REQUIRE(t->s_mem_axi_awready == 0);
     REQUIRE(t->s_mem_axi_wready == 1);
