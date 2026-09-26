@@ -384,27 +384,34 @@ module RasterIXRenderCore #(
     // Register Bank for the triangle parameters
     // Clocks: n/a
     ////////////////////////////////////////////////////////////////////////////
+    localparam TRIANGLE_STREAM_WORD_COUNT = ENABLE_SECOND_TMU ? TRIANGLE_STREAM_SIZE : (TRIANGLE_STREAM_INC_TEX0_Q_Y + 1);
     wire [(TRIANGLE_STREAM_PARAM_SIZE * TRIANGLE_STREAM_SIZE) - 1 : 0] triangleParams;
+    wire [(TRIANGLE_STREAM_PARAM_SIZE * TRIANGLE_STREAM_WORD_COUNT) - 1 : 0] triangleStreamParams;
+    assign triangleParams[0 +: TRIANGLE_STREAM_PARAM_SIZE * TRIANGLE_STREAM_WORD_COUNT] = triangleStreamParams;
 
     generate
+        if (!ENABLE_SECOND_TMU)
+        begin
+            assign triangleParams[TRIANGLE_STREAM_PARAM_SIZE * TRIANGLE_STREAM_WORD_COUNT +: TRIANGLE_STREAM_PARAM_SIZE * (TRIANGLE_STREAM_SIZE - TRIANGLE_STREAM_WORD_COUNT)] = 0;
+        end
+
         if (RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
         begin
-            RegisterBank triangleParameters (
+            ShiftRegisterBank triangleParameters (
                 .aclk(aclk),
                 .resetn(resetn),
 
                 .s_axis_tvalid(cmd_rasterizer_axis_tvalid),
                 .s_axis_tlast(cmd_xxx_axis_tlast),
                 .s_axis_tdata(cmd_xxx_axis_tdata),
-                .s_axis_tuser(0),
 
-                .registers(triangleParams),
+                .registers(triangleStreamParams),
 
                 .registers_updated(startRendering),
                 .update_acknowledged(rasterizerRunning)
             );
-            defparam triangleParameters.BANK_SIZE = TRIANGLE_STREAM_SIZE;
-            defparam triangleParameters.CMD_STREAM_WIDTH = CMD_STREAM_WIDTH;
+            defparam triangleParameters.BANK_SIZE = TRIANGLE_STREAM_WORD_COUNT;
+            defparam triangleParameters.REGISTER_WIDTH = TRIANGLE_STREAM_PARAM_SIZE;
             assign cmd_rasterizer_axis_tready = 1;
         end
         else
@@ -427,22 +434,21 @@ module RasterIXRenderCore #(
                 .m_axis_tdata(trianglex_axis_tdata)
             );
 
-            RegisterBank triangleParameters (
+            ShiftRegisterBank triangleParameters (
                 .aclk(aclk),
                 .resetn(resetn),
 
                 .s_axis_tvalid(trianglex_axis_tvalid),
                 .s_axis_tlast(trianglex_axis_tlast),
                 .s_axis_tdata(trianglex_axis_tdata),
-                .s_axis_tuser(0),
 
-                .registers(triangleParams),
+                .registers(triangleStreamParams),
 
                 .registers_updated(startRendering),
                 .update_acknowledged(rasterizerRunning)
             );
-            defparam triangleParameters.BANK_SIZE = TRIANGLE_STREAM_SIZE;
-            defparam triangleParameters.CMD_STREAM_WIDTH = 32;
+            defparam triangleParameters.BANK_SIZE = TRIANGLE_STREAM_WORD_COUNT;
+            defparam triangleParameters.REGISTER_WIDTH = TRIANGLE_STREAM_PARAM_SIZE;
         end
     endgenerate
     

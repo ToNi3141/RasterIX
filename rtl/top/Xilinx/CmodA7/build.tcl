@@ -74,6 +74,7 @@ read_verilog ./../../../../RasterIX/RasterizerCommands.vh
 read_verilog ./../../../../RasterIX/Rasterizer.v
 read_verilog ./../../../../RasterIX/RegisterAndDescriptorDefines.vh
 read_verilog ./../../../../RasterIX/RegisterBank.v
+read_verilog ./../../../../RasterIX/ShiftRegisterBank.v
 read_verilog ./../../../../RasterIX/RasterIX_EF.v
 read_verilog ./../../../../RasterIX/RasterIX_IF.v
 read_verilog ./../../../../RasterIX/RasterIX.v

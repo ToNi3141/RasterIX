@@ -123,21 +123,22 @@ module AttributeInterpolationX #(
     reg  signed [ATTRIBUTE_SIZE - 1 : 0]    reg_color_b_queue;
     reg  signed [ATTRIBUTE_SIZE - 1 : 0]    reg_color_a_queue;
 
-    // X_INC, X_DEC and Y_INC are mutually exclusive, so a single add/sub unit
-    // per attribute is sufficient. The operand mux selects +inc_x, -inc_x or
-    // inc_y (the else branch is only reached for Y_INC) and feeds one adder.
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_tex0_s  = ((cmd & RR_CMD_X_INC) != 0) ? tex0_s_inc_x  : ((cmd & RR_CMD_X_DEC) != 0) ? -tex0_s_inc_x  : tex0_s_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_tex0_t  = ((cmd & RR_CMD_X_INC) != 0) ? tex0_t_inc_x  : ((cmd & RR_CMD_X_DEC) != 0) ? -tex0_t_inc_x  : tex0_t_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_tex0_q  = ((cmd & RR_CMD_X_INC) != 0) ? tex0_q_inc_x  : ((cmd & RR_CMD_X_DEC) != 0) ? -tex0_q_inc_x  : tex0_q_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_tex1_s  = ((cmd & RR_CMD_X_INC) != 0) ? tex1_s_inc_x  : ((cmd & RR_CMD_X_DEC) != 0) ? -tex1_s_inc_x  : tex1_s_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_tex1_t  = ((cmd & RR_CMD_X_INC) != 0) ? tex1_t_inc_x  : ((cmd & RR_CMD_X_DEC) != 0) ? -tex1_t_inc_x  : tex1_t_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_tex1_q  = ((cmd & RR_CMD_X_INC) != 0) ? tex1_q_inc_x  : ((cmd & RR_CMD_X_DEC) != 0) ? -tex1_q_inc_x  : tex1_q_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_depth_w = ((cmd & RR_CMD_X_INC) != 0) ? depth_w_inc_x : ((cmd & RR_CMD_X_DEC) != 0) ? -depth_w_inc_x : depth_w_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_depth_z = ((cmd & RR_CMD_X_INC) != 0) ? depth_z_inc_x : ((cmd & RR_CMD_X_DEC) != 0) ? -depth_z_inc_x : depth_z_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_color_r = ((cmd & RR_CMD_X_INC) != 0) ? color_r_inc_x : ((cmd & RR_CMD_X_DEC) != 0) ? -color_r_inc_x : color_r_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_color_g = ((cmd & RR_CMD_X_INC) != 0) ? color_g_inc_x : ((cmd & RR_CMD_X_DEC) != 0) ? -color_g_inc_x : color_g_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_color_b = ((cmd & RR_CMD_X_INC) != 0) ? color_b_inc_x : ((cmd & RR_CMD_X_DEC) != 0) ? -color_b_inc_x : color_b_inc_y;
-    wire signed [ATTRIBUTE_SIZE - 1 : 0]    step_color_a = ((cmd & RR_CMD_X_INC) != 0) ? color_a_inc_x : ((cmd & RR_CMD_X_DEC) != 0) ? -color_a_inc_x : color_a_inc_y;
+    // X_INC, X_DEC and Y_INC are mutually exclusive. A 2:1 operand mux feeding an
+    // add/sub unit maps to one LUT6 per bit on the carry chain (no separate negation).
+    wire                                    step_sel_x = (cmd & (RR_CMD_X_INC | RR_CMD_X_DEC)) != 0;
+    wire                                    step_sub   = ((cmd & RR_CMD_X_INC) == 0) && ((cmd & RR_CMD_X_DEC) != 0);
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_tex0_s  = step_sel_x ? tex0_s_inc_x  : tex0_s_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_tex0_t  = step_sel_x ? tex0_t_inc_x  : tex0_t_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_tex0_q  = step_sel_x ? tex0_q_inc_x  : tex0_q_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_tex1_s  = step_sel_x ? tex1_s_inc_x  : tex1_s_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_tex1_t  = step_sel_x ? tex1_t_inc_x  : tex1_t_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_tex1_q  = step_sel_x ? tex1_q_inc_x  : tex1_q_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_depth_w = step_sel_x ? depth_w_inc_x : depth_w_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_depth_z = step_sel_x ? depth_z_inc_x : depth_z_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_color_r = step_sel_x ? color_r_inc_x : color_r_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_color_g = step_sel_x ? color_g_inc_x : color_g_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_color_b = step_sel_x ? color_b_inc_x : color_b_inc_y;
+    wire signed [ATTRIBUTE_SIZE - 1 : 0]    op_color_a = step_sel_x ? color_a_inc_x : color_a_inc_y;
 
     always @(posedge aclk)
     if (ce) begin
@@ -170,21 +171,21 @@ module AttributeInterpolationX #(
             end
             if (cmd & (RR_CMD_X_INC | RR_CMD_X_DEC | RR_CMD_Y_INC))
             begin
-                reg_tex0_s <= reg_tex0_s + step_tex0_s;
-                reg_tex0_t <= reg_tex0_t + step_tex0_t;
-                reg_tex0_q <= reg_tex0_q + step_tex0_q;
+                reg_tex0_s <= step_sub ? (reg_tex0_s - op_tex0_s) : (reg_tex0_s + op_tex0_s);
+                reg_tex0_t <= step_sub ? (reg_tex0_t - op_tex0_t) : (reg_tex0_t + op_tex0_t);
+                reg_tex0_q <= step_sub ? (reg_tex0_q - op_tex0_q) : (reg_tex0_q + op_tex0_q);
                 if (ENABLE_SECOND_TMU)
                 begin
-                    reg_tex1_s <= reg_tex1_s + step_tex1_s;
-                    reg_tex1_t <= reg_tex1_t + step_tex1_t;
-                    reg_tex1_q <= reg_tex1_q + step_tex1_q;
+                    reg_tex1_s <= step_sub ? (reg_tex1_s - op_tex1_s) : (reg_tex1_s + op_tex1_s);
+                    reg_tex1_t <= step_sub ? (reg_tex1_t - op_tex1_t) : (reg_tex1_t + op_tex1_t);
+                    reg_tex1_q <= step_sub ? (reg_tex1_q - op_tex1_q) : (reg_tex1_q + op_tex1_q);
                 end
-                reg_depth_w <= reg_depth_w + step_depth_w;
-                reg_depth_z <= reg_depth_z + step_depth_z;
-                reg_color_r <= reg_color_r + step_color_r;
-                reg_color_g <= reg_color_g + step_color_g;
-                reg_color_b <= reg_color_b + step_color_b;
-                reg_color_a <= reg_color_a + step_color_a;
+                reg_depth_w <= step_sub ? (reg_depth_w - op_depth_w) : (reg_depth_w + op_depth_w);
+                reg_depth_z <= step_sub ? (reg_depth_z - op_depth_z) : (reg_depth_z + op_depth_z);
+                reg_color_r <= step_sub ? (reg_color_r - op_color_r) : (reg_color_r + op_color_r);
+                reg_color_g <= step_sub ? (reg_color_g - op_color_g) : (reg_color_g + op_color_g);
+                reg_color_b <= step_sub ? (reg_color_b - op_color_b) : (reg_color_b + op_color_b);
+                reg_color_a <= step_sub ? (reg_color_a - op_color_a) : (reg_color_a + op_color_a);
             end
             if (cmd & RR_CMD_PUSH)
             begin
