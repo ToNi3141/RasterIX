@@ -112,7 +112,6 @@ module RasterIXRenderCore #(
     output wire [SCREEN_POS_WIDTH - 1 : 0]      framebufferParamYResolution,
 
     // Color buffer access
-    output wire [PIXEL_WIDTH - 1 : 0]           colorBufferClearColor,
     output wire [ADDR_WIDTH - 1 : 0]            colorBufferAddr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   colorBufferSize,
     output wire                                 colorBufferApply,
@@ -137,7 +136,6 @@ module RasterIXRenderCore #(
     output wire                                 m_color_wstrb,
 
     // Depth buffer access
-    output wire [DEPTH_WIDTH - 1 : 0]           depthBufferClearDepth,
     output wire [ADDR_WIDTH - 1 : 0]            depthBufferAddr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   depthBufferSize,
     output wire                                 depthBufferApply,
@@ -160,7 +158,6 @@ module RasterIXRenderCore #(
     output wire                                 m_depth_wstrb,
 
     // Stencil buffer access
-    output wire [STENCIL_WIDTH - 1 : 0]         stencilBufferClearStencil,
     output wire [ADDR_WIDTH - 1 : 0]            stencilBufferAddr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   stencilBufferSize,
     output wire                                 stencilBufferApply,
@@ -484,6 +481,9 @@ module RasterIXRenderCore #(
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TextureConfig;
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TexEnvColor;
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confStencilBufferConfig;
+    wire [PIXEL_WIDTH - 1 : 0]                  confColorBufferClearColor;
+    wire [DEPTH_WIDTH - 1 : 0]                  confDepthBufferClearDepth;
+    wire [STENCIL_WIDTH - 1 : 0]                confStencilBufferClearStencil;
     wire                                        confFramebufferScissorEnable;
     wire [SCREEN_POS_WIDTH - 1 : 0]             confFramebufferScissorStartX;
     wire [SCREEN_POS_WIDTH - 1 : 0]             confFramebufferScissorStartY;
@@ -503,9 +503,9 @@ module RasterIXRenderCore #(
     assign confYOffset = renderConfigs[OP_RENDER_CONFIG_Y_OFFSET +: OP_RENDER_CONFIG_REG_WIDTH];
     assign confRenderResolution = renderConfigs[OP_RENDER_CONFIG_RENDER_RESOLUTION +: OP_RENDER_CONFIG_REG_WIDTH];
     assign confStencilBufferConfig = renderConfigs[OP_RENDER_CONFIG_STENCIL_BUFFER +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign colorBufferClearColor = renderConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
-    assign depthBufferClearDepth = renderConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH +: RENDER_CONFIG_CLEAR_DEPTH_SIZE - (RENDER_CONFIG_CLEAR_DEPTH_SIZE - DEPTH_WIDTH)];
-    assign stencilBufferClearStencil = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_POS +: RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - STENCIL_WIDTH)];
+    assign confColorBufferClearColor = renderConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confDepthBufferClearDepth = renderConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH +: RENDER_CONFIG_CLEAR_DEPTH_SIZE - (RENDER_CONFIG_CLEAR_DEPTH_SIZE - DEPTH_WIDTH)];
+    assign confStencilBufferClearStencil = confStencilBufferConfig[RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_POS +: RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - (RENDER_CONFIG_STENCIL_BUFFER_CLEAR_STENICL_SIZE - STENCIL_WIDTH)];
     assign colorBufferAddr = renderConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_ADDR +: OP_RENDER_CONFIG_REG_WIDTH];
     assign depthBufferAddr = renderConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_ADDR +: OP_RENDER_CONFIG_REG_WIDTH];
     assign stencilBufferAddr = renderConfigs[OP_RENDER_CONFIG_STENCIL_BUFFER_ADDR +: OP_RENDER_CONFIG_REG_WIDTH];
@@ -1653,9 +1653,9 @@ module RasterIXRenderCore #(
         .aclk(aclk),
         .resetn(resetn),
 
-        .confClearColor(colorBufferClearColor),
-        .confClearDepth(depthBufferClearDepth),
-        .confClearStencil(stencilBufferClearStencil),
+        .confClearColor(confColorBufferClearColor),
+        .confClearDepth(confDepthBufferClearDepth),
+        .confClearStencil(confStencilBufferClearStencil),
         .confColorBufferSelect(framebufferClearColorSelect),
         .confDepthBufferSelect(framebufferClearDepthSelect),
         .confStencilBufferSelect(framebufferClearStencilSelect),

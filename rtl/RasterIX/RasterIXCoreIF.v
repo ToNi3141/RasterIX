@@ -229,7 +229,6 @@ module RasterIXCoreIF #(
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYResolution;
 
     // Color buffer access
-    wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              colorBufferClearColor;
     wire [ADDR_WIDTH - 1 : 0]                        colorBufferAddr;
     wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]               colorBufferSize; 
     wire                                             colorBufferApply;
@@ -251,7 +250,6 @@ module RasterIXCoreIF #(
     wire                                             m_color_wstrb;
 
     // Depth buffer access
-    wire [DEPTH_WIDTH - 1 : 0]                       depthBufferClearDepth;
     wire [ADDR_WIDTH - 1 : 0]                        depthBufferAddr;
     wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]               depthBufferSize; 
     wire                                             depthBufferApply;
@@ -271,7 +269,6 @@ module RasterIXCoreIF #(
     wire                                             m_depth_wstrb;
 
     // Stencil buffer access
-    wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferClearStencil;
     wire [ADDR_WIDTH - 1 : 0]                        stencilBufferAddr;
     wire [FB_SIZE_IN_PIXEL_LG -1 : 0]                stencilBufferSize; 
     wire                                             stencilBufferApply;
@@ -298,7 +295,7 @@ module RasterIXCoreIF #(
                 .clk(aclk),
                 .reset(!resetn),
 
-                .confClearColor(depthBufferClearDepth),
+                .confClearColor(0),
                 .confEnableScissor(1'b0),
                 .confScissorStartX({ SCREEN_POS_WIDTH { 1'b0 } }),
                 .confScissorStartY({ SCREEN_POS_WIDTH { 1'b0 } }),
@@ -382,7 +379,7 @@ module RasterIXCoreIF #(
         .clk(aclk),
         .reset(!resetn),
 
-        .confClearColor(ColorBufferReduce(ColorBufferReduceVec(colorBufferClearColor))),
+        .confClearColor(0),
         .confEnableScissor(1'b0),
         .confScissorStartX({ SCREEN_POS_WIDTH { 1'b0 } }),
         .confScissorStartY({ SCREEN_POS_WIDTH { 1'b0 } }),
@@ -489,7 +486,7 @@ module RasterIXCoreIF #(
                 .clk(aclk),
                 .reset(!resetn),
 
-                .confClearColor(stencilBufferClearStencil),
+                .confClearColor(0),
                 .confEnableScissor(1'b0),
                 .confScissorStartX({ SCREEN_POS_WIDTH { 1'b0 } }),
                 .confScissorStartY({ SCREEN_POS_WIDTH { 1'b0 } }),
@@ -598,7 +595,6 @@ module RasterIXCoreIF #(
         .framebufferParamXResolution(framebufferParamXResolution),
         .framebufferParamYResolution(framebufferParamYResolution),
 
-        .colorBufferClearColor(colorBufferClearColor),
         .colorBufferAddr(colorBufferAddr),
         .colorBufferSize(colorBufferSize),
         .colorBufferApply(colorBufferApply),
@@ -622,7 +618,6 @@ module RasterIXCoreIF #(
         .m_color_wstrb(m_color_wstrb),
         .m_color_wlast(),
 
-        .depthBufferClearDepth(depthBufferClearDepth),
         .depthBufferAddr(depthBufferAddr),
         .depthBufferSize(depthBufferSize),
         .depthBufferApply(depthBufferApply),
@@ -644,7 +639,6 @@ module RasterIXCoreIF #(
         .m_depth_wstrb(m_depth_wstrb),
         .m_depth_wlast(),
 
-        .stencilBufferClearStencil(stencilBufferClearStencil),
         .stencilBufferAddr(stencilBufferAddr),
         .stencilBufferSize(stencilBufferSize),
         .stencilBufferApply(stencilBufferApply),
