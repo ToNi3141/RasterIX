@@ -240,7 +240,6 @@ module RasterIXCoreIF #(
     wire                                             colorBufferApply;
     wire                                             colorBufferApplied;
     wire                                             colorBufferCmdCommit;
-    wire                                             colorBufferCmdMemset;
     wire                                             colorBufferCmdSwap;
     wire                                             colorBufferCmdRead;
     wire                                             colorBufferCmdSwapEnableVsync;
@@ -265,7 +264,6 @@ module RasterIXCoreIF #(
     wire                                             depthBufferApply;
     wire                                             depthBufferApplied;
     wire                                             depthBufferCmdCommit;
-    wire                                             depthBufferCmdMemset;
     wire                                             depthBufferCmdRead;
     wire                                             depthBufferMask;
     wire                                             m_depth_arvalid;
@@ -288,7 +286,6 @@ module RasterIXCoreIF #(
     wire                                             stencilBufferApply;
     wire                                             stencilBufferApplied;
     wire                                             stencilBufferCmdCommit;
-    wire                                             stencilBufferCmdMemset;
     wire                                             stencilBufferCmdRead;
     wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask;
     wire                                             m_stencil_arvalid;
@@ -336,10 +333,10 @@ module RasterIXCoreIF #(
                 .wscreenPosX(m_depth_wscreenPosX),
                 .wscreenPosY(m_depth_wscreenPosY),
 
-                .apply(depthBufferApply && (depthBufferCmdCommit || depthBufferCmdMemset || depthBufferCmdRead)),
+                .apply(depthBufferApply && (depthBufferCmdCommit || depthBufferCmdRead)),
                 .applied(depthBufferApplied),
                 .cmdCommit(depthBufferCmdCommit),
-                .cmdMemset(depthBufferCmdMemset),
+                .cmdMemset(1'b0),
                 .cmdRead(depthBufferCmdRead),
                 .cmdSize(depthBufferSize),
                 .cmdAddr(depthBufferAddr),
@@ -420,10 +417,10 @@ module RasterIXCoreIF #(
         .wscreenPosX(m_color_wscreenPosX),
         .wscreenPosY(m_color_wscreenPosY),
         
-        .apply(colorBufferApply && (colorBufferCmdCommit || colorBufferCmdMemset || colorBufferCmdRead)),
+        .apply(colorBufferApply && (colorBufferCmdCommit || colorBufferCmdRead)),
         .applied(colorBufferApplied),
         .cmdCommit(colorBufferCmdCommit),
-        .cmdMemset(colorBufferCmdMemset),
+        .cmdMemset(1'b0),
         .cmdRead(colorBufferCmdRead),
         .cmdSize(colorBufferSize),
         .cmdAddr(colorBufferAddr),
@@ -527,10 +524,10 @@ module RasterIXCoreIF #(
                 .wscreenPosX(m_stencil_wscreenPosX),
                 .wscreenPosY(m_stencil_wscreenPosY),
 
-                .apply(stencilBufferApply && (stencilBufferCmdCommit || stencilBufferCmdMemset || stencilBufferCmdRead)),
+                .apply(stencilBufferApply && (stencilBufferCmdCommit || stencilBufferCmdRead)),
                 .applied(stencilBufferApplied),
                 .cmdCommit(stencilBufferCmdCommit),
-                .cmdMemset(stencilBufferCmdMemset),
+                .cmdMemset(1'b0),
                 .cmdRead(stencilBufferCmdRead),
                 .cmdSize(stencilBufferSize),
                 .cmdAddr(stencilBufferAddr),
@@ -623,7 +620,6 @@ module RasterIXCoreIF #(
         .colorBufferApply(colorBufferApply),
         .colorBufferApplied(colorBufferApplied && fb_swapped),
         .colorBufferCmdCommit(colorBufferCmdCommit),
-        .colorBufferCmdMemset(colorBufferCmdMemset),
         .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferCmdRead(colorBufferCmdRead),
         .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
@@ -650,7 +646,6 @@ module RasterIXCoreIF #(
         .depthBufferApply(depthBufferApply),
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
-        .depthBufferCmdMemset(depthBufferCmdMemset),
         .depthBufferCmdRead(depthBufferCmdRead),
         .depthBufferMask(depthBufferMask),
         .m_depth_arready(1),
@@ -675,7 +670,6 @@ module RasterIXCoreIF #(
         .stencilBufferApply(stencilBufferApply),
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
-        .stencilBufferCmdMemset(stencilBufferCmdMemset),
         .stencilBufferCmdRead(stencilBufferCmdRead),
         .stencilBufferMask(stencilBufferMask),
         .m_stencil_arready(1),

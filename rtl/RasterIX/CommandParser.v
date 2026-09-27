@@ -52,7 +52,6 @@ module CommandParser #(
     output reg                                  colorBufferApply,
     input  wire                                 colorBufferApplied,
     output reg                                  colorBufferCmdCommit,
-    output reg                                  colorBufferCmdMemset,
     output reg                                  colorBufferCmdSwap,
     output reg                                  colorBufferCmdRead,
     output reg                                  colorBufferCmdSwapEnableVsync,
@@ -60,15 +59,20 @@ module CommandParser #(
     output reg                                  depthBufferApply,
     input  wire                                 depthBufferApplied,
     output reg                                  depthBufferCmdCommit,
-    output reg                                  depthBufferCmdMemset,
     output reg                                  depthBufferCmdRead,
     output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   depthBufferSize,
     output reg                                  stencilBufferApply,
     input  wire                                 stencilBufferApplied,
     output reg                                  stencilBufferCmdCommit,
-    output reg                                  stencilBufferCmdMemset,
     output reg                                  stencilBufferCmdRead,
     output reg  [FB_SIZE_IN_PIXEL_LG - 1 : 0]   stencilBufferSize,
+
+    // Shared framebuffer clear control
+    output reg                                  framebufferClearApply,
+    input  wire                                 framebufferClearApplied,
+    output reg                                  framebufferClearColorSelect,
+    output reg                                  framebufferClearDepthSelect,
+    output reg                                  framebufferClearStencilSelect,
 
     // Performance signals
     output wire                                 perfBusy,
@@ -94,6 +98,10 @@ module CommandParser #(
     localparam FB_CONTROL_WAITFORCOMMAND = 0;
     localparam FB_CONTROL_WAITFOREND = 1;
 
+    // Shared framebuffer clear statemachine
+    localparam FB_CONTROL_CLEAR_WAITFORCOMMAND = 0;
+    localparam FB_CONTROL_CLEAR_WAITFOREND = 1;
+
     initial
     begin
         if (FB_SIZE_IN_PIXEL_LG != OP_FRAMEBUFFER_SIZE_SIZE)
@@ -107,6 +115,7 @@ module CommandParser #(
     wire            framebufferCommandApplied;
     reg             rasterizerIsStarted;
     reg  [ 1 : 0]   fbControlState;
+    reg  [ 1 : 0]   fbControlClearState;
 
     // Local Statemachine variables
     reg  [ 4 : 0]   state;
@@ -139,6 +148,7 @@ module CommandParser #(
             MUX_TEXTURE1_STREAM: tready = m_cmd_tmu1_axis_tready;
             MUX_TRIANGLE_STREAM: tready = m_cmd_rasterizer_axis_tready;
             MUX_NONE: tready = 1;
+            default: tready = 1;
         endcase 
 
         if (!resetn)
@@ -147,7 +157,9 @@ module CommandParser #(
             mux <= MUX_NONE;
 
             fbControlState <= FB_CONTROL_WAITFORCOMMAND;
+            fbControlClearState <= FB_CONTROL_CLEAR_WAITFORCOMMAND;
             framebufferCommandApply <= 0;
+            framebufferClearApply <= 0;
             s_cmd_axis_tready <= 0;
 
             tvalid <= 0;
@@ -168,7 +180,10 @@ module CommandParser #(
                 reg triangleFastPath;
 
                 rasterizationFinished = !rasterizerRunning && rasterizerIsStarted;
-                framebufferFinished = !framebufferCommandApply && framebufferCommandApplied;
+                framebufferFinished = !framebufferCommandApply
+                    && (fbControlState == FB_CONTROL_WAITFORCOMMAND)
+                    && (fbControlClearState == FB_CONTROL_CLEAR_WAITFORCOMMAND)
+                    && !framebufferClearApply;
                 tmuFinished = m_cmd_tmu0_axis_tready && m_cmd_tmu1_axis_tready;
                 triangleFastPath = !dataInTriangleInterpolator
                     && s_cmd_axis_tvalid 
@@ -246,26 +261,45 @@ module CommandParser #(
                     OP_FRAMEBUFFER:
                     begin
                         s_cmd_axis_tready <= 0;
-                        colorBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
-                        colorBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
-                        colorBufferCmdSwap <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS];
-                        colorBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
-                        colorBufferCmdSwapEnableVsync <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC_POS];
-                        colorBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
-                        depthBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
-                        depthBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
-                        depthBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
-                        depthBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
-                        stencilBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
-                        stencilBufferCmdMemset <= s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS];
-                        stencilBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
-                        stencilBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
-                        colorBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
-                        depthBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
-                        stencilBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
-                        framebufferCommandApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS] 
-                            | (s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS])
-                            | (s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS]);
+                        colorBufferApply <= 0;
+                        depthBufferApply <= 0;
+                        stencilBufferApply <= 0;
+                        framebufferCommandApply <= 0;
+
+                        if (s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS])
+                        begin
+                            // MEMSET cannot be combined with another framebuffer operation.
+                            // The command stream has no error response, so consume it as a no-op.
+                            if (!(s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS]
+                                || s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS]
+                                || s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS]))
+                            begin
+                                framebufferClearColorSelect <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
+                                framebufferClearDepthSelect <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
+                                framebufferClearStencilSelect <= s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
+                                framebufferClearApply <= 1;
+                            end
+                        end
+                        else
+                        begin
+                            colorBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
+                            colorBufferCmdSwap <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS];
+                            colorBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
+                            colorBufferCmdSwapEnableVsync <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC_POS];
+                            colorBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
+                            depthBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
+                            depthBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
+                            depthBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
+                            stencilBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
+                            stencilBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
+                            stencilBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
+                            colorBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
+                            depthBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
+                            stencilBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
+                            framebufferCommandApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS]
+                                | (s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS])
+                                | (s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS]);
+                        end
                         state <= WAIT_FOR_IDLE;
                     end
                     OP_NOP_STREAM:
@@ -322,12 +356,9 @@ module CommandParser #(
             case (fbControlState)
             FB_CONTROL_WAITFORCOMMAND:
             begin
-                if (framebufferCommandApply)
+                if (framebufferCommandApply && !framebufferCommandApplied)
                 begin
-                    if (framebufferCommandApplied == 0)
-                    begin
-                        fbControlState <= FB_CONTROL_WAITFOREND;
-                    end
+                    fbControlState <= FB_CONTROL_WAITFOREND;
                 end
             end
             FB_CONTROL_WAITFOREND:
@@ -339,6 +370,24 @@ module CommandParser #(
                 if (framebufferCommandApplied)
                 begin
                     fbControlState <= FB_CONTROL_WAITFORCOMMAND;
+                end
+            end
+            endcase
+
+            case (fbControlClearState)
+            FB_CONTROL_CLEAR_WAITFORCOMMAND:
+            begin
+                if (framebufferClearApply && !framebufferClearApplied)
+                begin
+                    fbControlClearState <= FB_CONTROL_CLEAR_WAITFOREND;
+                end
+            end
+            FB_CONTROL_CLEAR_WAITFOREND:
+            begin
+                framebufferClearApply <= 0;
+                if (framebufferClearApplied)
+                begin
+                    fbControlClearState <= FB_CONTROL_CLEAR_WAITFORCOMMAND;
                 end
             end
             endcase

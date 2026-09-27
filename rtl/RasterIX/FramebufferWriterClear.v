@@ -15,14 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Used to clear the framebuffer. It will trigger a write request for 
+// Used to clear the framebuffer. It will trigger a write request for
 // each pixel in the framebuffer including the position of the pixel.
 // The FramebufferWriter can then decide to write the pixel to the
 // framebuffer or omit it (for instance when the scissor test fails).
 // It has a fragment in and fragment out interface. The fragment in
-// interface is connected to the pixel pipeline and is deactivated 
+// interface is connected to the pixel pipeline and is deactivated
 // as long as a clear is in progress.
-// Performance: 1 pixel per cylce
+// Performance: 1 pixel per cycle
+
 module FramebufferWriterClear #(
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,
@@ -32,61 +33,79 @@ module FramebufferWriterClear #(
     parameter Y_BIT_WIDTH = 11,
     parameter INDEX_WIDTH = X_BIT_WIDTH + Y_BIT_WIDTH,
 
-    // Size of the pixels
-    parameter PIXEL_WIDTH = 16,
-    localparam PIXEL_MASK_WIDTH = PIXEL_WIDTH / 8,
-    localparam PIXEL_WIDTH_LG = $clog2(PIXEL_WIDTH / 8)
+    // Size of the framebuffer lanes
+    parameter PIXEL_WIDTH = 32,
+    parameter DEPTH_WIDTH = 16,
+    parameter STENCIL_WIDTH = 4
 ) (
-    input   wire                        aclk,
-    input   wire                        resetn,
+    input   wire                            aclk,
+    input   wire                            resetn,
 
     /////////////////////////
     // Configs
     /////////////////////////
-    input  wire [PIXEL_WIDTH - 1 : 0]   confClearColor,
-    input  wire [X_BIT_WIDTH - 1 : 0]   confXResolution,
-    input  wire [Y_BIT_WIDTH - 1 : 0]   confYResolution,
-    input  wire                         confEnableScissor,
-    input  wire [X_BIT_WIDTH - 1 : 0]   confScissorStartX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]   confScissorStartY,
-    input  wire [X_BIT_WIDTH - 1 : 0]   confScissorEndX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]   confScissorEndY,
-
+    input  wire [PIXEL_WIDTH - 1 : 0]       confClearColor,
+    input  wire [DEPTH_WIDTH - 1 : 0]       confClearDepth,
+    input  wire [STENCIL_WIDTH - 1 : 0]     confClearStencil,
+    input  wire                             confColorBufferSelect,
+    input  wire                             confDepthBufferSelect,
+    input  wire                             confStencilBufferSelect,
+    input  wire [X_BIT_WIDTH - 1 : 0]       confXResolution,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confYResolution,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confYOffset,
+    input  wire                             confEnableScissor,
+    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorStartY,
+    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorEndX,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorEndY,
 
     /////////////////////////
     // Fragment interface
     /////////////////////////
+    input  wire                             s_frag_tvalid,
+    input  wire                             s_frag_tlast,
+    output wire                             s_frag_tready,
+    input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_color_tdata,
+    input  wire                             s_frag_color_tstrb,
+    input  wire [DEPTH_WIDTH - 1 : 0]       s_frag_depth_tdata,
+    input  wire                             s_frag_depth_tstrb,
+    input  wire [STENCIL_WIDTH - 1 : 0]     s_frag_stencil_tdata,
+    input  wire                             s_frag_stencil_tstrb,
+    input  wire [ADDR_WIDTH - 1 : 0]        s_frag_taddr,
+    input  wire [X_BIT_WIDTH - 1 : 0]       s_frag_txpos,
+    input  wire [Y_BIT_WIDTH - 1 : 0]       s_frag_typos,
 
-    // Framebuffer input interface
-    input  wire                         s_frag_tvalid,
-    input  wire                         s_frag_tlast,
-    output wire                         s_frag_tready,
-    input  wire [PIXEL_WIDTH - 1 : 0]   s_frag_tdata,
-    input  wire                         s_frag_tstrb,
-    input  wire [ADDR_WIDTH - 1 : 0]    s_frag_taddr,
-    input  wire [X_BIT_WIDTH - 1 : 0]   s_frag_txpos,
-    input  wire [X_BIT_WIDTH - 1 : 0]   s_frag_typos,
+    output wire                             m_frag_tvalid,
+    output wire                             m_frag_tlast,
+    input  wire                             m_frag_tready,
+    output wire [PIXEL_WIDTH - 1 : 0]       m_frag_color_tdata,
+    output wire                             m_frag_color_tstrb,
+    output wire [DEPTH_WIDTH - 1 : 0]       m_frag_depth_tdata,
+    output wire                             m_frag_depth_tstrb,
+    output wire [STENCIL_WIDTH - 1 : 0]     m_frag_stencil_tdata,
+    output wire                             m_frag_stencil_tstrb,
+    output wire [ADDR_WIDTH - 1 : 0]        m_frag_taddr,
+    output wire [X_BIT_WIDTH - 1 : 0]       m_frag_txpos,
+    output wire [Y_BIT_WIDTH - 1 : 0]       m_frag_typos,
 
-    // Framebuffer output interface
-    output wire                         m_frag_tvalid,
-    output wire                         m_frag_tlast,
-    input  wire                         m_frag_tready,
-    output wire [PIXEL_WIDTH - 1 : 0]   m_frag_tdata,
-    output wire                         m_frag_tstrb,
-    output wire [ADDR_WIDTH - 1 : 0]    m_frag_taddr,
-    output wire [X_BIT_WIDTH - 1 : 0]   m_frag_txpos,
-    output wire [X_BIT_WIDTH - 1 : 0]   m_frag_typos,
-    
     /////////////////////////
     // Control
     /////////////////////////
-
-    // Cmd interface
-    input  wire                         apply, // This start a command 
-    output reg                          applied // This marks if the commands has been applied.
-
+    input  wire                             apply,
+    output reg                              applied
 );
-    // Step 0 
+    function [Y_BIT_WIDTH - 1 : 0] clampToYOffset;
+        input [Y_BIT_WIDTH - 1 : 0] y;
+        input [Y_BIT_WIDTH - 1 : 0] yOffset;
+        begin
+            clampToYOffset = (y < yOffset) ? yOffset : y;
+        end
+    endfunction
+
+    wire [Y_BIT_WIDTH - 1 : 0] clampedScissorStartY = clampToYOffset(confScissorStartY, confYOffset);
+    wire [Y_BIT_WIDTH - 1 : 0] clampedScissorEndY = clampToYOffset(confScissorEndY, confYOffset);
+
+    // Step 0
     // Calculation of the pixel positions
     reg  [X_BIT_WIDTH - 1 : 0]  step0_xpos;
     reg  [Y_BIT_WIDTH - 1 : 0]  step0_ypos;
@@ -95,8 +114,9 @@ module FramebufferWriterClear #(
     reg  [X_BIT_WIDTH - 1 : 0]  step0_xend;
     reg  [Y_BIT_WIDTH - 1 : 0]  step0_yend;
     reg  [X_BIT_WIDTH - 1 : 0]  step0_xstart;
+    reg  [Y_BIT_WIDTH - 1 : 0]  step0_yoffset;
     wire [X_BIT_WIDTH - 1 : 0]  step0_xposNext = step0_xpos + 1;
-    wire [X_BIT_WIDTH - 1 : 0]  step0_yposNext = step0_ypos + 1;
+    wire [Y_BIT_WIDTH - 1 : 0]  step0_yposNext = step0_ypos + 1;
     always @(posedge aclk)
     begin
         if (!resetn)
@@ -111,14 +131,30 @@ module FramebufferWriterClear #(
             begin
                 applied <= 0;
                 step0_xpos <= confEnableScissor ? confScissorStartX : 0;
-                step0_ypos <= confEnableScissor ? confScissorStartY : 0;
                 step0_xstart <= confEnableScissor ? confScissorStartX : 0;
                 step0_xend <= confEnableScissor ? confScissorEndX : confXResolution;
-                step0_yend <= confEnableScissor ? confScissorEndY : confYResolution;
-                step0_valid <= 1;
+                if (!confEnableScissor)
+                begin
+                    step0_ypos <= 0;
+                    step0_yend <= confYResolution;
+                    step0_valid <= 1;
+                end
+                else if ((confYOffset != 0) && (clampedScissorEndY <= clampedScissorStartY))
+                begin
+                    step0_ypos <= confYResolution;
+                    step0_yend <= confYResolution;
+                    step0_valid <= 0;
+                end
+                else
+                begin
+                    step0_ypos <= clampedScissorStartY - confYOffset;
+                    step0_yend <= clampedScissorEndY - confYOffset;
+                    step0_valid <= 1;
+                end
+                step0_yoffset <= confYOffset;
                 step0_last <= 0;
             end
-    
+
             if (!applied && m_frag_tready)
             begin
                 if (step0_xpos >= (step0_xend - 1))
@@ -168,21 +204,25 @@ module FramebufferWriterClear #(
                 step1_valid <= step0_valid;
                 step1_last <= step0_last;
                 step1_xpos <= step0_xpos;
-                step1_ypos <= step0_ypos;
+                step1_ypos <= step0_ypos + step0_yoffset;
             end
         end
     end
 
-    // Step 2 
+    // Step 2
     // Muxing
     wire [ADDR_WIDTH - 1 : 0] step2_addr = { { (ADDR_WIDTH - INDEX_WIDTH) { 1'b0 } }, step1_index };
-    assign m_frag_tvalid    = step1_valid ? 1              : s_frag_tvalid;
-    assign m_frag_tlast     = step1_valid ? step1_last     : s_frag_tlast;
-    assign s_frag_tready    = step1_valid ? 0              : m_frag_tready;
-    assign m_frag_tdata     = step1_valid ? confClearColor : s_frag_tdata;
-    assign m_frag_tstrb     = step1_valid ? 1              : s_frag_tstrb;
-    assign m_frag_taddr     = step1_valid ? step2_addr     : s_frag_taddr;
-    assign m_frag_txpos     = step1_valid ? step1_xpos     : s_frag_txpos;
-    assign m_frag_typos     = step1_valid ? step1_ypos     : s_frag_typos;
+    assign m_frag_tvalid = step1_valid ? 1 : s_frag_tvalid;
+    assign m_frag_tlast = step1_valid ? step1_last : s_frag_tlast;
+    assign s_frag_tready = step1_valid ? 0 : m_frag_tready;
+    assign m_frag_color_tdata = step1_valid ? confClearColor : s_frag_color_tdata;
+    assign m_frag_color_tstrb = step1_valid ? confColorBufferSelect : s_frag_color_tstrb;
+    assign m_frag_depth_tdata = step1_valid ? confClearDepth : s_frag_depth_tdata;
+    assign m_frag_depth_tstrb = step1_valid ? confDepthBufferSelect : s_frag_depth_tstrb;
+    assign m_frag_stencil_tdata = step1_valid ? confClearStencil : s_frag_stencil_tdata;
+    assign m_frag_stencil_tstrb = step1_valid ? confStencilBufferSelect : s_frag_stencil_tstrb;
+    assign m_frag_taddr = step1_valid ? step2_addr : s_frag_taddr;
+    assign m_frag_txpos = step1_valid ? step1_xpos : s_frag_txpos;
+    assign m_frag_typos = step1_valid ? step1_ypos : s_frag_typos;
 
 endmodule

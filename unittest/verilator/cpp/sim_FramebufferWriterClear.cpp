@@ -15,44 +15,45 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-// #include "../Unittests/3rdParty/catch.hpp"
-
 #include "general.hpp"
-
-// Include model header, generated from Verilating "top.v"
 #include "VFramebufferWriterClear.h"
 
 TEST_CASE("Check forwarding", "[FramebufferWriterClear]")
 {
     VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
-
     t->apply = 0;
-
     rr::ut::reset(t);
 
-    CHECK(t->applied == 1);
-
-    t->confClearColor = 0xabcd;
+    t->confClearColor = 0x12345678;
+    t->confClearDepth = 0xabcd;
+    t->confClearStencil = 0xa;
     t->confXResolution = 16;
     t->confYResolution = 8;
+    t->confYOffset = 0;
 
     t->s_frag_tvalid = 1;
     t->s_frag_tlast = 0;
-    t->s_frag_tdata = 0xdcba;
-    t->s_frag_tstrb = 1;
+    t->s_frag_color_tdata = 0x87654321;
+    t->s_frag_color_tstrb = 1;
+    t->s_frag_depth_tdata = 0x4321;
+    t->s_frag_depth_tstrb = 0;
+    t->s_frag_stencil_tdata = 0x5;
+    t->s_frag_stencil_tstrb = 1;
     t->s_frag_taddr = 0x1234;
     t->s_frag_txpos = 10;
     t->s_frag_typos = 8;
     t->m_frag_tready = 1;
-
     t->eval();
 
     CHECK(t->s_frag_tready == 1);
     CHECK(t->m_frag_tvalid == 1);
     CHECK(t->m_frag_tlast == 0);
-    CHECK(t->m_frag_tdata == 0xdcba);
-    CHECK(t->m_frag_tstrb == 1);
+    CHECK(t->m_frag_color_tdata == 0x87654321);
+    CHECK(t->m_frag_color_tstrb == 1);
+    CHECK(t->m_frag_depth_tdata == 0x4321);
+    CHECK(t->m_frag_depth_tstrb == 0);
+    CHECK(t->m_frag_stencil_tdata == 0x5);
+    CHECK(t->m_frag_stencil_tstrb == 1);
     CHECK(t->m_frag_taddr == 0x1234);
     CHECK(t->m_frag_txpos == 10);
     CHECK(t->m_frag_typos == 8);
@@ -65,23 +66,24 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
     static constexpr uint32_t X_RES { 10 };
     static constexpr uint32_t Y_RES { 8 };
     VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
-
     t->apply = 0;
-
     rr::ut::reset(t);
 
-    t->confClearColor = 0xabcd;
+    t->confClearColor = 0x12345678;
+    t->confClearDepth = 0xabcd;
+    t->confClearStencil = 0xa;
+    t->confColorBufferSelect = 1;
+    t->confDepthBufferSelect = 1;
+    t->confStencilBufferSelect = 1;
     t->confXResolution = X_RES;
     t->confYResolution = Y_RES;
+    t->confYOffset = 0;
     t->confEnableScissor = 0;
     t->m_frag_tready = 1;
     t->apply = 1;
 
-    // The clear command is latched first, then the generated fragment passes
-    // through the additional pipeline stage.
     rr::ut::clk(t);
     REQUIRE(t->m_frag_tvalid == 0);
-
     t->apply = 0;
 
     static constexpr uint32_t Y_RES_MAX_INDEX = Y_RES - 1;
@@ -94,8 +96,12 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
         REQUIRE(t->s_frag_tready == 0);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tlast == ((y == Y_RES_MAX_INDEX) && (x == X_RES_MAX_INDEX)));
-        REQUIRE(t->m_frag_tdata == 0xabcd);
-        REQUIRE(t->m_frag_tstrb == 1);
+        REQUIRE(t->m_frag_color_tdata == 0x12345678);
+        REQUIRE(t->m_frag_color_tstrb == 1);
+        REQUIRE(t->m_frag_depth_tdata == 0xabcd);
+        REQUIRE(t->m_frag_depth_tstrb == 1);
+        REQUIRE(t->m_frag_stencil_tdata == 0xa);
+        REQUIRE(t->m_frag_stencil_tstrb == 1);
         REQUIRE(t->m_frag_taddr == x + ((Y_RES_MAX_INDEX - y) * X_RES));
         REQUIRE(t->m_frag_txpos == x);
         REQUIRE(t->m_frag_typos == y);
@@ -117,7 +123,6 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
     rr::ut::clk(t);
     REQUIRE(t->m_frag_tvalid == 0);
     REQUIRE(t->applied == 1);
-
     delete t;
 }
 
@@ -126,43 +131,46 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
     static constexpr uint32_t X_RES { 10 };
     static constexpr uint32_t Y_RES { 8 };
     VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
-
     t->apply = 0;
-
     rr::ut::reset(t);
 
-    t->confClearColor = 0xabcd;
+    t->confClearColor = 0x12345678;
+    t->confClearDepth = 0xabcd;
+    t->confClearStencil = 0xa;
+    t->confColorBufferSelect = 1;
+    t->confDepthBufferSelect = 1;
+    t->confStencilBufferSelect = 1;
     t->confXResolution = X_RES;
     t->confYResolution = Y_RES;
+    t->confYOffset = 0;
     t->confEnableScissor = 0;
     t->m_frag_tready = 0;
     t->apply = 1;
 
     rr::ut::clk(t);
     t->apply = 0;
-
-    // Step 1 cannot capture a generated pixel while the output is stalled.
     rr::ut::clk(t);
     REQUIRE(t->s_frag_tready == 0);
     REQUIRE(t->m_frag_tvalid == 0);
     REQUIRE(t->applied == 0);
 
-    // Let Step 1 capture the first generated pixel, then deassert ready to
-    // verify that the pixel is held.
     t->m_frag_tready = 1;
     rr::ut::clk(t);
     t->m_frag_tready = 0;
     REQUIRE(t->s_frag_tready == 0);
     REQUIRE(t->m_frag_tvalid == 1);
     REQUIRE(t->m_frag_tlast == 0);
-    REQUIRE(t->m_frag_tdata == 0xabcd);
-    REQUIRE(t->m_frag_tstrb == 1);
+    REQUIRE(t->m_frag_color_tdata == 0x12345678);
+    REQUIRE(t->m_frag_color_tstrb == 1);
+    REQUIRE(t->m_frag_depth_tdata == 0xabcd);
+    REQUIRE(t->m_frag_depth_tstrb == 1);
+    REQUIRE(t->m_frag_stencil_tdata == 0xa);
+    REQUIRE(t->m_frag_stencil_tstrb == 1);
     REQUIRE(t->m_frag_taddr == (Y_RES - 1) * X_RES);
     REQUIRE(t->m_frag_txpos == 0);
     REQUIRE(t->m_frag_typos == 0);
     REQUIRE(t->applied == 0);
 
-    // The generated pixel remains stable while the output is not ready.
     rr::ut::clk(t);
     REQUIRE(t->m_frag_tvalid == 1);
     REQUIRE(t->m_frag_taddr == (Y_RES - 1) * X_RES);
@@ -170,7 +178,6 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
     REQUIRE(t->m_frag_typos == 0);
     REQUIRE(t->applied == 0);
 
-    // Release the held pixel and confirm that the next pixel appears.
     t->m_frag_tready = 1;
     rr::ut::clk(t);
     t->m_frag_tready = 0;
@@ -179,7 +186,6 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
     REQUIRE(t->m_frag_txpos == 1);
     REQUIRE(t->m_frag_typos == 0);
     REQUIRE(t->applied == 0);
-
     delete t;
 }
 
@@ -192,12 +198,17 @@ TEST_CASE("Check scissored clear", "[FramebufferWriterClear]")
     static constexpr uint32_t END_X { 7 };
     static constexpr uint32_t END_Y { 9 };
     VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
-
     rr::ut::reset(t);
 
-    t->confClearColor = 0xabcd;
+    t->confClearColor = 0x12345678;
+    t->confClearDepth = 0xabcd;
+    t->confClearStencil = 0xa;
+    t->confColorBufferSelect = 1;
+    t->confDepthBufferSelect = 1;
+    t->confStencilBufferSelect = 1;
     t->confXResolution = X_RES;
     t->confYResolution = Y_RES;
+    t->confYOffset = 0;
     t->confEnableScissor = 1;
     t->confScissorStartX = START_X;
     t->confScissorStartY = START_Y;
@@ -208,32 +219,31 @@ TEST_CASE("Check scissored clear", "[FramebufferWriterClear]")
 
     rr::ut::clk(t);
     REQUIRE(t->m_frag_tvalid == 0);
-
     t->apply = 0;
 
-    uint32_t expected = 0;
     for (uint32_t y = START_Y; y < END_Y; ++y)
     {
         for (uint32_t x = START_X; x < END_X; ++x)
         {
             rr::ut::clk(t);
             REQUIRE(t->m_frag_tvalid == 1);
-            REQUIRE(t->m_frag_tdata == 0xabcd);
-            REQUIRE(t->m_frag_tstrb == 1);
+            REQUIRE(t->m_frag_color_tdata == 0x12345678);
+            REQUIRE(t->m_frag_color_tstrb == 1);
+            REQUIRE(t->m_frag_depth_tdata == 0xabcd);
+            REQUIRE(t->m_frag_depth_tstrb == 1);
+            REQUIRE(t->m_frag_stencil_tdata == 0xa);
+            REQUIRE(t->m_frag_stencil_tstrb == 1);
             REQUIRE(t->m_frag_txpos == x);
             REQUIRE(t->m_frag_typos == y);
             REQUIRE(t->m_frag_taddr == x + ((Y_RES - 1 - y) * X_RES));
             REQUIRE(t->m_frag_tlast == (x == END_X - 1 && y == END_Y - 1));
             REQUIRE(t->applied == (x == END_X - 1 && y == END_Y - 1));
-            ++expected;
         }
     }
 
-    CHECK(expected == (END_X - START_X) * (END_Y - START_Y));
     rr::ut::clk(t);
     CHECK(t->applied == 1);
     REQUIRE(t->m_frag_tvalid == 0);
-
     delete t;
 }
 
@@ -244,12 +254,13 @@ TEST_CASE("Check malformed scissor terminates", "[FramebufferWriterClear]")
     static constexpr uint32_t START_Y { 8 };
     static constexpr uint32_t END_Y { 4 };
     VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
-
     rr::ut::reset(t);
 
     t->confXResolution = 16;
     t->confYResolution = 12;
+    t->confYOffset = 0;
     t->confEnableScissor = 1;
+    t->confColorBufferSelect = 1;
     t->confScissorStartX = START_X;
     t->confScissorEndX = END_X;
     t->confScissorStartY = START_Y;
@@ -271,6 +282,169 @@ TEST_CASE("Check malformed scissor terminates", "[FramebufferWriterClear]")
         }
     }
     CHECK(completed);
+    delete t;
+}
 
+TEST_CASE("Clear strobes follow selected buffers", "[FramebufferWriterClear]")
+{
+    for (uint32_t selects = 0; selects < 8; ++selects)
+    {
+        VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+        rr::ut::reset(t);
+
+        t->confClearColor = 0x12345678;
+        t->confClearDepth = 0xabcd;
+        t->confClearStencil = 0xa;
+        t->confColorBufferSelect = (selects & 1) != 0;
+        t->confDepthBufferSelect = (selects & 2) != 0;
+        t->confStencilBufferSelect = (selects & 4) != 0;
+        t->confXResolution = 1;
+        t->confYResolution = 1;
+        t->confYOffset = 0;
+        t->confEnableScissor = 0;
+        t->m_frag_tready = 1;
+        t->apply = 1;
+        rr::ut::clk(t);
+        t->apply = 0;
+
+        REQUIRE(t->m_frag_tvalid == 0);
+        rr::ut::clk(t);
+        rr::ut::clk(t);
+        REQUIRE(t->m_frag_tvalid == 1);
+        REQUIRE(t->m_frag_tlast == 1);
+        REQUIRE(t->m_frag_color_tdata == 0x12345678);
+        REQUIRE(t->m_frag_depth_tdata == 0xabcd);
+        REQUIRE(t->m_frag_stencil_tdata == 0xa);
+        REQUIRE(t->m_frag_color_tstrb == ((selects & 1) != 0));
+        REQUIRE(t->m_frag_depth_tstrb == ((selects & 2) != 0));
+        REQUIRE(t->m_frag_stencil_tstrb == ((selects & 4) != 0));
+        CHECK(t->applied == 1);
+        delete t;
+    }
+}
+
+TEST_CASE("Scissor clear uses offset screen Y and local framebuffer address", "[FramebufferWriterClear]")
+{
+    static constexpr uint32_t X_RES { 8 };
+    static constexpr uint32_t Y_RES { 6 };
+    static constexpr uint32_t Y_OFFSET { 10 };
+    static constexpr uint32_t START_X { 2 };
+    static constexpr uint32_t END_X { 4 };
+    static constexpr uint32_t START_SCREEN_Y { 8 };
+    static constexpr uint32_t END_SCREEN_Y { 14 };
+
+    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    rr::ut::reset(t);
+
+    t->confClearColor = 0x12345678;
+    t->confClearDepth = 0xabcd;
+    t->confClearStencil = 0xa;
+    t->confColorBufferSelect = 1;
+    t->confDepthBufferSelect = 0;
+    t->confStencilBufferSelect = 0;
+    t->confXResolution = X_RES;
+    t->confYResolution = Y_RES;
+    t->confYOffset = Y_OFFSET;
+    t->confEnableScissor = 1;
+    t->confScissorStartX = START_X;
+    t->confScissorEndX = END_X;
+    t->confScissorStartY = START_SCREEN_Y;
+    t->confScissorEndY = END_SCREEN_Y;
+    t->m_frag_tready = 1;
+    t->apply = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->m_frag_tvalid == 0);
+    t->apply = 0;
+
+    for (uint32_t localY = 0; localY < END_SCREEN_Y - Y_OFFSET; ++localY)
+    {
+        for (uint32_t x = START_X; x < END_X; ++x)
+        {
+            rr::ut::clk(t);
+            REQUIRE(t->m_frag_tvalid == 1);
+            REQUIRE(t->m_frag_txpos == x);
+            REQUIRE(t->m_frag_typos == localY + Y_OFFSET);
+            REQUIRE(t->m_frag_taddr == x + ((Y_RES - 1 - localY) * X_RES));
+            REQUIRE(t->m_frag_color_tstrb == 1);
+            REQUIRE(t->m_frag_depth_tstrb == 0);
+            REQUIRE(t->m_frag_stencil_tstrb == 0);
+            REQUIRE(t->m_frag_tlast == (localY == END_SCREEN_Y - Y_OFFSET - 1 && x == END_X - 1));
+            REQUIRE(t->applied == (localY == END_SCREEN_Y - Y_OFFSET - 1 && x == END_X - 1));
+        }
+    }
+    CHECK(t->applied == 1);
+    rr::ut::clk(t);
+    CHECK(t->m_frag_tvalid == 0);
+    delete t;
+}
+
+TEST_CASE("Empty offset scissor completes without generated fragments", "[FramebufferWriterClear]")
+{
+    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    rr::ut::reset(t);
+
+    t->confXResolution = 8;
+    t->confYResolution = 6;
+    t->confYOffset = 10;
+    t->confEnableScissor = 1;
+    t->confScissorStartX = 2;
+    t->confScissorEndX = 4;
+    t->confScissorStartY = 4;
+    t->confScissorEndY = 8;
+    t->m_frag_tready = 1;
+    t->apply = 1;
+
+    rr::ut::clk(t);
+    t->apply = 0;
+    CHECK(t->applied == 0);
+
+    for (uint32_t cycle = 0; cycle < 4 && !t->applied; ++cycle)
+    {
+        CHECK(t->m_frag_tvalid == 0);
+        rr::ut::clk(t);
+    }
+
+    CHECK(t->applied == 1);
+    CHECK(t->m_frag_tvalid == 0);
+    delete t;
+}
+
+TEST_CASE("Applied preserves the original clear-pipeline boundary", "[FramebufferWriterClear]")
+{
+    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    rr::ut::reset(t);
+
+    t->confClearColor = 0x12345678;
+    t->confClearDepth = 0xabcd;
+    t->confClearStencil = 0xa;
+    t->confColorBufferSelect = 1;
+    t->confDepthBufferSelect = 0;
+    t->confStencilBufferSelect = 0;
+    t->confXResolution = 1;
+    t->confYResolution = 1;
+    t->confYOffset = 0;
+    t->confEnableScissor = 0;
+    t->m_frag_tready = 1;
+    t->apply = 1;
+    rr::ut::clk(t);
+    t->apply = 0;
+
+    rr::ut::clk(t);
+    REQUIRE(t->m_frag_tvalid == 1);
+    REQUIRE(t->m_frag_tlast == 0);
+    CHECK(t->applied == 0);
+
+    rr::ut::clk(t);
+    REQUIRE(t->m_frag_tvalid == 1);
+    REQUIRE(t->m_frag_tlast == 1);
+    CHECK(t->applied == 1);
+
+    t->m_frag_tready = 0;
+    const auto addr = t->m_frag_taddr;
+    rr::ut::clk(t);
+    CHECK(t->m_frag_tvalid == 1);
+    CHECK(t->m_frag_tlast == 1);
+    CHECK(t->m_frag_taddr == addr);
+    CHECK(t->applied == 1);
     delete t;
 }
