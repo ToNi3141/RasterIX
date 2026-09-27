@@ -39,10 +39,6 @@ module StreamFramebuffer
     // that many beats into a single AXI transaction.
     parameter MAX_BEATS_TO_COALESCE = 0,
 
-    // The maximum size of the screen in power of two
-    parameter X_BIT_WIDTH = 11,
-    parameter Y_BIT_WIDTH = 11,
-
     // Size of the pixels
     parameter PIXEL_WIDTH = 16,
     localparam PIXEL_MASK_WIDTH = PIXEL_WIDTH / 8,
@@ -56,11 +52,6 @@ module StreamFramebuffer
     // Configs
     /////////////////////////
     input  wire [ADDR_WIDTH - 1 : 0]        confAddr,
-    input  wire                             confEnableScissor,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorStartY,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorEndX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorEndY,
     input  wire [PIXEL_MASK_WIDTH - 1 : 0]  confMask,
 
     /////////////////////////
@@ -86,8 +77,6 @@ module StreamFramebuffer
     input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_wdata,
     input  wire                             s_frag_wstrb,
     input  wire [ADDR_WIDTH - 1 : 0]        s_frag_waddr,
-    input  wire [X_BIT_WIDTH - 1 : 0]       s_frag_wxpos,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       s_frag_wypos,
 
     /////////////////////////
     // Memory Interface
@@ -133,13 +122,6 @@ module StreamFramebuffer
     input  wire                             m_mem_axi_rvalid,
     output wire                             m_mem_axi_rready
 );
-    wire                             scissor_tvalid;
-    wire                             scissor_tlast;
-    wire                             scissor_tready;
-    wire [PIXEL_WIDTH - 1 : 0]       scissor_tdata;
-    wire                             scissor_tstrb;
-    wire [ADDR_WIDTH - 1 : 0]        scissor_taddr;
-
     wire                             strobegen_tvalid;
     wire                             strobegen_tlast;
     wire                             strobegen_tready;
@@ -380,35 +362,6 @@ module StreamFramebuffer
         .m_mem_axi_rready(m_mem_axi_rready)
     );
 
-    FramebufferScissor #(
-        .X_BIT_WIDTH(X_BIT_WIDTH),
-        .Y_BIT_WIDTH(Y_BIT_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
-    ) fbs (
-        .confEnableScissor(confEnableScissor),
-        .confScissorStartX(confScissorStartX),
-        .confScissorStartY(confScissorStartY),
-        .confScissorEndX(confScissorEndX),
-        .confScissorEndY(confScissorEndY),
-
-        .s_frag_tvalid(s_frag_wvalid),
-        .s_frag_tlast(s_frag_wlast),
-        .s_frag_tready(s_frag_wready),
-        .s_frag_tdata(s_frag_wdata),
-        .s_frag_tstrb(s_frag_wstrb),
-        .s_frag_taddr(s_frag_waddr),
-        .s_frag_txpos(s_frag_wxpos),
-        .s_frag_typos(s_frag_wypos),
-
-        .m_frag_tvalid(scissor_tvalid),
-        .m_frag_tlast(scissor_tlast),
-        .m_frag_tready(scissor_tready),
-        .m_frag_tdata(scissor_tdata),
-        .m_frag_tstrb(scissor_tstrb),
-        .m_frag_taddr(scissor_taddr)
-    );
-
     FramebufferWriterStrobeGen #(
         .MASK_WIDTH(PIXEL_MASK_WIDTH),
         .PIXEL_WIDTH(PIXEL_WIDTH),
@@ -416,12 +369,12 @@ module StreamFramebuffer
     ) fbwsg (
         .confMask(confMask),
 
-        .s_frag_tvalid(scissor_tvalid),
-        .s_frag_tlast(scissor_tlast),
-        .s_frag_tready(scissor_tready),
-        .s_frag_tdata(scissor_tdata),
-        .s_frag_tstrb(scissor_tstrb),
-        .s_frag_taddr(scissor_taddr),
+        .s_frag_tvalid(s_frag_wvalid),
+        .s_frag_tlast(s_frag_wlast),
+        .s_frag_tready(s_frag_wready),
+        .s_frag_tdata(s_frag_wdata),
+        .s_frag_tstrb(s_frag_wstrb),
+        .s_frag_taddr(s_frag_waddr),
 
         .m_frag_tvalid(strobegen_tvalid),
         .m_frag_tlast(strobegen_tlast),

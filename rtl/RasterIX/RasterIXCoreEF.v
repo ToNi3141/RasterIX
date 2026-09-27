@@ -304,11 +304,6 @@ module RasterIXCoreEF #(
         end
     end
 
-    wire                                             framebufferParamEnableScissor;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorStartX;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorStartY;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorEndX;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamScissorEndY;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYOffset;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamXResolution;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYResolution;
@@ -335,8 +330,6 @@ module RasterIXCoreEF #(
     wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              m_color_wdata;
     wire                                             m_color_wstrb;
     wire                                             m_color_wlast;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  m_color_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  m_color_wscreenPosY;
 
     // Depth buffer access
     wire [ADDR_WIDTH - 1 : 0]                        depthBufferAddr;
@@ -358,8 +351,6 @@ module RasterIXCoreEF #(
     wire [DEPTH_WIDTH - 1 : 0]                       m_depth_wdata;
     wire                                             m_depth_wstrb;
     wire                                             m_depth_wlast;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  m_depth_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  m_depth_wscreenPosY;
 
     // Stencil buffer access
     wire [ADDR_WIDTH - 1 : 0]                        stencilBufferAddr;
@@ -382,8 +373,6 @@ module RasterIXCoreEF #(
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_wdata;
     wire                                             m_stencil_wstrb;
     wire                                             m_stencil_wlast;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  m_stencil_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  m_stencil_wscreenPosY;
 
     assign colorBufferMaskReduced = ColorBufferReduceMask(colorBufferMask);
     assign m_stencil_rdata = m_stencil_rdata_byte[0 +: STENCIL_WIDTH];
@@ -398,8 +387,6 @@ module RasterIXCoreEF #(
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
                 .MAX_BEATS_TO_COALESCE(ENABLE_MEMORY_COALESCING ? NR_OF_COALESCED_BEATS_DEPTH : 0),
-                .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
-                .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
                 .PIXEL_WIDTH(DEPTH_WIDTH),
                 .STRB_WIDTH(STRB_WIDTH)
             ) depthBuffer (
@@ -407,11 +394,6 @@ module RasterIXCoreEF #(
                 .resetn(resetn),
 
                 .confAddr(depthBufferAddr),
-                .confEnableScissor(framebufferParamEnableScissor),
-                .confScissorStartX(framebufferParamScissorStartX),
-                .confScissorStartY(framebufferParamScissorStartY),
-                .confScissorEndX(framebufferParamScissorEndX),
-                .confScissorEndY(framebufferParamScissorEndY),
                 .confMask({ depthBufferMask, depthBufferMask }),
 
                 .s_fetch_arvalid(m_depth_arvalid),
@@ -430,8 +412,6 @@ module RasterIXCoreEF #(
                 .s_frag_wdata(m_depth_wdata),
                 .s_frag_wstrb(m_depth_wstrb),
                 .s_frag_waddr(m_depth_waddr),
-                .s_frag_wxpos(m_depth_wscreenPosX),
-                .s_frag_wypos(m_depth_wscreenPosY),
 
                 .m_mem_axi_awid(m_depth_axi_awid),
                 .m_mem_axi_awaddr(m_depth_axi_awaddr),
@@ -514,8 +494,6 @@ module RasterIXCoreEF #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .MAX_BEATS_TO_COALESCE(ENABLE_MEMORY_COALESCING ? NR_OF_COALESCED_BEATS_COLOR : 0),
-        .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
-        .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
         .PIXEL_WIDTH(PIXEL_WIDTH),
         .STRB_WIDTH(STRB_WIDTH)
     ) colorBuffer (
@@ -523,11 +501,6 @@ module RasterIXCoreEF #(
         .resetn(resetn),
 
         .confAddr(colorBufferAddr),
-        .confEnableScissor(framebufferParamEnableScissor),
-        .confScissorStartX(framebufferParamScissorStartX),
-        .confScissorStartY(framebufferParamScissorStartY),
-        .confScissorEndX(framebufferParamScissorEndX),
-        .confScissorEndY(framebufferParamScissorEndY),
         .confMask(colorBufferMaskReduced[0 +: 2]), // Currently 16 bit pixels are used with memorys where the strobe can only mask byte wise. To silence the warning, only select the lower two bits.
 
         .s_fetch_arvalid(m_color_arvalid),
@@ -546,8 +519,6 @@ module RasterIXCoreEF #(
         .s_frag_wdata(XXX2RGB565(ColorBufferReduceVec(m_color_wdata))),
         .s_frag_wstrb(m_color_wstrb),
         .s_frag_waddr(m_color_waddr),
-        .s_frag_wxpos(m_color_wscreenPosX),
-        .s_frag_wypos(m_color_wscreenPosY),
 
         .m_mem_axi_awid(m_color_axi_awid),
         .m_mem_axi_awaddr(m_color_axi_awaddr),
@@ -598,8 +569,6 @@ module RasterIXCoreEF #(
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
                 .MAX_BEATS_TO_COALESCE(ENABLE_MEMORY_COALESCING ? NR_OF_COALESCED_BEATS_STENCIL : 0),
-                .X_BIT_WIDTH(RENDER_CONFIG_X_SIZE),
-                .Y_BIT_WIDTH(RENDER_CONFIG_Y_SIZE),
                 .PIXEL_WIDTH(8),
                 .STRB_WIDTH(STRB_WIDTH)
             ) stencilBuffer (
@@ -607,11 +576,6 @@ module RasterIXCoreEF #(
                 .resetn(resetn),
 
                 .confAddr(stencilBufferAddr),
-                .confEnableScissor(framebufferParamEnableScissor),
-                .confScissorStartX(framebufferParamScissorStartX),
-                .confScissorStartY(framebufferParamScissorStartY),
-                .confScissorEndX(framebufferParamScissorEndX),
-                .confScissorEndY(framebufferParamScissorEndY),
                 .confMask(|stencilBufferMask),
 
                 .s_fetch_arvalid(m_stencil_arvalid),
@@ -630,8 +594,6 @@ module RasterIXCoreEF #(
                 .s_frag_wdata(m_stencil_wdata),
                 .s_frag_wstrb(m_stencil_wstrb),
                 .s_frag_waddr(m_stencil_waddr),
-                .s_frag_wxpos(m_stencil_wscreenPosX),
-                .s_frag_wypos(m_stencil_wscreenPosY),
 
                 .m_mem_axi_awid(m_stencil_axi_awid),
                 .m_mem_axi_awaddr(m_stencil_axi_awaddr),
@@ -737,11 +699,6 @@ module RasterIXCoreEF #(
         .s_cmd_axis_tlast(s_cmd_axis_tlast),
         .s_cmd_axis_tdata(s_cmd_axis_tdata),
 
-        .framebufferParamEnableScissor(framebufferParamEnableScissor),
-        .framebufferParamScissorStartX(framebufferParamScissorStartX),
-        .framebufferParamScissorStartY(framebufferParamScissorStartY),
-        .framebufferParamScissorEndX(framebufferParamScissorEndX),
-        .framebufferParamScissorEndY(framebufferParamScissorEndY),
         .framebufferParamYOffset(framebufferParamYOffset),
         .framebufferParamXResolution(framebufferParamXResolution),
         .framebufferParamYResolution(framebufferParamYResolution),
@@ -768,8 +725,6 @@ module RasterIXCoreEF #(
         .m_color_wdata(m_color_wdata),
         .m_color_wstrb(m_color_wstrb),
         .m_color_wlast(m_color_wlast),
-        .m_color_wscreenPosX(m_color_wscreenPosX),
-        .m_color_wscreenPosY(m_color_wscreenPosY),
 
         .depthBufferAddr(depthBufferAddr),
         .depthBufferSize(),
@@ -791,8 +746,6 @@ module RasterIXCoreEF #(
         .m_depth_wdata(m_depth_wdata),
         .m_depth_wstrb(m_depth_wstrb),
         .m_depth_wlast(m_depth_wlast),
-        .m_depth_wscreenPosX(m_depth_wscreenPosX),
-        .m_depth_wscreenPosY(m_depth_wscreenPosY),
 
         .stencilBufferAddr(stencilBufferAddr),
         .stencilBufferSize(),
@@ -814,8 +767,6 @@ module RasterIXCoreEF #(
         .m_stencil_wdata(m_stencil_wdata),
         .m_stencil_wstrb(m_stencil_wstrb),
         .m_stencil_wlast(m_stencil_wlast),
-        .m_stencil_wscreenPosX(m_stencil_wscreenPosX),
-        .m_stencil_wscreenPosY(m_stencil_wscreenPosY),
 
         .m_tmu0_axi_arid(m_tmu0_axi_arid),
         .m_tmu0_axi_araddr(m_tmu0_axi_araddr),
