@@ -97,13 +97,21 @@ module FramebufferWriterClear #(
     function [Y_BIT_WIDTH - 1 : 0] clampToYOffset;
         input [Y_BIT_WIDTH - 1 : 0] y;
         input [Y_BIT_WIDTH - 1 : 0] yOffset;
+        input [Y_BIT_WIDTH - 1 : 0] yResolution;
+        reg [Y_BIT_WIDTH : 0] lineEndY;
         begin
-            clampToYOffset = (y < yOffset) ? yOffset : y;
+            lineEndY = {1'b0, yOffset} + {1'b0, yResolution};
+            if (y < yOffset)
+                clampToYOffset = yOffset;
+            else if ({1'b0, y} > lineEndY)
+                clampToYOffset = lineEndY[Y_BIT_WIDTH - 1 : 0];
+            else
+                clampToYOffset = y;
         end
     endfunction
 
-    wire [Y_BIT_WIDTH - 1 : 0] clampedScissorStartY = clampToYOffset(confScissorStartY, confYOffset);
-    wire [Y_BIT_WIDTH - 1 : 0] clampedScissorEndY = clampToYOffset(confScissorEndY, confYOffset);
+    wire [Y_BIT_WIDTH - 1 : 0] clampedScissorStartY = clampToYOffset(confScissorStartY, confYOffset, confYResolution);
+    wire [Y_BIT_WIDTH - 1 : 0] clampedScissorEndY = clampToYOffset(confScissorEndY, confYOffset, confYResolution);
 
     // Step 0
     // Calculation of the pixel positions

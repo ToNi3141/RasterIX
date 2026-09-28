@@ -331,7 +331,7 @@ TEST_CASE("Scissor clear uses offset screen Y and local framebuffer address", "[
     static constexpr uint32_t START_X { 2 };
     static constexpr uint32_t END_X { 4 };
     static constexpr uint32_t START_SCREEN_Y { 8 };
-    static constexpr uint32_t END_SCREEN_Y { 14 };
+    static constexpr uint32_t END_SCREEN_Y { 20 };
 
     VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
     rr::ut::reset(t);
@@ -356,7 +356,7 @@ TEST_CASE("Scissor clear uses offset screen Y and local framebuffer address", "[
     REQUIRE(t->m_frag_tvalid == 0);
     t->apply = 0;
 
-    for (uint32_t localY = 0; localY < END_SCREEN_Y - Y_OFFSET; ++localY)
+    for (uint32_t localY = 0; localY < Y_RES; ++localY)
     {
         for (uint32_t x = START_X; x < END_X; ++x)
         {
@@ -368,8 +368,8 @@ TEST_CASE("Scissor clear uses offset screen Y and local framebuffer address", "[
             REQUIRE(t->m_frag_color_tstrb == 1);
             REQUIRE(t->m_frag_depth_tstrb == 0);
             REQUIRE(t->m_frag_stencil_tstrb == 0);
-            REQUIRE(t->m_frag_tlast == (localY == END_SCREEN_Y - Y_OFFSET - 1 && x == END_X - 1));
-            REQUIRE(t->applied == (localY == END_SCREEN_Y - Y_OFFSET - 1 && x == END_X - 1));
+            REQUIRE(t->m_frag_tlast == (localY == Y_RES - 1 && x == END_X - 1));
+            REQUIRE(t->applied == (localY == Y_RES - 1 && x == END_X - 1));
         }
     }
     CHECK(t->applied == 1);
