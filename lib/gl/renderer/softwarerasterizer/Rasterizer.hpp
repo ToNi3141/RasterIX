@@ -21,6 +21,7 @@
 #include "FragmentData.hpp"
 #include "ResolutionData.hpp"
 #include "renderer/commands/TriangleStreamTypes.hpp"
+#include <bitset>
 #include <cstdint>
 #include <tcb/span.hpp>
 
@@ -90,7 +91,12 @@ private:
 
     bool isInTriangle() const
     {
-        return (m_w[0] >= 0) && (m_w[1] >= 0) && (m_w[2] >= 0);
+        return isEdgeInside(0) && isEdgeInside(1) && isEdgeInside(2);
+    }
+
+    bool isEdgeInside(const std::size_t edge) const
+    {
+        return (m_w[edge] > 0) || ((m_w[edge] == 0) && m_edgeInclusive[edge]);
     }
 
     bool isInTriangleAndInBounds() const
@@ -140,6 +146,11 @@ private:
     Vec3i m_w {};
     Vec3i m_wXInc {};
     Vec3i m_wYInc {};
+
+    // This fixes overlapping edges when drawing triangles which share the same edge.
+    // This is only relevant for transparent triangles. It does not appear as a line,
+    // instead only a few pixels along the edge might be drawn twice.
+    std::bitset<3> m_edgeInclusive {};
 
     int32_t m_x {};
     int32_t m_y {};

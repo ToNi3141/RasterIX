@@ -1,7 +1,10 @@
-set SYNTH_OUT ./synth
+set SYNTH_OUT ./synth-[lindex $argv 0]
 set REPORT_PATH ./reports
 set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
-file delete -force $SYNTH_OUT
+if {[file exists $SYNTH_OUT]} {
+	set ARCHIVE_OUT ./synth-[clock format [clock seconds] -format {%Y-%m-%d-%H-%M}]
+	file rename -force $SYNTH_OUT $ARCHIVE_OUT
+}
 file mkdir $SYNTH_OUT
 
 # Change to synth directory as build directory
@@ -56,6 +59,11 @@ read_verilog ./../../../../RasterIX/LogicOp.v
 read_verilog ./../../../../RasterIX/MemoryReadRequestGenerator.v
 read_verilog ./../../../../RasterIX/MipmapOptimizedRam.v
 read_verilog ./../../../../RasterIX/PagedMemoryReader.v
+read_verilog ./../../../../RasterIX/TextureReader.v
+read_verilog ./../../../../RasterIX/TextureCacheDirectMapped.v
+read_verilog ./../../../../RasterIX/TextureCacheDirectMappedController.v
+read_verilog ./../../../../RasterIX/TextureCacheDirectMappedContext.v
+read_verilog ./../../../../RasterIX/TextureMMU.v
 read_verilog ./../../../../RasterIX/PerFragmentPipeline.v
 read_verilog ./../../../../RasterIX/PixelPipeline.v
 read_verilog ./../../../../RasterIX/PixelUtil.vh
@@ -75,10 +83,13 @@ read_verilog ./../../../../RasterIX/StreamConcatFifo.v
 read_verilog ./../../../../RasterIX/StreamFramebuffer.v
 read_verilog ./../../../../RasterIX/TestFunc.v
 read_verilog ./../../../../RasterIX/TexEnv.v
+read_verilog ./../../../../RasterIX/TexelColorUnpack.v
 read_verilog ./../../../../RasterIX/TextureBuffer.v
 read_verilog ./../../../../RasterIX/TextureFilter.v
 read_verilog ./../../../../RasterIX/TextureMappingUnit.v
 read_verilog ./../../../../RasterIX/TextureSampler.v
+read_verilog ./../../../../RasterIX/TextureReaderContext.v
+read_verilog ./../../../../RasterIX/TextureReaderController.v
 read_verilog ./../../../../RasterIX/TriangleStreamF2XConverter.v
 read_verilog ./../../../../RasterIX/TrueDualPortRam.v
 read_verilog ./../../../../Float/rtl/float/XRecip.v

@@ -135,7 +135,17 @@ module Rasterizer
     reg  [ATTRIBUTE_SIZE - 1 : 0]   regW1Stack;
     reg  [ATTRIBUTE_SIZE - 1 : 0]   regW2Stack;
 
-    wire isInTriangle = !(regW0[31] | regW1[31] | regW2[31]);
+    // This fixes overlapping edges when drawing triangles which share the same edge.
+    // This is only relevant for transparent triangles. It does not appear as a line,
+    // instead only a few pixels along the edge might be drawn twice.
+    reg                             edge0Inclusive;
+    reg                             edge1Inclusive;
+    reg                             edge2Inclusive;
+
+    wire edge0Inside = !regW0[31] && ((regW0 != 0) || edge0Inclusive);
+    wire edge1Inside = !regW1[31] && ((regW1 != 0) || edge1Inclusive);
+    wire edge2Inside = !regW2[31] && ((regW2 != 0) || edge2Inclusive);
+    wire isInTriangle = edge0Inside && edge1Inside && edge2Inside;
     wire isInTriangleAndInBounds = isInTriangle && (x < bbEnd[BB_X_POS +: X_BIT_WIDTH]) && (x >= bbStart[BB_X_POS +: X_BIT_WIDTH]);
     
     // Edge walker variables
@@ -179,6 +189,10 @@ module Rasterizer
                 regW0 <= w0;
                 regW1 <= w1;
                 regW2 <= w2;
+
+                edge0Inclusive <= ($signed(w0IncX) > 0) || (($signed(w0IncX) == 0) && ($signed(w0IncY) > 0));
+                edge1Inclusive <= ($signed(w1IncX) > 0) || (($signed(w1IncX) == 0) && ($signed(w1IncY) > 0));
+                edge2Inclusive <= ($signed(w2IncX) > 0) || (($signed(w2IncX) == 0) && ($signed(w2IncY) > 0));
 
                 if (LINE_MODE)
                 begin
