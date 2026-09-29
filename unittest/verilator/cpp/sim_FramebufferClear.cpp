@@ -18,49 +18,6 @@
 #include "general.hpp"
 #include "VFramebufferClear.h"
 
-TEST_CASE("Check forwarding", "[FramebufferClear]")
-{
-    VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
-    t->apply = 0;
-    rr::ut::reset(t);
-
-    t->confClearColor = 0x12345678;
-    t->confClearDepth = 0xabcd;
-    t->confClearStencil = 0xa;
-    t->confXResolution = 16;
-    t->confYResolution = 8;
-    t->confYOffset = 0;
-
-    t->s_frag_tvalid = 1;
-    t->s_frag_tlast = 0;
-    t->s_frag_color_tdata = 0x87654321;
-    t->s_frag_color_tstrb = 1;
-    t->s_frag_depth_tdata = 0x4321;
-    t->s_frag_depth_tstrb = 0;
-    t->s_frag_stencil_tdata = 0x5;
-    t->s_frag_stencil_tstrb = 1;
-    t->s_frag_taddr = 0x1234;
-    t->s_frag_txpos = 10;
-    t->s_frag_typos = 8;
-    t->m_frag_tready = 1;
-    t->eval();
-
-    CHECK(t->s_frag_tready == 1);
-    CHECK(t->m_frag_tvalid == 1);
-    CHECK(t->m_frag_tlast == 0);
-    CHECK(t->m_frag_color_tdata == 0x87654321);
-    CHECK(t->m_frag_color_tstrb == 1);
-    CHECK(t->m_frag_depth_tdata == 0x4321);
-    CHECK(t->m_frag_depth_tstrb == 0);
-    CHECK(t->m_frag_stencil_tdata == 0x5);
-    CHECK(t->m_frag_stencil_tstrb == 1);
-    CHECK(t->m_frag_taddr == 0x1234);
-    CHECK(t->m_frag_txpos == 10);
-    CHECK(t->m_frag_typos == 8);
-
-    delete t;
-}
-
 TEST_CASE("Check clear", "[FramebufferClear]")
 {
     static constexpr uint32_t X_RES { 10 };
@@ -93,7 +50,6 @@ TEST_CASE("Check clear", "[FramebufferClear]")
     while (y < Y_RES)
     {
         rr::ut::clk(t);
-        REQUIRE(t->s_frag_tready == 0);
         REQUIRE(t->m_frag_tvalid == 1);
         REQUIRE(t->m_frag_tlast == ((y == Y_RES_MAX_INDEX) && (x == X_RES_MAX_INDEX)));
         REQUIRE(t->m_frag_color_tdata == 0x12345678);
@@ -150,14 +106,12 @@ TEST_CASE("Check flow control", "[FramebufferClear]")
     rr::ut::clk(t);
     t->apply = 0;
     rr::ut::clk(t);
-    REQUIRE(t->s_frag_tready == 0);
     REQUIRE(t->m_frag_tvalid == 0);
     REQUIRE(t->applied == 0);
 
     t->m_frag_tready = 1;
     rr::ut::clk(t);
     t->m_frag_tready = 0;
-    REQUIRE(t->s_frag_tready == 0);
     REQUIRE(t->m_frag_tvalid == 1);
     REQUIRE(t->m_frag_tlast == 0);
     REQUIRE(t->m_frag_color_tdata == 0x12345678);

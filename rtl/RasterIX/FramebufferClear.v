@@ -15,13 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Used to clear the framebuffer. It will trigger a write request for
-// each pixel in the framebuffer including the position of the pixel.
-// The FramebufferWriter can then decide to write the pixel to the
-// framebuffer or omit it (for instance when the scissor test fails).
-// It has a fragment in and fragment out interface. The fragment in
-// interface is connected to the pixel pipeline and is deactivated
-// as long as a clear is in progress.
+// Used to clear the framebuffer by generating a clear color
+// for all three different framebuffer types.
 // Performance: 1 pixel per cycle
 
 module FramebufferClear #(
@@ -62,19 +57,6 @@ module FramebufferClear #(
     /////////////////////////
     // Fragment interface
     /////////////////////////
-    input  wire                             s_frag_tvalid,
-    input  wire                             s_frag_tlast,
-    output wire                             s_frag_tready,
-    input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_color_tdata,
-    input  wire                             s_frag_color_tstrb,
-    input  wire [DEPTH_WIDTH - 1 : 0]       s_frag_depth_tdata,
-    input  wire                             s_frag_depth_tstrb,
-    input  wire [STENCIL_WIDTH - 1 : 0]     s_frag_stencil_tdata,
-    input  wire                             s_frag_stencil_tstrb,
-    input  wire [ADDR_WIDTH - 1 : 0]        s_frag_taddr,
-    input  wire [X_BIT_WIDTH - 1 : 0]       s_frag_txpos,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       s_frag_typos,
-
     output wire                             m_frag_tvalid,
     output wire                             m_frag_tlast,
     input  wire                             m_frag_tready,
@@ -135,7 +117,7 @@ module FramebufferClear #(
         end
         else
         begin
-            if (apply && !s_frag_tvalid)
+            if (apply)
             begin
                 applied <= 0;
                 step0_xpos <= confEnableScissor ? confScissorStartX : 0;
@@ -218,19 +200,18 @@ module FramebufferClear #(
     end
 
     // Step 2
-    // Muxing
+    // Clear fragment generation
     wire [ADDR_WIDTH - 1 : 0] step2_addr = { { (ADDR_WIDTH - INDEX_WIDTH) { 1'b0 } }, step1_index };
-    assign m_frag_tvalid = step1_valid ? 1 : s_frag_tvalid;
-    assign m_frag_tlast = step1_valid ? step1_last : s_frag_tlast;
-    assign s_frag_tready = step1_valid ? 0 : m_frag_tready;
-    assign m_frag_color_tdata = step1_valid ? confClearColor : s_frag_color_tdata;
-    assign m_frag_color_tstrb = step1_valid ? confColorBufferSelect : s_frag_color_tstrb;
-    assign m_frag_depth_tdata = step1_valid ? confClearDepth : s_frag_depth_tdata;
-    assign m_frag_depth_tstrb = step1_valid ? confDepthBufferSelect : s_frag_depth_tstrb;
-    assign m_frag_stencil_tdata = step1_valid ? confClearStencil : s_frag_stencil_tdata;
-    assign m_frag_stencil_tstrb = step1_valid ? confStencilBufferSelect : s_frag_stencil_tstrb;
-    assign m_frag_taddr = step1_valid ? step2_addr : s_frag_taddr;
-    assign m_frag_txpos = step1_valid ? step1_xpos : s_frag_txpos;
-    assign m_frag_typos = step1_valid ? step1_ypos : s_frag_typos;
+    assign m_frag_tvalid = step1_valid;
+    assign m_frag_tlast = step1_last;
+    assign m_frag_color_tdata = confClearColor;
+    assign m_frag_color_tstrb = confColorBufferSelect;
+    assign m_frag_depth_tdata = confClearDepth;
+    assign m_frag_depth_tstrb = confDepthBufferSelect;
+    assign m_frag_stencil_tdata = confClearStencil;
+    assign m_frag_stencil_tstrb = confStencilBufferSelect;
+    assign m_frag_taddr = step2_addr;
+    assign m_frag_txpos = step1_xpos;
+    assign m_frag_typos = step1_ypos;
 
 endmodule

@@ -95,6 +95,7 @@ add_verilator_test(scissor Scissor ${RTL_RASTERIX}/Scissor.v)
 add_verilator_test(framebufferMMU FramebufferMMU ${RTL_RASTERIX}/FramebufferMMU.v)
 add_verilator_test(framebufferWriterStrobeGen FramebufferWriterStrobeGen ${RTL_RASTERIX}/FramebufferWriterStrobeGen.v)
 add_verilator_test(framebufferClear FramebufferClear ${RTL_RASTERIX}/FramebufferClear.v)
+add_verilator_test(streamMux2 StreamMux2 ${RTL_RASTERIX}/StreamMux2.v)
 add_verilator_test(framebufferReader FramebufferReader ${RTL_RASTERIX}/FramebufferReader.v 
     ${RTL_3RDPARTY}/verilog-axis)
 add_verilator_test(lodCalculator LodCalculator ${RTL_RASTERIX}/LodCalculator.v)

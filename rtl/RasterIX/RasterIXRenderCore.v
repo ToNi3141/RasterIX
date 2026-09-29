@@ -1590,19 +1590,6 @@ module RasterIXRenderCore #(
     wire [STENCIL_WIDTH - 1 : 0]    framebuffer_pfp_stencil_wdata;
     wire                            framebuffer_pfp_stencil_wstrb;
 
-    wire                            framebuffer_clear_wvalid;
-    wire                            framebuffer_clear_wlast;
-    wire                            framebuffer_clear_wready;
-    wire [INDEX_WIDTH - 1 : 0]      framebuffer_clear_waddr;
-    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_clear_wscreenPosX;
-    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_clear_wscreenPosY;
-    wire [PIXEL_WIDTH - 1 : 0]      framebuffer_clear_color_wdata;
-    wire                            framebuffer_clear_color_wstrb;
-    wire [DEPTH_WIDTH - 1 : 0]      framebuffer_clear_depth_wdata;
-    wire                            framebuffer_clear_depth_wstrb;
-    wire [STENCIL_WIDTH - 1 : 0]    framebuffer_clear_stencil_wdata;
-    wire                            framebuffer_clear_stencil_wstrb;
-
     PerFragmentPipeline perFragmentPipeline (
         .aclk(aclk),
         .resetn(resetn),
@@ -1649,6 +1636,27 @@ module RasterIXRenderCore #(
     defparam perFragmentPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam perFragmentPipeline.SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_CALC_PRECISION;
 
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 7
+    // Framebuffer clear and muxing between clear and the rasterizer
+    // Clocks: n/a
+    ////////////////////////////////////////////////////////////////////////////
+    wire                            framebuffer_clear_wvalid;
+    wire                            framebuffer_clear_wlast;
+    wire                            framebuffer_clear_wready;
+    wire [INDEX_WIDTH - 1 : 0]      framebuffer_clear_waddr;
+    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_clear_wscreenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_clear_wscreenPosY;
+    wire [PIXEL_WIDTH - 1 : 0]      framebuffer_clear_color_wdata;
+    wire                            framebuffer_clear_color_wstrb;
+    wire [DEPTH_WIDTH - 1 : 0]      framebuffer_clear_depth_wdata;
+    wire                            framebuffer_clear_depth_wstrb;
+    wire [STENCIL_WIDTH - 1 : 0]    framebuffer_clear_stencil_wdata;
+    wire                            framebuffer_clear_stencil_wstrb;
+
+    localparam FRAMEBUFFER_FRAGMENT_WIDTH = INDEX_WIDTH + (SCREEN_POS_WIDTH * 2)
+        + PIXEL_WIDTH + 1 + DEPTH_WIDTH + 1 + STENCIL_WIDTH + 1;
+
     FramebufferClear framebufferClear (
         .aclk(aclk),
         .resetn(resetn),
@@ -1667,19 +1675,6 @@ module RasterIXRenderCore #(
         .confScissorStartY(confFramebufferScissorStartY),
         .confScissorEndX(confFramebufferScissorEndX),
         .confScissorEndY(confFramebufferScissorEndY),
-
-        .s_frag_tvalid(framebuffer_pfp_wvalid),
-        .s_frag_tlast(framebuffer_pfp_wlast),
-        .s_frag_tready(framebuffer_pfp_wready),
-        .s_frag_color_tdata(framebuffer_pfp_color_wdata),
-        .s_frag_color_tstrb(framebuffer_pfp_color_wstrb),
-        .s_frag_depth_tdata(framebuffer_pfp_depth_wdata),
-        .s_frag_depth_tstrb(framebuffer_pfp_depth_wstrb),
-        .s_frag_stencil_tdata(framebuffer_pfp_stencil_wdata),
-        .s_frag_stencil_tstrb(framebuffer_pfp_stencil_wstrb),
-        .s_frag_taddr(framebuffer_pfp_waddr),
-        .s_frag_txpos(framebuffer_pfp_wscreenPosX),
-        .s_frag_typos(framebuffer_pfp_wscreenPosY),
 
         .m_frag_tvalid(framebuffer_clear_wvalid),
         .m_frag_tlast(framebuffer_clear_wlast),
@@ -1705,6 +1700,74 @@ module RasterIXRenderCore #(
     defparam framebufferClear.DEPTH_WIDTH = DEPTH_WIDTH;
     defparam framebufferClear.STENCIL_WIDTH = STENCIL_WIDTH;
 
+    wire                            framebuffer_mux_wvalid;
+    wire                            framebuffer_mux_wlast;
+    wire                            framebuffer_mux_wready;
+    wire [INDEX_WIDTH - 1 : 0]      framebuffer_mux_waddr;
+    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_mux_wscreenPosX;
+    wire [SCREEN_POS_WIDTH - 1 : 0] framebuffer_mux_wscreenPosY;
+    wire [PIXEL_WIDTH - 1 : 0]      framebuffer_mux_color_wdata;
+    wire                            framebuffer_mux_color_wstrb;
+    wire [DEPTH_WIDTH - 1 : 0]      framebuffer_mux_depth_wdata;
+    wire                            framebuffer_mux_depth_wstrb;
+    wire [STENCIL_WIDTH - 1 : 0]    framebuffer_mux_stencil_wdata;
+    wire                            framebuffer_mux_stencil_wstrb;
+    StreamMux2 #(
+        .DATA_WIDTH(FRAMEBUFFER_FRAGMENT_WIDTH)
+    ) framebufferMux (
+        .select(!framebufferClearApplied || framebuffer_clear_wvalid),
+
+        .s0_valid(framebuffer_pfp_wvalid),
+        .s0_last(framebuffer_pfp_wlast),
+        .s0_ready(framebuffer_pfp_wready),
+        .s0_data({
+            framebuffer_pfp_waddr,
+            framebuffer_pfp_wscreenPosX,
+            framebuffer_pfp_wscreenPosY,
+            framebuffer_pfp_color_wdata,
+            framebuffer_pfp_color_wstrb,
+            framebuffer_pfp_depth_wdata,
+            framebuffer_pfp_depth_wstrb,
+            framebuffer_pfp_stencil_wdata,
+            framebuffer_pfp_stencil_wstrb
+        }),
+
+        .s1_valid(framebuffer_clear_wvalid),
+        .s1_last(framebuffer_clear_wlast),
+        .s1_ready(framebuffer_clear_wready),
+        .s1_data({
+            framebuffer_clear_waddr,
+            framebuffer_clear_wscreenPosX,
+            framebuffer_clear_wscreenPosY,
+            framebuffer_clear_color_wdata,
+            framebuffer_clear_color_wstrb,
+            framebuffer_clear_depth_wdata,
+            framebuffer_clear_depth_wstrb,
+            framebuffer_clear_stencil_wdata,
+            framebuffer_clear_stencil_wstrb
+        }),
+
+        .m_valid(framebuffer_mux_wvalid),
+        .m_last(framebuffer_mux_wlast),
+        .m_ready(framebuffer_mux_wready),
+        .m_data({
+            framebuffer_mux_waddr,
+            framebuffer_mux_wscreenPosX,
+            framebuffer_mux_wscreenPosY,
+            framebuffer_mux_color_wdata,
+            framebuffer_mux_color_wstrb,
+            framebuffer_mux_depth_wdata,
+            framebuffer_mux_depth_wstrb,
+            framebuffer_mux_stencil_wdata,
+            framebuffer_mux_stencil_wstrb
+        })
+    );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // STEP 8
+    // Scissor test
+    // Clocks: 0
+    ////////////////////////////////////////////////////////////////////////////
     wire [INDEX_WIDTH - 1 : 0]      framebuffer_scissor_m_waddr;
     wire [PIXEL_WIDTH - 1 : 0]      framebuffer_scissor_m_color_wdata;
     wire                            framebuffer_scissor_m_color_wstrb;
@@ -1724,22 +1787,22 @@ module RasterIXRenderCore #(
         .confScissorEndX(confFramebufferScissorEndX),
         .confScissorEndY(confFramebufferScissorEndY),
 
-        .s_frag_tvalid(framebuffer_clear_wvalid),
-        .s_frag_tlast(framebuffer_clear_wlast),
-        .s_frag_tready(framebuffer_clear_wready),
+        .s_frag_tvalid(framebuffer_mux_wvalid),
+        .s_frag_tlast(framebuffer_mux_wlast),
+        .s_frag_tready(framebuffer_mux_wready),
         .s_frag_tdata({
-            framebuffer_clear_waddr,
-            framebuffer_clear_color_wdata,
-            framebuffer_clear_color_wstrb,
-            framebuffer_clear_depth_wdata,
-            framebuffer_clear_depth_wstrb,
-            framebuffer_clear_stencil_wdata,
-            framebuffer_clear_stencil_wstrb
+            framebuffer_mux_waddr,
+            framebuffer_mux_color_wdata,
+            framebuffer_mux_color_wstrb,
+            framebuffer_mux_depth_wdata,
+            framebuffer_mux_depth_wstrb,
+            framebuffer_mux_stencil_wdata,
+            framebuffer_mux_stencil_wstrb
         }),
         .s_frag_tstrb(1'b1),
         .s_frag_taddr({ INDEX_WIDTH { 1'b0 } }),
-        .s_frag_txpos(framebuffer_clear_wscreenPosX),
-        .s_frag_typos(framebuffer_clear_wscreenPosY),
+        .s_frag_txpos(framebuffer_mux_wscreenPosX),
+        .s_frag_typos(framebuffer_mux_wscreenPosY),
 
         .m_frag_tvalid(framebuffer_scissor_tvalid),
         .m_frag_tlast(framebuffer_scissor_tlast),
@@ -1762,8 +1825,8 @@ module RasterIXRenderCore #(
     defparam scissor.ADDR_WIDTH = INDEX_WIDTH;
 
     ////////////////////////////////////////////////////////////////////////////
-    // STEP 7
-    // Broadcast fragment stream to output fifos
+    // STEP 9
+    // Broadcast fragment stream to the different framebuffers
     // Clocks: 1
     ////////////////////////////////////////////////////////////////////////////
     wire [(INDEX_WIDTH * 3) - 1 : 0]        framebuffer_bc_waddr;
