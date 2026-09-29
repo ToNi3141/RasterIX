@@ -91,10 +91,10 @@ add_verilator_test(memoryReadRequestGenerator MemoryReadRequestGenerator ${RTL_R
 add_verilator_test(framebufferSerializer FramebufferSerializer ${RTL_RASTERIX}/FramebufferSerializer.v)
 add_verilator_test(streamConcatFifo StreamConcatFifo ${RTL_RASTERIX}/StreamConcatFifo.v)
 add_verilator_test(framebufferPacker FramebufferPacker ${RTL_RASTERIX}/FramebufferPacker.v)
-add_verilator_test(framebufferScissor FramebufferScissor ${RTL_RASTERIX}/FramebufferScissor.v)
+add_verilator_test(scissor Scissor ${RTL_RASTERIX}/Scissor.v)
 add_verilator_test(framebufferMMU FramebufferMMU ${RTL_RASTERIX}/FramebufferMMU.v)
 add_verilator_test(framebufferWriterStrobeGen FramebufferWriterStrobeGen ${RTL_RASTERIX}/FramebufferWriterStrobeGen.v)
-add_verilator_test(framebufferWriterClear FramebufferWriterClear ${RTL_RASTERIX}/FramebufferWriterClear.v)
+add_verilator_test(framebufferClear FramebufferClear ${RTL_RASTERIX}/FramebufferClear.v)
 add_verilator_test(framebufferReader FramebufferReader ${RTL_RASTERIX}/FramebufferReader.v 
     ${RTL_3RDPARTY}/verilog-axis)
 add_verilator_test(lodCalculator LodCalculator ${RTL_RASTERIX}/LodCalculator.v)

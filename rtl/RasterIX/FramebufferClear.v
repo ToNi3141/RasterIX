@@ -24,7 +24,7 @@
 // as long as a clear is in progress.
 // Performance: 1 pixel per cycle
 
-module FramebufferWriterClear #(
+module FramebufferClear #(
     // Width of address bus in bits
     parameter ADDR_WIDTH = 32,
 

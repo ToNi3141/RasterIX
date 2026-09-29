@@ -16,11 +16,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "general.hpp"
-#include "VFramebufferWriterClear.h"
+#include "VFramebufferClear.h"
 
-TEST_CASE("Check forwarding", "[FramebufferWriterClear]")
+TEST_CASE("Check forwarding", "[FramebufferClear]")
 {
-    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
     t->apply = 0;
     rr::ut::reset(t);
 
@@ -61,11 +61,11 @@ TEST_CASE("Check forwarding", "[FramebufferWriterClear]")
     delete t;
 }
 
-TEST_CASE("Check clear", "[FramebufferWriterClear]")
+TEST_CASE("Check clear", "[FramebufferClear]")
 {
     static constexpr uint32_t X_RES { 10 };
     static constexpr uint32_t Y_RES { 8 };
-    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
     t->apply = 0;
     rr::ut::reset(t);
 
@@ -126,11 +126,11 @@ TEST_CASE("Check clear", "[FramebufferWriterClear]")
     delete t;
 }
 
-TEST_CASE("Check flow control", "[FramebufferWriterClear]")
+TEST_CASE("Check flow control", "[FramebufferClear]")
 {
     static constexpr uint32_t X_RES { 10 };
     static constexpr uint32_t Y_RES { 8 };
-    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
     t->apply = 0;
     rr::ut::reset(t);
 
@@ -189,7 +189,7 @@ TEST_CASE("Check flow control", "[FramebufferWriterClear]")
     delete t;
 }
 
-TEST_CASE("Check scissored clear", "[FramebufferWriterClear]")
+TEST_CASE("Check scissored clear", "[FramebufferClear]")
 {
     static constexpr uint32_t X_RES { 16 };
     static constexpr uint32_t Y_RES { 12 };
@@ -197,7 +197,7 @@ TEST_CASE("Check scissored clear", "[FramebufferWriterClear]")
     static constexpr uint32_t START_Y { 4 };
     static constexpr uint32_t END_X { 7 };
     static constexpr uint32_t END_Y { 9 };
-    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
     rr::ut::reset(t);
 
     t->confClearColor = 0x12345678;
@@ -247,13 +247,13 @@ TEST_CASE("Check scissored clear", "[FramebufferWriterClear]")
     delete t;
 }
 
-TEST_CASE("Check malformed scissor terminates", "[FramebufferWriterClear]")
+TEST_CASE("Check malformed scissor terminates", "[FramebufferClear]")
 {
     static constexpr uint32_t START_X { 3 };
     static constexpr uint32_t END_X { 7 };
     static constexpr uint32_t START_Y { 8 };
     static constexpr uint32_t END_Y { 4 };
-    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
     rr::ut::reset(t);
 
     t->confXResolution = 16;
@@ -285,11 +285,11 @@ TEST_CASE("Check malformed scissor terminates", "[FramebufferWriterClear]")
     delete t;
 }
 
-TEST_CASE("Clear strobes follow selected buffers", "[FramebufferWriterClear]")
+TEST_CASE("Clear strobes follow selected buffers", "[FramebufferClear]")
 {
     for (uint32_t selects = 0; selects < 8; ++selects)
     {
-        VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+        VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
         rr::ut::reset(t);
 
         t->confClearColor = 0x12345678;
@@ -323,7 +323,7 @@ TEST_CASE("Clear strobes follow selected buffers", "[FramebufferWriterClear]")
     }
 }
 
-TEST_CASE("Scissor clear uses offset screen Y and local framebuffer address", "[FramebufferWriterClear]")
+TEST_CASE("Scissor clear uses offset screen Y and local framebuffer address", "[FramebufferClear]")
 {
     static constexpr uint32_t X_RES { 8 };
     static constexpr uint32_t Y_RES { 6 };
@@ -333,7 +333,7 @@ TEST_CASE("Scissor clear uses offset screen Y and local framebuffer address", "[
     static constexpr uint32_t START_SCREEN_Y { 8 };
     static constexpr uint32_t END_SCREEN_Y { 20 };
 
-    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
     rr::ut::reset(t);
 
     t->confClearColor = 0x12345678;
@@ -378,9 +378,9 @@ TEST_CASE("Scissor clear uses offset screen Y and local framebuffer address", "[
     delete t;
 }
 
-TEST_CASE("Empty offset scissor completes without generated fragments", "[FramebufferWriterClear]")
+TEST_CASE("Empty offset scissor completes without generated fragments", "[FramebufferClear]")
 {
-    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
     rr::ut::reset(t);
 
     t->confXResolution = 8;
@@ -409,9 +409,9 @@ TEST_CASE("Empty offset scissor completes without generated fragments", "[Frameb
     delete t;
 }
 
-TEST_CASE("Applied preserves the original clear-pipeline boundary", "[FramebufferWriterClear]")
+TEST_CASE("Applied preserves the original clear-pipeline boundary", "[FramebufferClear]")
 {
-    VFramebufferWriterClear* t = rr::ut::makeTop<VFramebufferWriterClear>();
+    VFramebufferClear* t = rr::ut::makeTop<VFramebufferClear>();
     rr::ut::reset(t);
 
     t->confClearColor = 0x12345678;

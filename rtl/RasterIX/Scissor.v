@@ -19,7 +19,7 @@
 // rectangle. If the pixel is outside the scissor rectangle, tstrb is zeroed.
 // All other fragment stream signals pass through unchanged.
 // txpos and typos are consumed by this module and not forwarded.
-module FramebufferScissor #(
+module Scissor #(
     // The maximum size of the screen in power of two
     parameter X_BIT_WIDTH = 11,
     parameter Y_BIT_WIDTH = 11,

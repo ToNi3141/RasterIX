@@ -1649,7 +1649,7 @@ module RasterIXRenderCore #(
     defparam perFragmentPipeline.SUB_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH;
     defparam perFragmentPipeline.SUB_PIXEL_CALC_PRECISION = SUB_PIXEL_CALC_PRECISION;
 
-    FramebufferWriterClear framebufferWriterClear (
+    FramebufferClear framebufferClear (
         .aclk(aclk),
         .resetn(resetn),
 
@@ -1697,13 +1697,13 @@ module RasterIXRenderCore #(
         .apply(framebufferClearApply),
         .applied(framebufferClearApplied)
     );
-    defparam framebufferWriterClear.ADDR_WIDTH = INDEX_WIDTH;
-    defparam framebufferWriterClear.X_BIT_WIDTH = SCREEN_POS_WIDTH;
-    defparam framebufferWriterClear.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
-    defparam framebufferWriterClear.INDEX_WIDTH = INDEX_WIDTH;
-    defparam framebufferWriterClear.PIXEL_WIDTH = PIXEL_WIDTH;
-    defparam framebufferWriterClear.DEPTH_WIDTH = DEPTH_WIDTH;
-    defparam framebufferWriterClear.STENCIL_WIDTH = STENCIL_WIDTH;
+    defparam framebufferClear.ADDR_WIDTH = INDEX_WIDTH;
+    defparam framebufferClear.X_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam framebufferClear.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam framebufferClear.INDEX_WIDTH = INDEX_WIDTH;
+    defparam framebufferClear.PIXEL_WIDTH = PIXEL_WIDTH;
+    defparam framebufferClear.DEPTH_WIDTH = DEPTH_WIDTH;
+    defparam framebufferClear.STENCIL_WIDTH = STENCIL_WIDTH;
 
     wire [INDEX_WIDTH - 1 : 0]      framebuffer_scissor_m_waddr;
     wire [PIXEL_WIDTH - 1 : 0]      framebuffer_scissor_m_color_wdata;
@@ -1717,7 +1717,7 @@ module RasterIXRenderCore #(
     wire                            framebuffer_scissor_tready;
     wire                            framebuffer_scissor_tstrb;
 
-    FramebufferScissor framebufferScissor (
+    Scissor scissor (
         .confEnableScissor(confFramebufferScissorEnable),
         .confScissorStartX(confFramebufferScissorStartX),
         .confScissorStartY(confFramebufferScissorStartY),
@@ -1756,10 +1756,10 @@ module RasterIXRenderCore #(
         .m_frag_tstrb(framebuffer_scissor_tstrb),
         .m_frag_taddr()
     );
-    defparam framebufferScissor.X_BIT_WIDTH = SCREEN_POS_WIDTH;
-    defparam framebufferScissor.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
-    defparam framebufferScissor.PIXEL_WIDTH = INDEX_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH + STENCIL_WIDTH + 3;
-    defparam framebufferScissor.ADDR_WIDTH = INDEX_WIDTH;
+    defparam scissor.X_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam scissor.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
+    defparam scissor.PIXEL_WIDTH = INDEX_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH + STENCIL_WIDTH + 3;
+    defparam scissor.ADDR_WIDTH = INDEX_WIDTH;
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 7
