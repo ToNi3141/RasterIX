@@ -310,7 +310,10 @@ module top #(
         .FRAMEBUFFER_SUB_PIXEL_WIDTH(6),
         .SUB_PIXEL_CALC_PRECISION(8),
         .TMU_COUNT(2),
-        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(0)
+        .ENABLE_EXTERNAL_TEXTURE_MEMORY(1),
+        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(0),
+        .RASTERIZER_FIXPOINT_PRECISION(25),
+        .CACHE_SIZE(1024)
     ) rix (
         .aclk(aclk),
         .resetn(resetn),

@@ -48,8 +48,8 @@ module RasterIX #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TEXTURE_PAGE_SIZE = 2048,
-    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 0,
-    parameter CACHE_SIZE = 8192,
+    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 1,
+    parameter CACHE_SIZE = 1024 * 8,
 
     // Enables the fog unit
     parameter ENABLE_FOG = 1,
