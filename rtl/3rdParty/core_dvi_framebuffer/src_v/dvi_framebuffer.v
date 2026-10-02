@@ -407,7 +407,7 @@ localparam V_MAX         = (VIDEO_HEIGHT == 480 && VIDEO_REFRESH == 60) ? 525 :
 
 localparam VIDEO_SIZE    = (H_REZ * V_REZ) * 2; // RG565
 localparam BUFFER_SIZE   = 1024 * 8;
-localparam BURST_LEN     = 128;
+localparam BURST_LEN     = 64;
 
 //-----------------------------------------------------------------
 // HSYNC, VSYNC

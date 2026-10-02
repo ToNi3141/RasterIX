@@ -78,6 +78,7 @@ petalinux-config --get-hw-description '/home/<username>/RasterIX/rtl/top/Xilinx/
 cp /home/<username>/RasterIX/lib/driver/dmaproxy/kernel/system-user.dtsi project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
 
 # Build
+petalinux-build -c fsbl-firmware -x cleansstate # important for rebuilding
 petalinux-build
 petalinux-package --boot --fsbl ./images/linux/zynq_fsbl.elf --fpga ./images/linux/system.bit --u-boot --force
 
