@@ -49,7 +49,7 @@ module TextureCacheDirectMappedContext #(
     input  wire                             s_tc_cmd,
     input  wire [ADDR_WIDTH - 1 : 0]        s_tc_addr,
 
-    output reg  [TEXEL_WIDTH - 1 : 0]       m_tc_texel,
+    output wire [TEXEL_WIDTH - 1 : 0]       m_tc_texel,
     output reg                              m_tc_valid,
     input  wire                             m_tc_ready,
 
@@ -94,15 +94,14 @@ module TextureCacheDirectMappedContext #(
     endfunction
 
     function [TEXEL_WIDTH - 1 : 0] GetTexel;
+        input [DATA_WIDTH - 1 : 0] word;
         input [ADDR_WIDTH - 1 : 0] addr;
         localparam TEXEL_OFFSET_WIDTH = (DATA_WIDTH / TEXEL_WIDTH) > 1
                                       ? $clog2(DATA_WIDTH / TEXEL_WIDTH)
                                       : 1;
-        reg [DATA_WIDTH - 1 : 0] word;
         reg [DATA_WIDTH - 1 : 0] shiftedWord;
         integer texelShift;
         begin
-            word = rCacheMemory[GetWordAddress(addr)];
             if (DATA_WIDTH == TEXEL_WIDTH)
             begin
                 texelShift = 0;
@@ -117,6 +116,8 @@ module TextureCacheDirectMappedContext #(
     endfunction
 
     reg  [DATA_WIDTH - 1 : 0]       rCacheMemory [0 : (CACHE_SIZE / (DATA_WIDTH / 8)) - 1];
+    reg  [DATA_WIDTH - 1 : 0]       rReadWord;
+    reg  [ADDR_WIDTH - 1 : 0]       rReadAddr;
 
     reg                             rSkidValid;
     reg                             rSkidCmd;
@@ -127,6 +128,53 @@ module TextureCacheDirectMappedContext #(
 
     wire                            wCmd = rSkidValid ? rSkidCmd : s_tc_cmd;
     wire [ADDR_WIDTH - 1 : 0]       wAddr = rSkidValid ? rSkidAddr : s_tc_addr;
+
+    wire [LG_CACHE_WORDS - 1 : 0]   wMemWriteAddr = GetWordAddress(GetCacheGroupAddress(rAxiAddr) + rI);
+    wire [LG_CACHE_WORDS - 1 : 0]   wMemReadAddr = GetWordAddress(wAddr);
+    wire                            wMemWrite = m_axi_rready && m_axi_rvalid;
+    wire                            wLastBeat = rI == (CACHE_LINE_SIZE - (DATA_WIDTH / 8));
+    wire                            wCanAccept = (ENABLE_EARLY_FETCH || !m_axi_rready) && (!m_tc_valid || m_tc_ready);
+    wire                            wRequestValid = s_tc_valid || rSkidValid;
+    wire                            wLoadCmd = wCmd == LOAD_CACHE_LINE;
+    wire                            wReadCmd = wCmd == READ_CACHE_ENTRY;
+    wire                            wWordPending = m_axi_rready && (GetWordAddress(rI) <= GetWordAddress(GetByteAddress(wAddr)));
+
+    wire                            wMemRead = wCanAccept && wRequestValid && wReadCmd && !wWordPending;
+
+    assign m_tc_texel = GetTexel(rReadWord, rReadAddr);
+
+    generate
+        if (ENABLE_EARLY_FETCH)
+        begin : gen_dual_port
+            always @(posedge aclk)
+            begin
+                if (wMemWrite)
+                begin
+                    rCacheMemory[wMemWriteAddr] <= m_axi_rdata;
+                end
+                if (wMemRead)
+                begin
+                    rReadWord <= rCacheMemory[wMemReadAddr];
+                end
+            end
+        end
+        else
+        begin : gen_single_port
+            wire [LG_CACHE_WORDS - 1 : 0] wMemAddr = m_axi_rready ? wMemWriteAddr : wMemReadAddr;
+
+            always @(posedge aclk)
+            begin
+                if (wMemWrite)
+                begin
+                    rCacheMemory[wMemAddr] <= m_axi_rdata;
+                end
+                else if (wMemRead)
+                begin
+                    rReadWord <= rCacheMemory[wMemAddr];
+                end
+            end
+        end
+    endgenerate
 
     always @(posedge aclk) 
     begin
@@ -139,10 +187,9 @@ module TextureCacheDirectMappedContext #(
         end 
         else 
         begin
-            if ((ENABLE_EARLY_FETCH || !m_axi_rready) && 
-                (!m_tc_valid || (m_tc_valid && m_tc_ready)))
+            if (wCanAccept)
             begin
-                if (s_tc_valid || rSkidValid)
+                if (wRequestValid)
                 begin
                     if (rSkidValid)
                     begin
@@ -150,7 +197,7 @@ module TextureCacheDirectMappedContext #(
                         s_tc_ready   <= 1'b1;
                     end
                     
-                    if (wCmd == LOAD_CACHE_LINE)
+                    if (wLoadCmd)
                     begin
                         if (m_axi_rready)
                         begin
@@ -168,9 +215,9 @@ module TextureCacheDirectMappedContext #(
                             m_tc_valid   <= 1'b0;
                         end
                     end
-                    else if (wCmd == READ_CACHE_ENTRY)
+                    else if (wReadCmd)
                     begin
-                        if (m_axi_rready && (GetWordAddress(rI) <= GetWordAddress(GetByteAddress(wAddr))))
+                        if (wWordPending)
                         begin
                             rSkidAddr  <= wAddr;
                             rSkidCmd   <= wCmd;
@@ -180,7 +227,7 @@ module TextureCacheDirectMappedContext #(
                         end
                         else
                         begin
-                            m_tc_texel <= GetTexel(wAddr);
+                            rReadAddr  <= wAddr;
                             m_tc_valid <= 1'b1;
                         end
                     end
@@ -201,11 +248,10 @@ module TextureCacheDirectMappedContext #(
                 end
             end
 
-            if (m_axi_rready && m_axi_rvalid)
+            if (wMemWrite)
             begin
                 rI <= rI + (DATA_WIDTH / 8);
-                rCacheMemory[GetWordAddress(GetCacheGroupAddress(rAxiAddr) + rI)] <= m_axi_rdata;
-                if (rI == (CACHE_LINE_SIZE - (DATA_WIDTH / 8)))
+                if (wLastBeat)
                 begin
                     m_axi_rready <= 1'b0;
                 end
