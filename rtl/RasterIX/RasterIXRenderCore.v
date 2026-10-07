@@ -35,8 +35,8 @@ module RasterIXRenderCore #(
     parameter TMU_MEMORY_WIDTH = 64,
     parameter TEXEL_WIDTH = 16,
     parameter TEXTURE_PAGE_SIZE = 2048,
-    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 0,
-    parameter CACHE_SIZE = 1024,
+    parameter ENABLE_TEXTURE_CACHE = 0,
+    parameter TEXTURE_CACHE_SIZE = 1024,
 
     // Enables the fogging unit
     parameter ENABLE_FOG = 1,
@@ -50,7 +50,8 @@ module RasterIXRenderCore #(
     localparam CMD_STREAM_WIDTH = 32,
 
     // The maximum size of a texture in pixel
-    parameter MAX_TEXTURE_SIZE = 256,
+    // The texture buffer is disabled when the ENABLE_TEXTURE_CACHE is set to 1
+    parameter TEXTURE_BUFFER_MAX_TEXTURE_SIZE = 256,
 
     // Enables FIFOs on the memory read channel. It can improve the performance by reducing stalls in the pipeline.
     parameter ENABLE_READ_FIFO = 1,
@@ -64,13 +65,13 @@ module RasterIXRenderCore #(
     // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
     // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
     parameter RASTERIZER_FLOAT_PRECISION = 32,
-    // When RASTERIZER_ENABLE_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
+    // When ENABLE_RASTERIZER_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
     // calculations. A value of 25 will instantiate signed 25 bit multipliers. The 25 already including the sign bit.
     // Lower values can lead to distortions of the fog and texels.
     parameter RASTERIZER_FIXPOINT_PRECISION = 25,
     // Enables the floating point interpolation. If this is disabled, it falls back
     // to the fix point interpolation
-    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1,
+    parameter ENABLE_RASTERIZER_FLOAT_INTERPOLATION = 1,
 
     // The size of a sub pixel
     localparam SUB_PIXEL_WIDTH = 8,
@@ -386,7 +387,7 @@ module RasterIXRenderCore #(
             assign triangleParams[TRIANGLE_STREAM_PARAM_SIZE * TRIANGLE_STREAM_WORD_COUNT +: TRIANGLE_STREAM_PARAM_SIZE * (TRIANGLE_STREAM_SIZE - TRIANGLE_STREAM_WORD_COUNT)] = 0;
         end
 
-        if (RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
+        if (ENABLE_RASTERIZER_FLOAT_INTERPOLATION)
         begin
             ShiftRegisterBank triangleParameters (
                 .aclk(aclk),
@@ -557,60 +558,63 @@ module RasterIXRenderCore #(
          (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA1_SIZE] == SRC_TEXTURE) ||
          (confTMU0TexEnvConfig[RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_POS +: RENDER_CONFIG_TMU_TEX_ENV_SRC_REG_ALPHA2_SIZE] == SRC_TEXTURE));
     generate
-        if (ENABLE_EXTERNAL_TEXTURE_MEMORY)
+        if (ENABLE_TEXTURE_CACHE)
         begin
-            TextureReader textureMemoryTMU0 (
-                .aclk(aclk),
-                .resetn(resetn),
-                .enable(textureCacheEnableTmu0),
-                .nearest(!confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS]),
+                TextureReader textureMemoryTMU0 (
+                    .aclk(aclk),
+                    .resetn(resetn),
+                    .enable(textureCacheEnableTmu0),
+                    .nearest(!confTMU0TextureConfig[RENDER_CONFIG_TMU_TEXTURE_MAG_FILTER_POS]),
 
-                .s_tr_valid(tr0_valid),
-                .s_tr_ready(tr0_ready),
-                .s_tr_addr_00(tr0_addr_00),
-                .s_tr_addr_01(tr0_addr_01),
-                .s_tr_addr_10(tr0_addr_10),
-                .s_tr_addr_11(tr0_addr_11),
+                    .s_tr_valid(tr0_valid),
+                    .s_tr_ready(tr0_ready),
+                    .s_tr_addr_00(tr0_addr_00),
+                    .s_tr_addr_01(tr0_addr_01),
+                    .s_tr_addr_10(tr0_addr_10),
+                    .s_tr_addr_11(tr0_addr_11),
 
-                .m_tr_valid(tr0_texel_valid),
-                .m_tr_ready(tr0_texel_ready),
-                .m_tr_texel_00(tr0_texel_00),
-                .m_tr_texel_01(tr0_texel_01),
-                .m_tr_texel_10(tr0_texel_10),
-                .m_tr_texel_11(tr0_texel_11),
+                    .m_tr_valid(tr0_texel_valid),
+                    .m_tr_ready(tr0_texel_ready),
+                    .m_tr_texel_00(tr0_texel_00),
+                    .m_tr_texel_01(tr0_texel_01),
+                    .m_tr_texel_10(tr0_texel_10),
+                    .m_tr_texel_11(tr0_texel_11),
 
-                .s_axis_tvalid(cmd_tmu0_axis_tvalid),
-                .s_axis_tready(cmd_tmu0_axis_tready),
-                .s_axis_tlast(cmd_xxx_axis_tlast),
-                .s_axis_tdata(cmd_xxx_axis_tdata[0 +: ADDR_WIDTH]),
+                    .s_axis_tvalid(cmd_tmu0_axis_tvalid),
+                    .s_axis_tready(cmd_tmu0_axis_tready),
+                    .s_axis_tlast(cmd_xxx_axis_tlast),
+                    .s_axis_tdata(cmd_xxx_axis_tdata[0 +: ADDR_WIDTH]),
 
-                .m_axi_arid(m_tmu0_axi_arid),
-                .m_axi_araddr(m_tmu0_axi_araddr),
-                .m_axi_arlen(m_tmu0_axi_arlen),
-                .m_axi_arsize(m_tmu0_axi_arsize),
-                .m_axi_arburst(m_tmu0_axi_arburst),
-                .m_axi_arlock(m_tmu0_axi_arlock),
-                .m_axi_arcache(m_tmu0_axi_arcache),
-                .m_axi_arprot(m_tmu0_axi_arprot),
-                .m_axi_arvalid(m_tmu0_axi_arvalid),
-                .m_axi_arready(m_tmu0_axi_arready),
-                .m_axi_rid(m_tmu0_axi_rid),
-                .m_axi_rdata(m_tmu0_axi_rdata),
-                .m_axi_rresp(m_tmu0_axi_rresp),
-                .m_axi_rlast(m_tmu0_axi_rlast),
-                .m_axi_rvalid(m_tmu0_axi_rvalid),
-                .m_axi_rready(m_tmu0_axi_rready)
-            );
-            defparam textureMemoryTMU0.DATA_WIDTH = TMU_MEMORY_WIDTH;
-            defparam textureMemoryTMU0.TEXEL_WIDTH = TEXEL_WIDTH;
-            defparam textureMemoryTMU0.ID_WIDTH = ID_WIDTH;
-            defparam textureMemoryTMU0.ADDR_WIDTH = ADDR_WIDTH;
-            defparam textureMemoryTMU0.PAGE_SIZE = TEXTURE_PAGE_SIZE;
-            defparam textureMemoryTMU0.CACHE_SIZE = CACHE_SIZE;
+                    .m_axi_arid(m_tmu0_axi_arid),
+                    .m_axi_araddr(m_tmu0_axi_araddr),
+                    .m_axi_arlen(m_tmu0_axi_arlen),
+                    .m_axi_arsize(m_tmu0_axi_arsize),
+                    .m_axi_arburst(m_tmu0_axi_arburst),
+                    .m_axi_arlock(m_tmu0_axi_arlock),
+                    .m_axi_arcache(m_tmu0_axi_arcache),
+                    .m_axi_arprot(m_tmu0_axi_arprot),
+                    .m_axi_arvalid(m_tmu0_axi_arvalid),
+                    .m_axi_arready(m_tmu0_axi_arready),
+                    .m_axi_rid(m_tmu0_axi_rid),
+                    .m_axi_rdata(m_tmu0_axi_rdata),
+                    .m_axi_rresp(m_tmu0_axi_rresp),
+                    .m_axi_rlast(m_tmu0_axi_rlast),
+                    .m_axi_rvalid(m_tmu0_axi_rvalid),
+                    .m_axi_rready(m_tmu0_axi_rready)
+                );
+                defparam textureMemoryTMU0.DATA_WIDTH = TMU_MEMORY_WIDTH;
+                defparam textureMemoryTMU0.TEXEL_WIDTH = TEXEL_WIDTH;
+                defparam textureMemoryTMU0.ID_WIDTH = ID_WIDTH;
+                defparam textureMemoryTMU0.ADDR_WIDTH = ADDR_WIDTH;
+                defparam textureMemoryTMU0.PAGE_SIZE = TEXTURE_PAGE_SIZE;
+                defparam textureMemoryTMU0.CACHE_SIZE = TEXTURE_CACHE_SIZE;
 
-        end
-        else
-        begin
+            end
+            else
+            begin
+            wire                                axis_tmu0_tvalid;
+            wire                                axis_tmu0_tlast;
+            wire  [TMU_MEMORY_WIDTH - 1 : 0]    axis_tmu0_tdata;
             PagedMemoryReader pagedMemoryReaderTmu0 (
                 .aclk(aclk),
                 .resetn(resetn),
@@ -669,7 +673,7 @@ module RasterIXRenderCore #(
                 .s_axis_tdata(axis_tmu0_tdata)
             );
             defparam textureBufferTMU0.STREAM_WIDTH = TMU_MEMORY_WIDTH;
-            defparam textureBufferTMU0.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
+            defparam textureBufferTMU0.MAX_TEXTURE_SIZE = TEXTURE_BUFFER_MAX_TEXTURE_SIZE;
             defparam textureBufferTMU0.TEXEL_WIDTH = TEXEL_WIDTH;
             defparam textureBufferTMU0.ENABLE_LOD = ENABLE_MIPMAPPING;
         end
@@ -703,7 +707,7 @@ module RasterIXRenderCore #(
     generate
         if (ENABLE_SECOND_TMU)
         begin
-            if (ENABLE_EXTERNAL_TEXTURE_MEMORY)
+            if (ENABLE_TEXTURE_CACHE)
             begin
                 TextureReader textureMemoryTMU1 (
                     .aclk(aclk),
@@ -752,7 +756,7 @@ module RasterIXRenderCore #(
                 defparam textureMemoryTMU1.ID_WIDTH = ID_WIDTH;
                 defparam textureMemoryTMU1.ADDR_WIDTH = ADDR_WIDTH;
                 defparam textureMemoryTMU1.PAGE_SIZE = TEXTURE_PAGE_SIZE;
-                defparam textureMemoryTMU1.CACHE_SIZE = CACHE_SIZE;
+                defparam textureMemoryTMU1.CACHE_SIZE = TEXTURE_CACHE_SIZE;
 
             end
             else
@@ -818,7 +822,7 @@ module RasterIXRenderCore #(
                 .s_axis_tdata(axis_tmu1_tdata)
             );
             defparam textureBufferTMU1.STREAM_WIDTH = TMU_MEMORY_WIDTH;
-            defparam textureBufferTMU1.MAX_TEXTURE_SIZE = MAX_TEXTURE_SIZE;
+            defparam textureBufferTMU1.MAX_TEXTURE_SIZE = TEXTURE_BUFFER_MAX_TEXTURE_SIZE;
             defparam textureBufferTMU1.TEXEL_WIDTH = TEXEL_WIDTH;
             defparam textureBufferTMU1.ENABLE_LOD = ENABLE_MIPMAPPING;
             end
@@ -1158,7 +1162,7 @@ module RasterIXRenderCore #(
     wire [COLOR_SUB_PIXEL_WIDTH - 1 : 0]    alrp_tcolor_r;
 
     generate
-        if (!RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
+        if (!ENABLE_RASTERIZER_FLOAT_INTERPOLATION)
         begin
             AttributeInterpolatorX attributeInterpolator (
                 .aclk(aclk),

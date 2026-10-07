@@ -1,4 +1,3 @@
-
 # TE0890 Build
 
 The [TE0890](https://www.trenz-electronic.de/en/S7-Mini-Fully-Open-Source-Module-with-AMD-Spartan-7S25-1C-64-Mbit-HyperRAM/TE0890-02-P1C-5-A) is a low-cost, open-source FPGA module from Trenz Electronic GmbH. It includes 8MB of HyperRAM and an `XC7S25` FPGA, making it one of the most affordable ways to use this project with an MCU.
@@ -97,11 +96,11 @@ build_flags =
     -Ofast 
     -std=c++17
     -DRIX_CORE_TMU_COUNT=1
-    -DRIX_CORE_MAX_TEXTURE_SIZE=128
+    -DRIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE=128
     -DRIX_CORE_ENABLE_MIPMAPPING=true
     -DRIX_CORE_MAX_DISPLAY_WIDTH=320
     -DRIX_CORE_MAX_DISPLAY_HEIGHT=240
-    -DRIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    -DRIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
     -DRIX_CORE_ENABLE_ATTRIBUTE_SCALING=true
     -DRIX_CORE_NUMBER_OF_TEXTURE_PAGES=512
     -DRIX_CORE_NUMBER_OF_TEXTURES=128

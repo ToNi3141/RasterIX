@@ -20,19 +20,19 @@
 module RasterIXCoreIF #(
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
-    // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
-    parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 17,
+    // Color buffer word size: IF_FRAMEBUFFER_SUB_PIXEL_WIDTH * (IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
+    parameter IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG = 17,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
     // Lower depth will result in color banding.
-    parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 6,
+    parameter IF_FRAMEBUFFER_SUB_PIXEL_WIDTH = 6,
     // This enables the alpha channel of the framebuffer. Requires additional memory.
-    parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
+    parameter IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
     // The number of sub pixels in the framebuffer
-    localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4,
+    localparam FRAMEBUFFER_NUMBER_OF_SUB_PIXELS = (IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL == 0) ? 3 : 4,
     // The sub pixel with in the framebuffer
-    localparam PIXEL_WIDTH_FRAMEBUFFER = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS * FRAMEBUFFER_SUB_PIXEL_WIDTH,
+    localparam PIXEL_WIDTH_FRAMEBUFFER = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS * IF_FRAMEBUFFER_SUB_PIXEL_WIDTH,
 
     parameter SUB_PIXEL_CALC_PRECISION = 8,
 
@@ -53,8 +53,8 @@ module RasterIXCoreIF #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TEXTURE_PAGE_SIZE = 2048,
-    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 0,
-    parameter CACHE_SIZE = 1024,
+    parameter ENABLE_TEXTURE_CACHE = 0,
+    parameter TEXTURE_CACHE_SIZE = 1024,
 
     // Enables the fog unit
     parameter ENABLE_FOG = 1,
@@ -64,7 +64,8 @@ module RasterIXCoreIF #(
     localparam CMD_STREAM_WIDTH = 32,
 
     // The maximum size of a texture
-    parameter MAX_TEXTURE_SIZE = 256,
+    // The texture buffer is disabled when ENABLE_TEXTURE_CACHE is set to 1
+    parameter TEXTURE_BUFFER_MAX_TEXTURE_SIZE = 256,
 
     // Memory address width
     parameter ADDR_WIDTH = 24,
@@ -82,13 +83,13 @@ module RasterIXCoreIF #(
     // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
     // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
     parameter RASTERIZER_FLOAT_PRECISION = 32,
-    // When RASTERIZER_ENABLE_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
+    // When ENABLE_RASTERIZER_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
     // calculations. A value of 25 will instantiate signed 25 bit multipliers. The 25 already including the sign bit.
     // Lower values can lead to distortions of the fog and texels.
     parameter RASTERIZER_FIXPOINT_PRECISION = 25,
     // Enables the floating point interpolation. If this is disabled, it falls back
     // to the fix point interpolation
-    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1,
+    parameter ENABLE_RASTERIZER_FLOAT_INTERPOLATION = 1,
 
     localparam FB_SIZE_IN_PIXEL_LG = 20
 )
@@ -221,8 +222,8 @@ module RasterIXCoreIF #(
     `ReduceVec(ColorBufferReduceVec, COLOR_SUB_PIXEL_WIDTH, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `ReduceVec(ColorBufferReduceMask, 1, COLOR_NUMBER_OF_SUB_PIXEL, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `ExpandVec(ColorBufferExpandVec, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, COLOR_NUMBER_OF_SUB_PIXEL)
-    `Expand(ColorBufferExpand, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
-    `Reduce(ColorBufferReduce, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
+    `Expand(ColorBufferExpand, IF_FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
+    `Reduce(ColorBufferReduce, IF_FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
 
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYOffset;
     wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamXResolution;
@@ -242,8 +243,8 @@ module RasterIXCoreIF #(
     wire                                             m_color_arlast;
     wire                                             m_color_rvalid;
     wire                                             m_color_rlast;
-    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_color_araddr;
-    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_color_waddr;
+    wire [IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]   m_color_araddr;
+    wire [IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]   m_color_waddr;
     wire                                             m_color_wvalid;
     wire [PIXEL_WIDTH_FRAMEBUFFER - 1 : 0]           m_color_rdata;
     wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              m_color_wdata;
@@ -261,8 +262,8 @@ module RasterIXCoreIF #(
     wire                                             m_depth_arlast;
     wire                                             m_depth_rvalid;
     wire                                             m_depth_rlast;
-    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_depth_araddr;
-    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_depth_waddr;
+    wire [IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]   m_depth_araddr;
+    wire [IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]   m_depth_waddr;
     wire                                             m_depth_wvalid;
     wire [DEPTH_WIDTH - 1 : 0]                       m_depth_rdata;
     wire [DEPTH_WIDTH - 1 : 0]                       m_depth_wdata;
@@ -280,8 +281,8 @@ module RasterIXCoreIF #(
     wire                                             m_stencil_arlast;
     wire                                             m_stencil_rvalid;
     wire                                             m_stencil_rlast;
-    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_stencil_araddr;
-    wire [FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]      m_stencil_waddr;
+    wire [IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]   m_stencil_araddr;
+    wire [IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG - 1 : 0]   m_stencil_waddr;
     wire                                             m_stencil_wvalid;
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_rdata;
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_wdata;
@@ -349,7 +350,7 @@ module RasterIXCoreIF #(
             defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
             defparam depthBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
             defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-            defparam depthBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
+            defparam depthBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG;
             defparam depthBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
             // The strobe can not logically be reduced to STRB_WIDTH bits, because the AXIS interface requires a strobe for every sub pixel.
@@ -430,10 +431,10 @@ module RasterIXCoreIF #(
     );
     defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
-    defparam colorBuffer.SUB_PIXEL_WIDTH = FRAMEBUFFER_SUB_PIXEL_WIDTH;
+    defparam colorBuffer.SUB_PIXEL_WIDTH = IF_FRAMEBUFFER_SUB_PIXEL_WIDTH;
     defparam colorBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
     defparam colorBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-    defparam colorBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
+    defparam colorBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG;
     defparam colorBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
     initial if (COLOR_A_POS != 0)
@@ -446,10 +447,10 @@ module RasterIXCoreIF #(
     generate
         // Convert from RGB[A]XXX[X] to RGB565
         `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
-        `Expand(RGBnnnToRGB888, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
+        `Expand(RGBnnnToRGB888, IF_FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
         if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
         begin
-            `ReduceVec(RGBA2RGB, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
+            `ReduceVec(RGBA2RGB, IF_FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL, COLOR_A_POS, COLOR_NUMBER_OF_SUB_PIXEL, PIXEL_PER_BEAT * 3);
             assign m_colorbuffer_axis_tdata = XXX2RGB565(RGBnnnToRGB888(RGBA2RGB(m_colorbuffer_unconverted_axis_tdata)));
         end
         else
@@ -459,11 +460,11 @@ module RasterIXCoreIF #(
 
         // Convert from RGB565 to RGB[A]XXX[X]
         `RGB5652XXX(RGB565ToXXX, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
-        `Reduce(RGBXXXToYYY, FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
+        `Reduce(RGBXXXToYYY, IF_FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
         if (FRAMEBUFFER_NUMBER_OF_SUB_PIXELS == 4)
         begin
-            `ExpandVec(RGBYYYToRGBAYYYY, FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3, COLOR_A_POS, 3, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL);
-            assign s_colorbuffer_unconverted_axis_tdata = RGBYYYToRGBAYYYY(RGBXXXToYYY(RGB565ToXXX(s_colorbuffer_axis_tdata)), { FRAMEBUFFER_SUB_PIXEL_WIDTH { 1'b0 } });
+            `ExpandVec(RGBYYYToRGBAYYYY, IF_FRAMEBUFFER_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3, COLOR_A_POS, 3, PIXEL_PER_BEAT * COLOR_NUMBER_OF_SUB_PIXEL);
+            assign s_colorbuffer_unconverted_axis_tdata = RGBYYYToRGBAYYYY(RGBXXXToYYY(RGB565ToXXX(s_colorbuffer_axis_tdata)), { IF_FRAMEBUFFER_SUB_PIXEL_WIDTH { 1'b0 } });
         end
         else
         begin
@@ -540,7 +541,7 @@ module RasterIXCoreIF #(
             defparam stencilBuffer.SUB_PIXEL_WIDTH = 1;
             defparam stencilBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
             defparam stencilBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
-            defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = FRAMEBUFFER_SIZE_IN_PIXEL_LG;
+            defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG;
             defparam stencilBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
             // The strobe can not logically be reduced to STRB_WIDTH bits, because the AXIS interface requires a strobe for every sub pixel.
@@ -564,13 +565,13 @@ module RasterIXCoreIF #(
     endgenerate
 
     RasterIXRenderCore #(
-        .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
-        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
+        .INDEX_WIDTH(IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG),
+        .TEXTURE_BUFFER_MAX_TEXTURE_SIZE(TEXTURE_BUFFER_MAX_TEXTURE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .TMU_COUNT(TMU_COUNT),
-        .ENABLE_EXTERNAL_TEXTURE_MEMORY(ENABLE_EXTERNAL_TEXTURE_MEMORY),
-        .CACHE_SIZE(CACHE_SIZE),
+        .ENABLE_TEXTURE_CACHE(ENABLE_TEXTURE_CACHE),
+        .TEXTURE_CACHE_SIZE(TEXTURE_CACHE_SIZE),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
         .ENABLE_FOG(ENABLE_FOG),
@@ -580,7 +581,7 @@ module RasterIXCoreIF #(
         .ENABLE_READ_FIFO(1), // Requires read FIFOs because the internal RAM does not have flow control
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
-        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
+        .ENABLE_RASTERIZER_FLOAT_INTERPOLATION(ENABLE_RASTERIZER_FLOAT_INTERPOLATION),
         .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) graphicCore (
         .aclk(aclk),

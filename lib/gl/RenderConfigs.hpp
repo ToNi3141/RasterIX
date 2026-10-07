@@ -12,14 +12,14 @@ struct RenderConfig
 {
     // TMU settings
     static constexpr std::size_t TMU_COUNT { RIX_CORE_TMU_COUNT };
-    static constexpr std::size_t MAX_TEXTURE_SIZE { RIX_CORE_MAX_TEXTURE_SIZE };
+    static constexpr std::size_t TEXTURE_BUFFER_MAX_TEXTURE_SIZE { RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE };
     static constexpr bool ENABLE_MIPMAPPING { RIX_CORE_ENABLE_MIPMAPPING };
 
     // Display Settings
     static constexpr std::size_t MAX_DISPLAY_WIDTH { RIX_CORE_MAX_DISPLAY_WIDTH };
     static constexpr std::size_t MAX_DISPLAY_HEIGHT { RIX_CORE_MAX_DISPLAY_HEIGHT };
-    static constexpr std::size_t FRAMEBUFFER_SIZE_IN_PIXEL_LG { RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG };
-    static constexpr std::size_t FRAMEBUFFER_SIZE_IN_PIXEL { 1 << FRAMEBUFFER_SIZE_IN_PIXEL_LG };
+    static constexpr std::size_t IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG { RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG };
+    static constexpr std::size_t IF_FRAMEBUFFER_SIZE_IN_PIXEL { 1 << IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG };
 
     // Rasterizer settings
     static constexpr bool ENABLE_ATTRIBUTE_SCALING { RIX_CORE_ENABLE_ATTRIBUTE_SCALING };
@@ -51,11 +51,11 @@ struct RenderConfig
     static constexpr std::size_t getDisplayLines()
     {
         constexpr std::size_t MAX_FRAMEBUFFER_SIZE = MAX_DISPLAY_WIDTH * MAX_DISPLAY_HEIGHT;
-        if constexpr (MAX_FRAMEBUFFER_SIZE == FRAMEBUFFER_SIZE_IN_PIXEL)
+        if constexpr (MAX_FRAMEBUFFER_SIZE == IF_FRAMEBUFFER_SIZE_IN_PIXEL)
         {
             return 1;
         }
-        return (MAX_FRAMEBUFFER_SIZE / FRAMEBUFFER_SIZE_IN_PIXEL) + 1;
+        return (MAX_FRAMEBUFFER_SIZE / IF_FRAMEBUFFER_SIZE_IN_PIXEL) + 1;
     }
 
     static constexpr uint32_t getAlignedSize(const uint32_t size)
@@ -70,8 +70,8 @@ struct RenderConfig
 
     static constexpr uint32_t getMaxTexturePages()
     {
-        constexpr float MAX_TEXTURE_SIZE_BYTES { static_cast<float>(MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE * 2.0f * 1.33f) };
-        return static_cast<uint32_t>((MAX_TEXTURE_SIZE_BYTES / static_cast<float>(TEXTURE_PAGE_SIZE)) + 1.0f);
+        constexpr float TEXTURE_BUFFER_MAX_TEXTURE_SIZE_BYTES { static_cast<float>(TEXTURE_BUFFER_MAX_TEXTURE_SIZE * TEXTURE_BUFFER_MAX_TEXTURE_SIZE * 2.0f * 1.33f) };
+        return static_cast<uint32_t>((TEXTURE_BUFFER_MAX_TEXTURE_SIZE_BYTES / static_cast<float>(TEXTURE_PAGE_SIZE)) + 1.0f);
     }
 };
 

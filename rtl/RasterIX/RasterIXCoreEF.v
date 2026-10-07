@@ -48,8 +48,8 @@ module RasterIXCoreEF #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TEXTURE_PAGE_SIZE = 2048,
-    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 0,
-    parameter CACHE_SIZE = 1024,
+    parameter ENABLE_TEXTURE_CACHE = 0,
+    parameter TEXTURE_CACHE_SIZE = 1024,
 
     // Enables the fog unit
     parameter ENABLE_FOG = 1,
@@ -59,7 +59,8 @@ module RasterIXCoreEF #(
     localparam CMD_STREAM_WIDTH = 32,
 
     // The maximum size of a texture
-    parameter MAX_TEXTURE_SIZE = 256,
+    // The texture buffer is disabled when ENABLE_TEXTURE_CACHE is set to 1
+    parameter TEXTURE_BUFFER_MAX_TEXTURE_SIZE = 256,
 
     // Memory address witdth
     parameter ADDR_WIDTH = 32,
@@ -79,13 +80,13 @@ module RasterIXCoreEF #(
     // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
     // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
     parameter RASTERIZER_FLOAT_PRECISION = 32,
-    // When RASTERIZER_ENABLE_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
+    // When ENABLE_RASTERIZER_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
     // calculations. A value of 25 will instantiate signed 25 bit multipliers. The 25 already including the sign bit.
     // Lower values can lead to distortions of the fog and texels.
     parameter RASTERIZER_FIXPOINT_PRECISION = 25,
     // Enables the floating point interpolation. If this is disabled, it falls back
     // to the fix point interpolation
-    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 1,
+    parameter ENABLE_RASTERIZER_FLOAT_INTERPOLATION = 1,
 
     localparam FB_SIZE_IN_PIXEL_LG = 20
 )
@@ -673,12 +674,12 @@ module RasterIXCoreEF #(
 
     RasterIXRenderCore #(
         .INDEX_WIDTH(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
-        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
+        .TEXTURE_BUFFER_MAX_TEXTURE_SIZE(TEXTURE_BUFFER_MAX_TEXTURE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH),
         .TMU_COUNT(TMU_COUNT),
-        .ENABLE_EXTERNAL_TEXTURE_MEMORY(ENABLE_EXTERNAL_TEXTURE_MEMORY),
-        .CACHE_SIZE(CACHE_SIZE),
+        .ENABLE_TEXTURE_CACHE(ENABLE_TEXTURE_CACHE),
+        .TEXTURE_CACHE_SIZE(TEXTURE_CACHE_SIZE),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
         .ENABLE_FOG(ENABLE_FOG),
@@ -688,7 +689,7 @@ module RasterIXCoreEF #(
         .READ_FIFO_SIZE(6), // Decouples the read channel from the internal pipeline
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION),
-        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
+        .ENABLE_RASTERIZER_FLOAT_INTERPOLATION(ENABLE_RASTERIZER_FLOAT_INTERPOLATION),
         .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION)
     ) graphicCore (
         .aclk(aclk),

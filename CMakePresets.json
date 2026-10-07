@@ -15,11 +15,11 @@
             "cacheVariables": 
             {
                 "RIX_CORE_TMU_COUNT": "2",
-                "RIX_CORE_MAX_TEXTURE_SIZE": "256",
+                "RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE": "256",
                 "RIX_CORE_ENABLE_MIPMAPPING": "true",
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "1024",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "600",
-                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "17",
+                "RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "17",
                 "RIX_CORE_ENABLE_ATTRIBUTE_SCALING": "true",
                 "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "12288",
                 "RIX_CORE_NUMBER_OF_TEXTURES": "12288",
@@ -44,11 +44,11 @@
             "cacheVariables": 
             {
                 "RIX_CORE_TMU_COUNT": "2",
-                "RIX_CORE_MAX_TEXTURE_SIZE": "256",
+                "RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE": "256",
                 "RIX_CORE_ENABLE_MIPMAPPING": "true",
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "1024",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "600",
-                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
+                "RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
                 "RIX_CORE_ENABLE_ATTRIBUTE_SCALING": "true",
                 "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "12800",
                 "RIX_CORE_NUMBER_OF_TEXTURES": "12800",
@@ -72,11 +72,11 @@
             "cacheVariables": 
             {
                 "RIX_CORE_TMU_COUNT": "1",
-                "RIX_CORE_MAX_TEXTURE_SIZE": "256",
+                "RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE": "256",
                 "RIX_CORE_ENABLE_MIPMAPPING": "true",
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "1024",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "600",
-                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "16",
+                "RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "16",
                 "RIX_CORE_ENABLE_ATTRIBUTE_SCALING": "true",
                 "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "11264",
                 "RIX_CORE_NUMBER_OF_TEXTURES": "11264",
@@ -101,11 +101,11 @@
             "cacheVariables": 
             {
                 "RIX_CORE_TMU_COUNT": "1",
-                "RIX_CORE_MAX_TEXTURE_SIZE": "256",
+                "RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE": "256",
                 "RIX_CORE_ENABLE_MIPMAPPING": "true",
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "1024",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "600",
-                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
+                "RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
                 "RIX_CORE_ENABLE_ATTRIBUTE_SCALING": "true",
                 "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "11648",
                 "RIX_CORE_NUMBER_OF_TEXTURES": "11648",
@@ -129,11 +129,11 @@
             "cacheVariables": 
             {
                 "RIX_CORE_TMU_COUNT": "1",
-                "RIX_CORE_MAX_TEXTURE_SIZE": "128",
+                "RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE": "128",
                 "RIX_CORE_ENABLE_MIPMAPPING": "true",
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "320",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "240",
-                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
+                "RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
                 "RIX_CORE_ENABLE_ATTRIBUTE_SCALING": "true",
                 "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "68",
                 "RIX_CORE_NUMBER_OF_TEXTURES": "68",
@@ -158,11 +158,11 @@
             "cacheVariables": 
             {
                 "RIX_CORE_TMU_COUNT": "1",
-                "RIX_CORE_MAX_TEXTURE_SIZE": "128",
+                "RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE": "128",
                 "RIX_CORE_ENABLE_MIPMAPPING": "true",
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "320",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "240",
-                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
+                "RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "20",
                 "RIX_CORE_ENABLE_ATTRIBUTE_SCALING": "true",
                 "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "512",
                 "RIX_CORE_NUMBER_OF_TEXTURES": "128",
@@ -187,11 +187,11 @@
             "cacheVariables": 
             {
                 "RIX_CORE_TMU_COUNT": "2",
-                "RIX_CORE_MAX_TEXTURE_SIZE": "256",
+                "RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE": "256",
                 "RIX_CORE_ENABLE_MIPMAPPING": "false",
                 "RIX_CORE_MAX_DISPLAY_WIDTH": "1024",
                 "RIX_CORE_MAX_DISPLAY_HEIGHT": "1024",
-                "RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "15",
+                "RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG": "15",
                 "RIX_CORE_ENABLE_ATTRIBUTE_SCALING": "true",
                 "RIX_CORE_NUMBER_OF_TEXTURE_PAGES": "12288",
                 "RIX_CORE_NUMBER_OF_TEXTURES": "12288",

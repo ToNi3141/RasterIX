@@ -1,4 +1,3 @@
-
 # CMOD A7 Build
 The build target is a CMOD A7 board with an `XC7A35` FPGA. An SPI interface is used to connect the FPGA with an MCU. An additional CTS pin for flow control (in software) is used.
 
@@ -80,11 +79,11 @@ build_flags =
     -Ofast 
     -std=c++17
     -DRIX_CORE_TMU_COUNT=1
-    -DRIX_CORE_MAX_TEXTURE_SIZE=128
+    -DRIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE=128
     -DRIX_CORE_ENABLE_MIPMAPPING=true
     -DRIX_CORE_MAX_DISPLAY_WIDTH=320
     -DRIX_CORE_MAX_DISPLAY_HEIGHT=240
-    -DRIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    -DRIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
     -DRIX_CORE_ENABLE_ATTRIBUTE_SCALING=true
     -DRIX_CORE_NUMBER_OF_TEXTURE_PAGES=68
     -DRIX_CORE_NUMBER_OF_TEXTURES=68
