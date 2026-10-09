@@ -305,10 +305,6 @@ module RasterIXCoreEF #(
         end
     end
 
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYOffset;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamXResolution;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYResolution;
-
     // Color buffer access
     wire [ADDR_WIDTH - 1 : 0]                        colorBufferAddr;
     wire                                             colorBufferApply;
@@ -699,10 +695,6 @@ module RasterIXCoreEF #(
         .s_cmd_axis_tready(s_cmd_axis_tready),
         .s_cmd_axis_tlast(s_cmd_axis_tlast),
         .s_cmd_axis_tdata(s_cmd_axis_tdata),
-
-        .framebufferParamYOffset(framebufferParamYOffset),
-        .framebufferParamXResolution(framebufferParamXResolution),
-        .framebufferParamYResolution(framebufferParamYResolution),
 
         .colorBufferAddr(colorBufferAddr),
         .colorBufferSize(fb_size),

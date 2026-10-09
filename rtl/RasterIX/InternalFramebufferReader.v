@@ -22,24 +22,17 @@ module InternalFramebufferReader
     // Number of pixels a stream beat contains
     parameter NUMBER_OF_PIXELS_PER_BEAT = 1,
     
-    // Number of sub pixels the interface of this module contains
-    parameter NUMBER_OF_SUB_PIXELS = 4,
-    // Number of bits of each sub pixel contains
-    parameter SUB_PIXEL_WIDTH = 8,
+    // Width of one framebuffer pixel, independent of its channel layout
+    parameter PIXEL_WIDTH = 32,
 
     // The maximum size of the screen in power of two
     parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 18, // Framebuffer size in power of two words (PIXEL_WIDTH)
     localparam ADDR_WIDTH = FRAMEBUFFER_SIZE_IN_PIXEL_LG,
 
-    // Size of the pixels
-    localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
-
     // Number of pixels a AXIS beat or a memory line can contain
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(NUMBER_OF_PIXELS_PER_BEAT),
-    // Size constrains of the internal memory
-    localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
-    localparam MEM_MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS,
-    localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH,
+    // Size constraints of the internal memory
+    localparam MEM_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * PIXEL_WIDTH,
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2
 )
 (
@@ -81,7 +74,7 @@ module InternalFramebufferReader
         else
         begin
             assign readAddrPort = araddr[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
-            assign memDataOut = readDataPort[memAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * MEM_PIXEL_WIDTH +: MEM_PIXEL_WIDTH];
+            assign memDataOut = readDataPort[memAddrReadDelay[0 +: PIXEL_PER_BEAT_LOG2] * PIXEL_WIDTH +: PIXEL_WIDTH];
         end
     endgenerate
 

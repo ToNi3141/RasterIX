@@ -16,154 +16,24 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "general.hpp"
-#include <algorithm>
-#include <array>
-#include <math.h>
-
 // Include model header, generated from Verilating "top.v"
 #include "VInternalFramebufferCommandHandler.h"
 
 static constexpr std::size_t NUMBER_OF_PIXELS_PER_BEAT = 2;
+static constexpr std::size_t AXI_BURST_BEATS = 16;
 
-static bool isInScissorArea(
-    const std::size_t x,
-    const std::size_t y,
-    const std::size_t scissorStartX,
-    const std::size_t scissorStartY,
-    const std::size_t scissorEndX,
-    const std::size_t scissorEndY,
-    const std::size_t yOffset,
-    const std::size_t yResolution)
+static std::size_t getTransferBeats(const std::size_t pixelCount)
 {
-    // Note: The Y coordinate is flipped. The Framebuffer's Y coordinate starts at the top left, while the openGL Y coordinate starts at the bottom left.
-    std::size_t tY = yOffset + yResolution - 1 - y; // Apply Y offset and flip Y coordinate
-    return (x >= scissorStartX && x < scissorEndX) && (tY >= scissorStartY && tY < scissorEndY);
+    constexpr std::size_t pixelsPerBurst = NUMBER_OF_PIXELS_PER_BEAT * AXI_BURST_BEATS;
+    const std::size_t paddedPixels = ((pixelCount + pixelsPerBurst - 1) / pixelsPerBurst) * pixelsPerBurst;
+    return paddedPixels / NUMBER_OF_PIXELS_PER_BEAT;
 }
 
-static uint8_t getScissorMask(
-    const std::size_t x,
-    const std::size_t y,
-    const std::size_t scissorStartX,
-    const std::size_t scissorStartY,
-    const std::size_t scissorEndX,
-    const std::size_t scissorEndY,
-    const std::size_t yOffset,
-    const std::size_t yResolution)
+static uint8_t getPixelValidMask(const std::size_t pixelOffset, const std::size_t pixelCount)
 {
-    const uint8_t maskScissor1 = isInScissorArea(
-                                     x,
-                                     y,
-                                     scissorStartX,
-                                     scissorStartY,
-                                     scissorEndX,
-                                     scissorEndY,
-                                     yOffset,
-                                     yResolution)
-        ? 0b0000'1111
-        : 0b0000'0000;
-    const uint8_t maskScissor0 = isInScissorArea(x + 1,
-                                     y,
-                                     scissorStartX,
-                                     scissorStartY,
-                                     scissorEndX,
-                                     scissorEndY,
-                                     yOffset,
-                                     yResolution)
-        ? 0b1111'0000
-        : 0b0000'0000;
-    const uint8_t maskScissor = maskScissor0 | maskScissor1;
-    return maskScissor;
-}
-
-TEST_CASE("memset", "[VInternalFramebufferCommandHandler]")
-{
-    VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
-
-    rr::ut::reset(t);
-
-    t->confClearColor = 0xaabbccdd; // Set clear color
-    t->confEnableScissor = 0; // Disable scissor test
-    t->confScissorStartX = 0;
-    t->confScissorStartY = 0;
-    t->confScissorEndX = 0;
-    t->confScissorEndY = 0;
-    t->confYOffset = 0;
-    t->confXResolution = 20;
-    t->confYResolution = 10;
-    t->confMask = 0b1111; // Enable all sub-pixels
-
-    t->apply = 1;
-    t->cmdMemset = 1; // Trigger memset command
-    t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
-    rr::ut::clk(t);
-
-    for (std::size_t i = 0; i < (t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT; i++)
-    {
-        rr::ut::clk(t);
-        CHECK(t->writeEnablePort == 1);
-        CHECK(t->writeDataPort == 0xaabbccdd'aabbccdd);
-        CHECK(t->writeAddrPort == i);
-        CHECK(t->writeMaskPort == 0b1111'1111);
-        CHECK(t->applied == 0);
-        t->apply = 0;
-    }
-
-    rr::ut::clk(t);
-    CHECK(t->writeEnablePort == 0);
-
-    rr::ut::clk(t);
-    CHECK(t->applied == 1);
-
-    // Destroy model
-    delete t;
-}
-
-TEST_CASE("memset with scissor and offset", "[VInternalFramebufferCommandHandler]")
-{
-    VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
-
-    rr::ut::reset(t);
-
-    t->confClearColor = 0xaabbccdd; // Set clear color
-    t->confEnableScissor = 1; // Disable scissor test
-    t->confScissorStartX = 5;
-    t->confScissorStartY = 15;
-    t->confScissorEndX = 11;
-    t->confScissorEndY = 20;
-    t->confYOffset = 10;
-    t->confXResolution = 20;
-    t->confYResolution = 10;
-    t->confMask = 0b1111; // Enable all sub-pixels
-
-    t->apply = 1;
-    t->cmdMemset = 1; // Trigger memset command
-    t->cmdSize = t->confXResolution * t->confYResolution; // Set size to fill
-    rr::ut::clk(t);
-
-    for (std::size_t y = 0; y < t->confYResolution; y++)
-    {
-        for (std::size_t x = 0; x < t->confXResolution; x += NUMBER_OF_PIXELS_PER_BEAT)
-        {
-            // Calculate index in memory
-            std::size_t i = (y * t->confXResolution + x) / NUMBER_OF_PIXELS_PER_BEAT;
-            rr::ut::clk(t);
-            CHECK(t->writeEnablePort == 1);
-            CHECK(t->writeDataPort == 0xaabbccdd'aabbccdd);
-            CHECK(t->writeAddrPort == i);
-            CHECK(t->writeMaskPort == getScissorMask(x, y, t->confScissorStartX, t->confScissorStartY, t->confScissorEndX, t->confScissorEndY, t->confYOffset, t->confYResolution));
-            CHECK(t->applied == 0);
-            t->apply = 0;
-        }
-    }
-
-    rr::ut::clk(t);
-    CHECK(t->writeEnablePort == 0);
-
-    rr::ut::clk(t);
-    CHECK(t->applied == 1);
-
-    // Destroy model
-    delete t;
+    const uint8_t lane0 = pixelOffset < pixelCount ? 0b01 : 0;
+    const uint8_t lane1 = (pixelOffset + 1) < pixelCount ? 0b10 : 0;
+    return lane0 | lane1;
 }
 
 TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
@@ -174,14 +44,9 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
 
     t->m_aready = 0;
 
-    t->confEnableScissor = 0; // Disable scissor test
-    t->confYOffset = 0;
-    t->confXResolution = 20;
-    t->confYResolution = 10;
-
     t->apply = 1;
     t->cmdCommit = 1;
-    t->cmdSize = (t->confXResolution * t->confYResolution) + t->confXResolution;
+    t->cmdSize = 220;
     t->cmdAddr = 0x1000'0000;
 
     t->m_axis_tready = 1; // Set ready signal to 1 to allow data transfer
@@ -191,7 +56,7 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
-    CHECK(t->m_abeats == (t->cmdSize / 2));
+    CHECK(t->m_abeats == getTransferBeats(t->cmdSize));
     CHECK(t->m_arnw == 1);
 
     rr::ut::clk(t);
@@ -199,31 +64,26 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
-    CHECK(t->m_abeats == (t->cmdSize / 2));
+    CHECK(t->m_abeats == getTransferBeats(t->cmdSize));
     CHECK(t->m_arnw == 1);
 
     t->apply = 0;
-    const std::size_t numberOfBeats = ((t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT);
-    for (std::size_t y = 0; y < t->confYResolution + 1; y++) // + to simulate an additional line (in respect to the cmdSize)
+    const std::size_t numberOfBeats = getTransferBeats(t->cmdSize);
+    for (std::size_t i = 0; i < numberOfBeats; i++)
     {
-        for (std::size_t x = 0; x < t->confXResolution; x += NUMBER_OF_PIXELS_PER_BEAT)
-        {
-            std::size_t i = (y * t->confXResolution + x) / NUMBER_OF_PIXELS_PER_BEAT;
+        t->readDataPort = i; // Simulate reading data from memory
+        rr::ut::clk(t);
+        CHECK(t->readAddrPort == i + 2);
+        CHECK(t->applied == 0);
 
-            t->readDataPort = i; // Simulate reading data from memory
-            rr::ut::clk(t);
-            CHECK(t->readAddrPort == i + 2);
-            CHECK(t->applied == 0);
+        CHECK(t->m_axis_tdata == i);
+        CHECK(t->m_axis_tstrb == getPixelValidMask(i * NUMBER_OF_PIXELS_PER_BEAT, t->cmdSize));
+        CHECK(t->m_axis_tvalid == 1);
+        CHECK(t->m_axis_tlast == (i == numberOfBeats - 1));
 
-            CHECK(t->m_axis_tdata == i);
-            CHECK(t->m_axis_tstrb == getScissorMask(x, y, 0, 0, t->confXResolution, t->confYResolution, 0, t->confYResolution));
-            CHECK(t->m_axis_tvalid == 1);
-            CHECK(t->m_axis_tlast == (i >= (t->cmdSize / NUMBER_OF_PIXELS_PER_BEAT) - 1));
-
-            CHECK(t->m_avalid == 1);
-            CHECK(t->m_aaddr == t->cmdAddr);
-            CHECK(t->m_abeats == (t->cmdSize / 2));
-        }
+        CHECK(t->m_avalid == 1);
+        CHECK(t->m_aaddr == t->cmdAddr);
+        CHECK(t->m_abeats == getTransferBeats(t->cmdSize));
     }
 
     // Additional clocks to check, that applied stays 0 as long as m_aready is not asserted
@@ -247,20 +107,47 @@ TEST_CASE("commit", "[VInternalFramebufferCommandHandler]")
     delete t;
 }
 
+TEST_CASE("commit pixel strobe handles exact-size tail and burst padding", "[VInternalFramebufferCommandHandler]")
+{
+    VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
+
+    rr::ut::reset(t);
+
+    t->apply = 1;
+    t->cmdCommit = 1;
+    t->cmdSize = 3; // Exact size ends part-way through a pixel beat.
+    t->m_axis_tready = 1;
+    t->readDataPort = 0;
+
+    rr::ut::clk(t);
+    t->apply = 0;
+    rr::ut::clk(t);
+    CHECK(t->m_axis_tvalid == 0);
+
+    const std::size_t numberOfBeats = getTransferBeats(t->cmdSize);
+    CHECK(t->m_abeats == numberOfBeats);
+    for (std::size_t i = 0; i < numberOfBeats; i++)
+    {
+        t->readDataPort = i;
+        rr::ut::clk(t);
+        CHECK(t->m_axis_tvalid == 1);
+        CHECK(t->m_axis_tdata == i);
+        CHECK(t->m_axis_tstrb == getPixelValidMask(i * NUMBER_OF_PIXELS_PER_BEAT, t->cmdSize));
+        CHECK(t->m_axis_tlast == (i == numberOfBeats - 1));
+    }
+
+    delete t;
+}
+
 TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler]")
 {
     VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
 
     rr::ut::reset(t);
 
-    t->confEnableScissor = 0; // Disable scissor test
-    t->confYOffset = 0;
-    t->confXResolution = 20;
-    t->confYResolution = 10;
-
     t->apply = 1;
     t->cmdCommit = 1;
-    t->cmdSize = t->confXResolution * t->confYResolution;
+    t->cmdSize = 200;
 
     t->m_axis_tready = 1; // Set ready signal to 1 to allow data transfer
     t->readDataPort = 1;
@@ -281,7 +168,7 @@ TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler
     CHECK(t->m_axis_tvalid == 1);
     CHECK(t->m_axis_tdata == 2);
 
-    const std::size_t numberOfBeats = ((t->confXResolution * t->confYResolution) / NUMBER_OF_PIXELS_PER_BEAT);
+    const std::size_t numberOfBeats = getTransferBeats(t->cmdSize);
     for (std::size_t i = 0; i < numberOfBeats - 1; i++)
     {
         t->m_axis_tready = 0; // Simulate that the stream is interrupted
@@ -290,7 +177,7 @@ TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler
         CHECK(t->readAddrPort == i + 2);
         CHECK(t->applied == 0);
         CHECK(t->m_axis_tdata == i + 2);
-        CHECK(t->m_axis_tstrb == 0b1111'1111);
+        CHECK(t->m_axis_tstrb == getPixelValidMask(i * NUMBER_OF_PIXELS_PER_BEAT, t->cmdSize));
         CHECK(t->m_axis_tvalid == 1);
         CHECK(t->m_axis_tlast == (i == numberOfBeats - 1));
         t->apply = 0;
@@ -302,7 +189,7 @@ TEST_CASE("commit with interrupted stream", "[VInternalFramebufferCommandHandler
             CHECK(t->readAddrPort == i + 3);
             CHECK(t->applied == 0);
             CHECK(t->m_axis_tdata == i + 3);
-            CHECK(t->m_axis_tstrb == 0b1111'1111);
+            CHECK(t->m_axis_tstrb == getPixelValidMask((i + 1) * NUMBER_OF_PIXELS_PER_BEAT, t->cmdSize));
             CHECK(t->m_axis_tvalid == 1);
             CHECK(t->m_axis_tlast == ((i + 1) == numberOfBeats - 1));
         }
@@ -338,7 +225,7 @@ TEST_CASE("read", "[VInternalFramebufferCommandHandler]")
     CHECK(t->s_axis_tready == 1);
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
-    CHECK(t->m_abeats == (t->cmdSize / 2));
+    CHECK(t->m_abeats == getTransferBeats(t->cmdSize));
     CHECK(t->m_arnw == 0);
 
     rr::ut::clk(t);
@@ -346,7 +233,7 @@ TEST_CASE("read", "[VInternalFramebufferCommandHandler]")
     CHECK(t->s_axis_tready == 1);
     CHECK(t->m_avalid == 1);
     CHECK(t->m_aaddr == t->cmdAddr);
-    CHECK(t->m_abeats == (t->cmdSize / 2));
+    CHECK(t->m_abeats == getTransferBeats(t->cmdSize));
     CHECK(t->m_arnw == 0);
 
     t->apply = 0;
@@ -359,13 +246,13 @@ TEST_CASE("read", "[VInternalFramebufferCommandHandler]")
         CHECK(t->writeAddrPort == i / NUMBER_OF_PIXELS_PER_BEAT);
         CHECK(t->writeEnablePort == 1);
         CHECK(t->writeDataPort == i);
-        CHECK(t->writeMaskPort == 0b1111'1111);
+        CHECK(t->writeMaskPort == 0b11);
         CHECK(t->s_axis_tready == !t->s_axis_tlast);
         CHECK(t->applied == 0);
 
         CHECK(t->m_avalid == 1);
         CHECK(t->m_aaddr == t->cmdAddr);
-        CHECK(t->m_abeats == (t->cmdSize / 2));
+        CHECK(t->m_abeats == getTransferBeats(t->cmdSize));
     }
 
     // Additional clocks to check, that applied stays 0 as long as m_aready is not asserted
@@ -392,5 +279,46 @@ TEST_CASE("read", "[VInternalFramebufferCommandHandler]")
     CHECK(t->s_axis_tready == 0);
 
     // Destroy model
+    delete t;
+}
+
+TEST_CASE("read pixel-valid mask handles burst padding beyond exact size", "[VInternalFramebufferCommandHandler]")
+{
+    VInternalFramebufferCommandHandler* t = rr::ut::makeTop<VInternalFramebufferCommandHandler>();
+
+    rr::ut::reset(t);
+    t->m_aready = 0;
+    t->apply = 1;
+    t->cmdRead = 1;
+    t->cmdSize = 3;
+    t->cmdAddr = 0x1000'0000;
+
+    rr::ut::clk(t);
+    CHECK(t->m_abeats == getTransferBeats(t->cmdSize));
+    CHECK(t->m_abeats == AXI_BURST_BEATS);
+
+    t->apply = 0;
+    const std::size_t transferPixels = getTransferBeats(t->cmdSize) * NUMBER_OF_PIXELS_PER_BEAT;
+    for (std::size_t pixelOffset = 0; pixelOffset < transferPixels; pixelOffset += NUMBER_OF_PIXELS_PER_BEAT)
+    {
+        t->s_axis_tvalid = 1;
+        t->s_axis_tdata = pixelOffset;
+        t->s_axis_tlast = (pixelOffset + NUMBER_OF_PIXELS_PER_BEAT) >= transferPixels;
+        rr::ut::clk(t);
+
+        CHECK(t->writeAddrPort == pixelOffset / NUMBER_OF_PIXELS_PER_BEAT);
+        CHECK(t->writeEnablePort == 1);
+        CHECK(t->writeDataPort == pixelOffset);
+        CHECK(t->writeMaskPort == getPixelValidMask(pixelOffset, t->cmdSize));
+        CHECK(t->s_axis_tready == !t->s_axis_tlast);
+    }
+
+    rr::ut::clk(t);
+    CHECK(t->writeEnablePort == 0);
+    t->m_aready = 1;
+    rr::ut::clk(t);
+    rr::ut::clk(t);
+    CHECK(t->applied == 1);
+
     delete t;
 }

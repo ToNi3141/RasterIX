@@ -73,8 +73,9 @@ module RasterIXCoreIF #(
     parameter ID_WIDTH = 8,
     // Memory data width
     parameter DATA_WIDTH = 64,
+    localparam AXI_BYTE_WIDTH = 8,
     // Memory strobe width
-    parameter STRB_WIDTH = DATA_WIDTH / 8,
+    parameter STRB_WIDTH = DATA_WIDTH / AXI_BYTE_WIDTH,
 
     // Configures the precision of the float calculations (interpolation of textures, depth, ...)
     // A lower value can significant reduce the logic consumption but can cause visible 
@@ -210,9 +211,12 @@ module RasterIXCoreIF #(
 );
 `include "RegisterAndDescriptorDefines.vh"
     localparam DEFAULT_ALPHA_VAL = 0;
-    localparam SCREEN_POS_WIDTH = 11;
     localparam PIXEL_WIDTH_STREAM = 16;
+    localparam PIXEL_BYTES = PIXEL_WIDTH_STREAM / AXI_BYTE_WIDTH;
     localparam PIXEL_PER_BEAT = DATA_WIDTH / PIXEL_WIDTH_STREAM;
+    localparam STENCIL_PIXELS_PER_BYTE = AXI_BYTE_WIDTH / STENCIL_WIDTH;
+    localparam STENCIL_DATA_WIDTH_PER_BEAT = PIXEL_PER_BEAT * STENCIL_WIDTH;
+    localparam STENCIL_BYTES_PER_BEAT = STENCIL_DATA_WIDTH_PER_BEAT / AXI_BYTE_WIDTH;
     localparam PIPELINE_PIXEL_WIDTH = COLOR_SUB_PIXEL_WIDTH * COLOR_NUMBER_OF_SUB_PIXEL;
     // This is used to configure, if it is required to reduce / expand a vector or not. This is done by the offset:
     // When the offset is set to number of pixels, then the reduce / expand function will just copy the line
@@ -224,10 +228,6 @@ module RasterIXCoreIF #(
     `ExpandVec(ColorBufferExpandVec, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS, SUB_PIXEL_OFFSET, COLOR_NUMBER_OF_SUB_PIXEL, COLOR_NUMBER_OF_SUB_PIXEL)
     `Expand(ColorBufferExpand, IF_FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
     `Reduce(ColorBufferReduce, IF_FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, FRAMEBUFFER_NUMBER_OF_SUB_PIXELS)
-
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYOffset;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamXResolution;
-    wire [SCREEN_POS_WIDTH - 1 : 0]                  framebufferParamYResolution;
 
     // Color buffer access
     wire [ADDR_WIDTH - 1 : 0]                        colorBufferAddr;
@@ -291,20 +291,12 @@ module RasterIXCoreIF #(
     generate
         if (ENABLE_DEPTH_BUFFER)
         begin
-            wire [PIXEL_PER_BEAT - 1 : 0] m_depthbuffer_unconverted_axis_tstrb;
+            genvar depthPixel;
+            wire [PIXEL_PER_BEAT - 1 : 0] m_depthbuffer_pixelstrobe;
             InternalFramebuffer depthBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
 
-                .confClearColor(0),
-                .confEnableScissor(1'b0),
-                .confScissorStartX({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .confScissorStartY({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .confScissorEndX({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .confScissorEndY({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .confYOffset(framebufferParamYOffset),
-                .confXResolution(framebufferParamXResolution),
-                .confYResolution(framebufferParamYResolution),
                 .confMask(depthBufferMask),
 
                 .araddr(m_depth_araddr),
@@ -317,13 +309,9 @@ module RasterIXCoreIF #(
                 .wdata(m_depth_wdata),
                 .wvalid(m_depth_wvalid),
                 .wstrb(m_depth_wstrb),
-                .wscreenPosX({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .wscreenPosY({ SCREEN_POS_WIDTH { 1'b0 } }),
-
                 .apply(depthBufferApply && (depthBufferCmdCommit || depthBufferCmdRead)),
                 .applied(depthBufferApplied),
                 .cmdCommit(depthBufferCmdCommit),
-                .cmdMemset(1'b0),
                 .cmdRead(depthBufferCmdRead),
                 .cmdSize(depthBufferSize),
                 .cmdAddr(depthBufferAddr),
@@ -332,7 +320,7 @@ module RasterIXCoreIF #(
                 .m_axis_tready(m_depthbuffer_axis_tready),
                 .m_axis_tlast(m_depthbuffer_axis_tlast),
                 .m_axis_tdata(m_depthbuffer_axis_tdata),
-                .m_axis_tstrb(m_depthbuffer_unconverted_axis_tstrb),
+                .m_axis_tstrb(m_depthbuffer_pixelstrobe),
 
                 .s_axis_tvalid(s_depthbuffer_axis_tvalid),
                 .s_axis_tready(s_depthbuffer_axis_tready),
@@ -347,22 +335,21 @@ module RasterIXCoreIF #(
             );
             defparam depthBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam depthBuffer.NUMBER_OF_SUB_PIXELS = 1;
-            defparam depthBuffer.SUB_PIXEL_WIDTH = 16;
-            defparam depthBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
-            defparam depthBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
+            defparam depthBuffer.SUB_PIXEL_WIDTH = PIXEL_WIDTH_STREAM;
             defparam depthBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG;
             defparam depthBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
-            // The strobe can not logically be reduced to STRB_WIDTH bits, because the AXIS interface requires a strobe for every sub pixel.
-            // Therefore, as long one strobe signal is active, store the whole pixel. This should be sufficient because the strobing is already
-            // done by the internal framebuffer.
-            assign m_depthbuffer_axis_tstrb = { STRB_WIDTH { |m_depthbuffer_unconverted_axis_tstrb } };
+            for (depthPixel = 0; depthPixel < PIXEL_PER_BEAT; depthPixel = depthPixel + 1)
+            begin
+                assign m_depthbuffer_axis_tstrb[(depthPixel * PIXEL_BYTES) +: PIXEL_BYTES] =
+                    { PIXEL_BYTES { m_depthbuffer_pixelstrobe[depthPixel] } };
+            end
         end
         else
         begin
             assign m_depth_arready = 1;
             assign m_depth_rvalid = 1;
-            assign m_depth_rdata = 16'hffff;
+            assign m_depth_rdata = { PIXEL_WIDTH_STREAM { 1'b1 } };
             assign m_depth_arlast = 0;
             assign depthBufferApplied = 1;
 
@@ -375,20 +362,11 @@ module RasterIXCoreIF #(
     localparam FRAMEBUFFER_SUBPIXEL_PER_BEAT = PIXEL_PER_BEAT * FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
     wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0]   m_colorbuffer_unconverted_axis_tdata;
     wire [(PIXEL_WIDTH_FRAMEBUFFER * PIXEL_PER_BEAT) - 1 : 0]   s_colorbuffer_unconverted_axis_tdata;
-    wire [FRAMEBUFFER_SUBPIXEL_PER_BEAT - 1 : 0]                m_colorbuffer_unconverted_axis_tstrb;
+    wire [PIXEL_PER_BEAT - 1 : 0]                               m_colorbuffer_pixelstrobe;
     InternalFramebuffer colorBuffer (  
         .clk(aclk),
         .reset(!resetn),
 
-        .confClearColor(0),
-        .confEnableScissor(1'b0),
-        .confScissorStartX({ SCREEN_POS_WIDTH { 1'b0 } }),
-        .confScissorStartY({ SCREEN_POS_WIDTH { 1'b0 } }),
-        .confScissorEndX({ SCREEN_POS_WIDTH { 1'b0 } }),
-        .confScissorEndY({ SCREEN_POS_WIDTH { 1'b0 } }),
-        .confYOffset(framebufferParamYOffset),
-        .confXResolution(framebufferParamXResolution),
-        .confYResolution(framebufferParamYResolution),
         .confMask(ColorBufferReduceMask(colorBufferMask)),
 
         .araddr(m_color_araddr),
@@ -401,13 +379,10 @@ module RasterIXCoreIF #(
         .wdata(ColorBufferReduce(ColorBufferReduceVec(m_color_wdata))),
         .wvalid(m_color_wvalid),
         .wstrb(m_color_wstrb),
-        .wscreenPosX({ SCREEN_POS_WIDTH { 1'b0 } }),
-        .wscreenPosY({ SCREEN_POS_WIDTH { 1'b0 } }),
-        
+
         .apply(colorBufferApply && (colorBufferCmdCommit || colorBufferCmdRead)),
         .applied(colorBufferApplied),
         .cmdCommit(colorBufferCmdCommit),
-        .cmdMemset(1'b0),
         .cmdRead(colorBufferCmdRead),
         .cmdSize(colorBufferSize),
         .cmdAddr(colorBufferAddr),
@@ -416,7 +391,7 @@ module RasterIXCoreIF #(
         .m_axis_tready(m_colorbuffer_axis_tready),
         .m_axis_tlast(m_colorbuffer_axis_tlast),
         .m_axis_tdata(m_colorbuffer_unconverted_axis_tdata),
-        .m_axis_tstrb(m_colorbuffer_unconverted_axis_tstrb),
+        .m_axis_tstrb(m_colorbuffer_pixelstrobe),
 
         .s_axis_tvalid(s_colorbuffer_axis_tvalid),
         .s_axis_tready(s_colorbuffer_axis_tready),
@@ -432,8 +407,6 @@ module RasterIXCoreIF #(
     defparam colorBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT; 
     defparam colorBuffer.NUMBER_OF_SUB_PIXELS = FRAMEBUFFER_NUMBER_OF_SUB_PIXELS;
     defparam colorBuffer.SUB_PIXEL_WIDTH = IF_FRAMEBUFFER_SUB_PIXEL_WIDTH;
-    defparam colorBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
-    defparam colorBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
     defparam colorBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG;
     defparam colorBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
@@ -445,6 +418,7 @@ module RasterIXCoreIF #(
 
     // Conversion of the internal pixel representation the exnternal one required for the AXIS interface
     generate
+        genvar colorPixel;
         // Convert from RGB[A]XXX[X] to RGB565
         `XXX2RGB565(XXX2RGB565, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT);
         `Expand(RGBnnnToRGB888, IF_FRAMEBUFFER_SUB_PIXEL_WIDTH, COLOR_SUB_PIXEL_WIDTH, PIXEL_PER_BEAT * 3);
@@ -471,31 +445,26 @@ module RasterIXCoreIF #(
             assign s_colorbuffer_unconverted_axis_tdata = RGBXXXToYYY(RGB565ToXXX(s_colorbuffer_axis_tdata));
         end
 
-        // The strobe can not logically be reduced to STRB_WIDTH bits, because the AXIS interface requires a strobe for every sub pixel.
-        // Therefore, as long one strobe signal is active, store the whole pixel. This should be sufficient because the strobing is already
-        // done by the internal framebuffer.
-        assign m_colorbuffer_axis_tstrb = { STRB_WIDTH { |m_colorbuffer_unconverted_axis_tstrb } };
+        // The handler emits one strobe bit per pixel. Duplicate it across the
+        // AXI byte lanes occupied by that pixel.
+        for (colorPixel = 0; colorPixel < PIXEL_PER_BEAT; colorPixel = colorPixel + 1)
+        begin
+            assign m_colorbuffer_axis_tstrb[(colorPixel * PIXEL_BYTES) +: PIXEL_BYTES] =
+                { PIXEL_BYTES { m_colorbuffer_pixelstrobe[colorPixel] } };
+        end
     endgenerate
 
     generate 
         if (ENABLE_STENCIL_BUFFER)
         begin
-            wire [PIXEL_PER_BEAT - 1 : 0]                   m_stencilbuffer_unconverted_axis_tstrb;
-            wire [(PIXEL_PER_BEAT * STENCIL_WIDTH) - 1 : 0] m_stencilbuffer_unconverted_axis_tdata;
+            genvar stencilByte;
+            wire [PIXEL_PER_BEAT - 1 : 0] m_stencilbuffer_pixelstrobe;
+            wire [STENCIL_DATA_WIDTH_PER_BEAT - 1 : 0] m_stencilbuffer_unconverted_axis_tdata;
 
             InternalFramebuffer stencilBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
 
-                .confClearColor(0),
-                .confEnableScissor(1'b0),
-                .confScissorStartX({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .confScissorStartY({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .confScissorEndX({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .confScissorEndY({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .confYOffset(framebufferParamYOffset),
-                .confXResolution(framebufferParamXResolution),
-                .confYResolution(framebufferParamYResolution),
                 .confMask(stencilBufferMask),
 
                 .araddr(m_stencil_araddr),
@@ -508,13 +477,9 @@ module RasterIXCoreIF #(
                 .wdata(m_stencil_wdata),
                 .wvalid(m_stencil_wvalid),
                 .wstrb(m_stencil_wstrb),
-                .wscreenPosX({ SCREEN_POS_WIDTH { 1'b0 } }),
-                .wscreenPosY({ SCREEN_POS_WIDTH { 1'b0 } }),
-
                 .apply(stencilBufferApply && (stencilBufferCmdCommit || stencilBufferCmdRead)),
                 .applied(stencilBufferApplied),
                 .cmdCommit(stencilBufferCmdCommit),
-                .cmdMemset(1'b0),
                 .cmdRead(stencilBufferCmdRead),
                 .cmdSize(stencilBufferSize),
                 .cmdAddr(stencilBufferAddr),
@@ -523,12 +488,12 @@ module RasterIXCoreIF #(
                 .m_axis_tready(m_stencilbuffer_axis_tready),
                 .m_axis_tlast(m_stencilbuffer_axis_tlast),
                 .m_axis_tdata(m_stencilbuffer_unconverted_axis_tdata),
-                .m_axis_tstrb(m_stencilbuffer_unconverted_axis_tstrb),
+                .m_axis_tstrb(m_stencilbuffer_pixelstrobe),
 
                 .s_axis_tvalid(s_stencilbuffer_axis_tvalid),
                 .s_axis_tready(s_stencilbuffer_axis_tready),
                 .s_axis_tlast(s_stencilbuffer_axis_tlast),
-                .s_axis_tdata(s_stencilbuffer_axis_tdata[0 +: PIXEL_PER_BEAT * STENCIL_WIDTH]),
+                .s_axis_tdata(s_stencilbuffer_axis_tdata[0 +: STENCIL_DATA_WIDTH_PER_BEAT]),
 
                 .m_avalid(m_stencilbuffer_avalid),
                 .m_aaddr(m_stencilbuffer_aaddr),
@@ -539,16 +504,22 @@ module RasterIXCoreIF #(
             defparam stencilBuffer.NUMBER_OF_PIXELS_PER_BEAT = PIXEL_PER_BEAT;
             defparam stencilBuffer.NUMBER_OF_SUB_PIXELS = STENCIL_WIDTH;
             defparam stencilBuffer.SUB_PIXEL_WIDTH = 1;
-            defparam stencilBuffer.X_BIT_WIDTH = RENDER_CONFIG_X_SIZE;
-            defparam stencilBuffer.Y_BIT_WIDTH = RENDER_CONFIG_Y_SIZE;
             defparam stencilBuffer.FRAMEBUFFER_SIZE_IN_PIXEL_LG = IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG;
             defparam stencilBuffer.FB_SIZE_IN_PIXEL_LG = FB_SIZE_IN_PIXEL_LG;
 
-            // The strobe can not logically be reduced to STRB_WIDTH bits, because the AXIS interface requires a strobe for every sub pixel.
-            // Therefore, as long one strobe signal is active, store the whole pixel. This should be sufficient because the strobing is already
-            // done by the internal framebuffer.
-            assign m_stencilbuffer_axis_tstrb = { STRB_WIDTH { |m_stencilbuffer_unconverted_axis_tstrb } };
-            assign m_stencilbuffer_axis_tdata = { { DATA_WIDTH - (PIXEL_PER_BEAT * STENCIL_WIDTH) { 1'b0 } }, m_stencilbuffer_unconverted_axis_tdata };
+            // Stencil occupies only the low bus bits. Each AXI byte covers
+            // STENCIL_PIXELS_PER_BYTE pixels; upper bus-byte strobes are zero.
+            for (stencilByte = 0; stencilByte < STENCIL_BYTES_PER_BEAT; stencilByte = stencilByte + 1)
+            begin
+                assign m_stencilbuffer_axis_tstrb[stencilByte] =
+                    |m_stencilbuffer_pixelstrobe[(stencilByte * STENCIL_PIXELS_PER_BYTE) +: STENCIL_PIXELS_PER_BYTE];
+            end
+            if (STRB_WIDTH > STENCIL_BYTES_PER_BEAT)
+            begin
+                assign m_stencilbuffer_axis_tstrb[STRB_WIDTH - 1 : STENCIL_BYTES_PER_BEAT] =
+                    { (STRB_WIDTH - STENCIL_BYTES_PER_BEAT) { 1'b0 } };
+            end
+            assign m_stencilbuffer_axis_tdata = { { DATA_WIDTH - STENCIL_DATA_WIDTH_PER_BEAT { 1'b0 } }, m_stencilbuffer_unconverted_axis_tdata };
         end
         else
         begin
@@ -591,10 +562,6 @@ module RasterIXCoreIF #(
         .s_cmd_axis_tready(s_cmd_axis_tready),
         .s_cmd_axis_tlast(s_cmd_axis_tlast),
         .s_cmd_axis_tdata(s_cmd_axis_tdata),
-
-        .framebufferParamYOffset(framebufferParamYOffset),
-        .framebufferParamXResolution(framebufferParamXResolution),
-        .framebufferParamYResolution(framebufferParamYResolution),
 
         .colorBufferAddr(colorBufferAddr),
         .colorBufferSize(colorBufferSize),

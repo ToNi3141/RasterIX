@@ -45,7 +45,6 @@ read_verilog ./../../../../RasterIX/InternalFramebuffer.v
 read_verilog ./../../../../RasterIX/InternalFramebufferCommandHandler.v
 read_verilog ./../../../../RasterIX/InternalFramebufferRam.v
 read_verilog ./../../../../RasterIX/InternalFramebufferReader.v
-read_verilog ./../../../../RasterIX/InternalFramebufferScissorFunc.vh
 read_verilog ./../../../../RasterIX/InternalFramebufferWriter.v
 read_verilog ./../../../../RasterIX/FramebufferClear.v
 read_verilog ./../../../../RasterIX/StreamMux2.v

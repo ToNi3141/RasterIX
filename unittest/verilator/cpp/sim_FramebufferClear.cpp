@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "general.hpp"
 #include "VFramebufferClear.h"
+#include "general.hpp"
 
 TEST_CASE("Check clear", "[FramebufferClear]")
 {

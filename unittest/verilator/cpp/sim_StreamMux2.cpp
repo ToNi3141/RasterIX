@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "general.hpp"
 #include "VStreamMux2.h"
+#include "general.hpp"
 
 TEST_CASE("StreamMux2 selects port 0", "[StreamMux2]")
 {

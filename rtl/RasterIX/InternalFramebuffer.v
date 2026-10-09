@@ -21,14 +21,9 @@
 // To execute a command, set apply to 1. The framebuffer will then start sampling the command bits and starts executing.
 // During execution, applied is set to 0. Is the execution finished, applied is set to 1.
 // cmdCommit: This command will start streaming the content of the framebuffer via the AXIS interface.
-// cmdMemset: This command will initialize the memory with the color in confClearColor
 // cmdRead: This command is used to stream the framebuffer content via the AXIS interface into this module (counterpart to cmdCommit).
 //
 // The fragment interface can be used to access single fragments from the framebuffer
-//
-// Improvements: The scrissor is not optimized. When memset is called, it will set the whole memory except
-// the scissor area. A improved version will just set the scissor area.
-// It is not implemented, because it requires additional logic for the index calculation (multiplier and so on).
 //
 // Pipelined: yes
 // Performance: 1 pixel per cycle
@@ -43,9 +38,6 @@ module InternalFramebuffer
     // Number of bits of each sub pixel containts
     parameter SUB_PIXEL_WIDTH = 8,
 
-    // The maximum size of the screen in power of two
-    parameter X_BIT_WIDTH = 11,
-    parameter Y_BIT_WIDTH = 11,
     parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 18, // Framebuffer size in power of two words (PIXEL_WIDTH)
 
     // The maximum size stream size
@@ -62,8 +54,6 @@ module InternalFramebuffer
 
     // Width of the AXIS interface with the frame buffer content
     localparam STREAM_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * PIXEL_WIDTH,
-    localparam STREAM_STRB_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS,
-
     // Number of pixels a AXIS beat or a memory line can contain
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(NUMBER_OF_PIXELS_PER_BEAT),
 
@@ -79,15 +69,6 @@ module InternalFramebuffer
     /////////////////////////
     // Configs
     /////////////////////////
-    input  wire [PIXEL_WIDTH - 1 : 0]           confClearColor,
-    input  wire                                 confEnableScissor,
-    input  wire [X_BIT_WIDTH - 1 : 0]           confScissorStartX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]           confScissorStartY,
-    input  wire [X_BIT_WIDTH - 1 : 0]           confScissorEndX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]           confScissorEndY,
-    input  wire [Y_BIT_WIDTH - 1 : 0]           confYOffset,
-    input  wire [X_BIT_WIDTH - 1 : 0]           confXResolution,
-    input  wire [Y_BIT_WIDTH - 1 : 0]           confYResolution,
     input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  confMask,
 
     /////////////////////////
@@ -112,9 +93,6 @@ module InternalFramebuffer
     input  wire [PIXEL_ADDR_WIDTH - 1 : 0]      waddr,
     input  wire [PIXEL_WIDTH - 1 : 0]           wdata,
     input  wire                                 wstrb,
-    input  wire [X_BIT_WIDTH - 1 : 0]           wscreenPosX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]           wscreenPosY,
-    
     /////////////////////////
     // Control
     /////////////////////////
@@ -123,9 +101,8 @@ module InternalFramebuffer
     input  wire                                 apply, // This start a command 
     output wire                                 applied, // This marks if the commands have been applied.
     input  wire                                 cmdCommit, // Starts to stream the memory content via the AXIS interface
-    input  wire                                 cmdMemset, // Applies the confClearColor (with respect to the scissor) to the memory
     input  wire                                 cmdRead, // Reads the framebuffer content and streams it via the AXIS interface
-    input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   cmdSize, // Size of the stream 
+    input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   cmdSize, // Exact logical framebuffer size in 16-bit pixels.
     input  wire [ADDR_WIDTH - 1 : 0]            cmdAddr,
 
     // AXI Stream master interface
@@ -133,7 +110,7 @@ module InternalFramebuffer
     input  wire                                 m_axis_tready,
     output wire                                 m_axis_tlast,
     output wire [STREAM_WIDTH - 1 : 0]          m_axis_tdata,
-    output wire [STREAM_STRB_WIDTH - 1 : 0]     m_axis_tstrb,
+    output wire [NUMBER_OF_PIXELS_PER_BEAT - 1 : 0] m_axis_tstrb,
 
     input  wire                                 s_axis_tvalid,
     output wire                                 s_axis_tready,
@@ -153,12 +130,22 @@ module InternalFramebuffer
     wire [MEM_ADDR_WIDTH - 1 : 0]   readAddrPort1;
     wire [MEM_WIDTH - 1 : 0]        readDataPort1;
     
-    wire [MEM_MASK_WIDTH - 1 : 0]   writeMaskPort0; 
+    wire [NUMBER_OF_PIXELS_PER_BEAT - 1 : 0]  writePixelStrobePort0;
+    wire [MEM_MASK_WIDTH - 1 : 0]             writeMaskPort0;
     wire [MEM_ADDR_WIDTH - 1 : 0]   writeAddrPort0;
     wire [MEM_WIDTH - 1 : 0]        writeDataPort0;
     wire                            writeEnablePort0;
     wire [MEM_ADDR_WIDTH - 1 : 0]   readAddrPort0;
     wire [MEM_WIDTH - 1 : 0]        readDataPort0;
+
+    genvar pixelLane;
+    generate
+        for (pixelLane = 0; pixelLane < NUMBER_OF_PIXELS_PER_BEAT; pixelLane = pixelLane + 1)
+        begin
+            assign writeMaskPort0[(pixelLane * NUMBER_OF_SUB_PIXELS) +: NUMBER_OF_SUB_PIXELS] =
+                { NUMBER_OF_SUB_PIXELS { writePixelStrobePort0[pixelLane] } };
+        end
+    endgenerate
 
     InternalFramebufferRam #(
         .ADDR_WIDTH(MEM_ADDR_WIDTH),
@@ -191,8 +178,7 @@ module InternalFramebuffer
 
     InternalFramebufferReader #(
         .NUMBER_OF_PIXELS_PER_BEAT(NUMBER_OF_PIXELS_PER_BEAT),
-        .NUMBER_OF_SUB_PIXELS(NUMBER_OF_SUB_PIXELS),
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
+        .PIXEL_WIDTH(PIXEL_WIDTH),
         .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG)
     ) reader (
         .clk(clk),
@@ -216,19 +202,9 @@ module InternalFramebuffer
         .NUMBER_OF_PIXELS_PER_BEAT(NUMBER_OF_PIXELS_PER_BEAT),
         .NUMBER_OF_SUB_PIXELS(NUMBER_OF_SUB_PIXELS),
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
-        .X_BIT_WIDTH(X_BIT_WIDTH),
-        .Y_BIT_WIDTH(Y_BIT_WIDTH),
         .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG)
     ) writer (
-        .clk(clk),
-        .reset(reset),
-
         // Configs
-        .confEnableScissor(confEnableScissor),
-        .confScissorStartX(confScissorStartX),
-        .confScissorStartY(confScissorStartY),
-        .confScissorEndX(confScissorEndX),
-        .confScissorEndY(confScissorEndY),
         .confMask(confMask),
 
         // Fragment interface
@@ -236,8 +212,6 @@ module InternalFramebuffer
         .waddr(waddr),
         .wdata(wdata),
         .wstrb(wstrb),
-        .wscreenPosX(wscreenPosX),
-        .wscreenPosY(wscreenPosY),
 
         .writeDataPort(writeDataPort1),
         .writeEnablePort(writeEnablePort1),
@@ -247,10 +221,7 @@ module InternalFramebuffer
 
     InternalFramebufferCommandHandler #(
         .NUMBER_OF_PIXELS_PER_BEAT(NUMBER_OF_PIXELS_PER_BEAT),
-        .NUMBER_OF_SUB_PIXELS(NUMBER_OF_SUB_PIXELS),
-        .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
-        .X_BIT_WIDTH(X_BIT_WIDTH),
-        .Y_BIT_WIDTH(Y_BIT_WIDTH),
+        .PIXEL_WIDTH(PIXEL_WIDTH),
         .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
         .FB_SIZE_IN_PIXEL_LG(FB_SIZE_IN_PIXEL_LG),
         .ADDR_WIDTH(ADDR_WIDTH)
@@ -258,23 +229,11 @@ module InternalFramebuffer
         .aclk(clk),
         .resetn(!reset),
 
-        // Configs
-        .confClearColor(confClearColor),
-        .confEnableScissor(confEnableScissor),
-        .confScissorStartX(confScissorStartX),
-        .confScissorStartY(confScissorStartY),
-        .confScissorEndX(confScissorEndX),
-        .confScissorEndY(confScissorEndY),
-        .confYOffset(confYOffset),
-        .confXResolution(confXResolution),
-        .confYResolution(confYResolution),
-        .confMask(confMask),
-
         // RAM interface
         .writeDataPort(writeDataPort0),
         .writeEnablePort(writeEnablePort0),
         .writeAddrPort(writeAddrPort0),
-        .writeMaskPort(writeMaskPort0),
+        .writeMaskPort(writePixelStrobePort0),
 
         .readDataPort(readDataPort0),
         .readAddrPort(readAddrPort0),
@@ -283,7 +242,6 @@ module InternalFramebuffer
         .apply(apply),
         .applied(applied),
         .cmdCommit(cmdCommit),
-        .cmdMemset(cmdMemset),
         .cmdRead(cmdRead),
         .cmdSize(cmdSize),
         .cmdAddr(cmdAddr),
@@ -306,4 +264,5 @@ module InternalFramebuffer
         .m_aready(m_aready),
         .m_arnw(m_arnw)
     );
+
 endmodule

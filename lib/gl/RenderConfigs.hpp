@@ -58,16 +58,6 @@ struct RenderConfig
         return (MAX_FRAMEBUFFER_SIZE / IF_FRAMEBUFFER_SIZE_IN_PIXEL) + 1;
     }
 
-    static constexpr uint32_t getAlignedSize(const uint32_t size)
-    {
-        constexpr uint32_t MASK = TEXTURE_PAGE_SIZE - 1;
-        if (size & MASK)
-        {
-            return (size | MASK) + 1;
-        }
-        return size;
-    }
-
     static constexpr uint32_t getMaxTexturePages()
     {
         constexpr float TEXTURE_BUFFER_MAX_TEXTURE_SIZE_BYTES { static_cast<float>(TEXTURE_BUFFER_MAX_TEXTURE_SIZE * TEXTURE_BUFFER_MAX_TEXTURE_SIZE * 2.0f * 1.33f) };

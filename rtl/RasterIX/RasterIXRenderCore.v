@@ -108,10 +108,6 @@ module RasterIXRenderCore #(
     input  wire                                 s_cmd_axis_tlast,
     input  wire [CMD_STREAM_WIDTH - 1 : 0]      s_cmd_axis_tdata,
 
-    output wire [SCREEN_POS_WIDTH - 1 : 0]      framebufferParamYOffset,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]      framebufferParamXResolution,
-    output wire [SCREEN_POS_WIDTH - 1 : 0]      framebufferParamYResolution,
-
     // Color buffer access
     output wire [ADDR_WIDTH - 1 : 0]            colorBufferAddr,
     output wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   colorBufferSize,
@@ -482,6 +478,9 @@ module RasterIXRenderCore #(
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TextureConfig;
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confTMU1TexEnvColor;
     wire [OP_RENDER_CONFIG_REG_WIDTH - 1 : 0]   confStencilBufferConfig;
+    wire [SCREEN_POS_WIDTH - 1 : 0]             confFramebufferXResolution;
+    wire [SCREEN_POS_WIDTH - 1 : 0]             confFramebufferYResolution;
+    wire [SCREEN_POS_WIDTH - 1 : 0]             confFramebufferYOffset;
     wire [PIXEL_WIDTH - 1 : 0]                  confColorBufferClearColor;
     wire [DEPTH_WIDTH - 1 : 0]                  confDepthBufferClearDepth;
     wire [STENCIL_WIDTH - 1 : 0]                confStencilBufferClearStencil;
@@ -503,6 +502,9 @@ module RasterIXRenderCore #(
     assign confScissorEndXY = renderConfigs[OP_RENDER_CONFIG_SCISSOR_END_XY +: OP_RENDER_CONFIG_REG_WIDTH];
     assign confYOffset = renderConfigs[OP_RENDER_CONFIG_Y_OFFSET +: OP_RENDER_CONFIG_REG_WIDTH];
     assign confRenderResolution = renderConfigs[OP_RENDER_CONFIG_RENDER_RESOLUTION +: OP_RENDER_CONFIG_REG_WIDTH];
+    assign confFramebufferXResolution = confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE];
+    assign confFramebufferYResolution = confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
+    assign confFramebufferYOffset = confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
     assign confStencilBufferConfig = renderConfigs[OP_RENDER_CONFIG_STENCIL_BUFFER +: OP_RENDER_CONFIG_REG_WIDTH];
     assign confColorBufferClearColor = renderConfigs[OP_RENDER_CONFIG_COLOR_BUFFER_CLEAR_COLOR +: OP_RENDER_CONFIG_REG_WIDTH];
     assign confDepthBufferClearDepth = renderConfigs[OP_RENDER_CONFIG_DEPTH_BUFFER_CLEAR_DEPTH +: RENDER_CONFIG_CLEAR_DEPTH_SIZE - (RENDER_CONFIG_CLEAR_DEPTH_SIZE - DEPTH_WIDTH)];
@@ -515,9 +517,6 @@ module RasterIXRenderCore #(
     assign confFramebufferScissorStartY = confScissorStartXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
     assign confFramebufferScissorEndX = confScissorEndXY[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE];
     assign confFramebufferScissorEndY = confScissorEndXY[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
-    assign framebufferParamYOffset = confYOffset[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
-    assign framebufferParamXResolution = confRenderResolution[RENDER_CONFIG_X_POS +: RENDER_CONFIG_X_SIZE];
-    assign framebufferParamYResolution = confRenderResolution[RENDER_CONFIG_Y_POS +: RENDER_CONFIG_Y_SIZE];
     wire   depthBufferEnable = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_DEPTH_TEST_POS];
     assign depthBufferMask = confFragmentPipelineConfig[RENDER_CONFIG_FRAGMENT_DEPTH_MASK_POS +: RENDER_CONFIG_FRAGMENT_DEPTH_MASK_SIZE];
     wire   colorBufferEnable = confFeatureEnable[RENDER_CONFIG_FEATURE_ENABLE_BLENDING_POS +: RENDER_CONFIG_FEATURE_ENABLE_BLENDING_SIZE];
@@ -1671,9 +1670,9 @@ module RasterIXRenderCore #(
         .confColorBufferSelect(framebufferClearColorSelect),
         .confDepthBufferSelect(framebufferClearDepthSelect),
         .confStencilBufferSelect(framebufferClearStencilSelect),
-        .confXResolution(framebufferParamXResolution),
-        .confYResolution(framebufferParamYResolution),
-        .confYOffset(LINE_MODE ? framebufferParamYOffset : { SCREEN_POS_WIDTH { 1'b0 } }),
+        .confXResolution(confFramebufferXResolution),
+        .confYResolution(confFramebufferYResolution),
+        .confYOffset(LINE_MODE ? confFramebufferYOffset : { SCREEN_POS_WIDTH { 1'b0 } }),
         .confEnableScissor(confFramebufferScissorEnable),
         .confScissorStartX(confFramebufferScissorStartX),
         .confScissorStartY(confFramebufferScissorStartY),
