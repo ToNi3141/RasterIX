@@ -39,7 +39,7 @@ module RasterIXSystem #(
     //   "if" - Internal Framebuffer: renders into a small on-chip buffer and
     //          streams it out; lower external memory bandwidth requirement.
     //   "ef" - External Framebuffer: renders directly into system memory.
-    parameter RIX_VARIANT = "if",
+    parameter RIX_VARIANT = "ef",
 
     // IF only: log2 of the number of pixels in the internal framebuffer.
     parameter RIX_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG = 16,

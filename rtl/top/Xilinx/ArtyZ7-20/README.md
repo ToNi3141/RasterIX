@@ -15,23 +15,27 @@ The build target is an Arty Z7-20 board with an `XC7Z020` SoC. It expects petali
 <img src="https://github.com/user-attachments/assets/2481e940-0bcb-4b07-8bb8-f84af454f469" width="70%"> 
 
 
-There are two variants available:
+## RasterIX Configuration
 
-`rixif`:  
-  - 1 TMU (max res: 256x256)
-  - Mip mapping
-  - Framebuffer size: 128kB + 128kB + 32 kB
-  - 25 bit fix point
+The checked-in block design builds `rixef` (EF, external framebuffer), and the
+Vivado build has no variant selector. Its RasterIX configuration is:
 
-`rixef`:
-  - 2 TMU (max res: 256x256)
-  - Mip mapping
-  - 25 bit fix point
+| Setting | Configuration |
+|---------|---------------|
+| Variant | EF (external framebuffer) |
+| Texture mapping units | 1 TMU |
+| Maximum texture size | 256 × 256 pixels |
+| Mipmapping / texture filtering | Enabled / enabled |
+| Texture storage | On-chip texture buffer; texture cache disabled |
+| Attribute interpolation | Fixed-point; 18-bit multiplier precision |
+| Fog, depth buffer, stencil buffer | Enabled, enabled, enabled |
+| Texture page size | 2048 bytes |
+| AXI data width / memory coalescing | 64 bits / enabled |
 
-To build the binaries use the following commands.
+To build the binaries use the following commands:
 ```sh
 cd rtl/top/Xilinx/ArtyZ7-20
-/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl -tclargs rixif
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. You will also find there the `design_1_wrapper.xsa` file which is used for petalinux.
 
@@ -117,7 +121,7 @@ Open a terminal. Use the following commands:
 ```sh
 cd <rasterix_directory>
 export SYSROOTS=/opt/petalinux/2022.2/sysroots
-cmake --preset zynq_embedded_linux_rixif
+cmake --preset zynq_embedded_linux_rixef
 cmake --build build/zynq --config Release --parallel
 ```
 Now you can copy the binaries in `build/zynq/example` to your target (for instance via `scp`) and execute them. You should now see on your screen the renderings.

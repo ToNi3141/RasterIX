@@ -1,4 +1,4 @@
-set SYNTH_OUT ./synth-[lindex $argv 0]
+set SYNTH_OUT ./synth
 set REPORT_PATH ./reports
 set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
 if {[file exists $SYNTH_OUT]} {
@@ -134,7 +134,7 @@ read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_d
 read_verilog ./../../../../3rdParty/core_dvi_framebuffer/src_v/dvi_framebuffer_fifo.v
 read_xdc ./../Arty-Z7-20-Master.xdc
 
-source ../bd_[lindex $argv 0]/design_1.tcl
+source ../design_1.tcl
 
 # Open board file
 read_bd $BOARD_FILE

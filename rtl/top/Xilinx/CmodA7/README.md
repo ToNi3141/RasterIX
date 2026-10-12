@@ -1,15 +1,22 @@
 # CMOD A7 Build
 The build target is a CMOD A7 board with an `XC7A35` FPGA. An SPI interface is used to connect the FPGA with an MCU. An additional CTS pin for flow control (in software) is used.
 
-This builds the `RasterIX_EF` and uses one TMU with a maximum texture resolution of 128x128px.
+## RasterIX Configuration
 
-There is one variant available:
+The checked-in block design builds `rixef` (EF, external framebuffer), and the
+Vivado build has no variant selector. Its RasterIX configuration is:
 
-`rixef`:  
-  - 1 TMU (max res: 128x128)
-  - Mip mapping
-  - Fixpoint
-  - 10MPixel maximum (because of slow SRAM)
+| Setting | Configuration |
+|---------|---------------|
+| Variant | EF (external framebuffer) |
+| Texture mapping units | 1 TMU |
+| Maximum texture size | 128 × 128 pixels |
+| Mipmapping / texture filtering | Enabled / enabled |
+| Texture storage | External memory with an 8 KiB texture cache |
+| Attribute interpolation | Fixed-point; 25-bit multiplier precision |
+| Fog, depth buffer, stencil buffer | Enabled, enabled, enabled |
+| Texture page size | 2048 bytes |
+| AXI data width / memory coalescing | 16 bits / enabled |
 
 Note: glReadPixels, glCopyTexImage2d and glCopyTexSubImage2d are not available. The SPI MISO channel is not used and needs to be implemented.
 

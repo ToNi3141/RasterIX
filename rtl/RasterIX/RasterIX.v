@@ -17,7 +17,7 @@
 
 module RasterIX #(
     // Selects the variant. Allowed values: if, ef
-    parameter VARIANT = "if",
+    parameter VARIANT = "ef",
 
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit

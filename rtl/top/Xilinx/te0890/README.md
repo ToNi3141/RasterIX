@@ -4,17 +4,24 @@ The [TE0890](https://www.trenz-electronic.de/en/S7-Mini-Fully-Open-Source-Module
 
 The FPGA connects to an MCU via an SPI interface, with an additional CTS pin for software-based flow control.
 
-## Variant: `rixef`
+## RasterIX Configuration
 
-- 1 TMU (max resolution: 128x128)
-- Mipmap support
-- Fixed-point arithmetic
-- Fog
-- Texture filtering
-- Stencil buffering
-- Depth buffering
-- HyperRAM interface
-- 75 MHz clock with 150 MB/s memory bandwidth 
+The checked-in block design builds `rixef` (EF, external framebuffer), and the
+Vivado build has no variant selector. Its RasterIX configuration is:
+
+| Setting | Configuration |
+|---------|---------------|
+| Variant | EF (external framebuffer) |
+| Texture mapping units | 1 TMU |
+| Maximum texture size | 128 × 128 pixels |
+| Mipmapping / texture filtering | Enabled / enabled |
+| Texture storage | External memory with an 8 KiB texture cache |
+| Attribute interpolation | Fixed-point; 18-bit multiplier precision |
+| Sub-pixel calculation precision | 6 bits |
+| Fog, depth buffer, stencil buffer | Enabled, enabled, enabled |
+| Texture page size | 2048 bytes |
+| AXI data width / memory coalescing | 16 bits / enabled |
+| HyperRAM interface | 75 MHz; approximately 150 MB/s memory bandwidth |
 
 **Note:** `glReadPixels`, `glCopyTexImage2D`, and `glCopyTexSubImage2D` are not available. The SPI MISO channel is currently unused and requires implementation.
 

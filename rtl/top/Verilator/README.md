@@ -4,8 +4,10 @@ A simulation can be used to easily develop and debug the renderer. The simulatio
 Before building the simulation, create the C++ code from the Verilog source via Verilator 5.046 2026-02-28 rev v5.046. Use the following commands:
 ```sh
 cd rtl/top/Verilator
-make -f Makefile.linux rixif -j
+make -f Makefile.linux rixef -j
 ```
+This command builds the EF simulation target. Use `rixif` to simulate the IF
+variant.
 Then build the Qt project. If the build was successful, you will see the following image on the screen, when you have started the application:
 
 ![qtRasterizer screenshot](../../../screenshots/qtRasterizer.png)

@@ -14,27 +14,29 @@
 # Nexys Video Build
 The build target is a Nexys Video board with an `XC7A200` FPGA. The interface used to connect the FPGA with the PC is an 16bit synchronous FT245 protocol on the Nexys FMC connector. Alternatively you can use the SPI interface on PMOD JA.
 
-There are two variants available:
+## RasterIX Configuration
 
-`rixif`:  
-  - 2 TMU (max res: 256x256)
-  - Mip mapping
-  - Framebuffer size: 256kB + 256kB + 64 kB
-  - 25 bit fix point
+The checked-in block design builds `rixef` (EF, external framebuffer), and the
+Vivado build has no variant selector. Its RasterIX configuration is:
 
-`rixef`:
-  - 2 TMU (max res: 256x256)
-  - Mip mapping
-  - 25 bit fix point
+| Setting | Configuration |
+|---------|---------------|
+| Variant | EF (external framebuffer) |
+| Texture mapping units | 2 TMUs |
+| Maximum texture size | 256 × 256 pixels |
+| Mipmapping / texture filtering | Enabled / enabled |
+| Texture storage | External memory with an 8 KiB texture cache |
+| Attribute interpolation | Fixed-point; 25-bit multiplier precision |
+| Fog, depth buffer, stencil buffer | Enabled, enabled, enabled |
+| Texture page size | 2048 bytes |
+| AXI data width / memory coalescing | 128 bits / enabled |
 
 Note: glReadPixels, glCopyTexImage2d and glCopyTexSubImage2d are not available. The FT60x read channel is not used and needs to be implemented.
 
-You can build it in two variants, `rixif` and `rixef`. Depending on the variant, you must choose the preset with the `_rixif` or `_rixef` suffix.
-
-To build the binaries use the following commands.
+To build the EF hardware binary, use the following commands:
 ```sh
 cd rtl/top/Xilinx/NexysVideo
-/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build_rixif.tcl -tclargs rixif
+/Xilinx/Vivado/2022.2/bin/vivado -mode batch -source build.tcl
 ```
 You will find `rasterix.bin` and `rasterix.bit` in the synth directory. Use Vivado to program the FPGA or to flash the binary into the flash.
 
@@ -75,7 +77,7 @@ Before configuring and starting the build, download from FTDI (https://ftdichip.
 To build the library an the minimal example, switch to the source directory and type
 ```sh
 cd <rasterix_directory>
-cmake --preset native_rixif
+cmake --preset native_rixef
 cmake --build build/native --config Release --parallel
 ```
 Note for Windows: you might better use the win32 preset, it is specifically for windows (see [Windows Build](#windows-build)). Otherwise configure it with `cmake --preset native_rixif -G "Visual Studio 16 2019" -A Win32` otherwise the build might fail.
@@ -93,7 +95,7 @@ This is a more specific preset for windows which also builds WGL. Please refer t
 Open a terminal. Use the following commands to create a 32bit Visual Studio Project:
 ```sh
 cd <rasterix_directory>
-cmake --preset win32_rixif
+cmake --preset win32_rixef
 cmake --build .\build\win32\ --config Release --parallel
 ```
 

@@ -28,7 +28,7 @@ set(RIX_CORE_ENABLE_MIPMAPPING "true" CACHE STRING "Enables mipmapping")
 # Display settings
 set(RIX_CORE_MAX_DISPLAY_WIDTH "1024" CACHE STRING "The maximum width of the display")
 set(RIX_CORE_MAX_DISPLAY_HEIGHT "600" CACHE STRING "The maximum height of the display")
-set(RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG "16" CACHE STRING "The log2(size) of the IF framebuffer in pixels")
+set(RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG "20" CACHE STRING "The log2(size) of the IF framebuffer in pixels")
 # Rasterizer settings
 set(RIX_CORE_ENABLE_ATTRIBUTE_SCALING "true" CACHE STRING "Enables float interpolation")
 # Texture memory settings
