@@ -52,7 +52,6 @@ module StreamFramebuffer
     // Configs
     /////////////////////////
     input  wire [ADDR_WIDTH - 1 : 0]        confAddr,
-    input  wire [PIXEL_MASK_WIDTH - 1 : 0]  confMask,
 
     /////////////////////////
     // Fragment Interface
@@ -75,7 +74,7 @@ module StreamFramebuffer
     input  wire                             s_frag_wlast,
     output wire                             s_frag_wready,
     input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_wdata,
-    input  wire                             s_frag_wstrb,
+    input  wire [PIXEL_MASK_WIDTH - 1 : 0]  s_frag_wstrb,
     input  wire [ADDR_WIDTH - 1 : 0]        s_frag_waddr,
 
     /////////////////////////
@@ -122,13 +121,6 @@ module StreamFramebuffer
     input  wire                             m_mem_axi_rvalid,
     output wire                             m_mem_axi_rready
 );
-    wire                             strobegen_tvalid;
-    wire                             strobegen_tlast;
-    wire                             strobegen_tready;
-    wire [PIXEL_WIDTH - 1 : 0]       strobegen_tdata;
-    wire [PIXEL_MASK_WIDTH - 1 : 0]  strobegen_tstrb;
-    wire [ADDR_WIDTH - 1 : 0]        strobegen_taddr;
-
     wire                             write_mmu_tvalid;
     wire                             write_mmu_tlast;
     wire                             write_mmu_tready;
@@ -362,12 +354,11 @@ module StreamFramebuffer
         .m_mem_axi_rready(m_mem_axi_rready)
     );
 
-    FramebufferWriterStrobeGen #(
-        .MASK_WIDTH(PIXEL_MASK_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
-    ) fbwsg (
-        .confMask(confMask),
+    FramebufferMMU #(
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .PIXEL_WIDTH(PIXEL_WIDTH)
+    ) fbmmu_write (
+        .confAddr(confAddr),
 
         .s_frag_tvalid(s_frag_wvalid),
         .s_frag_tlast(s_frag_wlast),
@@ -375,27 +366,6 @@ module StreamFramebuffer
         .s_frag_tdata(s_frag_wdata),
         .s_frag_tstrb(s_frag_wstrb),
         .s_frag_taddr(s_frag_waddr),
-
-        .m_frag_tvalid(strobegen_tvalid),
-        .m_frag_tlast(strobegen_tlast),
-        .m_frag_tready(strobegen_tready),
-        .m_frag_tdata(strobegen_tdata),
-        .m_frag_tstrb(strobegen_tstrb),
-        .m_frag_taddr(strobegen_taddr)
-    );
-
-    FramebufferMMU #(
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH)
-    ) fbmmu_write (
-        .confAddr(confAddr),
-
-        .s_frag_tvalid(strobegen_tvalid),
-        .s_frag_tlast(strobegen_tlast),
-        .s_frag_tready(strobegen_tready),
-        .s_frag_tdata(strobegen_tdata),
-        .s_frag_tstrb(strobegen_tstrb),
-        .s_frag_taddr(strobegen_taddr),
 
         .m_frag_tvalid(write_mmu_tvalid),
         .m_frag_tlast(write_mmu_tlast),

@@ -238,7 +238,6 @@ module RasterIXCoreIF #(
     wire                                             colorBufferCmdSwap;
     wire                                             colorBufferCmdRead;
     wire                                             colorBufferCmdSwapEnableVsync;
-    wire [3 : 0]                                     colorBufferMask;
     wire                                             m_color_arvalid;
     wire                                             m_color_arlast;
     wire                                             m_color_rvalid;
@@ -248,7 +247,7 @@ module RasterIXCoreIF #(
     wire                                             m_color_wvalid;
     wire [PIXEL_WIDTH_FRAMEBUFFER - 1 : 0]           m_color_rdata;
     wire [PIPELINE_PIXEL_WIDTH - 1 : 0]              m_color_wdata;
-    wire                                             m_color_wstrb;
+    wire [COLOR_NUMBER_OF_SUB_PIXEL - 1 : 0]         m_color_wstrb;
 
     // Depth buffer access
     wire [ADDR_WIDTH - 1 : 0]                        depthBufferAddr;
@@ -257,7 +256,6 @@ module RasterIXCoreIF #(
     wire                                             depthBufferApplied;
     wire                                             depthBufferCmdCommit;
     wire                                             depthBufferCmdRead;
-    wire                                             depthBufferMask;
     wire                                             m_depth_arvalid;
     wire                                             m_depth_arlast;
     wire                                             m_depth_rvalid;
@@ -276,7 +274,6 @@ module RasterIXCoreIF #(
     wire                                             stencilBufferApplied;
     wire                                             stencilBufferCmdCommit;
     wire                                             stencilBufferCmdRead;
-    wire [STENCIL_WIDTH - 1 : 0]                     stencilBufferMask;
     wire                                             m_stencil_arvalid;
     wire                                             m_stencil_arlast;
     wire                                             m_stencil_rvalid;
@@ -286,7 +283,7 @@ module RasterIXCoreIF #(
     wire                                             m_stencil_wvalid;
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_rdata;
     wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_wdata;
-    wire                                             m_stencil_wstrb;
+    wire [STENCIL_WIDTH - 1 : 0]                     m_stencil_wstrb;
 
     generate
         if (ENABLE_DEPTH_BUFFER)
@@ -296,8 +293,6 @@ module RasterIXCoreIF #(
             InternalFramebuffer depthBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
-
-                .confMask(depthBufferMask),
 
                 .araddr(m_depth_araddr),
                 .arvalid(m_depth_arvalid),
@@ -367,8 +362,6 @@ module RasterIXCoreIF #(
         .clk(aclk),
         .reset(!resetn),
 
-        .confMask(ColorBufferReduceMask(colorBufferMask)),
-
         .araddr(m_color_araddr),
         .arvalid(m_color_arvalid),
         .arlast(m_color_arlast),
@@ -378,7 +371,7 @@ module RasterIXCoreIF #(
         .waddr(m_color_waddr),
         .wdata(ColorBufferReduce(ColorBufferReduceVec(m_color_wdata))),
         .wvalid(m_color_wvalid),
-        .wstrb(m_color_wstrb),
+        .wstrb(ColorBufferReduceMask(m_color_wstrb)),
 
         .apply(colorBufferApply && (colorBufferCmdCommit || colorBufferCmdRead)),
         .applied(colorBufferApplied),
@@ -464,8 +457,6 @@ module RasterIXCoreIF #(
             InternalFramebuffer stencilBuffer (  
                 .clk(aclk),
                 .reset(!resetn),
-
-                .confMask(stencilBufferMask),
 
                 .araddr(m_stencil_araddr),
                 .arvalid(m_stencil_arvalid),
@@ -571,7 +562,6 @@ module RasterIXCoreIF #(
         .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferCmdRead(colorBufferCmdRead),
         .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
-        .colorBufferMask(colorBufferMask),
         .m_color_arready(1),
         .m_color_arlast(m_color_arlast),
         .m_color_arvalid(m_color_arvalid),
@@ -592,7 +582,6 @@ module RasterIXCoreIF #(
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdRead(depthBufferCmdRead),
-        .depthBufferMask(depthBufferMask),
         .m_depth_arready(1),
         .m_depth_arlast(m_depth_arlast),
         .m_depth_arvalid(m_depth_arvalid),
@@ -613,7 +602,6 @@ module RasterIXCoreIF #(
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdRead(stencilBufferCmdRead),
-        .stencilBufferMask(stencilBufferMask),
         .m_stencil_arready(1),
         .m_stencil_arlast(m_stencil_arlast),
         .m_stencil_arvalid(m_stencil_arvalid),

@@ -42,19 +42,13 @@ module InternalFramebufferWriter
     localparam MEM_ADDR_WIDTH = ADDR_WIDTH - PIXEL_PER_BEAT_LOG2
 )
 (
-    /////////////////////////
-    // Configs
-    /////////////////////////
-    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  confMask,
-
-    /////////////////////////
     // Fragment interface
     /////////////////////////
     // Fragment input
     input  wire                             wvalid,
     input  wire [ADDR_WIDTH - 1 : 0]        waddr,
     input  wire [PIXEL_WIDTH - 1 : 0]       wdata,
-    input  wire                             wstrb,
+    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  wstrb,
 
     /////////////////////////
     // RAM interface
@@ -65,7 +59,7 @@ module InternalFramebufferWriter
     output wire [MEM_MASK_WIDTH - 1 : 0]    writeMaskPort
 );
     // Interface to the memory when accessing a fragment. This interface has already the size required for the internal memory.
-    wire [MEM_MASK_WIDTH - 1 : 0]   memMask = { NUMBER_OF_PIXELS_PER_BEAT { confMask } };
+    wire [MEM_MASK_WIDTH - 1 : 0]   memStrobe = { NUMBER_OF_PIXELS_PER_BEAT { wstrb } };
 
     // Fragment access with per-subpixel masking.
     genvar i, j;
@@ -74,8 +68,8 @@ module InternalFramebufferWriter
         begin
             assign writeAddrPort = waddr;
             assign writeDataPort = wdata;
-            assign writeMaskPort = memMask;
-            assign writeEnablePort = wvalid && wstrb;
+            assign writeMaskPort = memStrobe;
+            assign writeEnablePort = wvalid && (|wstrb);
         end
         else
         begin
@@ -83,12 +77,12 @@ module InternalFramebufferWriter
             begin
                 for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
                 begin
-                    assign writeMaskPort[(i * NUMBER_OF_SUB_PIXELS) + j] = (waddr[0 +: PIXEL_PER_BEAT_LOG2] == i) & memMask[j];
+                    assign writeMaskPort[(i * NUMBER_OF_SUB_PIXELS) + j] = (waddr[0 +: PIXEL_PER_BEAT_LOG2] == i) & memStrobe[(i * NUMBER_OF_SUB_PIXELS) + j];
                 end
             end
             assign writeAddrPort = waddr[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
             assign writeDataPort = { NUMBER_OF_PIXELS_PER_BEAT { wdata } };
-            assign writeEnablePort = wvalid && wstrb;
+            assign writeEnablePort = wvalid && (|wstrb);
         end
     endgenerate
 endmodule

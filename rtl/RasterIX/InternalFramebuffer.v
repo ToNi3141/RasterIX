@@ -67,11 +67,6 @@ module InternalFramebuffer
     input   wire                                reset,
 
     /////////////////////////
-    // Configs
-    /////////////////////////
-    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  confMask,
-
-    /////////////////////////
     // Fragment interface
     /////////////////////////
 
@@ -92,7 +87,7 @@ module InternalFramebuffer
     // output wire                                 wready,
     input  wire [PIXEL_ADDR_WIDTH - 1 : 0]      waddr,
     input  wire [PIXEL_WIDTH - 1 : 0]           wdata,
-    input  wire                                 wstrb,
+    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0]  wstrb,
     /////////////////////////
     // Control
     /////////////////////////
@@ -204,9 +199,6 @@ module InternalFramebuffer
         .SUB_PIXEL_WIDTH(SUB_PIXEL_WIDTH),
         .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG)
     ) writer (
-        // Configs
-        .confMask(confMask),
-
         // Fragment interface
         .wvalid(wvalid),
         .waddr(waddr),
