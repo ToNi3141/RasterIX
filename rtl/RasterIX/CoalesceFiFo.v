@@ -123,6 +123,7 @@ module CoalesceFiFo #(
     defparam dataFiFo.BW = DATA_WIDTH + STRB_WIDTH;
     defparam dataFiFo.LGFLEN = $clog2(MAX_BEATS_TO_COALESCE);
     defparam dataFiFo.OPT_ASYNC_READ = 0;
+    defparam dataFiFo.OPT_READ_BYPASS = $clog2(MAX_BEATS_TO_COALESCE) < 2;
 
     assign fifo_ready = !fifo_empty;
 

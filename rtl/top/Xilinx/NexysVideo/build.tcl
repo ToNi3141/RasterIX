@@ -1,4 +1,4 @@
-set SYNTH_OUT ./synth-[lindex $argv 0]
+set SYNTH_OUT ./synth
 set REPORT_PATH ./reports
 set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
 if {[file exists $SYNTH_OUT]} {
@@ -45,11 +45,10 @@ read_verilog ./../../../../RasterIX/InternalFramebuffer.v
 read_verilog ./../../../../RasterIX/InternalFramebufferCommandHandler.v
 read_verilog ./../../../../RasterIX/InternalFramebufferRam.v
 read_verilog ./../../../../RasterIX/InternalFramebufferReader.v
-read_verilog ./../../../../RasterIX/InternalFramebufferScissorFunc.vh
 read_verilog ./../../../../RasterIX/InternalFramebufferWriter.v
-read_verilog ./../../../../RasterIX/FramebufferWriterClear.v
-read_verilog ./../../../../RasterIX/FramebufferWriterStrobeGen.v
-read_verilog ./../../../../RasterIX/FramebufferScissor.v
+read_verilog ./../../../../RasterIX/FramebufferClear.v
+read_verilog ./../../../../RasterIX/StreamMux2.v
+read_verilog ./../../../../RasterIX/Scissor.v
 read_verilog ./../../../../RasterIX/FramebufferMMU.v
 read_verilog ./../../../../RasterIX/FramebufferPacker.v
 read_verilog ./../../../../RasterIX/FunctionInterpolator.v
@@ -74,6 +73,7 @@ read_verilog ./../../../../RasterIX/RasterizerCommands.vh
 read_verilog ./../../../../RasterIX/Rasterizer.v
 read_verilog ./../../../../RasterIX/RegisterAndDescriptorDefines.vh
 read_verilog ./../../../../RasterIX/RegisterBank.v
+read_verilog ./../../../../RasterIX/ShiftRegisterBank.v
 read_verilog ./../../../../RasterIX/RasterIX_EF.v
 read_verilog ./../../../../RasterIX/RasterIX_IF.v
 read_verilog ./../../../../RasterIX/RasterIX.v
@@ -138,7 +138,7 @@ read_verilog ./../../../../Display/Dvi.v
 read_verilog ./../MainInterface.v
 read_xdc ./../Nexys-Video-Master.xdc
 
-source ../bd_[lindex $argv 0]/design_1.tcl
+source ../design_1.tcl
 
 # Open board file
 read_bd $BOARD_FILE

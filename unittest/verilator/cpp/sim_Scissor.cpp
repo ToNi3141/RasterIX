@@ -18,11 +18,11 @@
 #include "general.hpp"
 
 // Include model header, generated from Verilating "top.v"
-#include "VFramebufferScissor.h"
+#include "VScissor.h"
 
-TEST_CASE("Scissor disabled passes strobe through", "[FramebufferScissor]")
+TEST_CASE("Scissor disabled passes strobe through", "[Scissor]")
 {
-    VFramebufferScissor* t = rr::ut::makeTop<VFramebufferScissor>();
+    VScissor* t = rr::ut::makeTop<VScissor>();
 
     t->confEnableScissor = 0;
     t->confScissorStartX = 0;
@@ -55,9 +55,9 @@ TEST_CASE("Scissor disabled passes strobe through", "[FramebufferScissor]")
     delete t;
 }
 
-TEST_CASE("Scissor enabled clips pixels outside rect", "[FramebufferScissor]")
+TEST_CASE("Scissor enabled clips pixels outside rect", "[Scissor]")
 {
-    VFramebufferScissor* t = rr::ut::makeTop<VFramebufferScissor>();
+    VScissor* t = rr::ut::makeTop<VScissor>();
 
     t->confEnableScissor = 1;
     t->confScissorStartX = 2;

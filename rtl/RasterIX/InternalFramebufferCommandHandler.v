@@ -16,21 +16,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Handles the internal framebuffer commands.
-// It will handle the commands to clear the framebuffer, apply a scissor
-// and read/write the framebuffer content.
+// It handles framebuffer commit and read commands.
 module InternalFramebufferCommandHandler
 #(
     // Number of pixels a stream beat contains
     parameter NUMBER_OF_PIXELS_PER_BEAT = 2,
     
-    // Number of sub pixels the interface of this module contains
-    parameter NUMBER_OF_SUB_PIXELS = 4,
-    // Number of bits of each sub pixel contains
-    parameter SUB_PIXEL_WIDTH = 8,
+    // Width of one framebuffer pixel, independent of its channel layout
+    parameter PIXEL_WIDTH = 32,
 
-    // The maximum size of the screen in power of two
-    parameter X_BIT_WIDTH = 11,
-    parameter Y_BIT_WIDTH = 11,
     parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 18, // Framebuffer size in power of two words (PIXEL_WIDTH)
 
     // The maximum size stream size
@@ -38,9 +32,6 @@ module InternalFramebufferCommandHandler
 
     // Address width
     parameter ADDR_WIDTH = 32,
-
-    // Size of the pixels
-    localparam PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
 
     // Size of the internal memory
     localparam INT_MEM_SIZE = FRAMEBUFFER_SIZE_IN_PIXEL_LG,
@@ -50,10 +41,14 @@ module InternalFramebufferCommandHandler
 
     // Number of pixels a AXIS beat or a memory line can contain
     localparam PIXEL_PER_BEAT_LOG2 = $clog2(NUMBER_OF_PIXELS_PER_BEAT),
+    // Keep aligned with AxisToAxiAdapter's fixed AWLEN of 15 (16 beats per burst).
+    localparam AXI_BURST_BEATS = 16,
+    localparam AXI_BURST_PIXEL_COUNT = NUMBER_OF_PIXELS_PER_BEAT * AXI_BURST_BEATS,
+    localparam TRANSFER_SIZE_WIDTH = FB_SIZE_IN_PIXEL_LG + 1,
     // Size constrains of the internal memory
-    localparam MEM_PIXEL_WIDTH = NUMBER_OF_SUB_PIXELS * SUB_PIXEL_WIDTH,
-    localparam MEM_MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS,
-    localparam MEM_WIDTH = MEM_MASK_WIDTH * SUB_PIXEL_WIDTH,
+    // One strobe bit per logical pixel in each stream/memory beat.
+    localparam PIXEL_STROBE_WIDTH = NUMBER_OF_PIXELS_PER_BEAT,
+    localparam MEM_WIDTH = STREAM_WIDTH,
     localparam MEM_ADDR_WIDTH = INT_MEM_SIZE - PIXEL_PER_BEAT_LOG2
 )
 (
@@ -61,26 +56,12 @@ module InternalFramebufferCommandHandler
     input   wire                            resetn,
 
     /////////////////////////
-    // Configs
-    /////////////////////////
-    input  wire [PIXEL_WIDTH - 1 : 0]       confClearColor,
-    input  wire                             confEnableScissor,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorStartY,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorEndX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorEndY,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confYOffset,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confXResolution,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confYResolution,
-    input  wire [NUMBER_OF_SUB_PIXELS - 1 : 0] confMask,
-
-    /////////////////////////
     // RAM interface
     /////////////////////////
     output reg  [MEM_WIDTH - 1 : 0]         writeDataPort,
     output reg                              writeEnablePort,
     output wire [MEM_ADDR_WIDTH - 1 : 0]    writeAddrPort,
-    output reg  [MEM_MASK_WIDTH - 1 : 0]    writeMaskPort, 
+    output reg  [PIXEL_STROBE_WIDTH - 1 : 0] writeMaskPort,
 
     // Read interface port 1
     input  wire [MEM_WIDTH - 1 : 0]         readDataPort,
@@ -95,8 +76,7 @@ module InternalFramebufferCommandHandler
     output reg                                  applied, // This marks if the commands have been applied.
     input  wire                                 cmdCommit, // Starts to stream the memory content via the AXIS interface
     input  wire                                 cmdRead, // Starts to read the memory content via the AXIS interface
-    input  wire                                 cmdMemset, // Applies the confClearColor (with respect to the scissor) to the memory
-    input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   cmdSize, // Size of the stream 
+    input  wire [FB_SIZE_IN_PIXEL_LG - 1 : 0]   cmdSize, // Exact logical framebuffer size in 16-bit pixels.
     input  wire [ADDR_WIDTH - 1 : 0]            cmdAddr,
 
     // AXI Stream master interface
@@ -104,7 +84,7 @@ module InternalFramebufferCommandHandler
     input  wire                             m_axis_tready,
     output reg                              m_axis_tlast,
     output reg  [STREAM_WIDTH - 1 : 0]      m_axis_tdata,
-    output reg  [MEM_MASK_WIDTH - 1 : 0]    m_axis_tstrb,
+    output reg  [PIXEL_STROBE_WIDTH - 1 : 0] m_axis_tstrb,
 
     input  wire                             s_axis_tvalid,
     output reg                              s_axis_tready,
@@ -120,66 +100,60 @@ module InternalFramebufferCommandHandler
     // Stream states
     localparam COMMAND_WAIT_FOR_COMMAND = 0;
     localparam COMMAND_COMMIT = 1;
-    localparam COMMAND_MEMSET = 2;
-    localparam COMMAND_READ = 3;
+    localparam COMMAND_READ = 2;
+    
+    // Memory Address variables
+    reg  [MEM_ADDR_WIDTH - 1 : 0]       cmdMemAddr;
+    wire [MEM_ADDR_WIDTH - 1 : 0]       cmdMemAddrNext = cmdMemAddr + 1;
+    wire [TRANSFER_SIZE_WIDTH - 1 : 0]  cmdMemAddrNextExtended =
+        { { (TRANSFER_SIZE_WIDTH - MEM_ADDR_WIDTH) { 1'b0 } }, cmdMemAddrNext };
+    reg  [TRANSFER_SIZE_WIDTH - 1 : 0]  cmdFbSizeInBeats;
     
     // State variables
-    reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdMemAddr;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemAddrNext = cmdMemAddr + 1;
-    reg  [5 : 0]                    cmdState;
-    reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdFbSizeInBeats;
+    reg  [1 : 0]                        cmdState;
     
-    // Scissor variables
-    reg  [X_BIT_WIDTH - 1 : 0]      scissorX;
-    reg  [Y_BIT_WIDTH - 1 : 0]      scissorY;
-    wire [X_BIT_WIDTH - 1 : 0]      scissorXNext = scissorX + NUMBER_OF_PIXELS_PER_BEAT;
-    wire [Y_BIT_WIDTH - 1 : 0]      scissorYNext = scissorY - 1;
-    wire [MEM_MASK_WIDTH - 1 : 0]   scissorPixelAndColorMask;
-    reg  [X_BIT_WIDTH - 1 : 0]      scissorStartX;
-    reg  [Y_BIT_WIDTH - 1 : 0]      scissorStartY;
-    reg  [X_BIT_WIDTH - 1 : 0]      scissorEndX;
-    reg  [Y_BIT_WIDTH - 1 : 0]      scissorEndY;
+    // AXI writes use fixed 16-beat bursts; keep that padding internal to the IF transfer.
+    wire [TRANSFER_SIZE_WIDTH - 1 : 0]  roundedCmdSize =
+        ({ 1'b0, cmdSize } + AXI_BURST_PIXEL_COUNT - 1) & ~(AXI_BURST_PIXEL_COUNT - 1);
+    wire [TRANSFER_SIZE_WIDTH - 1 : 0]  cmdTransferBeats = roundedCmdSize >> PIXEL_PER_BEAT_LOG2;
+
+    // Pixel offsets preserve the exact logical size despite padded transport beats.
+    reg  [FB_SIZE_IN_PIXEL_LG : 0]      pixelOffset;
+    wire [FB_SIZE_IN_PIXEL_LG : 0]      pixelOffsetNext = pixelOffset + NUMBER_OF_PIXELS_PER_BEAT;
+    wire [PIXEL_STROBE_WIDTH - 1 : 0]   pixelStrobe;
 
     // Skid buffer
-    reg  [STREAM_WIDTH - 1 : 0]     skidBufferData;
-    reg                             skidBufferValid;
-    reg                             skidBufferLast;
-    reg  [MEM_MASK_WIDTH - 1 : 0]   skidBufferStrb;
+    reg  [STREAM_WIDTH - 1 : 0]         skidBufferData;
+    reg                                 skidBufferValid;
+    reg                                 skidBufferLast;
+    reg  [PIXEL_STROBE_WIDTH - 1 : 0]   skidBufferStrb;
 
     assign writeAddrPort = cmdMemAddr;
-
     assign readAddrPort = cmdMemAddr;
-    wire                            readPortReady;
-    wire                            readPortLast;
-    wire [MEM_MASK_WIDTH - 1 : 0]   readPortStrb;
-    wire                            commitActive = cmdState == COMMAND_COMMIT;
+
+    wire                                readPortReady;
+    wire                                readPortLast;
+    wire [PIXEL_STROBE_WIDTH - 1 : 0]   readPortStrb;
+    wire                                commitActive = cmdState == COMMAND_COMMIT;
+
+    genvar i;
+    generate
+        for (i = 0; i < NUMBER_OF_PIXELS_PER_BEAT; i = i + 1)
+        begin
+            assign pixelStrobe[i] = (pixelOffset + i) < cmdSize;
+        end
+    endgenerate
 
     ValueDelay #(
-        .VALUE_SIZE(2 + MEM_MASK_WIDTH),
+        .VALUE_SIZE(2 + PIXEL_STROBE_WIDTH),
         .DELAY(1)
     ) readDataPortDelay (
         .clk(aclk),
         .ce(1),
-        .in({ commitActive, cmdMemAddrNext == cmdFbSizeInBeats, scissorPixelAndColorMask }),
+        .in({ commitActive, cmdMemAddrNextExtended == cmdFbSizeInBeats, pixelStrobe }),
         .out({ readPortReady, readPortLast, readPortStrb })
     );
 
-    InternalFramebufferScissor #(
-        .NUMBER_OF_PIXELS_PER_BEAT(NUMBER_OF_PIXELS_PER_BEAT),
-        .NUMBER_OF_SUB_PIXELS(NUMBER_OF_SUB_PIXELS),
-        .X_BIT_WIDTH(X_BIT_WIDTH),
-        .Y_BIT_WIDTH(Y_BIT_WIDTH)
-    ) scissorInst (
-        .confEnableScissor(confEnableScissor || commitActive),
-        .confScissorStartX(scissorStartX),
-        .confScissorStartY(scissorStartY),
-        .confScissorEndX(scissorEndX),
-        .confScissorEndY(scissorEndY),
-        .x(scissorX),
-        .y(scissorY),
-
-        .pixelMask(scissorPixelAndColorMask)
-    );
 
     // Command execution
     always @(posedge aclk)
@@ -201,43 +175,22 @@ module InternalFramebufferCommandHandler
             COMMAND_WAIT_FOR_COMMAND:
             begin : waitForCommand
                 cmdMemAddr <= 0;
-                scissorX <= 0;
+                pixelOffset <= 0;
                 writeEnablePort <= 0;
 
-                cmdFbSizeInBeats <= cmdSize[PIXEL_PER_BEAT_LOG2 +: MEM_ADDR_WIDTH];
+                cmdFbSizeInBeats <= cmdTransferBeats;
 
                 if (apply && !m_avalid)
                 begin
                     applied <= 0;
 
-                    if (cmdMemset) 
-                    begin
-                        // Here is a mismatch between the RAM addresses and the OpenGL coordinate system.
-                        // OpenGL starts at the lower left corner. But this is a fairly high address in the RAM.
-                        // The cmdMemAddr starts at zero. This is basically in OpenGL the position (0, confYResolution - 1)
-                        scissorY <= confYOffset + confYResolution - 1;
-
-                        scissorStartX <= confScissorStartX;
-                        scissorStartY <= confScissorStartY;
-                        scissorEndX <= confScissorEndX;
-                        scissorEndY <= confScissorEndY;
-
-                        cmdState <= COMMAND_MEMSET;
-                    end
-
-                    m_abeats <= { 12'b0, cmdSize } >> PIXEL_PER_BEAT_LOG2;
+                    m_abeats <= { { (ADDR_WIDTH - TRANSFER_SIZE_WIDTH) { 1'b0 } }, cmdTransferBeats };
                     m_aaddr <= cmdAddr;
 
                     if (cmdCommit)
                     begin
                         m_avalid <= 1;
                         m_arnw <= 1;
-                        scissorY <= confYResolution - 1;
-                        scissorStartX <= 0;
-                        scissorStartY <= 0;
-                        scissorEndX <= confXResolution;
-                        scissorEndY <= confYResolution;
-
                         cmdState <= COMMAND_COMMIT;
                     end
 
@@ -280,15 +233,7 @@ module InternalFramebufferCommandHandler
                         end
 
                         cmdMemAddr <= cmdMemAddrNext;
-                        if (scissorXNext == confXResolution)
-                        begin
-                            scissorX <= 0;
-                            scissorY <= scissorYNext;
-                        end
-                        else
-                        begin
-                            scissorX <= scissorXNext;
-                        end
+                        pixelOffset <= pixelOffsetNext;
                     end
 
                     // Check if we reached the end of the copy process
@@ -323,43 +268,15 @@ module InternalFramebufferCommandHandler
                     begin
                         cmdMemAddr <= cmdMemAddrNext;
                     end
-                    writeMaskPort <= ~0;
+                    writeMaskPort <= pixelStrobe;
                     writeDataPort <= s_axis_tdata;
                     writeEnablePort <= 1;
+                    pixelOffset <= pixelOffsetNext;
                 end
                 if (!s_axis_tready)
                 begin
                     writeEnablePort <= 0;
                     cmdState <= COMMAND_WAIT_FOR_COMMAND;
-                end
-            end
-            COMMAND_MEMSET:
-            begin
-                if (cmdMemAddrNext == cmdFbSizeInBeats)
-                begin
-                    writeEnablePort <= 0;
-                    cmdState <= COMMAND_WAIT_FOR_COMMAND;
-                end
-                else
-                begin
-                    writeEnablePort <= 1;
-                end
-
-                if (writeEnablePort)
-                begin
-                    cmdMemAddr <= cmdMemAddrNext;
-                end
-                writeDataPort <= { NUMBER_OF_PIXELS_PER_BEAT { confClearColor } };
-                writeMaskPort <= { NUMBER_OF_PIXELS_PER_BEAT { confMask } } & scissorPixelAndColorMask;
-
-                if (scissorXNext == confXResolution)
-                begin
-                    scissorX <= 0;
-                    scissorY <= scissorYNext;
-                end
-                else
-                begin
-                    scissorX <= scissorXNext;
                 end
             end
             endcase
@@ -369,55 +286,4 @@ module InternalFramebufferCommandHandler
             m_avalid <= 0;
         end
     end
-endmodule
-
-module InternalFramebufferScissor
-#(
-    // Number of pixels a stream beat contains
-    parameter NUMBER_OF_PIXELS_PER_BEAT = 2,
-    
-    // Number of sub pixels the interface of this module contains
-    parameter NUMBER_OF_SUB_PIXELS = 4,
-
-    // The maximum size of the screen in power of two
-    parameter X_BIT_WIDTH = 11,
-    parameter Y_BIT_WIDTH = 11,
-
-    localparam MASK_WIDTH = NUMBER_OF_PIXELS_PER_BEAT * NUMBER_OF_SUB_PIXELS
-)
-(
-    input  wire                       confEnableScissor,
-    input  wire [X_BIT_WIDTH - 1 : 0] confScissorStartX,
-    input  wire [Y_BIT_WIDTH - 1 : 0] confScissorStartY,
-    input  wire [X_BIT_WIDTH - 1 : 0] confScissorEndX,
-    input  wire [Y_BIT_WIDTH - 1 : 0] confScissorEndY,
-    input  wire [X_BIT_WIDTH - 1 : 0] x,
-    input  wire [Y_BIT_WIDTH - 1 : 0] y,
-
-    output wire [MASK_WIDTH - 1 : 0]  pixelMask
-);
-    `include "InternalFramebufferScissorFunc.vh"
-
-    wire [NUMBER_OF_PIXELS_PER_BEAT - 1 : 0] scissorPixelMask;
-
-    genvar i, j;
-    generate
-        if (NUMBER_OF_PIXELS_PER_BEAT == 1)
-        begin 
-            assign scissorPixelMask = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, x, y);
-            assign pixelMask = { NUMBER_OF_SUB_PIXELS { scissorPixelMask } };
-        end
-        else
-        begin
-            for (i = 0; i < NUMBER_OF_PIXELS_PER_BEAT; i = i + 1)
-            begin
-                assign scissorPixelMask[i] = scissorFunc(confEnableScissor, confScissorStartX, confScissorStartY, confScissorEndX, confScissorEndY, x + i, y);
-                for (j = 0; j < NUMBER_OF_SUB_PIXELS; j = j + 1)
-                begin
-                    assign pixelMask[(i * NUMBER_OF_SUB_PIXELS) + j] = scissorPixelMask[i];
-                end
-            end
-        end
-    endgenerate
-
 endmodule

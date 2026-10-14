@@ -164,7 +164,8 @@ module TextureCacheDirectMapped #(
                 .LGFLEN(COMMAND_FIFO_DEPTH_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(COMMAND_FIFO_DEPTH_POW2 < 2)
             ) command_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
@@ -209,7 +210,8 @@ module TextureCacheDirectMapped #(
                 .LGFLEN(AXI_R_FIFO_DEPTH_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(AXI_R_FIFO_DEPTH_POW2 < 2)
             ) axi_r_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),

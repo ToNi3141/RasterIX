@@ -39,10 +39,6 @@ module StreamFramebuffer
     // that many beats into a single AXI transaction.
     parameter MAX_BEATS_TO_COALESCE = 0,
 
-    // The maximum size of the screen in power of two
-    parameter X_BIT_WIDTH = 11,
-    parameter Y_BIT_WIDTH = 11,
-
     // Size of the pixels
     parameter PIXEL_WIDTH = 16,
     localparam PIXEL_MASK_WIDTH = PIXEL_WIDTH / 8,
@@ -56,23 +52,6 @@ module StreamFramebuffer
     // Configs
     /////////////////////////
     input  wire [ADDR_WIDTH - 1 : 0]        confAddr,
-    input  wire                             confEnableScissor,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorStartX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorStartY,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confScissorEndX,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confScissorEndY,
-    input  wire [X_BIT_WIDTH - 1 : 0]       confXResolution,
-    input  wire [Y_BIT_WIDTH - 1 : 0]       confYResolution,
-    input  wire [PIXEL_MASK_WIDTH - 1 : 0]  confMask,
-    input  wire [PIXEL_WIDTH - 1 : 0]       confClearColor,
-
-    /////////////////////////
-    // Control
-    /////////////////////////
-
-    // Cmd interface
-    input  wire                             apply, // This start a command framebuffer clear
-    output wire                             applied, // This marks if the commands has been applied.
 
     /////////////////////////
     // Fragment Interface
@@ -95,10 +74,8 @@ module StreamFramebuffer
     input  wire                             s_frag_wlast,
     output wire                             s_frag_wready,
     input  wire [PIXEL_WIDTH - 1 : 0]       s_frag_wdata,
-    input  wire                             s_frag_wstrb,
+    input  wire [PIXEL_MASK_WIDTH - 1 : 0]  s_frag_wstrb,
     input  wire [ADDR_WIDTH - 1 : 0]        s_frag_waddr,
-    input  wire [X_BIT_WIDTH - 1 : 0]       s_frag_wxpos,
-    input  wire [X_BIT_WIDTH - 1 : 0]       s_frag_wypos,
 
     /////////////////////////
     // Memory Interface
@@ -144,29 +121,6 @@ module StreamFramebuffer
     input  wire                             m_mem_axi_rvalid,
     output wire                             m_mem_axi_rready
 );
-    wire                             frag_tvalid;
-    wire                             frag_tlast;
-    wire                             frag_tready;
-    wire [PIXEL_WIDTH - 1 : 0]       frag_tdata;
-    wire                             frag_tstrb;
-    wire [ADDR_WIDTH - 1 : 0]        frag_taddr;
-    wire [X_BIT_WIDTH - 1 : 0]       frag_txpos;
-    wire [X_BIT_WIDTH - 1 : 0]       frag_typos;
-
-    wire                             scissor_tvalid;
-    wire                             scissor_tlast;
-    wire                             scissor_tready;
-    wire [PIXEL_WIDTH - 1 : 0]       scissor_tdata;
-    wire                             scissor_tstrb;
-    wire [ADDR_WIDTH - 1 : 0]        scissor_taddr;
-
-    wire                             strobegen_tvalid;
-    wire                             strobegen_tlast;
-    wire                             strobegen_tready;
-    wire [PIXEL_WIDTH - 1 : 0]       strobegen_tdata;
-    wire [PIXEL_MASK_WIDTH - 1 : 0]  strobegen_tstrb;
-    wire [ADDR_WIDTH - 1 : 0]        strobegen_taddr;
-
     wire                             write_mmu_tvalid;
     wire                             write_mmu_tlast;
     wire                             write_mmu_tready;
@@ -400,23 +354,11 @@ module StreamFramebuffer
         .m_mem_axi_rready(m_mem_axi_rready)
     );
 
-    FramebufferWriterClear #(
+    FramebufferMMU #(
         .ADDR_WIDTH(ADDR_WIDTH),
-        .X_BIT_WIDTH(X_BIT_WIDTH),
-        .Y_BIT_WIDTH(Y_BIT_WIDTH),
         .PIXEL_WIDTH(PIXEL_WIDTH)
-    ) fbwc (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .confClearColor(confClearColor),
-        .confXResolution(confXResolution),
-        .confYResolution(confYResolution),
-        .confEnableScissor(confEnableScissor),
-        .confScissorStartX(confScissorStartX),
-        .confScissorStartY(confScissorStartY),
-        .confScissorEndX(confScissorEndX),
-        .confScissorEndY(confScissorEndY),
+    ) fbmmu_write (
+        .confAddr(confAddr),
 
         .s_frag_tvalid(s_frag_wvalid),
         .s_frag_tlast(s_frag_wlast),
@@ -424,85 +366,6 @@ module StreamFramebuffer
         .s_frag_tdata(s_frag_wdata),
         .s_frag_tstrb(s_frag_wstrb),
         .s_frag_taddr(s_frag_waddr),
-        .s_frag_txpos(s_frag_wxpos),
-        .s_frag_typos(s_frag_wypos),
-
-        .m_frag_tvalid(frag_tvalid),
-        .m_frag_tlast(frag_tlast),
-        .m_frag_tready(frag_tready),
-        .m_frag_tdata(frag_tdata),
-        .m_frag_tstrb(frag_tstrb),
-        .m_frag_taddr(frag_taddr),
-        .m_frag_txpos(frag_txpos),
-        .m_frag_typos(frag_typos),
-
-        .apply(apply),
-        .applied(applied)
-    );
-
-    FramebufferScissor #(
-        .X_BIT_WIDTH(X_BIT_WIDTH),
-        .Y_BIT_WIDTH(Y_BIT_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
-    ) fbs (
-        .confEnableScissor(confEnableScissor),
-        .confScissorStartX(confScissorStartX),
-        .confScissorStartY(confScissorStartY),
-        .confScissorEndX(confScissorEndX),
-        .confScissorEndY(confScissorEndY),
-
-        .s_frag_tvalid(frag_tvalid),
-        .s_frag_tlast(frag_tlast),
-        .s_frag_tready(frag_tready),
-        .s_frag_tdata(frag_tdata),
-        .s_frag_tstrb(frag_tstrb),
-        .s_frag_taddr(frag_taddr),
-        .s_frag_txpos(frag_txpos),
-        .s_frag_typos(frag_typos),
-
-        .m_frag_tvalid(scissor_tvalid),
-        .m_frag_tlast(scissor_tlast),
-        .m_frag_tready(scissor_tready),
-        .m_frag_tdata(scissor_tdata),
-        .m_frag_tstrb(scissor_tstrb),
-        .m_frag_taddr(scissor_taddr)
-    );
-
-    FramebufferWriterStrobeGen #(
-        .MASK_WIDTH(PIXEL_MASK_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH),
-        .ADDR_WIDTH(ADDR_WIDTH)
-    ) fbwsg (
-        .confMask(confMask),
-
-        .s_frag_tvalid(scissor_tvalid),
-        .s_frag_tlast(scissor_tlast),
-        .s_frag_tready(scissor_tready),
-        .s_frag_tdata(scissor_tdata),
-        .s_frag_tstrb(scissor_tstrb),
-        .s_frag_taddr(scissor_taddr),
-
-        .m_frag_tvalid(strobegen_tvalid),
-        .m_frag_tlast(strobegen_tlast),
-        .m_frag_tready(strobegen_tready),
-        .m_frag_tdata(strobegen_tdata),
-        .m_frag_tstrb(strobegen_tstrb),
-        .m_frag_taddr(strobegen_taddr)
-    );
-
-    FramebufferMMU #(
-        .ADDR_WIDTH(ADDR_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH)
-    ) fbmmu_write (
-        .confAddr(confAddr),
-
-        .s_frag_tvalid(strobegen_tvalid),
-        .s_frag_tlast(strobegen_tlast),
-        .s_frag_tready(strobegen_tready),
-        .s_frag_tdata(strobegen_tdata),
-        .s_frag_tstrb(strobegen_tstrb),
-        .s_frag_taddr(strobegen_taddr),
 
         .m_frag_tvalid(write_mmu_tvalid),
         .m_frag_tlast(write_mmu_tlast),

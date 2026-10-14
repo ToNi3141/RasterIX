@@ -1,21 +1,27 @@
-
 # TE0890 Build
 
 The [TE0890](https://www.trenz-electronic.de/en/S7-Mini-Fully-Open-Source-Module-with-AMD-Spartan-7S25-1C-64-Mbit-HyperRAM/TE0890-02-P1C-5-A) is a low-cost, open-source FPGA module from Trenz Electronic GmbH. It includes 8MB of HyperRAM and an `XC7S25` FPGA, making it one of the most affordable ways to use this project with an MCU.
 
 The FPGA connects to an MCU via an SPI interface, with an additional CTS pin for software-based flow control.
 
-## Variant: `rixef`
+## RasterIX Configuration
 
-- 1 TMU (max resolution: 128x128)
-- Mipmap support
-- Fixed-point arithmetic
-- Fog
-- Texture filtering
-- Stencil buffering
-- Depth buffering
-- HyperRAM interface
-- 75 MHz clock with 150 MB/s memory bandwidth 
+The checked-in block design builds `rixef` (EF, external framebuffer), and the
+Vivado build has no variant selector. Its RasterIX configuration is:
+
+| Setting | Configuration |
+|---------|---------------|
+| Variant | EF (external framebuffer) |
+| Texture mapping units | 1 TMU |
+| Maximum texture size | 128 × 128 pixels |
+| Mipmapping / texture filtering | Enabled / enabled |
+| Texture storage | External memory with an 8 KiB texture cache |
+| Attribute interpolation | Fixed-point; 18-bit multiplier precision |
+| Sub-pixel calculation precision | 6 bits |
+| Fog, depth buffer, stencil buffer | Enabled, enabled, enabled |
+| Texture page size | 2048 bytes |
+| AXI data width / memory coalescing | 16 bits / enabled |
+| HyperRAM interface | 75 MHz; approximately 150 MB/s memory bandwidth |
 
 **Note:** `glReadPixels`, `glCopyTexImage2D`, and `glCopyTexSubImage2D` are not available. The SPI MISO channel is currently unused and requires implementation.
 
@@ -97,11 +103,11 @@ build_flags =
     -Ofast 
     -std=c++17
     -DRIX_CORE_TMU_COUNT=1
-    -DRIX_CORE_MAX_TEXTURE_SIZE=128
+    -DRIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE=128
     -DRIX_CORE_ENABLE_MIPMAPPING=true
     -DRIX_CORE_MAX_DISPLAY_WIDTH=320
     -DRIX_CORE_MAX_DISPLAY_HEIGHT=240
-    -DRIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
+    -DRIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG=20
     -DRIX_CORE_ENABLE_ATTRIBUTE_SCALING=true
     -DRIX_CORE_NUMBER_OF_TEXTURE_PAGES=512
     -DRIX_CORE_NUMBER_OF_TEXTURES=128

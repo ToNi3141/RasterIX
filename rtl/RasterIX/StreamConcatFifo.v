@@ -81,7 +81,7 @@ module StreamConcatFifo
         begin
             assign s_stream0_data = s_stream0_tdata;
             assign stream_empty[0] = !s_stream0_tvalid;
-            assign stream_full[0] = 0;
+            assign stream_full[0] = !stream_out_read;
         end
         else
         begin
@@ -90,7 +90,8 @@ module StreamConcatFifo
                 .LGFLEN(FIFO_DEPTH0_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(FIFO_DEPTH0_POW2 < 2)
             ) stream0_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
@@ -112,7 +113,7 @@ module StreamConcatFifo
         begin
             assign s_stream1_data = s_stream1_tdata;
             assign stream_empty[1] = !s_stream1_tvalid;
-            assign stream_full[1] = 0;
+            assign stream_full[1] = !stream_out_read;
         end
         else
         begin
@@ -121,7 +122,8 @@ module StreamConcatFifo
                 .LGFLEN(FIFO_DEPTH1_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(FIFO_DEPTH1_POW2 < 2)
             ) stream1_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
@@ -143,7 +145,7 @@ module StreamConcatFifo
         begin
             assign s_stream2_data = s_stream2_tdata;
             assign stream_empty[2] = !s_stream2_tvalid;
-            assign stream_full[2] = 0;
+            assign stream_full[2] = !stream_out_read;
         end
         else
         begin
@@ -152,7 +154,8 @@ module StreamConcatFifo
                 .LGFLEN(FIFO_DEPTH2_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(FIFO_DEPTH2_POW2 < 2)
             ) stream2_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),
@@ -174,7 +177,7 @@ module StreamConcatFifo
         begin
             assign s_stream3_data = s_stream3_tdata;
             assign stream_empty[3] = !s_stream3_tvalid;
-            assign stream_full[3] = 0;
+            assign stream_full[3] = !stream_out_read;
         end
         else
         begin
@@ -183,7 +186,8 @@ module StreamConcatFifo
                 .LGFLEN(FIFO_DEPTH3_POW2),
                 .OPT_ASYNC_READ(0),
                 .OPT_WRITE_ON_FULL(0),
-                .OPT_READ_ON_EMPTY(0)
+                .OPT_READ_ON_EMPTY(0),
+                .OPT_READ_BYPASS(FIFO_DEPTH3_POW2 < 2)
             ) stream3_fifo (
                 .i_clk(aclk),
                 .i_reset(!resetn),

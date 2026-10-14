@@ -51,7 +51,6 @@ module RegisterBank
     output reg                              registers_updated,
     input  wire                             update_acknowledged
 );
-    
     localparam REGISTERS_PER_STREAM_BEAT = CMD_STREAM_WIDTH / BANK_REG_WIDTH;
 
     reg [BANK_REG_WIDTH - 1 : 0] registerMem [0 : BANK_SIZE - 1];

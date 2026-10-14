@@ -115,11 +115,11 @@ Note: Bold options are required to be equal to the hardware counterparts.
 | Property                               | Description |
 |----------------------------------------|-------------|
 | __RIX_CORE_TMU_COUNT__                 | Number of TMUs the hardware supports. Must be equal to the FPGA configuration. |
-| __RIX_CORE_MAX_TEXTURE_SIZE__          | The maximum texture resolution the hardware supports. A valid values is 256 for 256x256px textures. Must be the same value as in __MAX_TEXTURE_SIZE__ |
+| __RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE__ | The maximum dimension supported by the on-chip texture buffer. Valid values are 256, 128, 64, or 32. Must match RTL `TEXTURE_BUFFER_MAX_TEXTURE_SIZE`. |
 | __RIX_CORE_ENABLE_MIPMAPPING__         | Set this to `true` when mip mapping is available. Must be equal to the FPGA configuration |
 | RIX_CORE_MAX_DISPLAY_WIDTH             | The maximum width if the screen. All integers are valid like 1024. To be most memory efficient, this should fit to your display resolution. |
 | RIX_CORE_MAX_DISPLAY_HEIGHT            | The maximum height of the screen. All integers are valid like 600. To be most memory efficient, this should fit to your display resolution. |
-| __RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG__ | The log2(size) of the framebuffer in pixel. For the `rixef` variant, use a value which fits at least the whole screen like log2(1024 * 600) + 1. For the `rixif` variant, use the same value configured in the FPGA. A valid value could be 16. |
+| __RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG__ | The log2 of the IF framebuffer capacity in pixels. For `rixef`, choose enough capacity for the whole screen (for example, log2(1024 × 600) + 1); for `rixif`, match RTL `IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG`. This setting is also used by software display-list/frame splitting. |
 | RIX_CORE_ENABLE_ATTRIBUTE_SCALING      | This enables the scaling of triangle attributes. It is not needed when the floating point interpolation is enabled. In fixpoint interpolation, unscaled attributes can cause overflows. Visible in GL_CLAMP_TO_EDGE. Scaling can fix that, but increases the load on the CPU. |
 | RIX_CORE_NUMBER_OF_TEXTURE_PAGES       | The number of texture pages available. Combined with TEXTURE_PAGE_SIZE, it describes the size of the texture memory on the FPGA. This must never exceed the FPGAs available memory. |
 | RIX_CORE_NUMBER_OF_TEXTURES            | Number of allowed textures. Lower value here can reduce the CPU utilization. Typically set this to the same value as NUMBER_OF_TEXTURE_PAGES. |

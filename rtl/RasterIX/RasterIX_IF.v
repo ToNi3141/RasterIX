@@ -18,17 +18,17 @@
 module RasterIX_IF #(
     // The size of the internal framebuffer (in power of two)
     // Depth buffer word size: 16 bit
-    // Color buffer word size: FRAMEBUFFER_SUB_PIXEL_WIDTH * (FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
-    parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = 16,
+    // Color buffer word size: IF_FRAMEBUFFER_SUB_PIXEL_WIDTH * (IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL ? 4 : 3)
+    parameter IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG = 16,
 
     // This is the color depth of the framebuffer. Note: This setting has no influence on the framebuffer stream. This steam will
     // stay at RGB565. It changes the internal representation and might be used to reduce the memory footprint.
     // Lower depth will result in color banding.
-    parameter FRAMEBUFFER_SUB_PIXEL_WIDTH = 5,
+    parameter IF_FRAMEBUFFER_SUB_PIXEL_WIDTH = 5,
     // The internal calculation width of a sub pixel
     parameter SUB_PIXEL_CALC_PRECISION = 8,
     // This enables the alpha channel of the framebuffer. Requires additional memory.
-    parameter FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
+    parameter IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
 
     // This enables the 4 bit stencil buffer
     parameter ENABLE_STENCIL_BUFFER = 1,
@@ -41,14 +41,15 @@ module RasterIX_IF #(
     parameter ENABLE_MIPMAPPING = 1,
     parameter ENABLE_TEXTURE_FILTERING = 1,
     parameter TEXTURE_PAGE_SIZE = 2048,
-    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 0,
-    parameter CACHE_SIZE = 1024,
+    parameter ENABLE_TEXTURE_CACHE = 0,
+    parameter TEXTURE_CACHE_SIZE = 1024,
 
     // Enables the fog unit
     parameter ENABLE_FOG = 1,
     
     // The maximum size of a texture
-    parameter MAX_TEXTURE_SIZE = 256,
+    // The texture buffer is disabled when ENABLE_TEXTURE_CACHE is set to 1
+    parameter TEXTURE_BUFFER_MAX_TEXTURE_SIZE = 256,
 
     // Memory address width
     parameter ADDR_WIDTH = 32,
@@ -66,13 +67,13 @@ module RasterIX_IF #(
     // For compatibility reasons, it only cuts of the mantissa. By default it uses a 25x25 multiplier (for floatMul)
     // If you have a FPGA with only 18 bit native multipliers, reduce this value to 26.
     parameter RASTERIZER_FLOAT_PRECISION = 32,
-    // When RASTERIZER_ENABLE_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
+    // When ENABLE_RASTERIZER_FLOAT_INTERPOLATION is 0, then this configures the width of the multipliers for the fix point
     // calculations. A value of 25 will instantiate signed 25 bit multipliers. The 25 already including the sign bit.
     // Lower values can lead to distortions of the fog and texels.
     parameter RASTERIZER_FIXPOINT_PRECISION = 25,
     // Enables the floating point interpolation. If this is disabled, it falls back
     // to the fix point interpolation
-    parameter RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 0,
+    parameter ENABLE_RASTERIZER_FLOAT_INTERPOLATION = 0,
 
 
     localparam CMD_STREAM_WIDTH = 32,
@@ -611,24 +612,24 @@ module RasterIX_IF #(
     );
 
     RasterIXCoreIF #(
-        .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
-        .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
+        .IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG(IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG),
+        .IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL(IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
+        .IF_FRAMEBUFFER_SUB_PIXEL_WIDTH(IF_FRAMEBUFFER_SUB_PIXEL_WIDTH),
         .TEXTURE_PAGE_SIZE(TEXTURE_PAGE_SIZE),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC),
         .DATA_WIDTH(DATA_WIDTH),
         .ENABLE_STENCIL_BUFFER(ENABLE_STENCIL_BUFFER),
         .ENABLE_DEPTH_BUFFER(ENABLE_DEPTH_BUFFER),
-        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
+        .TEXTURE_BUFFER_MAX_TEXTURE_SIZE(TEXTURE_BUFFER_MAX_TEXTURE_SIZE),
         .ENABLE_MIPMAPPING(ENABLE_MIPMAPPING),
         .ENABLE_TEXTURE_FILTERING(ENABLE_TEXTURE_FILTERING),
-        .ENABLE_EXTERNAL_TEXTURE_MEMORY(ENABLE_EXTERNAL_TEXTURE_MEMORY),
-        .CACHE_SIZE(CACHE_SIZE),
+        .ENABLE_TEXTURE_CACHE(ENABLE_TEXTURE_CACHE),
+        .TEXTURE_CACHE_SIZE(TEXTURE_CACHE_SIZE),
         .ENABLE_FOG(ENABLE_FOG),
-        .FRAMEBUFFER_SUB_PIXEL_WIDTH(FRAMEBUFFER_SUB_PIXEL_WIDTH),
         .SUB_PIXEL_CALC_PRECISION(SUB_PIXEL_CALC_PRECISION),
         .TMU_COUNT(TMU_COUNT),
-        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RASTERIZER_ENABLE_FLOAT_INTERPOLATION),
+        .ENABLE_RASTERIZER_FLOAT_INTERPOLATION(ENABLE_RASTERIZER_FLOAT_INTERPOLATION),
         .RASTERIZER_FLOAT_PRECISION(RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION(RASTERIZER_FIXPOINT_PRECISION)
     ) rixif (

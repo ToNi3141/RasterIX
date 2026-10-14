@@ -31,6 +31,30 @@ module sfifo #(
 		parameter [0:0]	OPT_ASYNC_READ = 1'b1,
 		parameter [0:0]	OPT_WRITE_ON_FULL = 1'b0,
 		parameter [0:0]	OPT_READ_ON_EMPTY = 1'b0,
+		// OPT_READ_BYPASS (only for OPT_ASYNC_READ = 0, registered read)
+		//
+		// A registered memory needs one edge to write a word and another
+		// edge to read it back. To make a word written in t0 readable in t1,
+		// the bypass copies i_data in parallel and muxes it onto o_data:
+		//
+		//   i_data --+--> mem ---------> rd_data --+
+		//            |                             +-- mux --> o_data
+		//            +--> bypass_data -------------+
+		//
+		// OPT_READ_BYPASS = 0 removes the lower path (BW FFs + BW-wide mux).
+		// o_data comes only from mem, so o_empty clears one cycle later:
+		//
+		//   cycle | OPT_READ_BYPASS = 1          | OPT_READ_BYPASS = 0
+		//   ------+------------------------------+-----------------------------
+		//   t0    | write A (mem + bypass_data)  | write A (mem only)
+		//   t1    | !o_empty, o_data = A         | o_empty, mem reads A
+		//   t2    |                              | !o_empty, o_data = A
+		//
+		// Utilization is exchanged for one cycle latency, which only applies
+		// when the FIFO is empty. Throughput stays one word per cycle for
+		// LGFLEN >= 2 (LGFLEN = 1 halves it, because the not yet readable
+		// word occupies a slot). Not compatible with OPT_READ_ON_EMPTY.
+		parameter [0:0]	OPT_READ_BYPASS = 1'b1,
 		localparam	FLEN=(1<<LGFLEN)
 		// }}}
 	) (
@@ -127,14 +151,24 @@ module sfifo #(
 	// r_empty, o_empty
 	// {{{
 	initial	r_empty = 1'b1;
-	always @(posedge i_clk)
-	if (i_reset)
-		r_empty <= 1'b1;
-	else case ({ w_wr, w_rd })
-	2'b01: r_empty <= (o_fill <= 1);
-	2'b10: r_empty <= 1'b0;
-	default: begin end
-	endcase
+	generate if (!OPT_ASYNC_READ && !OPT_READ_BYPASS)
+	begin : DELAYED_EMPTY
+		// A word becomes readable two cycles after its write, so the registered read never collides with it
+		always @(posedge i_clk)
+		if (i_reset)
+			r_empty <= 1'b1;
+		else
+			r_empty <= (wr_addr == (w_rd ? (rd_addr + 1'b1) : rd_addr));
+	end else begin : IMMEDIATE_EMPTY
+		always @(posedge i_clk)
+		if (i_reset)
+			r_empty <= 1'b1;
+		else case ({ w_wr, w_rd })
+		2'b01: r_empty <= (o_fill <= 1);
+		2'b10: r_empty <= 1'b0;
+		default: begin end
+		endcase
+	end endgenerate
 
 	always @(*)
 	if (OPT_READ_ON_EMPTY && i_wr)
@@ -194,7 +228,8 @@ module sfifo #(
 		always @(*)
 		if (OPT_READ_ON_EMPTY && r_empty)
 			o_data = i_data;
-		else if (bypass_valid)
+		// bypass_valid assumes the immediate empty timing; the guard also lets synthesis drop the bypass
+		else if (OPT_READ_BYPASS && bypass_valid)
 			o_data = bypass_data;
 		else
 			o_data = rd_data;
@@ -256,7 +291,8 @@ module sfifo #(
 		assert(o_fill == f_fill);
 
 		assert(r_full  == (f_fill == {1'b1, {(LGFLEN){1'b0}} }));
-		assert(r_empty == (f_fill == 0));
+		if (OPT_ASYNC_READ || OPT_READ_BYPASS)
+			assert(r_empty == (f_fill == 0));
 		assert(rd_next == f_next[LGFLEN-1:0]);
 
 		if (!OPT_WRITE_ON_FULL)

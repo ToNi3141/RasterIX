@@ -96,7 +96,7 @@ module AxisMemoryReader #(
     sfifo #(
         .BW(DATA_WIDTH),
         .LGFLEN(FIFO_DEPTH_LG),
-        .OPT_ASYNC_READ(1'b1),
+        .OPT_ASYNC_READ(1'b0),
         .OPT_WRITE_ON_FULL(1'b0),
         .OPT_READ_ON_EMPTY(1'b0)
     ) data_fifo (

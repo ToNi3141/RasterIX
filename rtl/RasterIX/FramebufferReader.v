@@ -131,7 +131,8 @@ module FramebufferReader #(
 
     sfifo #(
         .BW(ADDR_WIDTH + 1),
-        .LGFLEN(FETCH_FIFO_LEN)
+        .LGFLEN(FETCH_FIFO_LEN),
+        .OPT_ASYNC_READ(1'b0)
     ) fetchAddrFifo (
         .i_clk(aclk),
         .i_reset(!resetn),

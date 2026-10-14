@@ -23,12 +23,12 @@ option(RIX_ENABLE_SPDLOG "Enables logging via the spdlog library" OFF)
 # Hardware defines
 set(RIX_CORE_TMU_COUNT "1" CACHE STRING "The number of TMUs in the hardware")
 # Texture settings
-set(RIX_CORE_MAX_TEXTURE_SIZE "256" CACHE STRING "The maximum width of the texture")
+set(RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE "256" CACHE STRING "The maximum dimension of the texture buffer")
 set(RIX_CORE_ENABLE_MIPMAPPING "true" CACHE STRING "Enables mipmapping")
 # Display settings
 set(RIX_CORE_MAX_DISPLAY_WIDTH "1024" CACHE STRING "The maximum width of the display")
 set(RIX_CORE_MAX_DISPLAY_HEIGHT "600" CACHE STRING "The maximum height of the display")
-set(RIX_CORE_FRAMEBUFFER_SIZE_IN_PIXEL_LG "16" CACHE STRING "The log2(size) of the framebuffer in 16 bit words / in pixel")
+set(RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG "20" CACHE STRING "The log2(size) of the IF framebuffer in pixels")
 # Rasterizer settings
 set(RIX_CORE_ENABLE_ATTRIBUTE_SCALING "true" CACHE STRING "Enables float interpolation")
 # Texture memory settings

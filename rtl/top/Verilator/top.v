@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 module top #(
-    parameter DATA_WIDTH = 32
+    parameter DATA_WIDTH = 32,
+    parameter ENABLE_TEXTURE_CACHE = 1
 )
 (
     input  wire                             aclk,
@@ -41,8 +42,8 @@ module top #(
 );
 `define STR(x) `"x`"
     parameter VARIANT = `STR(`VARIANT);
-    parameter FRAMEBUFFER_SIZE_IN_PIXEL_LG = `FRAMEBUFFER_SIZE_IN_PIXEL_LG;
-    parameter MAX_TEXTURE_SIZE = 256;
+    parameter IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG = `IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG;
+    parameter TEXTURE_BUFFER_MAX_TEXTURE_SIZE = 256;
     parameter CMD_STREAM_WIDTH = 32;
 
     initial
@@ -296,7 +297,7 @@ module top #(
 
     RasterIX #(
         .VARIANT(VARIANT),
-        .FRAMEBUFFER_SIZE_IN_PIXEL_LG(FRAMEBUFFER_SIZE_IN_PIXEL_LG),
+        .IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG(IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG),
         .TEXTURE_PAGE_SIZE(4096),
         .ADDR_WIDTH(ADDR_WIDTH),
         .ID_WIDTH(ID_WIDTH_LOC),
@@ -306,11 +307,14 @@ module top #(
         .ENABLE_TEXTURE_FILTERING(1),
         .ENABLE_FOG(1),
         .ENABLE_MEMORY_COALESCING(1),
-        .MAX_TEXTURE_SIZE(MAX_TEXTURE_SIZE),
-        .FRAMEBUFFER_SUB_PIXEL_WIDTH(6),
+        .TEXTURE_BUFFER_MAX_TEXTURE_SIZE(TEXTURE_BUFFER_MAX_TEXTURE_SIZE),
+        .IF_FRAMEBUFFER_SUB_PIXEL_WIDTH(6),
         .SUB_PIXEL_CALC_PRECISION(8),
         .TMU_COUNT(2),
-        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(0)
+        .ENABLE_TEXTURE_CACHE(ENABLE_TEXTURE_CACHE),
+        .ENABLE_RASTERIZER_FLOAT_INTERPOLATION(0),
+        .RASTERIZER_FIXPOINT_PRECISION(25),
+        .TEXTURE_CACHE_SIZE(1024)
     ) rix (
         .aclk(aclk),
         .resetn(resetn),
