@@ -103,38 +103,38 @@ module InternalFramebufferCommandHandler
     localparam COMMAND_READ = 2;
     
     // Memory Address variables
-    reg  [MEM_ADDR_WIDTH - 1 : 0]   cmdMemAddr;
-    wire [MEM_ADDR_WIDTH - 1 : 0]   cmdMemAddrNext = cmdMemAddr + 1;
-    wire [TRANSFER_SIZE_WIDTH - 1 : 0] cmdMemAddrNextExtended =
+    reg  [MEM_ADDR_WIDTH - 1 : 0]       cmdMemAddr;
+    wire [MEM_ADDR_WIDTH - 1 : 0]       cmdMemAddrNext = cmdMemAddr + 1;
+    wire [TRANSFER_SIZE_WIDTH - 1 : 0]  cmdMemAddrNextExtended =
         { { (TRANSFER_SIZE_WIDTH - MEM_ADDR_WIDTH) { 1'b0 } }, cmdMemAddrNext };
-    reg  [TRANSFER_SIZE_WIDTH - 1 : 0] cmdFbSizeInBeats;
+    reg  [TRANSFER_SIZE_WIDTH - 1 : 0]  cmdFbSizeInBeats;
     
     // State variables
-    reg  [1 : 0]                    cmdState;
+    reg  [1 : 0]                        cmdState;
     
     // AXI writes use fixed 16-beat bursts; keep that padding internal to the IF transfer.
-    wire [TRANSFER_SIZE_WIDTH - 1 : 0] roundedCmdSize =
+    wire [TRANSFER_SIZE_WIDTH - 1 : 0]  roundedCmdSize =
         ({ 1'b0, cmdSize } + AXI_BURST_PIXEL_COUNT - 1) & ~(AXI_BURST_PIXEL_COUNT - 1);
-    wire [TRANSFER_SIZE_WIDTH - 1 : 0] cmdTransferBeats = roundedCmdSize >> PIXEL_PER_BEAT_LOG2;
+    wire [TRANSFER_SIZE_WIDTH - 1 : 0]  cmdTransferBeats = roundedCmdSize >> PIXEL_PER_BEAT_LOG2;
 
     // Pixel offsets preserve the exact logical size despite padded transport beats.
-    reg  [FB_SIZE_IN_PIXEL_LG : 0]  pixelOffset;
-    wire [FB_SIZE_IN_PIXEL_LG : 0]  pixelOffsetNext = pixelOffset + NUMBER_OF_PIXELS_PER_BEAT;
-    wire [PIXEL_STROBE_WIDTH - 1 : 0] pixelStrobe;
+    reg  [FB_SIZE_IN_PIXEL_LG : 0]      pixelOffset;
+    wire [FB_SIZE_IN_PIXEL_LG : 0]      pixelOffsetNext = pixelOffset + NUMBER_OF_PIXELS_PER_BEAT;
+    wire [PIXEL_STROBE_WIDTH - 1 : 0]   pixelStrobe;
 
     // Skid buffer
-    reg  [STREAM_WIDTH - 1 : 0]     skidBufferData;
-    reg                             skidBufferValid;
-    reg                             skidBufferLast;
-    reg  [PIXEL_STROBE_WIDTH - 1 : 0] skidBufferStrb;
+    reg  [STREAM_WIDTH - 1 : 0]         skidBufferData;
+    reg                                 skidBufferValid;
+    reg                                 skidBufferLast;
+    reg  [PIXEL_STROBE_WIDTH - 1 : 0]   skidBufferStrb;
 
     assign writeAddrPort = cmdMemAddr;
-
     assign readAddrPort = cmdMemAddr;
-    wire                            readPortReady;
-    wire                            readPortLast;
-    wire [PIXEL_STROBE_WIDTH - 1 : 0] readPortStrb;
-    wire                            commitActive = cmdState == COMMAND_COMMIT;
+
+    wire                                readPortReady;
+    wire                                readPortLast;
+    wire [PIXEL_STROBE_WIDTH - 1 : 0]   readPortStrb;
+    wire                                commitActive = cmdState == COMMAND_COMMIT;
 
     genvar i;
     generate

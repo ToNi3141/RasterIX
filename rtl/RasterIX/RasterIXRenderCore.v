@@ -1784,7 +1784,6 @@ module RasterIXRenderCore #(
     wire                            framebuffer_scissor_tvalid;
     wire                            framebuffer_scissor_tlast;
     wire                            framebuffer_scissor_tready;
-    wire                            framebuffer_scissor_tstrb;
 
     Scissor scissor (
         .confEnableScissor(confFramebufferScissorEnable),
@@ -1797,7 +1796,6 @@ module RasterIXRenderCore #(
         .s_frag_tlast(framebuffer_mux_wlast),
         .s_frag_tready(framebuffer_mux_wready),
         .s_frag_tdata({
-            framebuffer_mux_waddr,
             framebuffer_mux_color_wdata,
             framebuffer_mux_color_wstrb,
             framebuffer_mux_depth_wdata,
@@ -1806,7 +1804,7 @@ module RasterIXRenderCore #(
             framebuffer_mux_stencil_wstrb
         }),
         .s_frag_tstrb(1'b1),
-        .s_frag_taddr({ INDEX_WIDTH { 1'b0 } }),
+        .s_frag_taddr(framebuffer_mux_waddr),
         .s_frag_txpos(framebuffer_mux_wscreenPosX),
         .s_frag_typos(framebuffer_mux_wscreenPosY),
 
@@ -1814,7 +1812,6 @@ module RasterIXRenderCore #(
         .m_frag_tlast(framebuffer_scissor_tlast),
         .m_frag_tready(framebuffer_scissor_tready),
         .m_frag_tdata({
-            framebuffer_scissor_m_waddr,
             framebuffer_scissor_m_color_wdata,
             framebuffer_scissor_m_color_wstrb,
             framebuffer_scissor_m_depth_wdata,
@@ -1822,12 +1819,12 @@ module RasterIXRenderCore #(
             framebuffer_scissor_m_stencil_wdata,
             framebuffer_scissor_m_stencil_wstrb
         }),
-        .m_frag_tstrb(framebuffer_scissor_tstrb),
-        .m_frag_taddr()
+        .m_frag_tstrb(),
+        .m_frag_taddr(framebuffer_scissor_m_waddr)
     );
     defparam scissor.X_BIT_WIDTH = SCREEN_POS_WIDTH;
     defparam scissor.Y_BIT_WIDTH = SCREEN_POS_WIDTH;
-    defparam scissor.PIXEL_WIDTH = INDEX_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH + STENCIL_WIDTH + 3;
+    defparam scissor.PIXEL_WIDTH = PIXEL_WIDTH + DEPTH_WIDTH + STENCIL_WIDTH + 3;
     defparam scissor.ADDR_WIDTH = INDEX_WIDTH;
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1855,11 +1852,11 @@ module RasterIXRenderCore #(
         .s_axis_tdata({
             framebuffer_scissor_m_waddr,
             framebuffer_scissor_m_color_wdata,
-            confColorBufferMask & { NUMBER_OF_SUB_PIXELS { framebuffer_scissor_m_color_wstrb & framebuffer_scissor_tstrb } },
+            confColorBufferMask & { NUMBER_OF_SUB_PIXELS { framebuffer_scissor_m_color_wstrb } },
             framebuffer_scissor_m_depth_wdata,
-            confDepthBufferMask & framebuffer_scissor_m_depth_wstrb & framebuffer_scissor_tstrb,
+            confDepthBufferMask & framebuffer_scissor_m_depth_wstrb,
             framebuffer_scissor_m_stencil_wdata,
-            confStencilBufferMask & { STENCIL_WIDTH { framebuffer_scissor_m_stencil_wstrb & framebuffer_scissor_tstrb } }
+            confStencilBufferMask & { STENCIL_WIDTH { framebuffer_scissor_m_stencil_wstrb } }
         }),
         .s_axis_tlast(framebuffer_scissor_tlast),
         .s_axis_tvalid(framebuffer_scissor_tvalid),
