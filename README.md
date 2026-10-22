@@ -37,8 +37,8 @@ The following are the latest checked-in **post-route whole-design** reports loca
 
 | Board | Configured features |
 |---|---|
-| Arty Z7-20 (`xc7z020clg400-1`) | External framebuffer; 1 TMU; 64-bit AXI; 18-bit fixed-point interpolation precision; 256×256 maximum texture dimension; 8 KiB texture cache enabled; 2048-byte pages; mipmapping, filtering, fog, depth, stencil, and memory coalescing enabled. The generated IP configuration is authoritative; the board guide’s texture-storage row is outdated. |
-| TE0890 (`xc7s25ftgb196-1`) | External framebuffer; 1 TMU; 16-bit AXI; 18-bit fixed-point precision; 6-bit sub-pixel precision; 128×128 maximum texture dimension; 8 KiB texture cache enabled; 2048-byte pages; mipmapping, filtering, fog, depth, stencil, and memory coalescing enabled. HyperRAM runs at 75 MHz per the board guide. |
+| Arty Z7-20 (`xc7z020clg400-1`) | External framebuffer; 1 TMU; 64-bit AXI; 18-bit fixed-point interpolation precision; 256×256 maximum texture dimension; 8 KiB texture cache enabled; 2048-byte pages; mipmapping, filtering, fog, depth, stencil, and memory coalescing enabled. The generated IP configuration is authoritative; the board guide’s texture-storage row is outdated. Runs at 100MHz. |
+| TE0890 (`xc7s25ftgb196-1`) | External framebuffer; 1 TMU; 16-bit AXI; 18-bit fixed-point precision; 6-bit sub-pixel precision; 128×128 maximum texture dimension; 8 KiB texture cache enabled; 2048-byte pages; mipmapping, filtering, fog, depth, stencil, and memory coalescing enabled. HyperRAM runs at 75 MHz. |
 
 ### Post-route results
 
