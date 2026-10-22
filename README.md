@@ -332,7 +332,9 @@ The following diagram is a conceptual overview of the FPGA rendering path. It is
 | Stencil Test | Does the stencil test. |
 | Mux | Selects the logic op or blend func fragment depending on the current configuration. |
 | Stencil Op | Calculates the stencil op. |
-| Framebuffer Writer | Second half of the framebuffer access. There is one framebuffer writer per framebuffer. An optional coalescer can combine the writes into a bigger transaction. |
+| Write Back | Consolidates all the test signals and creates the final transfer for all buffers. |
+| Scissor | Calculates the scissor mask. |
+| Framebuffer Writer | Second half of the framebuffer access. There is one framebuffer writer per framebuffer. An optional coalescer can combine the writes into a bigger transaction. The color/depth/stenicl masks are here directly applied to the AXI strobe signal. |
 
 The diagram shows the texture-cache/MMU route. When `ENABLE_TEXTURE_CACHE` is disabled, texture reads instead use paged loading into the full on-chip `TextureBuffer`. The dashed TMU1 path is present only in a two-TMU configuration. The branch from the broadcast stage to the framebuffer reader fetches destination color/depth/stencil in parallel with fragment shading, and the concat stage joins the corresponding data before per-fragment tests and writes.
 
