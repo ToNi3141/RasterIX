@@ -1,4 +1,4 @@
-set SYNTH_OUT ./synth-[lindex $argv 0]
+set SYNTH_OUT ./synth
 set REPORT_PATH ./reports
 set BOARD_FILE .srcs/sources_1/bd/design_1/design_1.bd
 if {[file exists $SYNTH_OUT]} {
