@@ -114,8 +114,66 @@ CMake also has top-level switches for selecting the host build and optional comp
 | `RIX_DRIVER_FT60X`, `RIX_DRIVER_DMA_PROXY`, `RIX_DRIVER_STANDALONE_XIL_CDMA`, `RIX_DRIVER_VERILATOR`, `RIX_DRIVER_SOFTWARE_RASTERIZER` | Include the selected hardware/simulation/software bus connector. |
 | `RIX_BUILD_EXAMPLES` | Build example applications. |
 | `RIX_BUILD_TESTS_SOFTWARE`, `RIX_BUILD_TESTS_VERILATOR` | Enable software or Verilator test targets. |
-| `RIX_BUILD_SHARED_LIBRARY` | Build a shared library where supported by the platform configuration. |
+| `RIX_BUILD_SHARED_LIBRARY` | Build a shared library when supported by the platform configuration. |
 | `RIX_ENABLE_SPDLOG` | Enable spdlog logging. |
+
+### Minimal application integration
+
+Integration has two parts: configure/link the RasterIX CMake targets, then create the device and use it from the application. The example uses `DMAProxyBusConnector`; substitute your platform's connector if needed.
+
+#### 1. Configure and statically link the CMake targets
+
+Set the driver and `RIX_CORE_*` cache variables **before** `add_subdirectory()`. Then link `gl` and the selected connector's target to the application (skip it when you want to link against a shared library):
+
+```cmake
+# Enable this only when using the Linux DMA Proxy connector shown below. Can be omitted when you use your own.
+set(RIX_DRIVER_DMA_PROXY ON CACHE BOOL "Build the DMA Proxy connector")
+
+# Example one-TMU software configuration (480x320 render target).
+# Match capability values to the parameters in the FPGA design.
+set(RIX_CORE_TMU_COUNT "1" CACHE STRING "Hardware TMU count")
+set(RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE "256" CACHE STRING "Maximum texture dimension")
+set(RIX_CORE_ENABLE_MIPMAPPING "true" CACHE STRING "Enable mipmapping")
+set(RIX_CORE_TEXTURE_PAGE_SIZE "2048" CACHE STRING "Texture page size in bytes")
+set(RIX_CORE_MAX_DISPLAY_WIDTH "480" CACHE STRING "Maximum render width")
+set(RIX_CORE_MAX_DISPLAY_HEIGHT "320" CACHE STRING "Maximum render height")
+set(RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG "20" CACHE STRING "IF framebuffer capacity / EF display splitting")
+set(RIX_CORE_THREADED_RASTERIZATION "false" CACHE STRING "Use direct, non-threaded device setup below")
+
+add_subdirectory(external/RasterIX)
+
+add_executable(my_app main.cpp)
+target_link_libraries(my_app PRIVATE gl spdlog::spdlog dmaproxy span)
+```
+
+`external/RasterIX` is the repository checkout path. These example values must be adjusted to match the FPGA configuration; set memory addresses and other platform-specific options as described in [Parameters: software and FPGA](#parameters-software-and-fpga). With your own connector, omit the DMA Proxy option and replace `dmaproxy` in the link list with your connector target.
+
+#### 2. Create the device and submit frames
+
+Construct the connector and uploader, create the `RIXGL` instance with the device, and set the render size. Put your OpenGL drawing calls in the scene's `draw()` method and submit each frame with `swapDisplayList()`:
+
+```cpp
+constexpr std::size_t width = 480;
+constexpr std::size_t height = 320;
+MyScene scene;
+rr::DMAProxyBusConnector bus;
+rr::devicedatauploader::DeviceDataUploader device { bus };
+
+rr::RIXGL::createInstance(device);
+rr::RIXGL::getInstance().setRenderResolution(width, height);
+
+scene.init(width, height);
+while (scene.isRunning())
+{
+    scene.draw(); // Issue OpenGL calls for this frame.
+    rr::RIXGL::getInstance().swapDisplayList(); // Submit this frame to the device.
+}
+
+rr::RIXGL::destroy();
+```
+
+This direct-device setup requires `RIX_CORE_THREADED_RASTERIZATION=false`. Keep `bus` and `device` alive until after `RIXGL::destroy()`. For the threaded `ThreadedVertexTransformer` composition and a complete platform example, see the Zynq [`Runner.hpp`](example/util/zynq-embedded-linux/Runner.hpp).
+
 
 ### Porting the device transport
 
