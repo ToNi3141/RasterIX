@@ -97,8 +97,8 @@ public:
     bool setResolution(const std::size_t x, const std::size_t y)
     {
         const std::size_t framebufferSize = x * y;
-        const std::size_t framebufferLines = (framebufferSize / RenderConfig::FRAMEBUFFER_SIZE_IN_PIXEL)
-            + ((framebufferSize % RenderConfig::FRAMEBUFFER_SIZE_IN_PIXEL) ? 1 : 0);
+        const std::size_t framebufferLines = (framebufferSize / RenderConfig::IF_FRAMEBUFFER_SIZE_IN_PIXEL)
+            + ((framebufferSize % RenderConfig::IF_FRAMEBUFFER_SIZE_IN_PIXEL) ? 1 : 0);
         if (framebufferLines > RenderConfig::getDisplayLines())
         {
             // More lines required than lines available

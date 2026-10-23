@@ -644,7 +644,7 @@ MipMapGenerator& RIXGL::mipMapGenerator()
 
 std::size_t RIXGL::getMaxTextureSize() const
 {
-    return RenderConfig::MAX_TEXTURE_SIZE;
+    return RenderConfig::TEXTURE_BUFFER_MAX_TEXTURE_SIZE;
 }
 
 std::size_t RIXGL::getMaxTmuCount() const

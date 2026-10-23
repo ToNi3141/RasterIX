@@ -35,7 +35,7 @@ module InternalFramebufferRam
     input  wire [DATA_WIDTH - 1 : 0]        writeDataPort0,
     input  wire                             writeEnablePort0,
     input  wire [ADDR_WIDTH - 1 : 0]        writeAddrPort0,
-    input  wire [WRITE_MASK_WIDTH - 1 : 0]  writeMaskPort0, 
+    input  wire [WRITE_MASK_WIDTH - 1 : 0]  writeMaskPort0,
 
     // Read interface port 1
     output wire [DATA_WIDTH - 1 : 0]        readDataPort0,

@@ -322,6 +322,13 @@ private:
 
     bool handleCommand(const FramebufferCmd& cmd)
     {
+        if (cmd.getEnableMemset()
+            && (cmd.getSwapFramebuffer() || cmd.getCommitFramebuffer() || cmd.getLoadFramebuffer()))
+        {
+            SPDLOG_WARN("Framebuffer MEMSET combined with SWAP, COMMIT, or READ is unsupported; command ignored");
+            return true;
+        }
+
         if (cmd.getSwapFramebuffer())
         {
             addLastCommand(WriteRegisterCmd { ColorBufferAddrReg { m_colorBufferAddr } });

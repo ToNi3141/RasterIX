@@ -39,18 +39,18 @@ module RasterIXSystem #(
     //   "if" - Internal Framebuffer: renders into a small on-chip buffer and
     //          streams it out; lower external memory bandwidth requirement.
     //   "ef" - External Framebuffer: renders directly into system memory.
-    parameter RIX_VARIANT = "if",
+    parameter RIX_VARIANT = "ef",
 
     // IF only: log2 of the number of pixels in the internal framebuffer.
-    parameter RIX_FRAMEBUFFER_SIZE_IN_PIXEL_LG = 16,
+    parameter RIX_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG = 16,
 
     // IF only: bits per colour channel stored in the internal framebuffer.
     // Reducing this value lowers memory footprint at the cost of colour banding.
-    parameter RIX_FRAMEBUFFER_SUB_PIXEL_WIDTH = 5,
+    parameter RIX_IF_FRAMEBUFFER_SUB_PIXEL_WIDTH = 5,
 
     // IF only: enable the alpha channel in the internal framebuffer.
     // Requires additional memory.
-    parameter RIX_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
+    parameter RIX_IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL = 0,
 
     // Sub-pixel calculation precision in the shader. Must be between 5 and 8.
     parameter RIX_SUB_PIXEL_CALC_PRECISION = 8,
@@ -73,14 +73,16 @@ module RasterIXSystem #(
     // Texture page size in bytes.
     parameter RIX_TEXTURE_PAGE_SIZE = 2048,
 
-    parameter ENABLE_EXTERNAL_TEXTURE_MEMORY = 1,
-    parameter CACHE_SIZE = 1024 * 8,
+    // Enables the texture cache. When enabled, the texture buffer is disabled.
+    parameter RIX_ENABLE_TEXTURE_CACHE = 1,
+    parameter RIX_TEXTURE_CACHE_SIZE = 1024 * 8,
 
     // Enable the fog unit.
     parameter RIX_ENABLE_FOG = 1,
 
     // Maximum texture dimension in pixels (e.g. 256 for 256x256 textures).
-    parameter RIX_MAX_TEXTURE_SIZE = 256,
+    // Is disabled when RIX_ENABLE_TEXTURE_CACHE is set to 1.
+    parameter RIX_TEXTURE_BUFFER_MAX_TEXTURE_SIZE = 256,
 
     // AXI address bus width in bits.
     parameter ADDR_WIDTH = 32,
@@ -103,14 +105,14 @@ module RasterIXSystem #(
     // For FPGAs with 18-bit native multipliers, a value of 26 is recommended.
     parameter RIX_RASTERIZER_FLOAT_PRECISION = 32,
 
-    // Fixed-point multiplier width used when RASTERIZER_ENABLE_FLOAT_INTERPOLATION=0.
+    // Fixed-point multiplier width used when ENABLE_RASTERIZER_FLOAT_INTERPOLATION=0.
     // Includes the sign bit (e.g. 25 = signed 25-bit multiplier).
     // Lower values can cause fog and texel distortions.
     parameter RIX_RASTERIZER_FIXPOINT_PRECISION = 25,
 
     // 1 = use floating-point attribute interpolation.
     // 0 = use fixed-point attribute interpolation (lower resource cost).
-    parameter RIX_RASTERIZER_ENABLE_FLOAT_INTERPOLATION = 0,
+    parameter RIX_ENABLE_RASTERIZER_FLOAT_INTERPOLATION = 0,
 
     // -----------------------------------------------------------------------
     // AxisFramebufferReader parameters
@@ -368,9 +370,9 @@ module RasterIXSystem #(
 
     RasterIX #(
         .VARIANT                              (RIX_VARIANT),
-        .FRAMEBUFFER_SIZE_IN_PIXEL_LG         (RIX_FRAMEBUFFER_SIZE_IN_PIXEL_LG),
-        .FRAMEBUFFER_SUB_PIXEL_WIDTH          (RIX_FRAMEBUFFER_SUB_PIXEL_WIDTH),
-        .FRAMEBUFFER_ENABLE_ALPHA_CHANNEL     (RIX_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
+        .IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG      (RIX_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG),
+        .IF_FRAMEBUFFER_SUB_PIXEL_WIDTH       (RIX_IF_FRAMEBUFFER_SUB_PIXEL_WIDTH),
+        .IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL  (RIX_IF_FRAMEBUFFER_ENABLE_ALPHA_CHANNEL),
         .SUB_PIXEL_CALC_PRECISION             (RIX_SUB_PIXEL_CALC_PRECISION),
         .ENABLE_STENCIL_BUFFER                (RIX_ENABLE_STENCIL_BUFFER),
         .ENABLE_DEPTH_BUFFER                  (RIX_ENABLE_DEPTH_BUFFER),
@@ -378,10 +380,10 @@ module RasterIXSystem #(
         .ENABLE_MIPMAPPING                    (RIX_ENABLE_MIPMAPPING),
         .ENABLE_TEXTURE_FILTERING             (RIX_ENABLE_TEXTURE_FILTERING),
         .TEXTURE_PAGE_SIZE                    (RIX_TEXTURE_PAGE_SIZE),
-        .ENABLE_EXTERNAL_TEXTURE_MEMORY       (ENABLE_EXTERNAL_TEXTURE_MEMORY),
-        .CACHE_SIZE                           (CACHE_SIZE),
+        .ENABLE_TEXTURE_CACHE                 (RIX_ENABLE_TEXTURE_CACHE),
+        .TEXTURE_CACHE_SIZE                   (RIX_TEXTURE_CACHE_SIZE),
         .ENABLE_FOG                           (RIX_ENABLE_FOG),
-        .MAX_TEXTURE_SIZE                     (RIX_MAX_TEXTURE_SIZE),
+        .TEXTURE_BUFFER_MAX_TEXTURE_SIZE      (RIX_TEXTURE_BUFFER_MAX_TEXTURE_SIZE),
         .ADDR_WIDTH                           (ADDR_WIDTH),
         .ID_WIDTH                             (S_ID_WIDTH),
         .DATA_WIDTH                           (DATA_WIDTH),
@@ -389,7 +391,7 @@ module RasterIXSystem #(
         .ENABLE_MEMORY_COALESCING             (RIX_ENABLE_MEMORY_COALESCING),
         .RASTERIZER_FLOAT_PRECISION           (RIX_RASTERIZER_FLOAT_PRECISION),
         .RASTERIZER_FIXPOINT_PRECISION        (RIX_RASTERIZER_FIXPOINT_PRECISION),
-        .RASTERIZER_ENABLE_FLOAT_INTERPOLATION(RIX_RASTERIZER_ENABLE_FLOAT_INTERPOLATION)
+        .ENABLE_RASTERIZER_FLOAT_INTERPOLATION(RIX_ENABLE_RASTERIZER_FLOAT_INTERPOLATION)
     ) rix_inst (
         .aclk   (aclk),
         .resetn (resetn),
