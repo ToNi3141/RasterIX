@@ -235,8 +235,8 @@ The RTL wrapper’s parameters and the required software/RTL matches are summari
 
 The RTL has two framebuffer variants. **Use EF (`VARIANT="ef"`) when possible; IF is not recommended for new designs unless its internal-framebuffer trade-off is specifically needed.**
 
-- **EF — External Framebuffer:** color, depth, and stencil buffers reside in external memory. This saves FPGA block RAM compared with keeping the framebuffers on-chip, at the cost of more AXI traffic and dependence on external-memory bandwidth and arbitration. The current EF color path uses RGB565; framebuffer mask/strobe behavior is constrained by byte-granular AXI strobes.
-- **IF — Internal Framebuffer:** framebuffer storage resides in FPGA RAM. This consumes substantial BRAM and can require the driver to split rendering into display-list/frame chunks that fit the configured capacity. It can be useful where on-chip RAM and the associated host-side buffering model are acceptable.
+- **EF - External Framebuffer:** color, depth, and stencil buffers reside in external memory. This saves FPGA block RAM compared with keeping the framebuffers on-chip, at the cost of more AXI traffic and dependence on external-memory bandwidth and arbitration. The current EF color path uses RGB565; framebuffer mask/strobe behavior is constrained by byte-granular AXI strobes.
+- **IF - Internal Framebuffer:** framebuffer storage resides in FPGA RAM. This consumes substantial BRAM and can require the driver to split rendering into display-list/frame chunks that fit the configured capacity. It can be useful where on-chip RAM and the associated host-side buffering model are acceptable.
 
 The variants share the rendering pipeline but differ in framebuffer storage and behavior. Do not assume every framebuffer format or masking operation behaves identically between them.
 
@@ -265,11 +265,11 @@ The CMake variables below generate the `RIX_CORE_*` definitions consumed by [`Re
 
 | CMake variable | Purpose | Must match RTL? |
 |---|---|---|
-| `RIX_CORE_TMU_COUNT` | Number of TMUs and corresponding texture stages/triangle payload. | **Yes — `TMU_COUNT`.** |
-| `RIX_CORE_ENABLE_MIPMAPPING` | Mipmap support used by the driver. | **Yes — `ENABLE_MIPMAPPING`.** |
-| `RIX_CORE_TEXTURE_PAGE_SIZE` | Texture page size used for uploads and virtual addressing. | **Yes — `TEXTURE_PAGE_SIZE`.** |
-| `RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE` | Maximum texture dimension expected by the driver. | **Yes when using full texture-buffer mode — `TEXTURE_BUFFER_MAX_TEXTURE_SIZE`.** |
-| `RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG` | Internal framebuffer capacity in log2 pixels; also influences software frame/display-list splitting for multicore rendering. | **Yes for internal — `IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG`.** In external configuration, keep it big enough so that it can contain a full frame. |
+| `RIX_CORE_TMU_COUNT` | Number of TMUs and corresponding texture stages/triangle payload. | **Yes - `TMU_COUNT`.** |
+| `RIX_CORE_ENABLE_MIPMAPPING` | Mipmap support used by the driver. | **Yes - `ENABLE_MIPMAPPING`.** |
+| `RIX_CORE_TEXTURE_PAGE_SIZE` | Texture page size used for uploads and virtual addressing. | **Yes - `TEXTURE_PAGE_SIZE`.** |
+| `RIX_CORE_TEXTURE_BUFFER_MAX_TEXTURE_SIZE` | Maximum texture dimension expected by the driver. | **Yes when using full texture-buffer mode - `TEXTURE_BUFFER_MAX_TEXTURE_SIZE`.** |
+| `RIX_CORE_IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG` | Internal framebuffer capacity in log2 pixels; also influences software frame/display-list splitting for multicore rendering. | **Yes for internal - `IF_FRAMEBUFFER_SIZE_IN_PIXEL_LG`.** In external configuration, keep it big enough so that it can contain a full frame. |
 | `RIX_CORE_MAX_DISPLAY_WIDTH`, `RIX_CORE_MAX_DISPLAY_HEIGHT` | Driver’s maximum render dimensions. | No direct RTL parameter; configure consistently with the application and buffers. |
 | `RIX_CORE_NUMBER_OF_TEXTURE_PAGES`, `RIX_CORE_NUMBER_OF_TEXTURES` | Driver-visible texture page and texture-object limits. | No; size available device memory appropriately. |
 | `RIX_CORE_GRAM_MEMORY_LOC` | Base/offset for device memory shared with other system users. | Must agree with the platform memory map, not an RTL feature parameter. |
@@ -310,7 +310,7 @@ This section gives the implementation detail for readers who want to understand 
 The following diagram is a conceptual overview of the FPGA rendering path. It is not a cycle-accurate or exact module schematic.
 
 <p align="center">
-  <img src="pictures/fpgaFlow.drawio.png" alt="Conceptual RasterIX FPGA rendering pipeline" width="900">
+  <img src="pictures/fpgaFlow.drawio.png" alt="Conceptual RasterIX FPGA rendering pipeline" width="1000">
 </p>
 
 | Stage | Work |
@@ -360,7 +360,7 @@ The texture address space is paged. `TextureMMU` uses an internal page table to 
 The FPGA core is fed by a C++ software stack. This diagram shows the major components and the typical path from application calls to the device transport; the table clarifies component boundaries that the diagram simplifies.
 
 <p align="center">
-  <img src="pictures/softwareFlow.drawio.png" alt="RasterIX software rendering and device data flow" width="700">
+  <img src="pictures/softwareFlow.drawio.png" alt="RasterIX software rendering and device data flow" width="1000">
 </p>
 
 | Component | Role in the software pipeline |
@@ -368,7 +368,7 @@ The FPGA core is fed by a C++ software stack. This diagram shows the major compo
 | Application and `gl` | The application calls the OpenGL-style C API. The API entry points forward calls and state changes into the RIXGL library. |
 | `RIXGL` | Main library entry point. It creates and owns the render-device composition, including the vertex and pixel pipelines. |
 | `VertexPipeline` | Tracks vertex-related OpenGL state, fetches submitted vertex attributes, and forwards draw data to the renderer. |
-| `PixelPipeline` | Tracks pixel-related state—such as texture, fog, and fragment-test settings and asks the renderer to emit the corresponding hardware configuration commands. |
+| `PixelPipeline` | Tracks pixel-related state, such as texture, fog, and fragment-test settings and asks the renderer to emit the corresponding hardware configuration commands. |
 | `Renderer` and `DisplayList` | The renderer coordinates command generation, buffers commands in display lists, manages framebuffer state, and submits triangle data. Display lists are streamed to the device when submitted or when intermediate uploads are needed. |
 | `Transformer` and CPU `Rasterizer` | The CPU vertex transformer applies model/view/projection transforms, lighting, clipping, and primitive assembly. The CPU `Rasterizer` then prepares triangle bounds and edge/interpolation increments for the FPGA. It does **not** walk every covered pixel. Per-pixel rasterization is performed by the FPGA pipeline above. |
 | `TextureMemoryManager` | Tracks texture objects and their device-memory pages. Texture data is uploaded through the device interface, while texture-selection/configuration commands are placed in the display list. |
