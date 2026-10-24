@@ -43,6 +43,7 @@ module FramebufferPacker #(
 ) (
     input   wire                            aclk,
     input   wire                            resetn,
+    output  wire                            active,
 
     /////////////////////////
     // Fragment interface
@@ -112,6 +113,9 @@ module FramebufferPacker #(
             
     assign tag = s_frag_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
     assign bytePos = s_frag_taddr[INDEX_BYTE_POS +: INDEX_BYTE_WIDTH];
+    assign active = s_frag_tvalid | !s_frag_tready | memRequest
+        | (|lineStrobe) | (|lineStrobeSkid) | lastSkid | wasLast
+        | m_mem_axi_awvalid | m_mem_axi_wvalid;
 
     always @(posedge aclk)
     begin

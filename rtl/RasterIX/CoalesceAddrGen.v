@@ -53,7 +53,10 @@ module CoalesceAddrGen #(
     output wire [ 3 : 0]                        m_mem_axi_axcache,
     output wire [ 2 : 0]                        m_mem_axi_axprot, 
     output reg                                  m_mem_axi_axvalid,
-    input  wire                                 m_mem_axi_axready
+    input  wire                                 m_mem_axi_axready,
+
+    // Indicates address requests held or buffered by the coalescer.
+    output wire                                 active
 );
     localparam TIMEOUT_MAX = (DATA_WIDTH / 8) + 1; // In cycles
     localparam ADDR_BOUNDARY_MASK = ~(4096 - 1); // AXI requires a 4KB boundary
@@ -75,6 +78,8 @@ module CoalesceAddrGen #(
     assign m_mem_axi_axlock = 0;
     assign m_mem_axi_axcache = 4'b0011;
     assign m_mem_axi_axprot = 0;
+    assign active = s_mem_axi_axvalid | coalescer_valid | mem_req_pending
+        | skid_valid | m_mem_axi_axvalid;
 
     always @(posedge aclk) 
     begin

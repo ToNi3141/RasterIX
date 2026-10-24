@@ -34,6 +34,7 @@ module FramebufferAdapter
 (
     input  wire                             aclk,
     input  wire                             resetn,
+    output wire                             active,
 
     /////////////////////////
     // Read Side - Fragment Interface
@@ -115,6 +116,7 @@ module FramebufferAdapter
     generate
         if (DATA_WIDTH < PIXEL_WIDTH) begin
             $error("FramebufferAdapter: DATA_WIDTH must be >= PIXEL_WIDTH. DATA_WIDTH=%0d, PIXEL_WIDTH=%0d", DATA_WIDTH, PIXEL_WIDTH);
+            assign active = 0;
         end else if (DATA_WIDTH == PIXEL_WIDTH) begin
             // Pass-through mode: DATA_WIDTH == PIXEL_WIDTH
             // No conversion needed - direct connection of read and write paths
@@ -141,6 +143,7 @@ module FramebufferAdapter
             wire [ 1 : 0] bcast_m_axis_tready;
             wire [2 * PIXEL_WIDTH - 1 : 0] bcast_m_axis_tdata;
             wire [2 * USER_WIDTH_FRAG - 1 : 0] bcast_m_axis_tuser;
+            assign active = s_frag_wvalid | (|bcast_m_axis_tvalid);
             
             axis_broadcast #(
                 .M_COUNT(2),
@@ -244,6 +247,9 @@ module FramebufferAdapter
                 .m_mem_axi_rready(m_mem_axi_rready)
             );
 
+            wire packer_active;
+            assign active = packer_active;
+
             FramebufferPacker #(
                 .DATA_WIDTH(DATA_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
@@ -253,6 +259,7 @@ module FramebufferAdapter
             ) writer (
                 .aclk(aclk),
                 .resetn(resetn),
+                .active(packer_active),
 
                 .s_frag_tvalid(s_frag_wvalid),
                 .s_frag_tlast(s_frag_wlast),

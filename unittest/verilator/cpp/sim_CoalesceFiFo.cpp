@@ -473,3 +473,29 @@ TEST_CASE("Test Full/Interleaved FiFo", "[VCoalesceFiFo]")
     // Destroy model
     delete t;
 }
+
+TEST_CASE("Active covers write data waiting for its address", "[VCoalesceFiFo]")
+{
+    VCoalesceFiFo* t = rr::ut::makeTop<VCoalesceFiFo>();
+
+    rr::ut::reset(t);
+    REQUIRE(t->active == 0);
+
+    t->s_mem_axi_wvalid = 1;
+    t->s_mem_axi_wdata = 0xDEADBEEF;
+    t->s_mem_axi_wstrb = 0xF;
+    t->s_mem_axi_wlast = 1;
+    t->eval();
+    REQUIRE(t->active == 1);
+
+    rr::ut::clk(t);
+    REQUIRE(t->active == 1);
+
+    t->s_mem_axi_wvalid = 0;
+    rr::ut::clk(t);
+    REQUIRE(t->m_mem_axi_awvalid == 0);
+    REQUIRE(t->m_mem_axi_wvalid == 0);
+    REQUIRE(t->active == 1);
+
+    delete t;
+}

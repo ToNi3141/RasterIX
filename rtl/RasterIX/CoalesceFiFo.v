@@ -73,7 +73,10 @@ module CoalesceFiFo #(
     input  wire [ID_WIDTH - 1 : 0]              m_mem_axi_bid,
     input  wire [ 1 : 0]                        m_mem_axi_bresp,
     input  wire                                 m_mem_axi_bvalid,
-    output wire                                 m_mem_axi_bready
+    output wire                                 m_mem_axi_bready,
+
+    // Indicates buffered addresses or data that have not drained to memory.
+    output wire                                 active
 );
     localparam DATA_WIDTH_LG = $clog2(DATA_WIDTH / 8);
 
@@ -138,6 +141,9 @@ module CoalesceFiFo #(
     assign s_mem_axi_bid = m_mem_axi_bid;
     assign s_mem_axi_bresp = m_mem_axi_bresp;
     assign s_mem_axi_bvalid = m_mem_axi_bvalid;
+    assign active = s_mem_axi_awvalid | s_mem_axi_wvalid
+        | m_mem_axi_awvalid | m_mem_axi_wvalid | skid_valid
+        | (awcount != 0) | !fifo_empty;
 
     always @(posedge aclk)
     begin
