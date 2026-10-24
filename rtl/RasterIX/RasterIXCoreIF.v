@@ -97,6 +97,7 @@ module RasterIXCoreIF #(
 (
     input  wire                                 aclk,
     input  wire                                 resetn,
+    input  wire                                 framebufferWritesPending,
 
     // AXI Stream command interface
     input  wire                                 s_cmd_axis_tvalid,
@@ -562,7 +563,7 @@ module RasterIXCoreIF #(
         .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferCmdRead(colorBufferCmdRead),
         .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
-        .colorBufferWritesPending(1'b0),
+        .colorBufferWritesPending(framebufferWritesPending),
         .m_color_arready(1),
         .m_color_arlast(m_color_arlast),
         .m_color_arvalid(m_color_arvalid),
@@ -583,7 +584,7 @@ module RasterIXCoreIF #(
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdRead(depthBufferCmdRead),
-        .depthBufferWritesPending(1'b0),
+        .depthBufferWritesPending(framebufferWritesPending),
         .m_depth_arready(1),
         .m_depth_arlast(m_depth_arlast),
         .m_depth_arvalid(m_depth_arvalid),
@@ -604,7 +605,7 @@ module RasterIXCoreIF #(
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdRead(stencilBufferCmdRead),
-        .stencilBufferWritesPending(1'b0),
+        .stencilBufferWritesPending(framebufferWritesPending),
         .m_stencil_arready(1),
         .m_stencil_arlast(m_stencil_arlast),
         .m_stencil_arvalid(m_stencil_arvalid),

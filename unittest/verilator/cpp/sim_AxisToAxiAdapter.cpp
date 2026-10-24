@@ -33,6 +33,7 @@ TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
     t->s_xvalid = true;
     rr::ut::reset(t);
     CHECK(t->s_aready == false);
+    CHECK(t->active == false);
 
     t->s_avalid = true;
     t->s_aaddr = 0x1000'0000;
@@ -42,7 +43,10 @@ TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
     t->m_xready = true;
     rr::ut::clk(t);
     CHECK(t->s_aready == false);
+    CHECK(t->s_xready == true);
+    CHECK(t->active == true);
 
+    t->s_xvalid = false;
     for (std::size_t i = 0; i < t->s_abeats; i += NUMBER_OF_BEATS)
     {
         rr::ut::clk(t);
@@ -52,6 +56,7 @@ TEST_CASE("check address channel", "[VAxisToAxiAdapter]")
         CHECK(t->m_axsize == 2);
         CHECK(t->m_axburst == 1);
         CHECK(t->s_aready == false);
+        CHECK(t->active == true);
     }
 
     rr::ut::clk(t);
@@ -69,6 +74,7 @@ TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
     t->s_xvalid = 1;
     rr::ut::reset(t);
     CHECK(t->s_aready == false);
+    CHECK(t->active == false);
 
     t->s_avalid = true;
     t->s_aaddr = 0x1000'0000;
@@ -78,6 +84,7 @@ TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
     t->m_xready = true;
     rr::ut::clk(t);
     CHECK(t->s_aready == false);
+    CHECK(t->active == true);
 
     for (std::size_t i = 0; i < t->s_abeats; i++)
     {
@@ -91,21 +98,25 @@ TEST_CASE("check mem write", "[VAxisToAxiAdapter]")
         CHECK(t->m_xlast == ((i % (NUMBER_OF_BEATS)) == (NUMBER_OF_BEATS - 1)));
         CHECK(t->m_xstrb == (i % NUMBER_OF_BEATS));
         CHECK(t->s_aready == false);
+        CHECK(t->active == true);
     }
 
     rr::ut::clk(t);
     CHECK(t->m_xvalid == false);
     CHECK(t->s_aready == true);
+    CHECK(t->active == true);
 
     t->s_avalid = false;
     rr::ut::clk(t);
     CHECK(t->m_xvalid == false);
     CHECK(t->s_aready == false);
+    CHECK(t->active == false);
 
     // Check that it stays done
     rr::ut::clk(t);
     CHECK(t->m_xvalid == false);
     CHECK(t->s_aready == false);
+    CHECK(t->active == false);
 
     // Destroy model
     delete t;
