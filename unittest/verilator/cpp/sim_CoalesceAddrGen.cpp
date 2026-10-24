@@ -348,3 +348,42 @@ TEST_CASE("Stall", "[VCoalesceAddrGen]")
     // Destroy model
     delete t;
 }
+
+TEST_CASE("Active covers coalesced and stalled address requests", "[VCoalesceAddrGen]")
+{
+    VCoalesceAddrGen* t = rr::ut::makeTop<VCoalesceAddrGen>();
+
+    rr::ut::reset(t);
+    REQUIRE(t->active == 0);
+
+    t->s_mem_axi_axburst = 1;
+    t->s_mem_axi_axvalid = 1;
+    t->s_mem_axi_axaddr = 0x1000;
+    t->s_mem_axi_axlen = 0;
+    t->s_mem_axi_axsize = 2;
+    t->m_mem_axi_axready = 0;
+    t->eval();
+    REQUIRE(t->active == 1);
+
+    rr::ut::clk(t);
+    REQUIRE(t->active == 1);
+
+    t->s_mem_axi_axvalid = 0;
+    rr::ut::clk(t);
+    REQUIRE(t->active == 1);
+
+    for (std::size_t i = 0; i < 5 && !t->m_mem_axi_axvalid; i++)
+    {
+        rr::ut::clk(t);
+        REQUIRE(t->active == 1);
+    }
+    REQUIRE(t->m_mem_axi_axvalid == 1);
+    REQUIRE(t->active == 1);
+
+    t->m_mem_axi_axready = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->m_mem_axi_axvalid == 0);
+    REQUIRE(t->active == 0);
+
+    delete t;
+}

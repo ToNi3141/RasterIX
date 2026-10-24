@@ -110,7 +110,9 @@ module Coalescer #(
     input  wire [ 1 : 0]                        m_mem_axi_rresp,
     input  wire                                 m_mem_axi_rlast,
     input  wire                                 m_mem_axi_rvalid,
-    output wire                                 m_mem_axi_rready
+    output wire                                 m_mem_axi_rready,
+
+    output wire                                 active
 );
 
     assign s_mem_axi_rdata = m_mem_axi_rdata;
@@ -123,6 +125,8 @@ module Coalescer #(
     generate
         if (MAX_BEATS_TO_COALESCE > 1)
         begin : gen_coalesce
+            wire                        write_addr_active;
+            wire                        write_fifo_active;
             wire [ID_WIDTH - 1 : 0]     mem_axi_awid;
             wire [ADDR_WIDTH - 1 : 0]   mem_axi_awaddr;
             wire [ 7 : 0]               mem_axi_awlen; 
@@ -197,7 +201,8 @@ module Coalescer #(
                 .m_mem_axi_axcache(mem_axi_awcache),
                 .m_mem_axi_axprot(mem_axi_awprot),
                 .m_mem_axi_axvalid(mem_axi_awvalid),
-                .m_mem_axi_axready(mem_axi_awready)
+                .m_mem_axi_axready(mem_axi_awready),
+                .active(write_addr_active)
             );
 
             CoalesceFiFo #(
@@ -252,8 +257,10 @@ module Coalescer #(
                 .m_mem_axi_bid(m_mem_axi_bid),
                 .m_mem_axi_bresp(m_mem_axi_bresp),
                 .m_mem_axi_bvalid(m_mem_axi_bvalid),
-                .m_mem_axi_bready(m_mem_axi_bready)
+                .m_mem_axi_bready(m_mem_axi_bready),
+                .active(write_fifo_active)
             );
+            assign active = write_addr_active | write_fifo_active;
         end
         else
         begin : gen_bypass
@@ -290,6 +297,9 @@ module Coalescer #(
             assign m_mem_axi_arprot = s_mem_axi_arprot;
             assign m_mem_axi_arvalid = s_mem_axi_arvalid;
             assign s_mem_axi_arready = m_mem_axi_arready;
+
+            assign active = s_mem_axi_awvalid | s_mem_axi_wvalid
+                | m_mem_axi_awvalid | m_mem_axi_wvalid;
         end
     endgenerate
 
