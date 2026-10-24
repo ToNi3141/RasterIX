@@ -1,6 +1,6 @@
 # RasterIX
 
-**An open-source, fixed-function 3D rasterizer for FPGA-based systems.** RasterIX pairs a C++ graphics driver and software vertex pipeline with a Verilog pixel-rendering core. It is designed for embedded systems where a dedicated, configurable graphics pipeline is useful.
+**An open-source, fixed-function 3D rasterizer for FPGA-based systems.** RasterIX pairs a C++ graphics driver and software vertex pipeline with a Verilog pixel-rendering core. It is designed for embedded systems and early 3D games.
 
 | | |
 |---|---|
