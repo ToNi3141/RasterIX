@@ -542,6 +542,7 @@ module RasterIX_IF #(
     wire [(ADDR_WIDTH * FRAMEBUFFER_STREAMS) - 1 : 0]   framebuffer_abeats;
     wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_aready;
     wire [FRAMEBUFFER_STREAMS - 1 : 0]                  framebuffer_arnw;
+    wire                                                framebufferWritesPending;
 
     AxisToAxiCrossbar #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -552,6 +553,7 @@ module RasterIX_IF #(
     ) axisToAxiCrossbar (
         .aclk(aclk),
         .resetn(resetn),
+        .active(framebufferWritesPending),
 
         .s_avalid(framebuffer_avalid),
         .s_aaddr(framebuffer_aaddr),
@@ -635,6 +637,7 @@ module RasterIX_IF #(
     ) rixif (
         .aclk(aclk),
         .resetn(resetn),
+        .framebufferWritesPending(framebufferWritesPending),
         
         .s_cmd_axis_tvalid(cmd_axis_tvalid),
         .s_cmd_axis_tready(cmd_axis_tready),
