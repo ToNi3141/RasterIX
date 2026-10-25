@@ -298,7 +298,6 @@ proc create_root_design { parentCell } {
     CONFIG.RIX_ENABLE_MIPMAPPING {1} \
     CONFIG.RIX_ENABLE_STENCIL_BUFFER {1} \
     CONFIG.RIX_ENABLE_TEXTURE_FILTERING {1} \
-    CONFIG.RIX_TEXTURE_BUFFER_MAX_TEXTURE_SIZE {128} \
     CONFIG.RIX_RASTERIZER_FIXPOINT_PRECISION {18} \
     CONFIG.RIX_SUB_PIXEL_CALC_PRECISION {6} \
     CONFIG.RIX_TEXTURE_PAGE_SIZE {2048} \
@@ -374,7 +373,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net HyperRamWrapper_0_hr_resetn_o [get_bd_ports hr_rst_l] [get_bd_pins HyperRamWrapper_0/hr_resetn_o]
   connect_bd_net -net Net [get_bd_ports hr_rwds] [get_bd_pins HyperRamWrapper_0/hr_rwds_io]
   connect_bd_net -net Net1 [get_bd_ports hr_dq] [get_bd_pins HyperRamWrapper_0/hr_dq_io]
-  connect_bd_net -net RasterIXSystem_0_perfBusy [get_bd_ports led1] [get_bd_pins RasterIXSystem_0/perfBusy]
+  connect_bd_net -net RasterIXSystem_0_idle [get_bd_ports led1] [get_bd_pins RasterIXSystem_0/idle]
   connect_bd_net -net RasterIXSystem_0_perfTriangleRendering [get_bd_ports led2] [get_bd_pins RasterIXSystem_0/perfTriangleRendering]
   connect_bd_net -net Serial2AXIS_0_serial_cts [get_bd_ports serial_cts] [get_bd_pins Serial2AXIS_0/serial_cts]
   connect_bd_net -net Serial2AXIS_0_serial_miso [get_bd_ports serial_miso] [get_bd_pins Serial2AXIS_0/serial_miso]

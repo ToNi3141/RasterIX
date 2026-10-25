@@ -214,6 +214,9 @@ module RasterIXRenderCore #(
     input  wire                                 m_tmu1_axi_rvalid,
     output wire                                 m_tmu1_axi_rready,
 
+    // High when all commands are executed and no memory transaction is outstanding
+    output wire                                 idle,
+
     // Performance signals
     output wire                                 perfBusy,
     output wire                                 perfTriangleRendering,
@@ -303,6 +306,8 @@ module RasterIXRenderCore #(
     wire             framebufferClearStencilSelect;
     // Control
     wire             pixelInPipeline;
+    wire             tmu0MemoryTransactionsPending;
+    wire             tmu1MemoryTransactionsPending;
     wire [ 2 : 0]    framebufferBroadcastPipelineActive;
     wire             dataInTriangleInterpolator;
     wire             startRendering;
@@ -339,6 +344,8 @@ module RasterIXRenderCore #(
         .framebufferWritesPending(colorBufferWritesPending
             | depthBufferWritesPending
             | stencilBufferWritesPending),
+        .textureMemoryTransactionsPending(tmu0MemoryTransactionsPending | tmu1MemoryTransactionsPending),
+        .idle(idle),
 
         // applied
         .colorBufferApply(colorBufferApply),
@@ -609,7 +616,8 @@ module RasterIXRenderCore #(
                 .m_axi_rresp(m_tmu0_axi_rresp),
                 .m_axi_rlast(m_tmu0_axi_rlast),
                 .m_axi_rvalid(m_tmu0_axi_rvalid),
-                .m_axi_rready(m_tmu0_axi_rready)
+                .m_axi_rready(m_tmu0_axi_rready),
+                .memoryTransactionsPending(tmu0MemoryTransactionsPending)
             );
             defparam textureMemoryTMU0.DATA_WIDTH = TMU_MEMORY_WIDTH;
             defparam textureMemoryTMU0.TEXEL_WIDTH = TEXEL_WIDTH;
@@ -652,7 +660,8 @@ module RasterIXRenderCore #(
                 .m_mem_axi_rresp(m_tmu0_axi_rresp),
                 .m_mem_axi_rlast(m_tmu0_axi_rlast),
                 .m_mem_axi_rvalid(m_tmu0_axi_rvalid),
-                .m_mem_axi_rready(m_tmu0_axi_rready)
+                .m_mem_axi_rready(m_tmu0_axi_rready),
+                .memoryTransactionsPending(tmu0MemoryTransactionsPending)
             );
             defparam pagedMemoryReaderTmu0.DATA_WIDTH = TMU_MEMORY_WIDTH;
             defparam pagedMemoryReaderTmu0.ADDR_WIDTH = ADDR_WIDTH;
@@ -758,7 +767,8 @@ module RasterIXRenderCore #(
                     .m_axi_rresp(m_tmu1_axi_rresp),
                     .m_axi_rlast(m_tmu1_axi_rlast),
                     .m_axi_rvalid(m_tmu1_axi_rvalid),
-                    .m_axi_rready(m_tmu1_axi_rready)
+                    .m_axi_rready(m_tmu1_axi_rready),
+                    .memoryTransactionsPending(tmu1MemoryTransactionsPending)
                 );
                 defparam textureMemoryTMU1.DATA_WIDTH = TMU_MEMORY_WIDTH;
                 defparam textureMemoryTMU1.TEXEL_WIDTH = TEXEL_WIDTH;
@@ -801,7 +811,8 @@ module RasterIXRenderCore #(
                 .m_mem_axi_rresp(m_tmu1_axi_rresp),
                 .m_mem_axi_rlast(m_tmu1_axi_rlast),
                 .m_mem_axi_rvalid(m_tmu1_axi_rvalid),
-                .m_mem_axi_rready(m_tmu1_axi_rready)
+                .m_mem_axi_rready(m_tmu1_axi_rready),
+                .memoryTransactionsPending(tmu1MemoryTransactionsPending)
             );
             defparam pagedMemoryReaderTmu1.DATA_WIDTH = TMU_MEMORY_WIDTH;
             defparam pagedMemoryReaderTmu1.ADDR_WIDTH = ADDR_WIDTH;
@@ -838,6 +849,7 @@ module RasterIXRenderCore #(
         end
         else
         begin
+            assign tmu1MemoryTransactionsPending = 1'b0;
             assign tr1_ready = 1;
             assign tr1_texel_00 = 0;
             assign tr1_texel_01 = 0;

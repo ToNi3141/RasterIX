@@ -86,6 +86,9 @@ module FrameStreamingCore #(
     input  wire                         aclk,
     input  wire                         resetn,
 
+    // High when waiting for a command and no memory transaction is outstanding
+    output wire                         idle,
+
     // Stream interface (Channel 0)
     output wire                         m_st0_axis_tvalid,
     input  wire                         m_st0_axis_tready,
@@ -251,6 +254,22 @@ module FrameStreamingCore #(
     wire [ 2 : 0]               mem_axi_axprot;
     wire                        mem_axi_axvalid;
     wire                        mem_axi_axready;
+    wire                        outstandingWriteActive;
+
+    ValueTrack outstandingWriteTrack (
+        .aclk(aclk),
+        .resetn(resetn),
+        .sigIncomingValue(m_mem_axi_awvalid && m_mem_axi_awready),
+        .sigOutgoingValue(m_mem_axi_bvalid && m_mem_axi_bready),
+        .valueInPipeline(outstandingWriteActive)
+    );
+
+    // Reads are complete in COMMAND because the stream consumes every requested beat.
+    assign idle = !AUTO_LOAD
+        && (state == COMMAND)
+        && !s_st0_axis_tvalid // No incoming command
+        && !enableAddressChannel
+        && !outstandingWriteActive;
 
     LinearAddressGenerator #(
         .ADDR_WIDTH(ADDR_WIDTH),

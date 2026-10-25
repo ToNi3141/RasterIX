@@ -30,12 +30,13 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
     static constexpr std::size_t TRANSFER_SIZE { BEATS * 4 };
 
     VPagedMemoryReader* t = rr::ut::makeTop<VPagedMemoryReader>();
-    auto testMemoryAddressGeneration = [t]()
+    auto testMemoryAddressGeneration = [t](const bool firstTransfer)
     {
         // Send page to load
         t->s_axis_tvalid = 1;
         t->s_axis_tdata = 0x1000'0000;
         rr::ut::clk(t);
+        CHECK(t->memoryTransactionsPending == !firstTransfer);
         CHECK(t->s_axis_tready == 0);
         CHECK(t->m_mem_axi_arvalid == 0);
         CHECK(t->m_axis_tvalid == 0);
@@ -44,6 +45,7 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
         {
             // The PagedMemoryReader responses with a memory request
             rr::ut::clk(t);
+            CHECK(t->memoryTransactionsPending == (!firstTransfer || i > 0));
             CHECK(t->m_mem_axi_arvalid == 1);
             CHECK(t->m_mem_axi_araddr == (0x1000'0000 + (i * TRANSFER_SIZE)));
             CHECK(t->m_axis_tvalid == 0);
@@ -52,6 +54,7 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
             // Answer the memory response
             t->m_mem_axi_arready = 1;
             rr::ut::clk(t);
+            CHECK(t->memoryTransactionsPending == 1);
             CHECK(t->m_mem_axi_arvalid == 0);
             CHECK(t->s_axis_tready == 0);
         }
@@ -59,6 +62,7 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
         // Check for last transfer
         t->m_mem_axi_arready = 0;
         rr::ut::clk(t);
+        CHECK(t->memoryTransactionsPending == 1);
     };
 
     t->s_axis_tvalid = 0;
@@ -70,16 +74,17 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
 
     // Reset hardware
     rr::ut::reset(t);
+    CHECK(t->memoryTransactionsPending == 0);
     CHECK(t->m_axis_tvalid == 0);
     CHECK(t->s_axis_tready == 1);
 
     // Test first transfer
-    testMemoryAddressGeneration();
+    testMemoryAddressGeneration(true);
     CHECK(t->s_axis_tready == 1);
 
     // Test last transfer
     t->s_axis_tlast = 1;
-    testMemoryAddressGeneration();
+    testMemoryAddressGeneration(false);
     CHECK(t->s_axis_tready == 0);
 
     // The memory data is now streamed to the axis interface
@@ -89,6 +94,7 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
         t->m_mem_axi_rvalid = 1;
         t->m_mem_axi_rdata = i;
         rr::ut::clk(t);
+        CHECK(t->memoryTransactionsPending == 1);
         CHECK(t->m_axis_tvalid == 1);
         CHECK(t->m_axis_tlast == 0);
         CHECK(t->m_axis_tdata == i);
@@ -101,6 +107,7 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
     t->m_mem_axi_rvalid = 1;
     t->m_mem_axi_rdata = 123;
     rr::ut::clk(t);
+    CHECK(t->memoryTransactionsPending == 1);
     CHECK(t->m_axis_tvalid == 1);
     CHECK(t->m_axis_tlast == 1);
     CHECK(t->m_axis_tdata == 123);
@@ -113,6 +120,7 @@ TEST_CASE("Read data from memory and stream it", "[VPagedMemoryReader]")
     t->m_mem_axi_rdata = 0;
     rr::ut::clk(t);
     CHECK(t->m_axis_tvalid == 0);
+    CHECK(t->memoryTransactionsPending == 0);
     // The page interface is now ready again to receive new data
     CHECK(t->s_axis_tready == 1);
 

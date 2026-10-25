@@ -205,6 +205,9 @@ module RasterIXCoreIF #(
     input  wire                                 m_tmu1_axi_rvalid,
     output wire                                 m_tmu1_axi_rready,
 
+    // High when all commands are executed and no memory transaction is outstanding
+    output wire                                 idle,
+
     // Performance signals
     output wire                                 perfBusy,
     output wire                                 perfTriangleRendering,
@@ -653,6 +656,8 @@ module RasterIXCoreIF #(
         .m_tmu1_axi_rlast(m_tmu1_axi_rlast),
         .m_tmu1_axi_rvalid(m_tmu1_axi_rvalid),
         .m_tmu1_axi_rready(m_tmu1_axi_rready),
+
+        .idle(idle),
 
         .perfBusy(perfBusy),
         .perfTriangleRendering(perfTriangleRendering),

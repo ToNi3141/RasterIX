@@ -68,6 +68,7 @@ add_verilator_test(textureSampler TextureSampler ${RTL_RASTERIX}/TextureSampler.
 add_verilator_test(textureBuffer TextureBuffer ${RTL_RASTERIX}/TextureBuffer.v)
 add_verilator_test(textureMMU TextureMMU ${RTL_RASTERIX}/TextureMMU.v)
 add_verilator_test(textureReader TextureReader ${RTL_RASTERIX}/TextureReader.v
+    ${RTL_FLOAT}/ValueTrack.v
     ${RTL_3RDPARTY}/verilog-axis)
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/obj_dir_textureReader/VTextureReader
@@ -102,7 +103,8 @@ add_verilator_test(attributeInterpolationX AttributeInterpolationX ${RTL_RASTERI
 add_verilator_test(attributePerspectiveCorrectionX AttributePerspectiveCorrectionX ${RTL_RASTERIX}/AttributePerspectiveCorrectionX.v)
 add_verilator_test(triangleStreamF2XConverter TriangleStreamF2XConverter ${RTL_RASTERIX}/TriangleStreamF2XConverter.v)
 add_verilator_test(shiftRegisterBank ShiftRegisterBank ${RTL_RASTERIX}/ShiftRegisterBank.v)
-add_verilator_test(pagedMemoryReader PagedMemoryReader ${RTL_RASTERIX}/PagedMemoryReader.v)
+add_verilator_test(pagedMemoryReader PagedMemoryReader ${RTL_RASTERIX}/PagedMemoryReader.v
+    ${RTL_FLOAT}/ValueTrack.v)
 add_verilator_test(internalFramebufferCommandHandler InternalFramebufferCommandHandler ${RTL_RASTERIX}/InternalFramebufferCommandHandler.v)
 add_verilator_test(axisToAxiAdapter AxisToAxiAdapter ${RTL_RASTERIX}/AxisToAxiAdapter.v)
 add_verilator_test(axisToAxiCrossbar AxisToAxiCrossbar ${RTL_RASTERIX}/AxisToAxiCrossbar.v)

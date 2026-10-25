@@ -48,6 +48,10 @@ module CommandParser #(
     input  wire             pixelInPipeline,
     input  wire             dataInTriangleInterpolator,
     input  wire             framebufferWritesPending,
+    input  wire             textureMemoryTransactionsPending,
+
+    // High when all commands are executed and no memory transaction is outstanding
+    output wire             idle,
 
     // Color/Depth buffer control
     output reg                                  colorBufferApply,
@@ -137,6 +141,11 @@ module CommandParser #(
     assign m_cmd_config_axis_tvalid      = (mux == MUX_RENDER_CONFIG) ? tvalid : 0;
 
     assign perfBusy = state != COMMAND_IN;
+    assign idle = (state == COMMAND_IN)
+        && !s_cmd_axis_tvalid
+        && !pixelInPipeline
+        && !framebufferWritesPending
+        && !textureMemoryTransactionsPending;
     assign perfTriangleRendering = rasterizerRunning && pixelInPipeline && dataInTriangleInterpolator;
 
     assign framebufferCommandApplied = colorBufferApplied & depthBufferApplied & stencilBufferApplied;

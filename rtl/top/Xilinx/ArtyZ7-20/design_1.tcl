@@ -244,6 +244,8 @@ proc create_root_design { parentCell } {
   set led0 [ create_bd_port -dir O led0 ]
   set led1 [ create_bd_port -dir O led1 ]
   set led2 [ create_bd_port -dir O led2 ]
+  set led3 [ create_bd_port -dir O led3 ]
+
 
   # Create instance: Dvi_0, and set properties
   set block_name Dvi
@@ -978,6 +980,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net Dvi_0_swapped [get_bd_pins Dvi_0/swapped] [get_bd_pins RasterIX_0/fb_swapped]
   connect_bd_net -net RasterIX_0_fb_addr [get_bd_pins Dvi_0/fbAddr] [get_bd_pins RasterIX_0/fb_addr]
   connect_bd_net -net RasterIX_0_perfBusy [get_bd_ports led2] [get_bd_pins RasterIX_0/perfBusy]
+  connect_bd_net -net RasterIX_0_idle [get_bd_ports led3] [get_bd_pins RasterIX_0/idle]
   connect_bd_net -net RasterIX_0_perfRasterizerStall [get_bd_ports led0] [get_bd_pins RasterIX_0/perfRasterizerStall]
   connect_bd_net -net RasterIX_0_perfTriangleRendering [get_bd_ports led1] [get_bd_pins RasterIX_0/perfTriangleRendering]
   connect_bd_net -net RasterIX_0_swap_fb [get_bd_pins Dvi_0/swap] [get_bd_pins RasterIX_0/swap_fb]

@@ -218,6 +218,8 @@ module RasterIXSystem #(
     input  wire                         m_axi_rvalid,
     output wire                         m_axi_rready,
 
+    output wire                         idle,
+
     // RasterIX performance signals
     output wire                         perfBusy,
     output wire                         perfTriangleRendering,
@@ -450,6 +452,7 @@ module RasterIXSystem #(
         .m_axi_rvalid   (rix_rvalid),
         .m_axi_rready   (rix_rready),
 
+        .idle                   (idle),
         .perfBusy               (perfBusy),
         .perfTriangleRendering  (perfTriangleRendering),
         .perfRasterizerStall    (perfRasterizerStall)
