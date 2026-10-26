@@ -91,6 +91,7 @@ TEST_CASE("Active covers a partial line and a stalled memory write", "[Framebuff
 
     t->s_frag_tvalid = 0;
     t->s_frag_tlast = 0;
+    t->m_mem_axi_bvalid = 0;
     t->m_mem_axi_awready = 0;
     t->m_mem_axi_wready = 0;
 
@@ -120,6 +121,14 @@ TEST_CASE("Active covers a partial line and a stalled memory write", "[Framebuff
     rr::ut::clk(t);
     REQUIRE(t->m_mem_axi_awvalid == 0);
     REQUIRE(t->m_mem_axi_wvalid == 0);
+    REQUIRE(t->active == 1);
+
+    t->m_mem_axi_bvalid = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->active == 1);
+
+    t->m_mem_axi_bvalid = 0;
+    rr::ut::clk(t);
     REQUIRE(t->active == 0);
 
     delete t;

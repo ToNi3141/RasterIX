@@ -177,17 +177,7 @@ module StreamFramebuffer
 
     wire adapter_active;
     wire coalescer_active;
-    wire outstanding_write_active;
-
-    ValueTrack outstandingWriteTrack (
-        .aclk(aclk),
-        .resetn(resetn),
-        .sigIncomingValue(m_mem_axi_awvalid && m_mem_axi_awready),
-        .sigOutgoingValue(m_mem_axi_bvalid && m_mem_axi_bready),
-        .valueInPipeline(outstanding_write_active)
-    );
-
-    assign active = adapter_active | coalescer_active | outstanding_write_active;
+    assign active = adapter_active | coalescer_active;
 
     FramebufferMMU #(
         .ADDR_WIDTH(ADDR_WIDTH),
@@ -215,7 +205,9 @@ module StreamFramebuffer
         .ADDR_WIDTH(ADDR_WIDTH),
         .STRB_WIDTH(STRB_WIDTH),
         .ID_WIDTH(ID_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH)
+        .PIXEL_WIDTH(PIXEL_WIDTH),
+        // The coalescer below tracks merged writes and their responses.
+        .TRACK_WRITE_RESPONSES(0)
     ) fba (
         .aclk(aclk),
         .resetn(resetn),

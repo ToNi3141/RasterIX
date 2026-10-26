@@ -29,7 +29,10 @@ module FramebufferAdapter
     parameter ID_WIDTH = 8,
 
     // Size of the pixels
-    parameter PIXEL_WIDTH = 16
+    parameter PIXEL_WIDTH = 16,
+
+    // The active signals tracks also write responses
+    parameter TRACK_WRITE_RESPONSES = 1
 )
 (
     input  wire                             aclk,
@@ -255,7 +258,8 @@ module FramebufferAdapter
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .STRB_WIDTH(STRB_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
-                .PIXEL_WIDTH(PIXEL_WIDTH)
+                .PIXEL_WIDTH(PIXEL_WIDTH),
+                .TRACK_WRITE_RESPONSES(TRACK_WRITE_RESPONSES)
             ) writer (
                 .aclk(aclk),
                 .resetn(resetn),

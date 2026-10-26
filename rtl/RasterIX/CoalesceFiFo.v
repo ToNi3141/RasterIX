@@ -96,6 +96,7 @@ module CoalesceFiFo #(
     wire                        fifo_empty;
     reg                         fifo_read;
     wire                        fifo_ready;
+    wire                        outstanding_write_active;
 
     reg  [DATA_WIDTH - 1: 0]    skid_wdata;
     reg  [STRB_WIDTH - 1 : 0]   skid_wstrb;
@@ -141,9 +142,17 @@ module CoalesceFiFo #(
     assign s_mem_axi_bid = m_mem_axi_bid;
     assign s_mem_axi_bresp = m_mem_axi_bresp;
     assign s_mem_axi_bvalid = m_mem_axi_bvalid;
+    ValueTrack outstandingWriteTrack (
+        .aclk(aclk),
+        .resetn(resetn),
+        .sigIncomingValue(m_mem_axi_awvalid && m_mem_axi_awready),
+        .sigOutgoingValue(m_mem_axi_bvalid && m_mem_axi_bready),
+        .valueInPipeline(outstanding_write_active)
+    );
+
     assign active = s_mem_axi_awvalid | s_mem_axi_wvalid
         | m_mem_axi_awvalid | m_mem_axi_wvalid | skid_valid
-        | (awcount != 0) | !fifo_empty;
+        | (awcount != 0) | !fifo_empty | outstanding_write_active;
 
     always @(posedge aclk)
     begin

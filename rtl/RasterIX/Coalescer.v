@@ -264,6 +264,16 @@ module Coalescer #(
         end
         else
         begin : gen_bypass
+            wire outstanding_write_active;
+
+            ValueTrack outstandingWriteTrack (
+                .aclk(aclk),
+                .resetn(resetn),
+                .sigIncomingValue(m_mem_axi_awvalid && m_mem_axi_awready),
+                .sigOutgoingValue(m_mem_axi_bvalid && m_mem_axi_bready),
+                .valueInPipeline(outstanding_write_active)
+            );
+
             // Bypass coalescing entirely: connect slave AW/W/B/AR channels directly to master
             assign m_mem_axi_awid = s_mem_axi_awid;
             assign m_mem_axi_awaddr = s_mem_axi_awaddr;
@@ -299,7 +309,7 @@ module Coalescer #(
             assign s_mem_axi_arready = m_mem_axi_arready;
 
             assign active = s_mem_axi_awvalid | s_mem_axi_wvalid
-                | m_mem_axi_awvalid | m_mem_axi_wvalid;
+                | m_mem_axi_awvalid | m_mem_axi_wvalid | outstanding_write_active;
         end
     endgenerate
 

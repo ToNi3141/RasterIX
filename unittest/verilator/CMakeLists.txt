@@ -46,7 +46,7 @@ function(add_verilator_test TEST_NAME TOP_MODULE VERILOG_FILE)
             ${VERILOG_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
         COMMAND make -C ${OBJ_DIR} -f V${TOP_MODULE}.mk
-        DEPENDS ${VERILOG_FILE} ${EXTRA_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
+        DEPENDS ${VERILOG_FILE} ${EXTRA_SOURCES} ${EXTRA_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/cpp/general.hpp
         COMMENT "Verilating and building ${TOP_MODULE}..."
         VERBATIM
@@ -91,7 +91,8 @@ add_verilator_test(stencilOp StencilOp ${RTL_RASTERIX}/StencilOp.v)
 add_verilator_test(memoryReadRequestGenerator MemoryReadRequestGenerator ${RTL_RASTERIX}/MemoryReadRequestGenerator.v)
 add_verilator_test(framebufferSerializer FramebufferSerializer ${RTL_RASTERIX}/FramebufferSerializer.v)
 add_verilator_test(streamConcatFifo StreamConcatFifo ${RTL_RASTERIX}/StreamConcatFifo.v)
-add_verilator_test(framebufferPacker FramebufferPacker ${RTL_RASTERIX}/FramebufferPacker.v)
+add_verilator_test(framebufferPacker FramebufferPacker ${RTL_RASTERIX}/FramebufferPacker.v
+    ${RTL_FLOAT}/ValueTrack.v)
 add_verilator_test(scissor Scissor ${RTL_RASTERIX}/Scissor.v)
 add_verilator_test(framebufferMMU FramebufferMMU ${RTL_RASTERIX}/FramebufferMMU.v)
 add_verilator_test(framebufferClear FramebufferClear ${RTL_RASTERIX}/FramebufferClear.v)
@@ -109,7 +110,8 @@ add_verilator_test(internalFramebufferCommandHandler InternalFramebufferCommandH
 add_verilator_test(axisToAxiAdapter AxisToAxiAdapter ${RTL_RASTERIX}/AxisToAxiAdapter.v)
 add_verilator_test(axisToAxiCrossbar AxisToAxiCrossbar ${RTL_RASTERIX}/AxisToAxiCrossbar.v)
 add_verilator_test(logicOp LogicOp ${RTL_RASTERIX}/LogicOp.v)
-add_verilator_test(coalesceFiFo CoalesceFiFo ${RTL_RASTERIX}/CoalesceFiFo.v)
+add_verilator_test(coalesceFiFo CoalesceFiFo ${RTL_RASTERIX}/CoalesceFiFo.v
+    ${RTL_FLOAT}/ValueTrack.v)
 add_verilator_test(coalesceAddrGen CoalesceAddrGen ${RTL_RASTERIX}/CoalesceAddrGen.v)
 add_verilator_test(streamSemaphore StreamSemaphore ${RTL_RASTERIX}/StreamSemaphore.v)
 add_verilator_test(axiToAvalonBridge AxiToAvalonBridge ${RTL_UTIL}/AxiToAvalonBridge.v)
