@@ -263,10 +263,9 @@ module FrameStreamingCore #(
         .sigOutgoingValue(m_mem_axi_bvalid && m_mem_axi_bready),
         .valueInPipeline(outstandingWriteActive)
     );
-
-    // Reads are complete in COMMAND because the stream consumes every requested beat.
+    
     assign idle = !AUTO_LOAD
-        && (state == COMMAND)
+        && (state == COMMAND) // Reads are complete in COMMAND because the stream consumes every requested beat.
         && !s_st0_axis_tvalid // No incoming command
         && !enableAddressChannel
         && !outstandingWriteActive;

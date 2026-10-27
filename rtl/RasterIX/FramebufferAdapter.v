@@ -250,9 +250,6 @@ module FramebufferAdapter
                 .m_mem_axi_rready(m_mem_axi_rready)
             );
 
-            wire packer_active;
-            assign active = packer_active;
-
             FramebufferPacker #(
                 .DATA_WIDTH(DATA_WIDTH),
                 .ADDR_WIDTH(ADDR_WIDTH),
@@ -263,7 +260,7 @@ module FramebufferAdapter
             ) writer (
                 .aclk(aclk),
                 .resetn(resetn),
-                .active(packer_active),
+                .active(active),
 
                 .s_frag_tvalid(s_frag_wvalid),
                 .s_frag_tlast(s_frag_wlast),
