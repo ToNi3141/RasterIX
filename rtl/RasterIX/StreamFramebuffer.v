@@ -47,6 +47,7 @@ module StreamFramebuffer
 (
     input  wire                             aclk,
     input  wire                             resetn,
+    output wire                             active,
 
     /////////////////////////
     // Configs
@@ -174,6 +175,10 @@ module StreamFramebuffer
     wire                             coal_rvalid;
     wire                             coal_rready;
 
+    wire adapter_active;
+    wire coalescer_active;
+    assign active = adapter_active | coalescer_active;
+
     FramebufferMMU #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .PIXEL_WIDTH(PIXEL_WIDTH)
@@ -200,10 +205,13 @@ module StreamFramebuffer
         .ADDR_WIDTH(ADDR_WIDTH),
         .STRB_WIDTH(STRB_WIDTH),
         .ID_WIDTH(ID_WIDTH),
-        .PIXEL_WIDTH(PIXEL_WIDTH)
+        .PIXEL_WIDTH(PIXEL_WIDTH),
+        // The coalescer below tracks merged writes and their responses.
+        .TRACK_WRITE_RESPONSES(0)
     ) fba (
         .aclk(aclk),
         .resetn(resetn),
+        .active(adapter_active),
 
         .s_fetch_arvalid(fetch_mmu_tvalid),
         .s_fetch_arlast(fetch_mmu_tlast),
@@ -272,6 +280,7 @@ module StreamFramebuffer
     ) coalescer (
         .aclk(aclk),
         .resetn(resetn),
+        .active(coalescer_active),
 
         .s_mem_axi_awid(coal_awid),
         .s_mem_axi_awaddr(coal_awaddr),

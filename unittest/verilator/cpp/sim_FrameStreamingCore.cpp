@@ -34,9 +34,11 @@ void reset(VFrameStreamingCore& t)
     t.s_st0_axis_tdata = 0;
 
     rr::ut::clk(&t);
+    REQUIRE(t.idle == 0);
 
     t.resetn = 1;
     rr::ut::clk(&t);
+    REQUIRE(t.idle == 1);
 }
 
 void configPhase(VFrameStreamingCore& t, uint32_t command, uint32_t addr)
@@ -59,6 +61,7 @@ void configPhase(VFrameStreamingCore& t, uint32_t command, uint32_t addr)
 
     // Process command
     rr::ut::clk(&t);
+    REQUIRE(t.idle == 0);
 
     // COMMAND ADDR //////////////////////
     // Outputs
@@ -78,6 +81,7 @@ void configPhase(VFrameStreamingCore& t, uint32_t command, uint32_t addr)
 
     // Process command
     rr::ut::clk(&t);
+    REQUIRE(t.idle == 0);
 }
 
 TEST_CASE("Mux data simple (st0 -> st0)", "[Stream]")
@@ -120,6 +124,7 @@ TEST_CASE("Mux data simple (st0 -> st0)", "[Stream]")
 
         // Process first 4 bytes of data
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Assert tvalid to mark available data. Deassert tready (last byte) and assert tlast.
@@ -139,6 +144,7 @@ TEST_CASE("Mux data simple (st0 -> st0)", "[Stream]")
         t.s_st0_axis_tvalid = 1; // Keep tvalid asserted to check that it does not pull further data.
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // IDLE /////////////////////////////
         // Deassert everything (no read or write should be in progress now)
@@ -154,7 +160,12 @@ TEST_CASE("Mux data simple (st0 -> st0)", "[Stream]")
         REQUIRE(t.m_st0_axis_tlast == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
     }
+
+    t.s_st0_axis_tvalid = 0;
+    rr::ut::clk(top);
+    REQUIRE(t.idle == 1);
 
     // Final model cleanup
     top->final();
@@ -203,6 +214,7 @@ TEST_CASE("Mux data simple (st0 -> st1)", "[Stream]")
 
         // Process first 4 bytes of data
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Assert tvalid to mark available data. Deassert tready (last byte) and assert tlast.
@@ -222,6 +234,7 @@ TEST_CASE("Mux data simple (st0 -> st1)", "[Stream]")
         t.s_st0_axis_tvalid = 1; // Keep tvalid asserted to check that it does not pull further data.
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // IDLE /////////////////////////////
         // Deassert everything (no read or write should be in progress now)
@@ -237,7 +250,12 @@ TEST_CASE("Mux data simple (st0 -> st1)", "[Stream]")
         REQUIRE(t.m_st0_axis_tlast == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
     }
+
+    t.s_st0_axis_tvalid = 0;
+    rr::ut::clk(top);
+    REQUIRE(t.idle == 1);
 
     // Final model cleanup
     top->final();
@@ -286,6 +304,7 @@ TEST_CASE("Mux data simple (st1 -> st1)", "[Stream]")
 
         // Process first 4 bytes of data
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Assert tvalid to mark available data. Deassert tready (last byte) and assert tlast.
@@ -305,6 +324,7 @@ TEST_CASE("Mux data simple (st1 -> st1)", "[Stream]")
         t.s_st1_axis_tvalid = 1; // Keep tvalid asserted to check that it does not pull further data.
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // IDLE /////////////////////////////
         // Deassert everything (no read or write should be in progress now)
@@ -320,7 +340,12 @@ TEST_CASE("Mux data simple (st1 -> st1)", "[Stream]")
         REQUIRE(t.m_st0_axis_tlast == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
     }
+
+    t.s_st0_axis_tvalid = 0;
+    rr::ut::clk(top);
+    REQUIRE(t.idle == 1);
 
     // Final model cleanup
     top->final();
@@ -369,6 +394,7 @@ TEST_CASE("Mux data simple (st1 -> st0)", "[Stream]")
 
         // Process first 4 bytes of data
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Assert tvalid to mark available data. Deassert tready (last byte) and assert tlast.
@@ -388,6 +414,7 @@ TEST_CASE("Mux data simple (st1 -> st0)", "[Stream]")
         t.s_st1_axis_tvalid = 1; // Keep tvalid asserted to check that it does not pull further data.
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // IDLE /////////////////////////////
         // Deassert everything (no read or write should be in progress now)
@@ -403,7 +430,12 @@ TEST_CASE("Mux data simple (st1 -> st0)", "[Stream]")
         REQUIRE(t.m_st0_axis_tlast == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
     }
+
+    t.s_st0_axis_tvalid = 0;
+    rr::ut::clk(top);
+    REQUIRE(t.idle == 1);
 
     // Final model cleanup
     top->final();
@@ -443,6 +475,7 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
 
         // Process first 4 bytes of data
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Read first 4 bytes from master interface
@@ -460,6 +493,7 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         t.m_st0_axis_tready = 0;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Read first 4 bytes from master interface
@@ -477,6 +511,7 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         t.m_st0_axis_tready = 1;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Read first 4 bytes from master interface
@@ -490,6 +525,7 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         t.m_st0_axis_tready = 0;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Read first 4 bytes from master interface
@@ -503,6 +539,7 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         t.m_st0_axis_tready = 1;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // IDLE /////////////////////////////
 
@@ -513,7 +550,12 @@ TEST_CASE("Stream data interrupted from master (st0 -> st0)", "[Stream]")
         REQUIRE(t.s_st0_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
     }
+
+    t.s_st0_axis_tvalid = 0;
+    rr::ut::clk(top);
+    REQUIRE(t.idle == 1);
 
     // Final model cleanup
     top->final();
@@ -558,6 +600,7 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
 
         // Process first 4 bytes of data
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Outputs
@@ -574,6 +617,7 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
         t.s_st0_axis_tvalid = 1;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Outputs
@@ -589,6 +633,7 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
         t.s_st0_axis_tvalid = 0;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Outputs
@@ -605,6 +650,7 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
         t.s_st0_axis_tvalid = 1;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         // Read first 4 bytes from master interface
@@ -615,6 +661,7 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
         REQUIRE(t.s_st0_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // IDLE /////////////////////////////
 
@@ -625,7 +672,12 @@ TEST_CASE("Stream data interrupted from slave (st0 -> st0)", "[Stream]")
         REQUIRE(t.s_st0_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
     }
+
+    t.s_st0_axis_tvalid = 0;
+    rr::ut::clk(top);
+    REQUIRE(t.idle == 1);
 
     // Final model cleanup
     top->final();
@@ -654,8 +706,11 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
     // Run this test two times, so that we know that we can start a new transfer after the old one
     for (uint32_t i = 0; i < 2; i++)
     {
+        REQUIRE(t.idle == 1);
+
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND, 0x8000'0000);
+        REQUIRE(t.idle == 0);
 
         // First test the address channel (data and address are independent)
         // STORE ADDR ////////////////////////
@@ -671,6 +726,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         t.s_st0_axis_tvalid = 0;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STORE ADDR ////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 1);
@@ -685,6 +741,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         REQUIRE(t.m_mem_axi_awaddr == 0x8000'0000);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STORE ADDR ////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 1);
@@ -699,6 +756,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         REQUIRE(t.m_mem_axi_awaddr == 0x8000'0040);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STORE ADDR ////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -711,6 +769,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // Now check the data channel
         // STORE DATA ////////////////////////
@@ -729,6 +788,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         t.s_st0_axis_tvalid = 1;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STORE DATA ////////////////////////
         // Output contains the data from all elemets except the last
@@ -749,6 +809,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
             t.s_st0_axis_tdata = i;
 
             rr::ut::clk(top);
+            REQUIRE(t.idle == 0);
         }
 
         for (uint32_t transfer = 1; transfer < 2; ++transfer)
@@ -771,6 +832,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
             t.s_st0_axis_tdata = 0;
 
             rr::ut::clk(top);
+            REQUIRE(t.idle == 0);
 
             // STORE DATA ////////////////////////
             // Output contains the data from all elemets except the last
@@ -791,6 +853,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
                 t.s_st0_axis_tdata = i;
 
                 rr::ut::clk(top);
+                REQUIRE(t.idle == 0);
             }
 
             // Second transfer
@@ -809,6 +872,7 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
             REQUIRE(t.m_mem_axi_wlast == 1);
 
             rr::ut::clk(top);
+            REQUIRE(t.idle == 0);
         }
 
         // IDLE /////////////////////////////
@@ -822,6 +886,21 @@ TEST_CASE("Store chunk of data simple (st0 -> mem)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
+
+        // Both bursts are waiting for their write responses
+        t.s_st0_axis_tvalid = 0;
+
+        t.m_mem_axi_bvalid = 1;
+        rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
+
+        rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
+
+        t.m_mem_axi_bvalid = 0;
+        rr::ut::clk(top);
+        REQUIRE(t.idle == 1);
     }
 
     // Final model cleanup
@@ -868,6 +947,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
         t.s_st1_axis_tvalid = 0;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STORE ADDR ////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 1);
@@ -882,6 +962,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
         REQUIRE(t.m_mem_axi_awaddr == 0x100);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STORE ADDR ////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 1);
@@ -896,6 +977,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
         REQUIRE(t.m_mem_axi_awaddr == 0x140);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STORE ADDR ////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -908,6 +990,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 1);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STORE ADDR ////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -920,6 +1003,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 1);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // Now check the data channel
         // STORE DATA ////////////////////////
@@ -938,6 +1022,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
         t.s_st1_axis_tvalid = 1;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STORE DATA ////////////////////////
         // Output contains the data from all elemets except the last
@@ -958,6 +1043,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
             t.s_st1_axis_tdata = i;
 
             rr::ut::clk(top);
+            REQUIRE(t.idle == 0);
         }
 
         for (uint32_t transfer = 1; transfer < 2; ++transfer)
@@ -980,6 +1066,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
             t.s_st1_axis_tdata = 0;
 
             rr::ut::clk(top);
+            REQUIRE(t.idle == 0);
 
             // STORE DATA ////////////////////////
             // Output contains the data from all elemets except the last
@@ -1000,6 +1087,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
                 t.s_st1_axis_tdata = i;
 
                 rr::ut::clk(top);
+                REQUIRE(t.idle == 0);
             }
 
             // Second transfer
@@ -1018,6 +1106,7 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
             REQUIRE(t.m_mem_axi_wlast == 1);
 
             rr::ut::clk(top);
+            REQUIRE(t.idle == 0);
         }
 
         // IDLE /////////////////////////////
@@ -1031,6 +1120,21 @@ TEST_CASE("Store chunk of data simple (st1 -> mem)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
+
+        // Both bursts are waiting for their write responses
+        t.s_st0_axis_tvalid = 0;
+
+        t.m_mem_axi_bvalid = 1;
+        rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
+
+        rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
+
+        t.m_mem_axi_bvalid = 0;
+        rr::ut::clk(top);
+        REQUIRE(t.idle == 1);
     }
 
     // Final model cleanup
@@ -1077,6 +1181,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         t.m_st0_axis_tready = 0;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1091,6 +1196,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         REQUIRE(t.m_mem_axi_araddr == 0x8000'0000);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1105,6 +1211,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         REQUIRE(t.m_mem_axi_araddr == 0x8000'0040);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1119,6 +1226,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         REQUIRE(t.m_mem_axi_araddr == 0x8000'0080);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1133,6 +1241,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         REQUIRE(t.m_mem_axi_araddr == 0x8000'00c0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1145,6 +1254,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // Now check the data channel
         // LOAD DATA /////////////////////////
@@ -1164,6 +1274,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         t.m_mem_axi_rdata = 0;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD DATA /////////////////////////
         // Output contains the data from all elemets except the last
@@ -1184,6 +1295,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
             t.m_mem_axi_rdata = i;
 
             rr::ut::clk(top);
+            REQUIRE(t.idle == 0);
         }
 
         // LOAD DATA /////////////////////////
@@ -1201,6 +1313,7 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         REQUIRE(t.m_st0_axis_tlast == 1);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // IDLE /////////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1213,7 +1326,12 @@ TEST_CASE("Load chunk data simple (mem -> st0)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
     }
+
+    t.s_st0_axis_tvalid = 0;
+    rr::ut::clk(top);
+    REQUIRE(t.idle == 1);
 
     // Final model cleanup
     top->final();
@@ -1259,6 +1377,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         t.m_st1_axis_tready = 0;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1273,6 +1392,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.m_mem_axi_araddr == 0x8000'0000);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1287,6 +1407,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.m_mem_axi_araddr == 0x8000'0040);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1301,6 +1422,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.m_mem_axi_araddr == 0x8000'0080);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1315,6 +1437,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.m_mem_axi_araddr == 0x8000'00c0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD ADDR /////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1327,6 +1450,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // Now check the data channel
         // LOAD DATA /////////////////////////
@@ -1346,6 +1470,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         t.m_mem_axi_rdata = 0;
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // LOAD DATA /////////////////////////
         // Output contains the data from all elemets except the last
@@ -1366,6 +1491,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
             t.m_mem_axi_rdata = i;
 
             rr::ut::clk(top);
+            REQUIRE(t.idle == 0);
         }
 
         // LOAD DATA /////////////////////////
@@ -1383,6 +1509,7 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.m_st1_axis_tlast == 1);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // IDLE /////////////////////////////
         REQUIRE(t.m_mem_axi_awvalid == 0);
@@ -1395,7 +1522,12 @@ TEST_CASE("Load chunk data simple (mem -> st1)", "[Memory]")
         REQUIRE(t.s_st1_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
     }
+
+    t.s_st0_axis_tvalid = 0;
+    rr::ut::clk(top);
+    REQUIRE(t.idle == 1);
 
     // Final model cleanup
     top->final();
@@ -1439,6 +1571,7 @@ TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]"
 
         // Process 4 bytes of data
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // STREAM ////////////////////////////
         t.s_st0_axis_tlast = 0;
@@ -1446,9 +1579,11 @@ TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]"
         REQUIRE(t.s_st0_axis_tready == 0);
 
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         // IDLE /////////////////////////////
         rr::ut::clk(top);
+        REQUIRE(t.idle == 1);
 
         // COMMAND ///////////////////////////
         configPhase(t, COMMAND_INT_TO_ST0, 0);
@@ -1463,6 +1598,7 @@ TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]"
 
         // Process 4 bytes of data
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
 
         for (uint32_t i = 0; i < 0x100 / 4; i++)
         {
@@ -1474,11 +1610,17 @@ TEST_CASE("Stream chunk of data int simple (st0 -> int, int -> st0)", "[Stream]"
             t.m_st0_axis_tready = 1;
 
             rr::ut::clk(top);
+            REQUIRE(t.idle == 0);
         }
 
         // IDLE /////////////////////////////
         rr::ut::clk(top);
+        REQUIRE(t.idle == 0);
     }
+
+    t.s_st0_axis_tvalid = 0;
+    rr::ut::clk(top);
+    REQUIRE(t.idle == 1);
 
     // Final model cleanup
     top->final();

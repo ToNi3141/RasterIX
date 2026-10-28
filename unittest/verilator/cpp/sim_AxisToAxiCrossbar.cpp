@@ -32,6 +32,7 @@ TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
 
     rr::ut::reset(t);
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == false);
 
     t->m_mem_axi_awready = 1;
 
@@ -40,11 +41,16 @@ TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
     t->s_arnw = 0b0'1; // Write
     t->s_abeats = 0x00000000'00000020;
     rr::ut::clk(t); // port 1 because the rr::ut::reset() already triggers with the extra clock cycle a scheduling
+    CHECK(t->active == true);
+
     rr::ut::clk(t); // port 0
     CHECK(t->s_aready == 0b0'1);
+    CHECK(t->active == true);
 
+    t->s_avalid = 0;
     rr::ut::clk(t); // Few clock cycles are required till the AxisToAxiAdapter is ready to send the address
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 1);
@@ -53,6 +59,7 @@ TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awsize == 0b010); // 32 bit
     CHECK(t->m_mem_axi_awburst == 0b01); // INCR
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 1);
@@ -61,10 +68,12 @@ TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awsize == 0b010); // 32 bit
     CHECK(t->m_mem_axi_awburst == 0b01); // INCR
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 0);
     CHECK(t->s_wready == 0b0'1);
+    CHECK(t->active == true);
 
     for (std::size_t i = 0; i < t->s_abeats; i++)
     {
@@ -79,10 +88,25 @@ TEST_CASE("check write channel 0", "[VAxisToAxiCrossbar]")
         CHECK(t->m_mem_axi_wstrb == 0b1111);
         CHECK(t->m_mem_axi_wlast == (((i + 1) % 16) == 0));
         CHECK(t->s_wready == 0b0'1);
+        CHECK(t->active == true);
     }
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_wvalid == 0);
     CHECK(t->s_wready == 0b0'0);
+    CHECK(t->active == true);
+    t->s_wvalid = 0; // Deassert s_wvalid after the write burst is done
+
+    t->m_mem_axi_bvalid = 1;
+    rr::ut::clk(t);
+    t->m_mem_axi_bvalid = 0;
+    rr::ut::clk(t);
+    CHECK(t->active == true);
+
+    t->m_mem_axi_bvalid = 1;
+    rr::ut::clk(t);
+    t->m_mem_axi_bvalid = 0;
+    rr::ut::clk(t);
+    CHECK(t->active == false);
 
     // Destroy model
     delete t;
@@ -94,6 +118,7 @@ TEST_CASE("check write channel 1", "[VAxisToAxiCrossbar]")
 
     rr::ut::reset(t);
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == false);
 
     t->m_mem_axi_awready = 1;
 
@@ -103,9 +128,12 @@ TEST_CASE("check write channel 1", "[VAxisToAxiCrossbar]")
     t->s_abeats = 0x00000020'00000000;
     rr::ut::clk(t); // port 0
     CHECK(t->s_aready == 0b1'0);
+    CHECK(t->active == true);
 
+    t->s_avalid = 0;
     rr::ut::clk(t); // Few clock cycles are required till the AxisToAxiAdapter is ready to send the address
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 1);
@@ -114,6 +142,7 @@ TEST_CASE("check write channel 1", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awsize == 0b010); // 32 bit
     CHECK(t->m_mem_axi_awburst == 0b01); // INCR
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 1);
@@ -122,10 +151,12 @@ TEST_CASE("check write channel 1", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awsize == 0b010); // 32 bit
     CHECK(t->m_mem_axi_awburst == 0b01); // INCR
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 0);
     CHECK(t->s_wready == 0b1'0);
+    CHECK(t->active == true);
 
     for (std::size_t i = 0; i < TEST_SIZE; i++)
     {
@@ -140,10 +171,25 @@ TEST_CASE("check write channel 1", "[VAxisToAxiCrossbar]")
         CHECK(t->m_mem_axi_wstrb == 0b1111);
         CHECK(t->m_mem_axi_wlast == (((i + 1) % 16) == 0));
         CHECK(t->s_wready == 0b1'0);
+        CHECK(t->active == true);
     }
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_wvalid == 0);
     CHECK(t->s_wready == 0b0'0);
+    CHECK(t->active == true);
+    t->s_wvalid = 0;
+
+    t->m_mem_axi_bvalid = 1;
+    rr::ut::clk(t);
+    t->m_mem_axi_bvalid = 0;
+    rr::ut::clk(t);
+    CHECK(t->active == true);
+
+    t->m_mem_axi_bvalid = 1;
+    rr::ut::clk(t);
+    t->m_mem_axi_bvalid = 0;
+    rr::ut::clk(t);
+    CHECK(t->active == false);
 
     // Destroy model
     delete t;
@@ -155,6 +201,7 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
 
     rr::ut::reset(t);
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == false);
 
     t->m_mem_axi_awready = 1;
 
@@ -164,11 +211,13 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
     t->s_abeats = 0x00000020'00000010;
     rr::ut::clk(t); // port 0
     CHECK(t->s_aready == 0b1'0);
+    CHECK(t->active == true);
 
     // Handle Channel 1
     t->s_avalid = 0b0'1;
     rr::ut::clk(t); // Few clock cycles are required till the AxisToAxiAdapter is ready to send the address
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 1);
@@ -177,6 +226,7 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awsize == 0b010); // 32 bit
     CHECK(t->m_mem_axi_awburst == 0b01); // INCR
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 1);
@@ -185,10 +235,12 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awsize == 0b010); // 32 bit
     CHECK(t->m_mem_axi_awburst == 0b01); // INCR
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 0);
     CHECK(t->s_wready == 0b1'0);
+    CHECK(t->active == true);
 
     for (std::size_t i = 0; i < TEST_SIZE; i++)
     {
@@ -203,26 +255,31 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
         CHECK(t->m_mem_axi_wstrb == 0b1111);
         CHECK(t->m_mem_axi_wlast == (((i + 1) % 16) == 0));
         CHECK(t->s_wready == 0b1'0);
+        CHECK(t->active == true);
     }
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_wvalid == 0);
     CHECK(t->s_wready == 0b0'0);
+    CHECK(t->active == true);
 
     t->s_wvalid = 0b0'0; // This is not really AXI confirm to reset a not acknowledged valid signal, but simplifies the test
     t->m_mem_axi_wready = 0;
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_wvalid == 0);
     CHECK(t->s_wready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_wvalid == 0);
     CHECK(t->s_wready == 0b0'0);
     CHECK(t->s_aready == 0b0'1);
+    CHECK(t->active == true);
 
     // Handle channel 0
     rr::ut::clk(t);
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 1);
@@ -231,11 +288,13 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
     CHECK(t->m_mem_axi_awsize == 0b010); // 32 bit
     CHECK(t->m_mem_axi_awburst == 0b01); // INCR
     CHECK(t->s_aready == 0b0'0);
+    CHECK(t->active == true);
 
     t->s_avalid = 0b0'0;
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_awvalid == 0);
     CHECK(t->s_wready == 0b0'1);
+    CHECK(t->active == true);
 
     for (std::size_t i = 0; i < TEST_SIZE / 2; i++)
     {
@@ -250,10 +309,23 @@ TEST_CASE("check both write channels", "[VAxisToAxiCrossbar]")
         CHECK(t->m_mem_axi_wstrb == 0b1111);
         CHECK(t->m_mem_axi_wlast == (((i + 1) % 16) == 0));
         CHECK(t->s_wready == 0b0'1);
+        CHECK(t->active == true);
     }
     rr::ut::clk(t);
     CHECK(t->m_mem_axi_wvalid == 0);
     CHECK(t->s_wready == 0b0'0);
+    CHECK(t->active == true);
+    t->s_wvalid = 0;
+
+    for (std::size_t i = 0; i < 3; i++)
+    {
+        t->m_mem_axi_bvalid = 1;
+        rr::ut::clk(t);
+        t->m_mem_axi_bvalid = 0;
+        CHECK(t->active == true);
+    }
+    rr::ut::clk(t);
+    CHECK(t->active == false);
 
     // Destroy model
     delete t;

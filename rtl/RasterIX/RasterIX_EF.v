@@ -129,6 +129,9 @@ module RasterIX_EF #(
     input  wire                             m_axi_rvalid,
     output wire                             m_axi_rready,
 
+    // Registered; high when all commands are executed and no AXI transaction is outstanding
+    output reg                              idle,
+
     // Performance signals
     output wire                             perfBusy,
     output wire                             perfTriangleRendering,
@@ -441,6 +444,20 @@ module RasterIX_EF #(
     wire                             cmd_axis_tready;
     wire                             cmd_axis_tlast;
     wire [CMD_STREAM_WIDTH - 1 : 0]  cmd_axis_tdata;
+    wire                             dmaIdle;
+    wire                             renderCoreIdle;
+
+    always @(posedge aclk)
+    begin
+        if (!resetn)
+        begin
+            idle <= 0;
+        end
+        else
+        begin
+            idle <= dmaIdle & renderCoreIdle;
+        end
+    end
 
     FrameStreamingCore #(
         .STREAM_WIDTH(CMD_STREAM_WIDTH),
@@ -449,6 +466,7 @@ module RasterIX_EF #(
     ) dma (
         .aclk(aclk),
         .resetn(resetn),
+        .idle(dmaIdle),
 
         .m_st1_axis_tvalid(cmd_axis_tvalid),
         .m_st1_axis_tready(cmd_axis_tready),
@@ -700,6 +718,8 @@ module RasterIX_EF #(
         .m_tmu1_axi_rlast(xbar_axi_rlast[5 * 1 +: 1]),
         .m_tmu1_axi_rvalid(xbar_axi_rvalid[5 * 1 +: 1]),
         .m_tmu1_axi_rready(xbar_axi_rready[5 * 1 +: 1]),
+
+        .idle(renderCoreIdle),
 
         .perfBusy(perfBusy),
         .perfTriangleRendering(perfTriangleRendering),

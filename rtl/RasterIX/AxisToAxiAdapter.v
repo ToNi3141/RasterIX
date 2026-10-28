@@ -33,6 +33,7 @@ module AxisToAxiAdapter #(
 ) (
     input  wire                         aclk,
     input  wire                         resetn,
+    output wire                         active,
 
     input  wire                         s_avalid,
     input  wire [ADDR_WIDTH - 1 : 0]    s_aaddr,
@@ -85,8 +86,8 @@ module AxisToAxiAdapter #(
 
     reg                         startAddressGeneration;
     wire                        addressGenerationDone;
-
     reg                         streamingDone;
+    assign active = !streamingDone | !addressGenerationDone;
 
     reg  [DATA_WIDTH - 1 : 0]   wdataSkid;
     reg  [STRB_WIDTH - 1 : 0]   wstrbSkid;

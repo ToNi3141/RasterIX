@@ -36,6 +36,10 @@ module FramebufferPacker #(
     // Width of ID signal
     parameter ID_WIDTH = 8,
 
+    // The active signals tracks also write responses together 
+    // with an ongoing packing
+    parameter TRACK_WRITE_RESPONSES = 1,
+
     // Size of the pixels
     parameter PIXEL_WIDTH = 16,
     localparam PIXEL_MASK_WIDTH = PIXEL_WIDTH / 8,
@@ -43,6 +47,7 @@ module FramebufferPacker #(
 ) (
     input   wire                            aclk,
     input   wire                            resetn,
+    output  wire                            active,
 
     /////////////////////////
     // Fragment interface
@@ -109,9 +114,30 @@ module FramebufferPacker #(
 
     wire [INDEX_TAG_WIDTH - 1 : 0]      tag;
     wire [INDEX_BYTE_WIDTH - 1 : 0]     bytePos;
+    wire                                outstandingWriteActive;
+
+    generate
+        if (TRACK_WRITE_RESPONSES)
+        begin
+            ValueTrack outstandingWriteTrack (
+                .aclk(aclk),
+                .resetn(resetn),
+                .sigIncomingValue(m_mem_axi_awvalid && m_mem_axi_awready),
+                .sigOutgoingValue(m_mem_axi_bvalid && m_mem_axi_bready),
+                .valueInPipeline(outstandingWriteActive)
+            );
+        end
+        else
+        begin
+            assign outstandingWriteActive = 1'b0;
+        end
+    endgenerate
             
     assign tag = s_frag_taddr[INDEX_TAG_POS +: INDEX_TAG_WIDTH];
     assign bytePos = s_frag_taddr[INDEX_BYTE_POS +: INDEX_BYTE_WIDTH];
+    assign active = s_frag_tvalid | !s_frag_tready | memRequest
+        | (|lineStrobe) | (|lineStrobeSkid) | lastSkid | wasLast
+        | m_mem_axi_awvalid | m_mem_axi_wvalid | outstandingWriteActive;
 
     always @(posedge aclk)
     begin

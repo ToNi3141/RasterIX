@@ -97,6 +97,7 @@ module RasterIXCoreIF #(
 (
     input  wire                                 aclk,
     input  wire                                 resetn,
+    input  wire                                 framebufferWritesPending,
 
     // AXI Stream command interface
     input  wire                                 s_cmd_axis_tvalid,
@@ -203,6 +204,9 @@ module RasterIXCoreIF #(
     input  wire                                 m_tmu1_axi_rlast,
     input  wire                                 m_tmu1_axi_rvalid,
     output wire                                 m_tmu1_axi_rready,
+
+    // High when all commands are executed and no memory transaction is outstanding
+    output wire                                 idle,
 
     // Performance signals
     output wire                                 perfBusy,
@@ -562,6 +566,7 @@ module RasterIXCoreIF #(
         .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferCmdRead(colorBufferCmdRead),
         .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
+        .colorBufferWritesPending(framebufferWritesPending),
         .m_color_arready(1),
         .m_color_arlast(m_color_arlast),
         .m_color_arvalid(m_color_arvalid),
@@ -582,6 +587,7 @@ module RasterIXCoreIF #(
         .depthBufferApplied(depthBufferApplied),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdRead(depthBufferCmdRead),
+        .depthBufferWritesPending(framebufferWritesPending),
         .m_depth_arready(1),
         .m_depth_arlast(m_depth_arlast),
         .m_depth_arvalid(m_depth_arvalid),
@@ -602,6 +608,7 @@ module RasterIXCoreIF #(
         .stencilBufferApplied(stencilBufferApplied),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdRead(stencilBufferCmdRead),
+        .stencilBufferWritesPending(framebufferWritesPending),
         .m_stencil_arready(1),
         .m_stencil_arlast(m_stencil_arlast),
         .m_stencil_arvalid(m_stencil_arvalid),
@@ -649,6 +656,8 @@ module RasterIXCoreIF #(
         .m_tmu1_axi_rlast(m_tmu1_axi_rlast),
         .m_tmu1_axi_rvalid(m_tmu1_axi_rvalid),
         .m_tmu1_axi_rready(m_tmu1_axi_rready),
+
+        .idle(idle),
 
         .perfBusy(perfBusy),
         .perfTriangleRendering(perfTriangleRendering),

@@ -62,9 +62,6 @@ module PerFragmentPipeline
     input  wire [DEPTH_WIDTH - 1 : 0]               s_frag_tdestinationDepth,
     input  wire [STENCIL_WIDTH - 1 : 0]             s_frag_tdestinationStencil,
 
-    // Signals when the fragment went through the pipeline
-    output reg                                      fragmentProcessed,
-
     // Fragment output
     input  wire                                     m_frag_tready,
     output reg  [FRAMEBUFFER_INDEX_WIDTH - 1 : 0]   m_frag_taddr,
@@ -338,7 +335,6 @@ module PerFragmentPipeline
             m_frag_color_tdata <= (logicOpEnable) ? step1_colorLogicOp : step1_colorBlend;
             m_frag_stencil_tdata <= step1_stencil;
         end
-        fragmentProcessed <= step1_valid;
         m_frag_tvalid <= step1_valid;
         m_frag_tlast <= step1_last;
         m_frag_color_tstrb <= step1_keep & step1_writeFramebuffer;

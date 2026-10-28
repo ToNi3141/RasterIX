@@ -29,11 +29,15 @@ module FramebufferAdapter
     parameter ID_WIDTH = 8,
 
     // Size of the pixels
-    parameter PIXEL_WIDTH = 16
+    parameter PIXEL_WIDTH = 16,
+
+    // The active signals tracks also write responses
+    parameter TRACK_WRITE_RESPONSES = 1
 )
 (
     input  wire                             aclk,
     input  wire                             resetn,
+    output wire                             active,
 
     /////////////////////////
     // Read Side - Fragment Interface
@@ -115,6 +119,7 @@ module FramebufferAdapter
     generate
         if (DATA_WIDTH < PIXEL_WIDTH) begin
             $error("FramebufferAdapter: DATA_WIDTH must be >= PIXEL_WIDTH. DATA_WIDTH=%0d, PIXEL_WIDTH=%0d", DATA_WIDTH, PIXEL_WIDTH);
+            assign active = 0;
         end else if (DATA_WIDTH == PIXEL_WIDTH) begin
             // Pass-through mode: DATA_WIDTH == PIXEL_WIDTH
             // No conversion needed - direct connection of read and write paths
@@ -141,6 +146,7 @@ module FramebufferAdapter
             wire [ 1 : 0] bcast_m_axis_tready;
             wire [2 * PIXEL_WIDTH - 1 : 0] bcast_m_axis_tdata;
             wire [2 * USER_WIDTH_FRAG - 1 : 0] bcast_m_axis_tuser;
+            assign active = s_frag_wvalid | (|bcast_m_axis_tvalid);
             
             axis_broadcast #(
                 .M_COUNT(2),
@@ -249,10 +255,12 @@ module FramebufferAdapter
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .STRB_WIDTH(STRB_WIDTH),
                 .ID_WIDTH(ID_WIDTH),
-                .PIXEL_WIDTH(PIXEL_WIDTH)
+                .PIXEL_WIDTH(PIXEL_WIDTH),
+                .TRACK_WRITE_RESPONSES(TRACK_WRITE_RESPONSES)
             ) writer (
                 .aclk(aclk),
                 .resetn(resetn),
+                .active(active),
 
                 .s_frag_tvalid(s_frag_wvalid),
                 .s_frag_tlast(s_frag_wlast),

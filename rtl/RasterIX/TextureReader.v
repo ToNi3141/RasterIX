@@ -79,8 +79,18 @@ module TextureReader #(
     input  wire [ 1 : 0]                    m_axi_rresp,
     input  wire                             m_axi_rlast,
     input  wire                             m_axi_rvalid,
-    output wire                             m_axi_rready
+    output wire                             m_axi_rready,
+
+    output wire                             memoryTransactionsPending
 );
+    ValueTrack outstandingReadsTrack (
+        .aclk(aclk),
+        .resetn(resetn),
+        .sigIncomingValue(m_axi_arvalid & m_axi_arready),
+        .sigOutgoingValue(m_axi_rvalid & m_axi_rready & m_axi_rlast),
+        .valueInPipeline(memoryTransactionsPending)
+    );
+
     wire [ 1 : 0]                   ttcmTexelPos;
     wire [BYTE_ADDR_WIDTH - 1 : 0]  ttcmAddr;
     wire                            ttcmCmd;

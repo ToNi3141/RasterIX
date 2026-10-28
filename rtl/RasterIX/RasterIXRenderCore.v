@@ -117,6 +117,7 @@ module RasterIXRenderCore #(
     output wire                                 colorBufferCmdSwap,
     output wire                                 colorBufferCmdRead,
     output wire                                 colorBufferCmdSwapEnableVsync,
+    input  wire                                 colorBufferWritesPending,
     input  wire                                 m_color_arready,
     output wire                                 m_color_arvalid,
     output wire                                 m_color_arlast,
@@ -138,6 +139,7 @@ module RasterIXRenderCore #(
     input  wire                                 depthBufferApplied,
     output wire                                 depthBufferCmdCommit,
     output wire                                 depthBufferCmdRead,
+    input  wire                                 depthBufferWritesPending,
     input  wire                                 m_depth_arready,
     output wire                                 m_depth_arvalid,
     output wire                                 m_depth_arlast,
@@ -159,6 +161,7 @@ module RasterIXRenderCore #(
     input  wire                                 stencilBufferApplied,
     output wire                                 stencilBufferCmdCommit,
     output wire                                 stencilBufferCmdRead,
+    input  wire                                 stencilBufferWritesPending,
     input  wire                                 m_stencil_arready,
     output wire                                 m_stencil_arvalid,
     output wire                                 m_stencil_arlast,
@@ -210,6 +213,9 @@ module RasterIXRenderCore #(
     input  wire                                 m_tmu1_axi_rlast,
     input  wire                                 m_tmu1_axi_rvalid,
     output wire                                 m_tmu1_axi_rready,
+
+    // High when all commands are executed and no memory transaction is outstanding
+    output wire                                 idle,
 
     // Performance signals
     output wire                                 perfBusy,
@@ -300,6 +306,9 @@ module RasterIXRenderCore #(
     wire             framebufferClearStencilSelect;
     // Control
     wire             pixelInPipeline;
+    wire             tmu0MemoryTransactionsPending;
+    wire             tmu1MemoryTransactionsPending;
+    wire [ 2 : 0]    framebufferBroadcastPipelineActive;
     wire             dataInTriangleInterpolator;
     wire             startRendering;
     wire             rasterizerRunning;
@@ -332,6 +341,11 @@ module RasterIXRenderCore #(
         .rasterizerRunning(rasterizerRunning),
         .pixelInPipeline(pixelInPipeline),
         .dataInTriangleInterpolator(dataInTriangleInterpolator),
+        .framebufferWritesPending(colorBufferWritesPending
+            | depthBufferWritesPending
+            | stencilBufferWritesPending),
+        .textureMemoryTransactionsPending(tmu0MemoryTransactionsPending | tmu1MemoryTransactionsPending),
+        .idle(idle),
 
         // applied
         .colorBufferApply(colorBufferApply),
@@ -602,7 +616,8 @@ module RasterIXRenderCore #(
                 .m_axi_rresp(m_tmu0_axi_rresp),
                 .m_axi_rlast(m_tmu0_axi_rlast),
                 .m_axi_rvalid(m_tmu0_axi_rvalid),
-                .m_axi_rready(m_tmu0_axi_rready)
+                .m_axi_rready(m_tmu0_axi_rready),
+                .memoryTransactionsPending(tmu0MemoryTransactionsPending)
             );
             defparam textureMemoryTMU0.DATA_WIDTH = TMU_MEMORY_WIDTH;
             defparam textureMemoryTMU0.TEXEL_WIDTH = TEXEL_WIDTH;
@@ -645,7 +660,8 @@ module RasterIXRenderCore #(
                 .m_mem_axi_rresp(m_tmu0_axi_rresp),
                 .m_mem_axi_rlast(m_tmu0_axi_rlast),
                 .m_mem_axi_rvalid(m_tmu0_axi_rvalid),
-                .m_mem_axi_rready(m_tmu0_axi_rready)
+                .m_mem_axi_rready(m_tmu0_axi_rready),
+                .memoryTransactionsPending(tmu0MemoryTransactionsPending)
             );
             defparam pagedMemoryReaderTmu0.DATA_WIDTH = TMU_MEMORY_WIDTH;
             defparam pagedMemoryReaderTmu0.ADDR_WIDTH = ADDR_WIDTH;
@@ -751,7 +767,8 @@ module RasterIXRenderCore #(
                     .m_axi_rresp(m_tmu1_axi_rresp),
                     .m_axi_rlast(m_tmu1_axi_rlast),
                     .m_axi_rvalid(m_tmu1_axi_rvalid),
-                    .m_axi_rready(m_tmu1_axi_rready)
+                    .m_axi_rready(m_tmu1_axi_rready),
+                    .memoryTransactionsPending(tmu1MemoryTransactionsPending)
                 );
                 defparam textureMemoryTMU1.DATA_WIDTH = TMU_MEMORY_WIDTH;
                 defparam textureMemoryTMU1.TEXEL_WIDTH = TEXEL_WIDTH;
@@ -794,7 +811,8 @@ module RasterIXRenderCore #(
                 .m_mem_axi_rresp(m_tmu1_axi_rresp),
                 .m_mem_axi_rlast(m_tmu1_axi_rlast),
                 .m_mem_axi_rvalid(m_tmu1_axi_rvalid),
-                .m_mem_axi_rready(m_tmu1_axi_rready)
+                .m_mem_axi_rready(m_tmu1_axi_rready),
+                .memoryTransactionsPending(tmu1MemoryTransactionsPending)
             );
             defparam pagedMemoryReaderTmu1.DATA_WIDTH = TMU_MEMORY_WIDTH;
             defparam pagedMemoryReaderTmu1.ADDR_WIDTH = ADDR_WIDTH;
@@ -831,6 +849,7 @@ module RasterIXRenderCore #(
         end
         else
         begin
+            assign tmu1MemoryTransactionsPending = 1'b0;
             assign tr1_ready = 1;
             assign tr1_texel_00 = 0;
             assign tr1_texel_01 = 0;
@@ -911,11 +930,10 @@ module RasterIXRenderCore #(
 
     ////////////////////////////////////////////////////////////////////////////
     // STEP 1
-    // Counting of the pixels which are send from the rasterizer and which leave
-    // the pipeline. Used to determine if there are pixel on the fly or not.
+    // Count accepted rasterizer and clear fragments through each framebuffer
+    // broadcast output. These tracks cover the complete render-fragment path.
     ////////////////////////////////////////////////////////////////////////////
     localparam RASTERIZER_CONCAT_WIDTH = (4 * SCREEN_POS_WIDTH) + INDEX_WIDTH + 1 + RR_CMD_SIZE;
-    wire fragmentProcessed;
     wire [RASTERIZER_CONCAT_WIDTH - 1 : 0] semaphoreRasterizerData;
     wire                                   semaphoreRasterizerValid;
     wire                                   semaphoreRasterizerReady;
@@ -923,15 +941,6 @@ module RasterIXRenderCore #(
     wire                                   semaphoreRasterizerLast;
 
     assign perfRasterizerStall = rasterizer_tvalid & !rasterizer_tready;
-
-    ValueTrack vt (
-        .aclk(aclk),
-        .resetn(resetn),
-
-        .sigIncomingValue(rasterizer_tpixel & rasterizer_tvalid & rasterizer_tready),
-        .sigOutgoingValue(fragmentProcessed & framebuffer_pfp_wvalid & framebuffer_pfp_wready),
-        .valueInPipeline(pixelInPipeline)
-    );
 
     ValueTrack vtTriangle (
         .aclk(aclk),
@@ -1617,8 +1626,6 @@ module RasterIXRenderCore #(
         .s_frag_tdestinationDepth(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH +: DEPTH_WIDTH]),
         .s_frag_tdestinationStencil(fragment_stream_out_tdata[FRAGMENT_STREAM_WIDTH + PIXEL_WIDTH + DEPTH_WIDTH +: STENCIL_WIDTH]),
 
-        .fragmentProcessed(fragmentProcessed),
-
         .m_frag_tready(framebuffer_pfp_wready),
         .m_frag_taddr(framebuffer_pfp_waddr),
         .m_frag_tvalid(framebuffer_pfp_wvalid),
@@ -1835,7 +1842,7 @@ module RasterIXRenderCore #(
     wire [(INDEX_WIDTH * 3) - 1 : 0]        framebuffer_bc_waddr;
     wire [ 2 : 0]                           framebuffer_bc_wvalid;
     wire [ 2 : 0]                           framebuffer_bc_wlast;
-    wire [ 2 : 0]                           framebuffer_bc_wfull; // it's a !wready signal
+    wire [ 2 : 0]                           framebuffer_bc_wready;
     wire [(PIXEL_WIDTH * 3) - 1 : 0]        framebuffer_bc_color_wdata;
     wire [(NUMBER_OF_SUB_PIXELS * 3) - 1 : 0] framebuffer_bc_color_wstrb;
 
@@ -1891,9 +1898,9 @@ module RasterIXRenderCore #(
         }),
         .m_axis_tvalid(framebuffer_bc_wvalid),
         .m_axis_tready({
-            !framebuffer_bc_wfull[2],
-            !framebuffer_bc_wfull[1],
-            !framebuffer_bc_wfull[0]
+            framebuffer_bc_wready[2],
+            framebuffer_bc_wready[1],
+            framebuffer_bc_wready[0]
         }),
         .m_axis_tlast(framebuffer_bc_wlast),
         .m_axis_tkeep(),
@@ -1910,6 +1917,35 @@ module RasterIXRenderCore #(
     defparam fragmentBroadcast.DEST_ENABLE = 0;
     defparam fragmentBroadcast.USER_ENABLE = 0;
 
+    wire framebufferPixelSignal = (rasterizer_tpixel & rasterizer_tvalid & rasterizer_tready)
+            | (framebuffer_clear_wvalid & framebuffer_clear_wready);
+
+    ValueTrack colorFramebufferBroadcastTrack (
+        .aclk(aclk),
+        .resetn(resetn),
+        .sigIncomingValue(framebufferPixelSignal),
+        .sigOutgoingValue(framebuffer_bc_wvalid[2] & framebuffer_bc_wready[2]),
+        .valueInPipeline(framebufferBroadcastPipelineActive[2])
+    );
+
+    ValueTrack depthFramebufferBroadcastTrack (
+        .aclk(aclk),
+        .resetn(resetn),
+        .sigIncomingValue(framebufferPixelSignal),
+        .sigOutgoingValue(framebuffer_bc_wvalid[1] & framebuffer_bc_wready[1]),
+        .valueInPipeline(framebufferBroadcastPipelineActive[1])
+    );
+
+    ValueTrack stencilFramebufferBroadcastTrack (
+        .aclk(aclk),
+        .resetn(resetn),
+        .sigIncomingValue(framebufferPixelSignal),
+        .sigOutgoingValue(framebuffer_bc_wvalid[0] & framebuffer_bc_wready[0]),
+        .valueInPipeline(framebufferBroadcastPipelineActive[0])
+    );
+
+    assign pixelInPipeline = |framebufferBroadcastPipelineActive;
+
     ////////////////////////////////////////////////////////////////////////////
     // STEP 8
     // Writing into the memory
@@ -1920,19 +1956,19 @@ module RasterIXRenderCore #(
     assign m_color_wlast = framebuffer_bc_wlast[2];
     assign m_color_wdata = framebuffer_bc_color_wdata[2 * PIXEL_WIDTH +: PIXEL_WIDTH];
     assign m_color_wstrb = framebuffer_bc_color_wstrb[(2 * NUMBER_OF_SUB_PIXELS) +: NUMBER_OF_SUB_PIXELS];
-    assign framebuffer_bc_wfull[2] = !m_color_wready;
+    assign framebuffer_bc_wready[2] = m_color_wready;
 
     assign m_depth_wvalid = framebuffer_bc_wvalid[1] & (framebuffer_bc_depth_wstrb[1] | framebuffer_bc_wlast[1]);
     assign m_depth_waddr = framebuffer_bc_waddr[1 * INDEX_WIDTH +: INDEX_WIDTH];
     assign m_depth_wlast = framebuffer_bc_wlast[1];
     assign m_depth_wdata = framebuffer_bc_depth_wdata[1 * DEPTH_WIDTH +: DEPTH_WIDTH];
     assign m_depth_wstrb = framebuffer_bc_depth_wstrb[1];
-    assign framebuffer_bc_wfull[1] = !m_depth_wready;
+    assign framebuffer_bc_wready[1] = m_depth_wready;
 
     assign m_stencil_wvalid = framebuffer_bc_wvalid[0] & ((|framebuffer_bc_stencil_wstrb[(0 * STENCIL_WIDTH) +: STENCIL_WIDTH]) | framebuffer_bc_wlast[0]);
     assign m_stencil_waddr = framebuffer_bc_waddr[0 * INDEX_WIDTH +: INDEX_WIDTH];
     assign m_stencil_wlast = framebuffer_bc_wlast[0];
     assign m_stencil_wdata = framebuffer_bc_stencil_wdata[0 * STENCIL_WIDTH +: STENCIL_WIDTH];
     assign m_stencil_wstrb = framebuffer_bc_stencil_wstrb[(0 * STENCIL_WIDTH) +: STENCIL_WIDTH];
-    assign framebuffer_bc_wfull[0] = !m_stencil_wready;
+    assign framebuffer_bc_wready[0] = m_stencil_wready;
 endmodule

@@ -46,7 +46,7 @@ function(add_verilator_test TEST_NAME TOP_MODULE VERILOG_FILE)
             ${VERILOG_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
         COMMAND make -C ${OBJ_DIR} -f V${TOP_MODULE}.mk
-        DEPENDS ${VERILOG_FILE} ${EXTRA_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
+        DEPENDS ${VERILOG_FILE} ${EXTRA_SOURCES} ${EXTRA_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/sim_${TOP_MODULE}.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/cpp/general.hpp
         COMMENT "Verilating and building ${TOP_MODULE}..."
         VERBATIM
@@ -68,6 +68,7 @@ add_verilator_test(textureSampler TextureSampler ${RTL_RASTERIX}/TextureSampler.
 add_verilator_test(textureBuffer TextureBuffer ${RTL_RASTERIX}/TextureBuffer.v)
 add_verilator_test(textureMMU TextureMMU ${RTL_RASTERIX}/TextureMMU.v)
 add_verilator_test(textureReader TextureReader ${RTL_RASTERIX}/TextureReader.v
+    ${RTL_FLOAT}/ValueTrack.v
     ${RTL_3RDPARTY}/verilog-axis)
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/obj_dir_textureReader/VTextureReader
@@ -90,10 +91,10 @@ add_verilator_test(stencilOp StencilOp ${RTL_RASTERIX}/StencilOp.v)
 add_verilator_test(memoryReadRequestGenerator MemoryReadRequestGenerator ${RTL_RASTERIX}/MemoryReadRequestGenerator.v)
 add_verilator_test(framebufferSerializer FramebufferSerializer ${RTL_RASTERIX}/FramebufferSerializer.v)
 add_verilator_test(streamConcatFifo StreamConcatFifo ${RTL_RASTERIX}/StreamConcatFifo.v)
-add_verilator_test(framebufferPacker FramebufferPacker ${RTL_RASTERIX}/FramebufferPacker.v)
+add_verilator_test(framebufferPacker FramebufferPacker ${RTL_RASTERIX}/FramebufferPacker.v
+    ${RTL_FLOAT}/ValueTrack.v)
 add_verilator_test(scissor Scissor ${RTL_RASTERIX}/Scissor.v)
 add_verilator_test(framebufferMMU FramebufferMMU ${RTL_RASTERIX}/FramebufferMMU.v)
-add_verilator_test(framebufferWriterStrobeGen FramebufferWriterStrobeGen ${RTL_RASTERIX}/FramebufferWriterStrobeGen.v)
 add_verilator_test(framebufferClear FramebufferClear ${RTL_RASTERIX}/FramebufferClear.v)
 add_verilator_test(streamMux2 StreamMux2 ${RTL_RASTERIX}/StreamMux2.v)
 add_verilator_test(framebufferReader FramebufferReader ${RTL_RASTERIX}/FramebufferReader.v 
@@ -103,12 +104,14 @@ add_verilator_test(attributeInterpolationX AttributeInterpolationX ${RTL_RASTERI
 add_verilator_test(attributePerspectiveCorrectionX AttributePerspectiveCorrectionX ${RTL_RASTERIX}/AttributePerspectiveCorrectionX.v)
 add_verilator_test(triangleStreamF2XConverter TriangleStreamF2XConverter ${RTL_RASTERIX}/TriangleStreamF2XConverter.v)
 add_verilator_test(shiftRegisterBank ShiftRegisterBank ${RTL_RASTERIX}/ShiftRegisterBank.v)
-add_verilator_test(pagedMemoryReader PagedMemoryReader ${RTL_RASTERIX}/PagedMemoryReader.v)
+add_verilator_test(pagedMemoryReader PagedMemoryReader ${RTL_RASTERIX}/PagedMemoryReader.v
+    ${RTL_FLOAT}/ValueTrack.v)
 add_verilator_test(internalFramebufferCommandHandler InternalFramebufferCommandHandler ${RTL_RASTERIX}/InternalFramebufferCommandHandler.v)
 add_verilator_test(axisToAxiAdapter AxisToAxiAdapter ${RTL_RASTERIX}/AxisToAxiAdapter.v)
 add_verilator_test(axisToAxiCrossbar AxisToAxiCrossbar ${RTL_RASTERIX}/AxisToAxiCrossbar.v)
 add_verilator_test(logicOp LogicOp ${RTL_RASTERIX}/LogicOp.v)
-add_verilator_test(coalesceFiFo CoalesceFiFo ${RTL_RASTERIX}/CoalesceFiFo.v)
+add_verilator_test(coalesceFiFo CoalesceFiFo ${RTL_RASTERIX}/CoalesceFiFo.v
+    ${RTL_FLOAT}/ValueTrack.v)
 add_verilator_test(coalesceAddrGen CoalesceAddrGen ${RTL_RASTERIX}/CoalesceAddrGen.v)
 add_verilator_test(streamSemaphore StreamSemaphore ${RTL_RASTERIX}/StreamSemaphore.v)
 add_verilator_test(axiToAvalonBridge AxiToAvalonBridge ${RTL_UTIL}/AxiToAvalonBridge.v)

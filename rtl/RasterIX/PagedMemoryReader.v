@@ -60,7 +60,9 @@ module PagedMemoryReader #(
     input  wire [ 1 : 0]                m_mem_axi_rresp,
     input  wire                         m_mem_axi_rlast,
     input  wire                         m_mem_axi_rvalid,
-    output reg                          m_mem_axi_rready
+    output reg                          m_mem_axi_rready,
+
+    output wire                         memoryTransactionsPending
 );
     localparam BYTES_PER_BEAT = DATA_WIDTH / 8;
     localparam LG_BEAT_SIZE = $clog2(BYTES_PER_BEAT);
@@ -92,6 +94,14 @@ module PagedMemoryReader #(
     localparam REQUEST_MEMORY = 1;
     localparam WAIT_FOR_MEMORY = 2;
     localparam LAST_TRANSFER = 3;
+
+    ValueTrack outstandingReadsTrack (
+        .aclk(aclk),
+        .resetn(resetn),
+        .sigIncomingValue(m_mem_axi_arvalid & m_mem_axi_arready),
+        .sigOutgoingValue(m_mem_axi_rvalid & m_mem_axi_rready & m_mem_axi_rlast),
+        .valueInPipeline(memoryTransactionsPending)
+    );
 
     reg  [15 : 0]               index;
     reg  [ADDR_WIDTH - 1 : 0]   addr;

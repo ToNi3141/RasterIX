@@ -269,6 +269,9 @@ module RasterIXCoreEF #(
     input  wire                             m_tmu1_axi_rvalid,
     output wire                             m_tmu1_axi_rready,
 
+    // High when all commands are executed and no memory transaction is outstanding
+    output wire                             idle,
+
     // Performance signals
     output wire                             perfBusy,
     output wire                             perfTriangleRendering,
@@ -311,6 +314,7 @@ module RasterIXCoreEF #(
     wire                                             colorBufferCmdCommit;
     wire                                             colorBufferCmdRead;
     wire                                             colorBufferCmdSwap;
+    wire                                             colorBufferWriteActive;
     wire                                             m_color_arvalid;
     wire                                             m_color_arlast;
     wire                                             m_color_arready;
@@ -331,6 +335,7 @@ module RasterIXCoreEF #(
     wire                                             depthBufferApply;
     wire                                             depthBufferCmdCommit;
     wire                                             depthBufferCmdRead;
+    wire                                             depthBufferWriteActive;
     wire                                             m_depth_arvalid;
     wire                                             m_depth_arlast;
     wire                                             m_depth_arready;
@@ -351,6 +356,7 @@ module RasterIXCoreEF #(
     wire                                             stencilBufferApply;
     wire                                             stencilBufferCmdCommit;
     wire                                             stencilBufferCmdRead;
+    wire                                             stencilBufferWriteActive;
     wire                                             m_stencil_arvalid;
     wire                                             m_stencil_arlast;
     wire                                             m_stencil_arready;
@@ -384,6 +390,7 @@ module RasterIXCoreEF #(
             ) depthBuffer (
                 .aclk(aclk),
                 .resetn(resetn),
+                .active(depthBufferWriteActive),
 
                 .confAddr(depthBufferAddr),
                 .s_fetch_arvalid(m_depth_arvalid),
@@ -450,6 +457,7 @@ module RasterIXCoreEF #(
             assign m_depth_rvalid = 1;
             assign m_depth_rdata = 16'hffff;
             assign m_depth_wready = 1;
+            assign depthBufferWriteActive = 0;
             
             // Tie off depth outputs when depth buffer is disabled
             assign m_depth_axi_awid = 0;
@@ -489,6 +497,7 @@ module RasterIXCoreEF #(
     ) colorBuffer (
         .aclk(aclk),
         .resetn(resetn),
+        .active(colorBufferWriteActive),
 
         .confAddr(colorBufferAddr),
         .s_fetch_arvalid(m_color_arvalid),
@@ -562,6 +571,7 @@ module RasterIXCoreEF #(
             ) stencilBuffer (
                 .aclk(aclk),
                 .resetn(resetn),
+                .active(stencilBufferWriteActive),
 
                 .confAddr(stencilBufferAddr),
                 .s_fetch_arvalid(m_stencil_arvalid),
@@ -628,6 +638,7 @@ module RasterIXCoreEF #(
             assign m_stencil_rvalid = 1;
             assign m_stencil_rdata = 0;
             assign m_stencil_wready = 1;
+            assign stencilBufferWriteActive = 0;
             
             // Tie off stencil outputs when stencil buffer is disabled
             assign m_stencil_axi_awid = 0;
@@ -693,6 +704,7 @@ module RasterIXCoreEF #(
         .colorBufferCmdRead(colorBufferCmdRead),
         .colorBufferCmdSwap(colorBufferCmdSwap),
         .colorBufferCmdSwapEnableVsync(colorBufferCmdSwapEnableVsync),
+        .colorBufferWritesPending(colorBufferWriteActive),
         .m_color_arready(m_color_arready),
         .m_color_arlast(m_color_arlast),
         .m_color_arvalid(m_color_arvalid),
@@ -713,6 +725,7 @@ module RasterIXCoreEF #(
         .depthBufferApplied(!((depthBufferCmdCommit || depthBufferCmdRead) && depthBufferApply)),
         .depthBufferCmdCommit(depthBufferCmdCommit),
         .depthBufferCmdRead(depthBufferCmdRead),
+        .depthBufferWritesPending(depthBufferWriteActive),
         .m_depth_arready(m_depth_arready),
         .m_depth_arlast(m_depth_arlast),
         .m_depth_arvalid(m_depth_arvalid),
@@ -733,6 +746,7 @@ module RasterIXCoreEF #(
         .stencilBufferApplied(!((stencilBufferCmdCommit || stencilBufferCmdRead) && stencilBufferApply)),
         .stencilBufferCmdCommit(stencilBufferCmdCommit),
         .stencilBufferCmdRead(stencilBufferCmdRead),
+        .stencilBufferWritesPending(stencilBufferWriteActive),
         .m_stencil_arready(m_stencil_arready),
         .m_stencil_arlast(m_stencil_arlast),
         .m_stencil_arvalid(m_stencil_arvalid),
@@ -780,6 +794,8 @@ module RasterIXCoreEF #(
         .m_tmu1_axi_rlast(m_tmu1_axi_rlast),
         .m_tmu1_axi_rvalid(m_tmu1_axi_rvalid),
         .m_tmu1_axi_rready(m_tmu1_axi_rready),
+
+        .idle(idle),
 
         .perfBusy(perfBusy),
         .perfTriangleRendering(perfTriangleRendering),

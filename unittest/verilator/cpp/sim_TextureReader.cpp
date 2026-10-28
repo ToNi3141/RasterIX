@@ -45,11 +45,13 @@ TEST_CASE("reads a texel through TextureReader", "[TextureReader]")
     textureMemory->m_axi_arready = 0;
     textureMemory->m_axi_rvalid = 0;
     rr::ut::reset(textureMemory);
+    CHECK(textureMemory->memoryTransactionsPending == 0);
 
     textureMemory->s_axis_tvalid = 1;
     textureMemory->s_axis_tlast = 1;
     textureMemory->s_axis_tdata = PAGE_BASE;
     rr::ut::clk(textureMemory);
+    CHECK(textureMemory->memoryTransactionsPending == 0);
     textureMemory->s_axis_tvalid = 0;
     textureMemory->s_axis_tlast = 0;
 
@@ -62,21 +64,25 @@ TEST_CASE("reads a texel through TextureReader", "[TextureReader]")
     while (!textureMemory->s_tr_ready && cycles++ < MAX_WAIT_CYCLES)
     {
         rr::ut::clk(textureMemory);
+        CHECK(textureMemory->memoryTransactionsPending == 0);
     }
     REQUIRE(textureMemory->s_tr_ready);
     rr::ut::clk(textureMemory);
+    CHECK(textureMemory->memoryTransactionsPending == 0);
     textureMemory->s_tr_valid = 0;
 
     cycles = 0;
     while (!textureMemory->m_axi_arvalid && cycles++ < MAX_WAIT_CYCLES)
     {
         rr::ut::clk(textureMemory);
+        CHECK(textureMemory->memoryTransactionsPending == 0);
     }
     REQUIRE(textureMemory->m_axi_arvalid);
     CHECK(textureMemory->m_axi_araddr == PAGE_BASE + (TEXEL_ADDRESSES[0] << 1));
 
     textureMemory->m_axi_arready = 1;
     rr::ut::clk(textureMemory);
+    CHECK(textureMemory->memoryTransactionsPending == 1);
     textureMemory->m_axi_arready = 0;
 
     for (std::size_t beat = 0; beat < CACHE_LINE_SIZE / sizeof(std::uint32_t); ++beat)
@@ -98,17 +104,23 @@ TEST_CASE("reads a texel through TextureReader", "[TextureReader]")
         while (!textureMemory->m_axi_rready && cycles++ < MAX_WAIT_CYCLES)
         {
             rr::ut::clk(textureMemory);
+            CHECK(textureMemory->memoryTransactionsPending == 1);
         }
         REQUIRE(textureMemory->m_axi_rready);
         rr::ut::clk(textureMemory);
+        CHECK(textureMemory->memoryTransactionsPending == 1);
     }
     textureMemory->m_axi_rvalid = 0;
     textureMemory->m_axi_rlast = 0;
+    CHECK(textureMemory->memoryTransactionsPending == 1);
+    rr::ut::clk(textureMemory);
+    CHECK(textureMemory->memoryTransactionsPending == 0);
 
     cycles = 0;
     while (!textureMemory->m_tr_valid && cycles++ < MAX_WAIT_CYCLES)
     {
         rr::ut::clk(textureMemory);
+        CHECK(textureMemory->memoryTransactionsPending == 0);
     }
     REQUIRE(textureMemory->m_tr_valid);
     CHECK(textureMemory->m_tr_texel_00 == TEXELS[0]);

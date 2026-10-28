@@ -47,6 +47,11 @@ module CommandParser #(
     input  wire             rasterizerRunning,
     input  wire             pixelInPipeline,
     input  wire             dataInTriangleInterpolator,
+    input  wire             framebufferWritesPending,
+    input  wire             textureMemoryTransactionsPending,
+
+    // High when all commands are executed and no memory transaction is outstanding
+    output wire             idle,
 
     // Color/Depth buffer control
     output reg                                  colorBufferApply,
@@ -86,6 +91,7 @@ module CommandParser #(
     localparam WAIT_FOR_IDLE = 5'd0;
     localparam COMMAND_IN = 5'd1;
     localparam EXEC_STREAM = 5'd2;
+    localparam EXEC_FRAMEBUFFER = 5'd3;
 
     localparam MUX_NONE = 5'd0;
     localparam MUX_TRIANGLE_STREAM = 5'd1;
@@ -112,6 +118,7 @@ module CommandParser #(
 
     // Command Unit Variables
     reg             framebufferCommandApply;
+    reg  [CMD_STREAM_WIDTH - 1 : 0] framebufferCommandData;
     wire            framebufferCommandApplied;
     reg             rasterizerIsStarted;
     reg  [ 1 : 0]   fbControlState;
@@ -134,6 +141,11 @@ module CommandParser #(
     assign m_cmd_config_axis_tvalid      = (mux == MUX_RENDER_CONFIG) ? tvalid : 0;
 
     assign perfBusy = state != COMMAND_IN;
+    assign idle = (state == COMMAND_IN)
+        && !s_cmd_axis_tvalid
+        && !pixelInPipeline
+        && !framebufferWritesPending
+        && !textureMemoryTransactionsPending;
     assign perfTriangleRendering = rasterizerRunning && pixelInPipeline && dataInTriangleInterpolator;
 
     assign framebufferCommandApplied = colorBufferApplied & depthBufferApplied & stencilBufferApplied;
@@ -260,47 +272,9 @@ module CommandParser #(
                     end
                     OP_FRAMEBUFFER:
                     begin
+                        framebufferCommandData <= s_cmd_axis_tdata;
                         s_cmd_axis_tready <= 0;
-                        colorBufferApply <= 0;
-                        depthBufferApply <= 0;
-                        stencilBufferApply <= 0;
-                        framebufferCommandApply <= 0;
-
-                        if (s_cmd_axis_tdata[OP_FRAMEBUFFER_MEMSET_POS])
-                        begin
-                            // MEMSET cannot be combined with another framebuffer operation.
-                            // The command stream has no error response, so consume it as a no-op.
-                            if (!(s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS]
-                                || s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS]
-                                || s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS]))
-                            begin
-                                framebufferClearColorSelect <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
-                                framebufferClearDepthSelect <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
-                                framebufferClearStencilSelect <= s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
-                                framebufferClearApply <= 1;
-                            end
-                        end
-                        else
-                        begin
-                            colorBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
-                            colorBufferCmdSwap <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS];
-                            colorBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
-                            colorBufferCmdSwapEnableVsync <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC_POS];
-                            colorBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
-                            depthBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
-                            depthBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
-                            depthBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
-                            stencilBufferCmdCommit <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COMMIT_POS];
-                            stencilBufferCmdRead <= s_cmd_axis_tdata[OP_FRAMEBUFFER_READ_POS];
-                            stencilBufferSize <= s_cmd_axis_tdata[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
-                            colorBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
-                            depthBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
-                            stencilBufferApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
-                            framebufferCommandApply <= s_cmd_axis_tdata[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS]
-                                | (s_cmd_axis_tdata[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS])
-                                | (s_cmd_axis_tdata[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS] && !s_cmd_axis_tdata[OP_FRAMEBUFFER_SWAP_POS]);
-                        end
-                        state <= WAIT_FOR_IDLE;
+                        state <= EXEC_FRAMEBUFFER;
                     end
                     OP_NOP_STREAM:
                     begin
@@ -308,6 +282,60 @@ module CommandParser #(
                         state <= WAIT_FOR_IDLE;
                     end
                     endcase
+                end
+            end
+            EXEC_FRAMEBUFFER:
+            begin : ExecuteFramebuffer
+                // Wait for framebuffer writes to drain before executing framebuffer commands.
+                if (framebufferWritesPending)
+                begin
+                    s_cmd_axis_tready <= 0;
+                end
+                else
+                begin
+                    s_cmd_axis_tready <= 0;
+                    colorBufferApply <= 0;
+                    depthBufferApply <= 0;
+                    stencilBufferApply <= 0;
+                    framebufferCommandApply <= 0;
+
+                    if (framebufferCommandData[OP_FRAMEBUFFER_MEMSET_POS])
+                    begin
+                        // MEMSET cannot be combined with another framebuffer operation.
+                        // The command stream has no error response, so consume it as a no-op.
+                        if (!(framebufferCommandData[OP_FRAMEBUFFER_COMMIT_POS]
+                            || framebufferCommandData[OP_FRAMEBUFFER_SWAP_POS]
+                            || framebufferCommandData[OP_FRAMEBUFFER_READ_POS]))
+                        begin
+                            framebufferClearColorSelect <= framebufferCommandData[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
+                            framebufferClearDepthSelect <= framebufferCommandData[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
+                            framebufferClearStencilSelect <= framebufferCommandData[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
+                            framebufferClearApply <= 1;
+                        end
+                    end
+                    else
+                    begin
+                        colorBufferCmdCommit <= framebufferCommandData[OP_FRAMEBUFFER_COMMIT_POS];
+                        colorBufferCmdSwap <= framebufferCommandData[OP_FRAMEBUFFER_SWAP_POS];
+                        colorBufferCmdRead <= framebufferCommandData[OP_FRAMEBUFFER_READ_POS];
+                        colorBufferCmdSwapEnableVsync <= framebufferCommandData[OP_FRAMEBUFFER_SWAP_ENABLE_VSYNC_POS];
+                        colorBufferSize <= framebufferCommandData[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
+                        depthBufferCmdCommit <= framebufferCommandData[OP_FRAMEBUFFER_COMMIT_POS];
+                        depthBufferCmdRead <= framebufferCommandData[OP_FRAMEBUFFER_READ_POS];
+                        depthBufferSize <= framebufferCommandData[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
+                        stencilBufferCmdCommit <= framebufferCommandData[OP_FRAMEBUFFER_COMMIT_POS];
+                        stencilBufferCmdRead <= framebufferCommandData[OP_FRAMEBUFFER_READ_POS];
+                        stencilBufferSize <= framebufferCommandData[OP_FRAMEBUFFER_SIZE_POS +: OP_FRAMEBUFFER_SIZE_SIZE];
+                        colorBufferApply <= framebufferCommandData[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS];
+                        depthBufferApply <= framebufferCommandData[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS];
+                        stencilBufferApply <= framebufferCommandData[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS];
+                        framebufferCommandApply <= framebufferCommandData[OP_FRAMEBUFFER_COLOR_BUFFER_SELECT_POS]
+                            | (framebufferCommandData[OP_FRAMEBUFFER_DEPTH_BUFFER_SELECT_POS]
+                                && !framebufferCommandData[OP_FRAMEBUFFER_SWAP_POS])
+                            | (framebufferCommandData[OP_FRAMEBUFFER_STENCIL_BUFFER_SELECT_POS]
+                                && !framebufferCommandData[OP_FRAMEBUFFER_SWAP_POS]);
+                    end
+                    state <= WAIT_FOR_IDLE;
                 end
             end
             EXEC_STREAM:

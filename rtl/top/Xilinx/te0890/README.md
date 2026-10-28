@@ -13,7 +13,7 @@ Vivado build has no variant selector. Its RasterIX configuration is:
 |---------|---------------|
 | Variant | EF (external framebuffer) |
 | Texture mapping units | 1 TMU |
-| Maximum texture size | 128 × 128 pixels |
+| Maximum texture size | 256 x 256 pixels |
 | Mipmapping / texture filtering | Enabled / enabled |
 | Texture storage | External memory with an 8 KiB texture cache |
 | Attribute interpolation | Fixed-point; 18-bit multiplier precision |

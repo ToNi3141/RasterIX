@@ -35,6 +35,7 @@ module AxisToAxiCrossbar #(
 ) (
     input  wire                                 aclk,
     input  wire                                 resetn,
+    output wire                                 active,
 
     // Address port
     input  wire [NPRT - 1 : 0]                  s_avalid,
@@ -131,6 +132,8 @@ module AxisToAxiCrossbar #(
     wire                        aready;
     reg  [ADDR_WIDTH - 1 : 0]   aaddr;
     reg  [ADDR_WIDTH - 1 : 0]   abeats;
+    wire                        adapterActive;
+    wire                        outstandingWriteActive;;
 
     wire                        s_wlastSignal;
     wire                        m_rlastSignal;
@@ -145,6 +148,7 @@ module AxisToAxiCrossbar #(
     ) axisToAxiAdapter (
         .aclk(aclk),
         .resetn(resetn),
+        .active(adapterActive),
 
         .s_avalid(avalid),
         .s_aaddr(aaddr),
@@ -226,6 +230,17 @@ module AxisToAxiCrossbar #(
     endgenerate
 
     assign m_mem_axi_bready = 1;
+    assign active = |(s_avalid & s_arnw)
+        | (writeToMemory & (transferActive | avalid | adapterActive))
+        | outstandingWriteActive;
+
+    ValueTrack outstandingWriteTrack (
+        .aclk(aclk),
+        .resetn(resetn),
+        .sigIncomingValue(m_mem_axi_awvalid && m_mem_axi_awready),
+        .sigOutgoingValue(m_mem_axi_bvalid && m_mem_axi_bready),
+        .valueInPipeline(outstandingWriteActive)
+    );
 
     assign s_wlastSignal = (s_wlast[portSelect] && s_wvalid[portSelect] && s_wready[portSelect]);
     assign m_rlastSignal = (m_rlast[portSelect] && m_rvalid[portSelect] && m_rready[portSelect]);
@@ -236,6 +251,7 @@ module AxisToAxiCrossbar #(
         if (!resetn)
         begin : Reset
             portSelect <= 0;
+            writeToMemory <= 0;
             transferActive <= 0;
             s_aready <= { NPRT { 1'b0 } };
             avalid <= 0;

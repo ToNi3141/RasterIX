@@ -85,6 +85,55 @@ TEST_CASE("Write one pixel into framebuffer", "[FramebufferPacker]")
     delete t;
 }
 
+TEST_CASE("Active covers a partial line and a stalled memory write", "[FramebufferPacker]")
+{
+    VFramebufferPacker* t = rr::ut::makeTop<VFramebufferPacker>();
+
+    t->s_frag_tvalid = 0;
+    t->s_frag_tlast = 0;
+    t->m_mem_axi_bvalid = 0;
+    t->m_mem_axi_awready = 0;
+    t->m_mem_axi_wready = 0;
+
+    rr::ut::reset(t);
+    REQUIRE(t->active == 0);
+
+    t->s_frag_tvalid = 1;
+    t->s_frag_tlast = 1;
+    t->s_frag_tdata = 0x1234;
+    t->s_frag_tstrb = 0x3;
+    t->s_frag_taddr = 0;
+    rr::ut::clk(t);
+    REQUIRE(t->active == 1);
+
+    t->s_frag_tvalid = 0;
+    for (std::size_t i = 0; i < 5 && !t->m_mem_axi_awvalid; i++)
+    {
+        rr::ut::clk(t);
+        REQUIRE(t->active == 1);
+    }
+    REQUIRE(t->m_mem_axi_awvalid == 1);
+    REQUIRE(t->m_mem_axi_wvalid == 1);
+    REQUIRE(t->active == 1);
+
+    t->m_mem_axi_awready = 1;
+    t->m_mem_axi_wready = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->m_mem_axi_awvalid == 0);
+    REQUIRE(t->m_mem_axi_wvalid == 0);
+    REQUIRE(t->active == 1);
+
+    t->m_mem_axi_bvalid = 1;
+    rr::ut::clk(t);
+    REQUIRE(t->active == 1);
+
+    t->m_mem_axi_bvalid = 0;
+    rr::ut::clk(t);
+    REQUIRE(t->active == 0);
+
+    delete t;
+}
+
 TEST_CASE("Write stream of pixels into framebuffer", "[FramebufferPacker]")
 {
     VFramebufferPacker* t = rr::ut::makeTop<VFramebufferPacker>();
