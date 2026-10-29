@@ -66,6 +66,10 @@ private:
         {
             return cmdHandler(deserializeCommand<NopCmd>(srcList));
         }
+        else if (FenceCmd::isThis(op))
+        {
+            return cmdHandler(deserializeCommand<FenceCmd>(srcList));
+        }
         else if (TextureStreamCmd::isThis(op))
         {
             return cmdHandler(deserializeCommand<TextureStreamCmd>(srcList));
