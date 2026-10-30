@@ -76,6 +76,7 @@ private:
     bool handleCommand(const SetLightingCtxCmd&);
     bool handleCommand(const DrawNewElementCmd&);
     bool handleCommand(const NopCmd& cmd);
+    bool handleCommand(const FenceCmd& cmd);
     bool handleCommand(const TextureStreamCmd& cmd);
     bool handleCommand(const WriteRegisterCmd& cmd);
 

@@ -50,6 +50,11 @@ void Renderer::deinit()
     switchDisplayLists();
 }
 
+bool Renderer::addFence()
+{
+    return addCommand(FenceCmd {});
+}
+
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
     TriangleStreamCmd triangleCmd { m_rasterizer, triangle };
@@ -151,6 +156,7 @@ void Renderer::endFrame(const bool swapScreen)
 {
     // Finish frame
     addCommitFramebufferCommand();
+    addFence();
     if (swapScreen)
     {
         swapScreenToNewColorBuffer();

@@ -41,6 +41,7 @@
 #include "RenderConfigs.hpp"
 #include "commands/CommandVariant.hpp"
 #include "commands/DrawNewElementCmd.hpp"
+#include "commands/FenceCmd.hpp"
 #include "commands/FogLutStreamCmd.hpp"
 #include "commands/FramebufferCmd.hpp"
 #include "commands/NopCmd.hpp"
@@ -382,6 +383,7 @@ private:
     bool setStencilBufferAddress(const uint32_t addr) { return writeReg(StencilBufferAddrReg { addr }); }
     bool writeToTextureConfig(const std::size_t tmu, TmuTextureReg tmuConfig);
     bool setColorBufferAddress(const uint32_t addr);
+    bool addFence();
     void uploadTextures();
     void swapFramebuffer();
     void intermediateUpload();

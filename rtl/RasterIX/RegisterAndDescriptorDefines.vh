@@ -128,6 +128,15 @@ localparam TEXTURE_STREAM_SIZE_SIZE = 19;
 localparam TEXTURE_STREAM_TMU_NR_POS = TEXTURE_STREAM_SIZE_POS + TEXTURE_STREAM_SIZE_SIZE;
 localparam TEXTURE_STREAM_TMU_NR_SIZE = 2;
 
+//---------------------------------------------------------------------------------------------------------
+// Fence
+//  +-----------------------+
+//  | 4'h6 | 28'hx reserved |
+//  +-----------------------+
+// Blocks the command stream until all outstanding AXI transactions (framebuffer and texture memory) are finished.
+// Steam size 0 32bit value.
+localparam OP_FENCE = 6;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Operation Arguments
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -135,6 +144,10 @@ localparam TEXTURE_STREAM_TMU_NR_SIZE = 2;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OP_NOP_STREAM
 // Has no arguments. 
+
+//---------------------------------------------------------------------------------------------------------
+// OP_FENCE
+// Has no arguments.
 
 //---------------------------------------------------------------------------------------------------------
 // OP_TEXTURE_STREAM

@@ -2,6 +2,7 @@
 #define COMMAND_VARIANT_HPP_
 
 #include "renderer/commands/DrawNewElementCmd.hpp"
+#include "renderer/commands/FenceCmd.hpp"
 #include "renderer/commands/FogLutStreamCmd.hpp"
 #include "renderer/commands/FramebufferCmd.hpp"
 #include "renderer/commands/NopCmd.hpp"
@@ -23,6 +24,7 @@ using CommandVariant = std::variant<
     FramebufferCmd,
     FogLutStreamCmd,
     NopCmd,
+    FenceCmd,
     PushVertexCmd,
     TextureStreamCmd,
     TriangleStreamCmd,

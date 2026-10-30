@@ -188,6 +188,11 @@ bool SoftwareRasterizationInstance::handleCommand(const NopCmd&)
     return true;
 }
 
+bool SoftwareRasterizationInstance::handleCommand(const FenceCmd&)
+{
+    return true;
+}
+
 bool SoftwareRasterizationInstance::handleCommand(const TextureStreamCmd& cmd)
 {
     m_textureMapper[cmd.getTmu()].setPages(cmd.payload());

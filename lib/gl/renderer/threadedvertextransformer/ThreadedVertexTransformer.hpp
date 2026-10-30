@@ -455,6 +455,11 @@ private:
         return addCommand(cmd);
     }
 
+    bool handleCommand(const FenceCmd& cmd)
+    {
+        return addCommand(cmd);
+    }
+
     bool handleCommand(const TextureStreamCmd& cmd)
     {
         return addCommand(cmd);
