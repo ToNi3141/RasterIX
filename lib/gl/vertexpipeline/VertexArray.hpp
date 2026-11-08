@@ -38,7 +38,11 @@ public:
     void setPointSize(float pointSize) { m_objPtr.setPointSize(pointSize); }
     float getPointSize() const { return m_objPtr.getPointSize(); }
 
-    const RenderObj& renderObj() const { return m_objPtr; }
+    const RenderObj& renderObj()
+    {
+        m_objPtr.initGetters();
+        return m_objPtr;
+    }
 
     void reset() { m_objPtr.reset(); }
 

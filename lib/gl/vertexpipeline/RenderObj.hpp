@@ -36,8 +36,9 @@ public:
 
     void logCurrentConfig() const;
 
+    void initGetters();
     inline bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
-    Vec4 getVertex(const std::size_t index) const { return getFromArray<Vec4>(m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index); }
+    Vec4 getVertex(const std::size_t index) const { return m_getVertexFunc(m_vertexPointer, index, m_vertexSize, m_vertexStride, m_vertex); }
     inline const std::bitset<MAX_TMU_COUNT>& texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
     Vec4 getTexCoord(const std::size_t tmu, const std::size_t index) const;
     inline bool colorArrayEnabled() const { return m_colorArrayEnabled; }
@@ -98,10 +99,10 @@ public:
     void setPointSizeType(Type type) { m_pointSizeType = type; }
     void setPointSizeStride(std::size_t stride) { m_pointSizeStride = stride; }
     void setPointSizePointer(const void* ptr) { m_pointSizePointer = ptr; }
-    void setPointSize(float pointSize) { m_pointSize = pointSize; }
+    void setPointSize(float pointSize) { m_pointSize.fromArray(&pointSize, 1); }
     Type getPointSizeType() const { return m_pointSizeType; }
     std::size_t getPointSizeStride() const { return m_pointSizeStride; }
-    float getPointSize() const { return m_pointSize; }
+    float getPointSize() const { return m_pointSize[0]; }
 
     void setDrawMode(DrawMode mode) { m_drawMode = mode; }
 
@@ -112,69 +113,303 @@ public:
     void setArrayOffset(std::size_t offset) { m_arrayOffset = offset; }
 
 private:
-    template <typename T>
-    T getFromArray(const Type type, const void* arr, const std::size_t stride, std::size_t size, const std::size_t index) const
+    template <typename T, typename TTYPE>
+    static T getFromArrayNoStride(const void* arr, const std::size_t index, const std::size_t size, const std::size_t, const T& defaultValue)
     {
-        T vec = T::createHomogeneous();
+        T vec = defaultValue;
+        const TTYPE* a = reinterpret_cast<const TTYPE*>(arr);
+        const std::size_t indexWithStride = index * size;
+        vec.fromArray(a + indexWithStride, size);
+        return vec;
+    }
+
+    template <typename T, typename TTYPE>
+    static T getFromArrayWithStride(const void* arr, const std::size_t index, const std::size_t size, const std::size_t stride, const T& defaultValue)
+    {
+        T vec = defaultValue;
+        const uint8_t* a = reinterpret_cast<const uint8_t*>(arr);
+        const uint32_t indexWithStride = index * stride;
+        vec.fromArray(reinterpret_cast<const TTYPE*>(a + indexWithStride), size);
+        return vec;
+    }
+
+    static Vec4 getFromArrayDefault4(const void*, std::size_t, std::size_t, std::size_t, const Vec4& defaultValue)
+    {
+        return defaultValue;
+    }
+
+    static Vec4 getHomogeneous4(const void*, std::size_t, std::size_t, std::size_t, const Vec4&)
+    {
+        return Vec4::createHomogeneous();
+    }
+
+    static Vec4 getFromArrayNoStrideByte4(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec4& defaultValue)
+    {
+        return getFromArrayNoStride<Vec4, int8_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec4 getFromArrayNoStrideUnsignedByte4(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec4& defaultValue)
+    {
+        return getFromArrayNoStride<Vec4, uint8_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec4 getFromArrayNoStrideShort4(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec4& defaultValue)
+    {
+        return getFromArrayNoStride<Vec4, int16_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec4 getFromArrayNoStrideUnsignedShort4(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec4& defaultValue)
+    {
+        return getFromArrayNoStride<Vec4, uint16_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec4 getFromArrayNoStrideUnsignedInt4(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec4& defaultValue)
+    {
+        return getFromArrayNoStride<Vec4, uint32_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec4 getFromArrayNoStrideFloat4(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec4& defaultValue)
+    {
+        return getFromArrayNoStride<Vec4, float>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec4 getFromArrayWithStrideByte4(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue)
+    {
+        return getFromArrayWithStride<Vec4, int8_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec4 getFromArrayWithStrideUnsignedByte4(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue)
+    {
+        return getFromArrayWithStride<Vec4, uint8_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec4 getFromArrayWithStrideShort4(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue)
+    {
+        return getFromArrayWithStride<Vec4, int16_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec4 getFromArrayWithStrideUnsignedShort4(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue)
+    {
+        return getFromArrayWithStride<Vec4, uint16_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec4 getFromArrayWithStrideUnsignedInt4(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue)
+    {
+        return getFromArrayWithStride<Vec4, uint32_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec4 getFromArrayWithStrideFloat4(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue)
+    {
+        return getFromArrayWithStride<Vec4, float>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec3 getFromArrayDefault3(const void*, std::size_t, std::size_t, std::size_t, const Vec3& defaultValue)
+    {
+        return defaultValue;
+    }
+
+    static Vec3 getHomogeneous3(const void*, std::size_t, std::size_t, std::size_t, const Vec3&)
+    {
+        return Vec3::createHomogeneous();
+    }
+
+    static Vec3 getFromArrayNoStrideByte3(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec3& defaultValue)
+    {
+        return getFromArrayNoStride<Vec3, int8_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec3 getFromArrayNoStrideUnsignedByte3(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec3& defaultValue)
+    {
+        return getFromArrayNoStride<Vec3, uint8_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec3 getFromArrayNoStrideShort3(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec3& defaultValue)
+    {
+        return getFromArrayNoStride<Vec3, int16_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec3 getFromArrayNoStrideUnsignedShort3(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec3& defaultValue)
+    {
+        return getFromArrayNoStride<Vec3, uint16_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec3 getFromArrayNoStrideUnsignedInt3(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec3& defaultValue)
+    {
+        return getFromArrayNoStride<Vec3, uint32_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec3 getFromArrayNoStrideFloat3(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec3& defaultValue)
+    {
+        return getFromArrayNoStride<Vec3, float>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec3 getFromArrayWithStrideByte3(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec3& defaultValue)
+    {
+        return getFromArrayWithStride<Vec3, int8_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec3 getFromArrayWithStrideUnsignedByte3(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec3& defaultValue)
+    {
+        return getFromArrayWithStride<Vec3, uint8_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec3 getFromArrayWithStrideShort3(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec3& defaultValue)
+    {
+        return getFromArrayWithStride<Vec3, int16_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec3 getFromArrayWithStrideUnsignedShort3(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec3& defaultValue)
+    {
+        return getFromArrayWithStride<Vec3, uint16_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec3 getFromArrayWithStrideUnsignedInt3(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec3& defaultValue)
+    {
+        return getFromArrayWithStride<Vec3, uint32_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec3 getFromArrayWithStrideFloat3(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec3& defaultValue)
+    {
+        return getFromArrayWithStride<Vec3, float>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec1 getFromArrayDefault1(const void*, std::size_t, std::size_t, std::size_t, const Vec1& defaultValue)
+    {
+        return defaultValue;
+    }
+
+    static Vec1 getHomogeneous1(const void*, std::size_t, std::size_t, std::size_t, const Vec1&)
+    {
+        return Vec1::createHomogeneous();
+    }
+
+    static Vec1 getFromArrayNoStrideByte1(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec1& defaultValue)
+    {
+        return getFromArrayNoStride<Vec1, int8_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec1 getFromArrayNoStrideUnsignedByte1(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec1& defaultValue)
+    {
+        return getFromArrayNoStride<Vec1, uint8_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec1 getFromArrayNoStrideShort1(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec1& defaultValue)
+    {
+        return getFromArrayNoStride<Vec1, int16_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec1 getFromArrayNoStrideUnsignedShort1(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec1& defaultValue)
+    {
+        return getFromArrayNoStride<Vec1, uint16_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec1 getFromArrayNoStrideUnsignedInt1(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec1& defaultValue)
+    {
+        return getFromArrayNoStride<Vec1, uint32_t>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec1 getFromArrayNoStrideFloat1(const void* arr, std::size_t index, std::size_t size, std::size_t, const Vec1& defaultValue)
+    {
+        return getFromArrayNoStride<Vec1, float>(arr, index, size, 0, defaultValue);
+    }
+
+    static Vec1 getFromArrayWithStrideByte1(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec1& defaultValue)
+    {
+        return getFromArrayWithStride<Vec1, int8_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec1 getFromArrayWithStrideUnsignedByte1(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec1& defaultValue)
+    {
+        return getFromArrayWithStride<Vec1, uint8_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec1 getFromArrayWithStrideShort1(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec1& defaultValue)
+    {
+        return getFromArrayWithStride<Vec1, int16_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec1 getFromArrayWithStrideUnsignedShort1(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec1& defaultValue)
+    {
+        return getFromArrayWithStride<Vec1, uint16_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec1 getFromArrayWithStrideUnsignedInt1(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec1& defaultValue)
+    {
+        return getFromArrayWithStride<Vec1, uint32_t>(arr, index, size, stride, defaultValue);
+    }
+
+    static Vec1 getFromArrayWithStrideFloat1(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec1& defaultValue)
+    {
+        return getFromArrayWithStride<Vec1, float>(arr, index, size, stride, defaultValue);
+    }
+
+    template <typename T>
+    static auto getFromArrayFuncVec(Vec1 (*func1)(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec1& defaultValue),
+        Vec3 (*func3)(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec3& defaultValue),
+        Vec4 (*func4)(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue))
+    {
+        if constexpr (std::is_same_v<T, Vec1>)
+            return func1;
+        else if constexpr (std::is_same_v<T, Vec3>)
+            return func3;
+        else if constexpr (std::is_same_v<T, Vec4>)
+            return func4;
+    }
+
+    template <typename T>
+    static T (*getFromArrayFunc(const Type type, const void* arr, std::size_t stride))(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const T& defaultValue)
+    {
         if (arr)
         {
-            const int8_t* a = reinterpret_cast<const int8_t*>(arr);
             if (stride == 0)
             {
-                const std::size_t indexWithStride = index * size;
                 switch (type)
                 {
                 case Type::BYTE:
-                    vec.fromArray(a + (indexWithStride * 1), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayNoStrideByte1, &getFromArrayNoStrideByte3, &getFromArrayNoStrideByte4);
                 case Type::UNSIGNED_BYTE:
-                    vec.fromArray(reinterpret_cast<const uint8_t*>(a + (indexWithStride * 1)), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayNoStrideUnsignedByte1, &getFromArrayNoStrideUnsignedByte3, &getFromArrayNoStrideUnsignedByte4);
                 case Type::SHORT:
-                    vec.fromArray(reinterpret_cast<const int16_t*>(a + (indexWithStride * 2)), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayNoStrideShort1, &getFromArrayNoStrideShort3, &getFromArrayNoStrideShort4);
                 case Type::UNSIGNED_SHORT:
-                    vec.fromArray(reinterpret_cast<const uint16_t*>(a + (indexWithStride * 2)), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayNoStrideUnsignedShort1, &getFromArrayNoStrideUnsignedShort3, &getFromArrayNoStrideUnsignedShort4);
                 case Type::UNSIGNED_INT:
-                    vec.fromArray(reinterpret_cast<const int32_t*>(a + (indexWithStride * 4)), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayNoStrideUnsignedInt1, &getFromArrayNoStrideUnsignedInt3, &getFromArrayNoStrideUnsignedInt4);
                 default:
-                    vec.fromArray(reinterpret_cast<const float*>(a + (indexWithStride * 4)), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayNoStrideFloat1, &getFromArrayNoStrideFloat3, &getFromArrayNoStrideFloat4);
                 }
             }
             else
             {
-                const uint32_t indexWithStride = index * stride;
                 switch (type)
                 {
                 case Type::BYTE:
-                    vec.fromArray(a + indexWithStride, size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayWithStrideByte1, &getFromArrayWithStrideByte3, &getFromArrayWithStrideByte4);
                 case Type::UNSIGNED_BYTE:
-                    vec.fromArray(reinterpret_cast<const uint8_t*>(a + indexWithStride), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayWithStrideUnsignedByte1, &getFromArrayWithStrideUnsignedByte3, &getFromArrayWithStrideUnsignedByte4);
                 case Type::SHORT:
-                    vec.fromArray(reinterpret_cast<const int16_t*>(a + indexWithStride), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayWithStrideShort1, &getFromArrayWithStrideShort3, &getFromArrayWithStrideShort4);
                 case Type::UNSIGNED_SHORT:
-                    vec.fromArray(reinterpret_cast<const uint16_t*>(a + indexWithStride), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayWithStrideUnsignedShort1, &getFromArrayWithStrideUnsignedShort3, &getFromArrayWithStrideUnsignedShort4);
                 case Type::UNSIGNED_INT:
-                    vec.fromArray(reinterpret_cast<const int32_t*>(a + indexWithStride), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayWithStrideUnsignedInt1, &getFromArrayWithStrideUnsignedInt3, &getFromArrayWithStrideUnsignedInt4);
                 default:
-                    vec.fromArray(reinterpret_cast<const float*>(a + indexWithStride), size);
-                    break;
+                    return getFromArrayFuncVec<T>(&getFromArrayWithStrideFloat1, &getFromArrayWithStrideFloat3, &getFromArrayWithStrideFloat4);
                 }
             }
         }
-        return vec;
+        return getFromArrayFuncVec<T>(&getHomogeneous1, &getHomogeneous3, &getHomogeneous4);
     }
 
     const char* drawModeToString(const DrawMode drawMode) const;
     const char* typeToString(const Type type) const;
+
+    Vec4 (*m_getVertexFunc)(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue);
+    Vec4 (*m_getTexCoordFunc[MAX_TMU_COUNT])(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue);
+    Vec4 (*m_getColorFunc)(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec4& defaultValue);
+    Vec1 (*m_getPointSizeFunc)(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec1& defaultValue);
+    Vec3 (*m_getNormalFunc)(const void* arr, std::size_t index, std::size_t size, std::size_t stride, const Vec3& defaultValue);
+    float m_colorValueCorrection { 1.0f };
 
     DrawMode m_drawMode;
     std::size_t m_count;
@@ -184,6 +419,7 @@ private:
     Type m_vertexType;
     std::size_t m_vertexStride;
     const void* m_vertexPointer;
+    Vec4 m_vertex { { 0.0f, 0.0f, 0.0f, 1.0f } };
 
     std::bitset<MAX_TMU_COUNT> m_texCoordArrayEnabled;
     std::array<std::size_t, MAX_TMU_COUNT> m_texCoordSize;
@@ -209,7 +445,7 @@ private:
     Type m_pointSizeType;
     std::size_t m_pointSizeStride;
     const void* m_pointSizePointer;
-    float m_pointSize { 1.0f };
+    Vec1 m_pointSize { { 1.0f } };
 
     bool m_indicesEnabled;
     Type m_indicesType;

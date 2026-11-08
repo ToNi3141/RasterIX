@@ -30,6 +30,68 @@ RenderObj::RenderObj()
     }
 }
 
+void RenderObj::initGetters()
+{
+    m_getVertexFunc = getFromArrayFunc<Vec4>(m_vertexType, m_vertexPointer, m_vertexStride);
+    for (std::size_t i = 0; i < MAX_TMU_COUNT; i++)
+    {
+        if (m_texCoordArrayEnabled[i])
+        {
+            m_getTexCoordFunc[i] = getFromArrayFunc<Vec4>(m_texCoordType[i], m_texCoordPointer[i], m_texCoordStride[i]);
+        }
+        else
+        {
+            m_getTexCoordFunc[i] = &getFromArrayDefault4;
+        }
+    }
+
+    if (m_colorArrayEnabled)
+    {
+        m_getColorFunc = getFromArrayFunc<Vec4>(m_colorType, m_colorPointer, m_colorStride);
+    }
+    else
+    {
+        m_getColorFunc = &getFromArrayDefault4;
+    }
+
+    if (m_pointSizeArrayEnabled)
+    {
+        m_getPointSizeFunc = getFromArrayFunc<Vec1>(m_pointSizeType, m_pointSizePointer, m_pointSizeStride);
+    }
+    else
+    {
+        m_getPointSizeFunc = &getFromArrayDefault1;
+    }
+
+    if (m_normalArrayEnabled)
+    {
+        m_getNormalFunc = getFromArrayFunc<Vec3>(m_normalType, m_normalPointer, m_normalStride);
+    }
+    else
+    {
+        m_getNormalFunc = &getFromArrayDefault3;
+    }
+
+    switch (m_colorType)
+    {
+    case Type::UNSIGNED_BYTE:
+    case Type::UNSIGNED_SHORT:
+    case Type::UNSIGNED_INT:
+        // Map unsigned values to 0.0 .. 1.0
+        m_colorValueCorrection = 1.0f / 255.0f;
+        break;
+    case Type::BYTE:
+    case Type::SHORT:
+        // Map signed values to -1.0 .. 1.0
+        m_colorValueCorrection = 1.0f / 127.0f;
+        break;
+    default:
+        // Other types like floats can be used as they are
+        m_colorValueCorrection = 1.0f;
+        break;
+    }
+}
+
 bool RenderObj::isLine() const
 {
     return (getDrawMode() == DrawMode::LINES) || (getDrawMode() == DrawMode::LINE_LOOP) || (getDrawMode() == DrawMode::LINE_STRIP);
@@ -37,57 +99,22 @@ bool RenderObj::isLine() const
 
 Vec4 RenderObj::getTexCoord(const std::size_t tmu, const std::size_t index) const
 {
-    if (m_texCoordArrayEnabled[tmu])
-    {
-        return getFromArray<Vec4>(m_texCoordType[tmu], m_texCoordPointer[tmu], m_texCoordStride[tmu], m_texCoordSize[tmu], index);
-    }
-    return m_texCoord[tmu];
+    return m_getTexCoordFunc[tmu](m_texCoordPointer[tmu], index, m_texCoordSize[tmu], m_texCoordStride[tmu], m_texCoord[tmu]);
 }
 
 Vec4 RenderObj::getColor(const std::size_t index) const
 {
-    if (colorArrayEnabled())
-    {
-        Vec4 vec = getFromArray<Vec4>(m_colorType, m_colorPointer, m_colorStride, m_colorSize, index);
-        switch (m_colorType)
-        {
-        case Type::UNSIGNED_BYTE:
-        case Type::UNSIGNED_SHORT:
-        case Type::UNSIGNED_INT:
-            // Map unsigned values to 0.0 .. 1.0
-            vec *= 1.0f / 255.0f;
-            break;
-        case Type::BYTE:
-        case Type::SHORT:
-            // Map signed values to -1.0 .. 1.0
-            vec *= 1.0f / 127.0f;
-            break;
-        default:
-            // Other types like floats can be used as they are
-            break;
-        }
-        return vec;
-    }
-    return m_vertexColor;
+    return m_getColorFunc(m_colorPointer, index, m_colorSize, m_colorStride, m_vertexColor) * m_colorValueCorrection;
 }
 
 float RenderObj::getPointSize(const std::size_t index) const
 {
-    if (pointSizeArrayEnabled())
-    {
-        // This could be optimized. Ony float is allowed for point size arrays. It might be possible to handle only the float case.
-        return getFromArray<Vec1>(m_pointSizeType, m_pointSizePointer, m_pointSizeStride, 1, index)[0];
-    }
-    return m_pointSize;
+    return m_getPointSizeFunc(m_pointSizePointer, index, 1, m_pointSizeStride, m_pointSize)[0];
 }
 
 Vec3 RenderObj::getNormal(const std::size_t index) const
 {
-    if (normalArrayEnabled())
-    {
-        return getFromArray<Vec3>(m_normalType, m_normalPointer, m_normalStride, 3, index);
-    }
-    return m_normal;
+    return m_getNormalFunc(m_normalPointer, index, 3, m_normalStride, m_normal);
 }
 
 std::size_t RenderObj::getIndex(const std::size_t index) const

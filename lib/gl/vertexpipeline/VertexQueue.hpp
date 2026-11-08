@@ -89,6 +89,8 @@ public:
         m_objBeginEnd.setDrawMode(m_beginMode);
         m_objBeginEnd.setCount(m_vertexBuffer.size());
 
+        m_objBeginEnd.initGetters();
+
         return m_objBeginEnd;
     }
 
