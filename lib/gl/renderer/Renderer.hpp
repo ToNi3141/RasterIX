@@ -428,16 +428,22 @@ private:
     TextureManagerType m_textureManager;
     Rasterizer m_rasterizer { RenderConfig::ENABLE_ATTRIBUTE_SCALING };
 
-    const std::function<bool(const TransformedTriangle&)> m_drawTriangleLambda = [this](const TransformedTriangle& triangle)
-    { return drawTriangle(triangle); };
-    const std::function<bool(const StencilReg&)> m_setStencilBufferConfigLambda = [this](const StencilReg& stencilConf)
-    { return setStencilBufferConfig(stencilConf); };
+    struct DrawTriangleFunc
+    {
+        Renderer& renderer;
+        bool operator()(const TransformedTriangle& triangle) const { return renderer.drawTriangle(triangle); }
+    };
+    struct SetStencilBufferConfigFunc
+    {
+        Renderer& renderer;
+        bool operator()(const StencilReg& stencilConf) const { return renderer.setStencilBufferConfig(stencilConf); }
+    };
 
     vertextransformer::VertexTransformerData m_vertexCtx {};
-    vertextransformer::VertexTransformerCalc<decltype(m_drawTriangleLambda), decltype(m_setStencilBufferConfigLambda)> m_vertexTransform {
+    vertextransformer::VertexTransformerCalc<DrawTriangleFunc, SetStencilBufferConfigFunc> m_vertexTransform {
         m_vertexCtx,
-        m_drawTriangleLambda,
-        m_setStencilBufferConfigLambda,
+        DrawTriangleFunc { *this },
+        SetStencilBufferConfigFunc { *this },
     };
 
     // Instantiation of the displaylist assemblers
