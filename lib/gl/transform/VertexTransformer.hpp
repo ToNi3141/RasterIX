@@ -121,12 +121,24 @@ public:
         return true;
     }
 
+    // Draw mode TRIANGLES only. Works on stack locals and does not touch the vertex cache or the primitive assembler.
+    bool pushTriangle(const VertexParameter& p0, const VertexParameter& p1, const VertexParameter& p2)
+    {
+        std::array<TransformingVertexParameter, 3> tri;
+        tri[0] = { m_modelViewProjection.transform(p0.vertex),p0.color, p0.color, p0.tex, p0.pointSize };
+        tri[1] = { m_modelViewProjection.transform(p1.vertex),p1.color, p1.color, p1.tex, p1.pointSize };
+        tri[2] = { m_modelViewProjection.transform(p2.vertex),p2.color, p2.color, p2.tex, p2.pointSize };
+
+        return drawPreClippedTriangle<false, false, false>({ tri.data(), 3 });
+    }
+
     void init()
     {
         m_primitiveAssembler.init();
         m_vertexCache.reset();
         updateNormalMatrix();
         checkForRequiredTextureTransformations();
+        m_modelViewProjection = m_data.transformMatrices.modelView * m_data.transformMatrices.projection;
     }
 
 private:
@@ -303,6 +315,7 @@ private:
         return outParam;
     }
 
+    template <bool EnableFeatureTwoSideModel, bool EnableFeatureTwoSideStencil, bool EnableFeaturePolygonOffset>
     bool drawClippedTriangleList(const tcb::span<TransformingVertexParameter>& list)
     {
         const std::size_t clippedVertexListSize = list.size();
@@ -314,31 +327,41 @@ private:
 
         // Check only one triangle in the clipped list. The triangles are sub divided, but not rotated. So if one triangle is
         // facing backwards, then all in the clipping list will do this and vice versa.
-        const Vec4& v0 = list[0].vertex;
-        const Vec4& v1 = list[1].vertex;
-        const Vec4& v2 = list[2].vertex;
-        if (culling::CullingCalc { m_data.culling }.cull(v0, v1, v2))
-        {
-            return true;
-        }
+        Vec4& v0 = list[0].vertex;
+        Vec4& v1 = list[1].vertex;
+        Vec4& v2 = list[2].vertex;
 
-        if (m_data.lighting.lightingEnabled && m_data.lighting.enableTwoSideModel)
+        if constexpr (EnableFeatureTwoSideModel)
         {
-            if (!culling::CullingCalc { m_data.culling }.isFrontFace(v0, v1, v2))
+            if (m_data.lighting.lightingEnabled && m_data.lighting.enableTwoSideModel)
             {
-                for (std::size_t i = 0; i < clippedVertexListSize; i++)
+                if (!culling::CullingCalc { m_data.culling }.isFrontFace(v0, v1, v2))
                 {
-                    list[i].colorFront = list[i].colorBack;
+                    for (std::size_t i = 0; i < clippedVertexListSize; i++)
+                    {
+                        list[i].colorFront = list[i].colorBack;
+                    }
                 }
             }
         }
 
-        if (m_data.stencil.enableTwoSideStencil)
+        if constexpr (EnableFeatureTwoSideStencil)
         {
-            const StencilReg reg = stencil::StencilCalc { m_data.stencil }.updateStencilFace(v0, v1, v2);
-            if (!m_updateStencilFunc(reg))
+            if (m_data.stencil.enableTwoSideStencil)
             {
-                return false;
+                const StencilReg reg = stencil::StencilCalc { m_data.stencil }.updateStencilFace(v0, v1, v2);
+                if (!m_updateStencilFunc(reg))
+                {
+                    return false;
+                }
+            }
+        }
+
+        if constexpr (EnableFeaturePolygonOffset)
+        {
+            if (m_data.polygonOffset.enable)
+            {
+                polygonoffset::PolygonOffsetCalc { m_data.polygonOffset }.addOffset(v0, v1, v2);
             }
         }
 
@@ -363,6 +386,7 @@ private:
         return true;
     }
 
+    template <bool EnableFeatureTwoSideModel, bool EnableFeatureTwoSideStencil, bool EnableFeaturePolygonOffset>
     bool drawUnclippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
         // Optimized version of the drawTriangle when a triangle is not needed to be clipped.
@@ -381,36 +405,40 @@ private:
         viewport::ViewPortCalc { m_data.viewPort }.transform(v1);
         viewport::ViewPortCalc { m_data.viewPort }.transform(v2);
 
-        if (culling::CullingCalc { m_data.culling }.cull(v0, v1, v2))
-        {
-            return true;
-        }
-
         Vec4& c0 = primitive[0].colorFront;
         Vec4& c1 = primitive[1].colorFront;
         Vec4& c2 = primitive[2].colorFront;
-        if (m_data.lighting.lightingEnabled && m_data.lighting.enableTwoSideModel)
+        if constexpr (EnableFeatureTwoSideModel)
         {
-            if (!culling::CullingCalc { m_data.culling }.isFrontFace(v0, v1, v2))
+            if (m_data.lighting.lightingEnabled && m_data.lighting.enableTwoSideModel)
             {
-                c0 = primitive[0].colorBack;
-                c1 = primitive[1].colorBack;
-                c2 = primitive[2].colorBack;
+                if (!culling::CullingCalc { m_data.culling }.isFrontFace(v0, v1, v2))
+                {
+                    c0 = primitive[0].colorBack;
+                    c1 = primitive[1].colorBack;
+                    c2 = primitive[2].colorBack;
+                }
+            }
+        }
+        
+        if constexpr (EnableFeatureTwoSideStencil)
+        {
+            if (m_data.stencil.enableTwoSideStencil)
+            {
+                const StencilReg reg = stencil::StencilCalc { m_data.stencil }.updateStencilFace(v0, v1, v2);
+                if (!m_updateStencilFunc(reg))
+                {
+                    return false;
+                }
             }
         }
 
-        if (m_data.stencil.enableTwoSideStencil)
+        if constexpr (EnableFeaturePolygonOffset)
         {
-            const StencilReg reg = stencil::StencilCalc { m_data.stencil }.updateStencilFace(v0, v1, v2);
-            if (!m_updateStencilFunc(reg))
+            if (m_data.polygonOffset.enable)
             {
-                return false;
+                polygonoffset::PolygonOffsetCalc { m_data.polygonOffset }.addOffset(v0, v1, v2);
             }
-        }
-
-        if (m_data.polygonOffset.enable)
-        {
-            polygonoffset::PolygonOffsetCalc { m_data.polygonOffset }.addOffset(v0, v1, v2);
         }
 
         return m_drawTriangleFunc({
@@ -426,6 +454,7 @@ private:
         });
     }
 
+    template <bool EnableFeatureTwoSideModel, bool EnableFeatureTwoSideStencil, bool EnableFeaturePolygonOffset>
     bool drawClippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
         Clipper::ClipList list;
@@ -442,21 +471,39 @@ private:
             return true;
         }
 
-        return drawClippedTriangleList(clippedVertexParameter);
+        return drawClippedTriangleList<EnableFeatureTwoSideModel, EnableFeatureTwoSideStencil, EnableFeaturePolygonOffset>(clippedVertexParameter);
     }
 
+
+    template <bool EnableFeatureTwoSideModel = true, bool EnableFeatureTwoSideStencil = true, bool EnableFeaturePolygonOffset = true>
     bool drawPreClippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
-        switch (Clipper::isIntersecting(primitive[0].vertex, primitive[1].vertex, primitive[2].vertex))
+        const Clipper::Position pos = Clipper::isIntersecting(
+            primitive[0].vertex, 
+            primitive[1].vertex, 
+            primitive[2].vertex);
+        
+        if (pos == Clipper::Position::Outside)
         {
-        case Clipper::Position::Inside:
-            return drawUnclippedTriangle(primitive);
-        case Clipper::Position::Outside:
             return true;
-        case Clipper::Position::Intersecting:
-            return drawClippedTriangle(primitive);
         }
-        return false;
+
+        if (culling::CullingCalc { m_data.culling }.cullClipSpace(
+            primitive[0].vertex, 
+            primitive[1].vertex, 
+            primitive[2].vertex))
+        {
+            return true;
+        }
+
+        if (pos == Clipper::Position::Inside)
+        {
+            return drawUnclippedTriangle<EnableFeatureTwoSideModel, EnableFeatureTwoSideStencil, EnableFeaturePolygonOffset>(primitive);
+        }
+        else
+        {
+            return drawClippedTriangle<EnableFeatureTwoSideModel, EnableFeatureTwoSideStencil, EnableFeaturePolygonOffset>(primitive);
+        }
     }
 
     bool drawTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
@@ -467,7 +514,7 @@ private:
 
         shademodel::ShadeModelCalc { m_data.shadeModel }.updateShadeModelTriangle(p0, p1, p2);
 
-        return drawPreClippedTriangle(primitive);
+        return drawPreClippedTriangle<>(primitive);
     }
 
     bool drawLine(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
@@ -480,9 +527,9 @@ private:
         lineassembly::LineAssemblyCalc::Triangles triangles = m_lineAssembly.createLine(p0, p1);
 
         tcb::span<TransformingVertexParameter> triangleSpan { triangles.data(), triangles.size() };
-        drawPreClippedTriangle(triangleSpan.subspan(0, 3));
+        drawPreClippedTriangle<>(triangleSpan.subspan(0, 3));
         // Assume when the first one fails, the second one will also fail.
-        return drawPreClippedTriangle(triangleSpan.subspan(3, 3));
+        return drawPreClippedTriangle<>(triangleSpan.subspan(3, 3));
     }
 
     bool drawPoint(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
@@ -492,9 +539,9 @@ private:
         pointassembly::PointAssemblyCalc::Triangles triangles = m_pointAssembly.createPoint(p0);
 
         tcb::span<TransformingVertexParameter> triangleSpan { triangles.data(), triangles.size() };
-        drawPreClippedTriangle(triangleSpan.subspan(0, 3));
+        drawPreClippedTriangle<>(triangleSpan.subspan(0, 3));
         // Assume when the first one fails, the second one will also fail.
-        return drawPreClippedTriangle(triangleSpan.subspan(3, 3));
+        return drawPreClippedTriangle<>(triangleSpan.subspan(3, 3));
     }
 
     bool drawPrimitive(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
@@ -570,6 +617,8 @@ private:
     cache::Cache<TransformingVertexParameter, VERTEX_CACHE_SIZE> m_vertexCache {};
 
     std::bitset<RenderConfig::TMU_COUNT> m_textureTransformationRequired {};
+
+    Mat44 m_modelViewProjection {};
 };
 
 } // namespace rr::vertextransformer

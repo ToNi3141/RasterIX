@@ -38,6 +38,8 @@ public:
     CullingCalc(const CullingData& cullingData);
     bool cull(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
     bool isFrontFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
+    // Same decision as cull(), but takes clip space vertices (before the perspective divide). Requires w > 0 for all vertices.
+    bool cullClipSpace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const;
 
 private:
     const CullingData& m_data;

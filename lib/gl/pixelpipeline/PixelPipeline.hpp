@@ -38,6 +38,7 @@ public:
 
     // Drawing
     bool pushVertex(const VertexParameter& vertex) { return m_renderer.pushVertex(vertex); }
+    bool pushTriangle(const VertexParameter& v0, const VertexParameter& v1, const VertexParameter& v2) { return m_renderer.pushTriangle(v0, v1, v2); }
     void drawNewElement() { m_renderer.drawNewElement(); }
     void setElementGlobalContext(const transform::ElementGlobalData& ctx) { m_renderer.setElementGlobalContext(ctx); }
     void setElementLocalContext(const transform::ElementLocalData& ctx) { m_renderer.setElementLocalContext(ctx); }

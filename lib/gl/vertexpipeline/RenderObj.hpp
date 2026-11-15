@@ -23,7 +23,6 @@
 #include "math/Vec.hpp"
 #include <array>
 #include <bitset>
-#include <optional>
 
 namespace rr
 {
@@ -38,6 +37,7 @@ public:
 
     inline bool vertexArrayEnabled() const { return m_vertexArrayEnabled; }
     Vec4 getVertex(const std::size_t index) const { return getFromArray<Vec4>(m_vertexType, m_vertexPointer, m_vertexStride, m_vertexSize, index); }
+    const void* getVertexPointer() const { return m_vertexPointer; }
     inline const std::bitset<MAX_TMU_COUNT>& texCoordArrayEnabled() const { return m_texCoordArrayEnabled; }
     Vec4 getTexCoord(const std::size_t tmu, const std::size_t index) const;
     inline bool colorArrayEnabled() const { return m_colorArrayEnabled; }
@@ -72,6 +72,8 @@ public:
     void setTexCoordStride(const std::size_t tmu, std::size_t stride) { m_texCoordStride[tmu] = stride; }
     void setTexCoordPointer(const std::size_t tmu, const void* ptr) { m_texCoordPointer[tmu] = ptr; }
     void setTexCoord(const std::size_t tmu, const Vec4& texCoord) { m_texCoord[tmu] = texCoord; }
+    const Vec4& getTexCoordDefault(const std::size_t tmu) const { return m_texCoord[tmu]; }
+    const void* getTexCoordPointer(const std::size_t tmu) const { return m_texCoordPointer[tmu]; }
     std::size_t getTexCoordSize(const std::size_t tmu) const { return m_texCoordSize[tmu]; }
     Type getTexCoordType(const std::size_t tmu) const { return m_texCoordType[tmu]; }
     std::size_t getTexCoordStride(const std::size_t tmu) const { return m_texCoordStride[tmu]; }
@@ -81,6 +83,7 @@ public:
     void setNormalStride(std::size_t stride) { m_normalStride = stride; }
     void setNormalPointer(const void* ptr) { m_normalPointer = ptr; }
     void setNormal(const Vec3& normal) { m_normal = normal; }
+    const Vec3& getNormalDefault() const { return m_normal; }
     Type getNormalType() const { return m_normalType; }
     std::size_t getNormalStride() const { return m_normalStride; }
 
@@ -89,6 +92,7 @@ public:
     void setColorType(Type type) { m_colorType = type; }
     void setColorStride(std::size_t stride) { m_colorStride = stride; }
     void setColorPointer(const void* ptr) { m_colorPointer = ptr; }
+    const void* getColorPointer() const { return m_colorPointer; }
     void setVertexColor(const Vec4& color) { m_vertexColor = color; }
     std::size_t getColorSize() const { return m_colorSize; }
     Type getColorType() const { return m_colorType; }
@@ -110,6 +114,9 @@ public:
     void setIndicesType(Type type) { m_indicesType = type; }
     void setIndicesPointer(const void* ptr) { m_indicesPointer = ptr; }
     void setArrayOffset(std::size_t offset) { m_arrayOffset = offset; }
+    Type getIndicesType() const { return m_indicesType; }
+    const void* getIndicesPointer() const { return m_indicesPointer; }
+    std::size_t getArrayOffset() const { return m_arrayOffset; }
 
 private:
     template <typename T>

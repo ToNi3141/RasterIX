@@ -22,6 +22,7 @@
 #include "RenderConfigs.hpp"
 #include <array>
 #include <memory>
+#include <new>
 #include <optional>
 #include <tcb/span.hpp>
 
@@ -48,7 +49,7 @@ public:
     {
         if (buffer < m_buffers.size())
         {
-            delete m_buffers[buffer]->data();
+            ::operator delete[](m_buffers[buffer]->data(), std::align_val_t { BUFFER_ALIGNMENT });
             m_buffers[buffer].reset();
             if (m_boundBuffer == buffer)
             {
@@ -80,7 +81,7 @@ public:
         if (m_boundBuffer < m_buffers.size() && m_buffers[m_boundBuffer].has_value())
         {
             auto& buf = m_buffers[m_boundBuffer];
-            buf = BufferEntry { new std::uint8_t[data.size()], data.size() };
+            buf = BufferEntry { new (std::align_val_t { BUFFER_ALIGNMENT }) std::uint8_t[data.size()], data.size() };
             if (buf->data() == nullptr)
             {
                 buf = BufferEntry {};
@@ -116,6 +117,7 @@ public:
 
 private:
     static constexpr std::size_t InvalidBuffer { static_cast<std::size_t>(0) };
+    static constexpr std::size_t BUFFER_ALIGNMENT { 32 }; // Helps to align buffers to cache lines
     using BufferEntry = tcb::span<std::uint8_t>;
 
     std::array<std::optional<BufferEntry>, RenderConfig::MAX_VBO_COUNT> m_buffers {};

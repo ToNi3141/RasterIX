@@ -51,7 +51,7 @@ struct RenderConfig
     static constexpr std::size_t getDisplayLines()
     {
         constexpr std::size_t MAX_FRAMEBUFFER_SIZE = MAX_DISPLAY_WIDTH * MAX_DISPLAY_HEIGHT;
-        if constexpr (MAX_FRAMEBUFFER_SIZE == IF_FRAMEBUFFER_SIZE_IN_PIXEL)
+        if constexpr (MAX_FRAMEBUFFER_SIZE <= IF_FRAMEBUFFER_SIZE_IN_PIXEL)
         {
             return 1;
         }

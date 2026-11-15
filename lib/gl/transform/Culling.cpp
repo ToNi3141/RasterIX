@@ -77,4 +77,24 @@ bool CullingCalc::isFrontFace(const Vec4& v0, const Vec4& v1, const Vec4& v2) co
     return edgeVal > 0.0f;
 }
 
+bool CullingCalc::cullClipSpace(const Vec4& v0, const Vec4& v1, const Vec4& v2) const
+{
+    if (!m_data.enableCulling)
+    {
+        return false;
+    }
+    if (m_data.cullMode == Face::FRONT_AND_BACK)
+    {
+        return true;
+    }
+    // det([x y w]) / (w0 w1 w2) is the signed area of the projected triangle. With w > 0 the sign of the determinant is enough.
+    // The edge function used by isFrontFace() is the negative signed area.
+    const float det = (v0[0] * ((v1[1] * v2[3]) - (v2[1] * v1[3])))
+        - (v0[1] * ((v1[0] * v2[3]) - (v2[0] * v1[3])))
+        + (v0[3] * ((v1[0] * v2[1]) - (v2[0] * v1[1])));
+    const bool frontFace = (m_data.frontFace == Orientation::CCW) ? (det > 0.0f) : (det < 0.0f);
+    return (frontFace && (m_data.cullMode == Face::FRONT))
+        || (!frontFace && (m_data.cullMode == Face::BACK));
+}
+
 } // namespace rr::culling

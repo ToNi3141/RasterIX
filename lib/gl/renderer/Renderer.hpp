@@ -109,6 +109,9 @@ public:
     /// @return true when the vertex was accepted. False could be a out of memory error.
     bool pushVertex(const VertexParameter& vertex) { return pushVertexImpl(vertex); }
 
+    /// @brief Pushes three vertices which form one triangle (draw mode TRIANGLES) into the renderer
+    bool pushTriangle(const VertexParameter& v0, const VertexParameter& v1, const VertexParameter& v2) { return pushTriangleImpl(v0, v1, v2); }
+
     /// @brief Resets the primitive assembler and other modules to draw a new element
     ///     Must be called before a new element is drawn
     void drawNewElement();
@@ -322,7 +325,10 @@ public:
     std::size_t getFramebufferHeight() const { return m_resolutionY; }
 
 private:
-    using DisplayListAssemblerType = displaylist::DisplayListAssembler<RenderConfig::TMU_COUNT, displaylist::DisplayList>;
+    using DisplayListAssemblerType = displaylist::DisplayListAssembler<
+        RenderConfig::TMU_COUNT, 
+        displaylist::DisplayList, 
+        (RenderConfig::getDisplayLines() > 1)>;
     using TextureManagerType = TextureMemoryManager<RenderConfig>;
     using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListAssemblerType>;
 
@@ -376,6 +382,18 @@ private:
         else
         {
             return m_vertexTransform.pushVertex(vertex);
+        }
+    }
+
+    bool pushTriangleImpl(const VertexParameter& v0, const VertexParameter& v1, const VertexParameter& v2)
+    {
+        if constexpr (RenderConfig::THREADED_RASTERIZATION)
+        {
+            return pushVertexImpl(v0) && pushVertexImpl(v1) && pushVertexImpl(v2);
+        }
+        else
+        {
+            return m_vertexTransform.pushTriangle(v0, v1, v2);
         }
     }
 

@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "VertexPipeline.hpp"
+#include "FloatV3T2C3Renderer.hpp"
 #include "math/Vec.hpp"
 #include "math/Veci.hpp"
 #include <cmath>
@@ -98,6 +99,12 @@ bool VertexPipeline::drawObj(const RenderObj& obj)
 
     m_renderer.setElementLocalContext(m_elementLocalData);
     m_renderer.drawNewElement();
+
+    if (FloatV3T2C3Renderer::isApplicable(obj))
+    {
+        FloatV3T2C3Renderer { obj, m_renderer }.render();
+        return true;
+    }
 
     std::size_t count = obj.getCount();
     for (std::size_t it = 0; it < count; it++)

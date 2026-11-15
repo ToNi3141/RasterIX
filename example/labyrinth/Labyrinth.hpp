@@ -105,11 +105,14 @@ private:
     struct MeshVboSet
     {
         GLuint vertices = 0;
-        GLuint colors = 0;
-        GLuint texCoords = 0;
         GLuint indices = 0;
         GLsizei indexCount = 0;
     };
+
+    // Interleaved vertex: x y z r g b s t. 32 bytes, so one vertex fits into one 32 byte cache line.
+    static constexpr GLsizei VERTEX_STRIDE = 8 * sizeof(float);
+    static constexpr std::size_t COLOR_OFFSET = 3 * sizeof(float);
+    static constexpr std::size_t TEXCOORD_OFFSET = 6 * sizeof(float);
 
     static constexpr float LOOK_AHEAD_CELLS = 0.8f;
     static constexpr float CAMERA_SPEED_CELLS_PER_SECOND = 1.5f;
@@ -183,17 +186,19 @@ private:
     {
         meshVboSet.indexCount = static_cast<GLsizei>(renderMesh.indices.size());
 
+        const std::size_t vertexCount = renderMesh.vertices.size() / 3;
+        std::vector<float> interleaved;
+        interleaved.reserve(vertexCount * (VERTEX_STRIDE / sizeof(float)));
+        for (std::size_t i = 0; i < vertexCount; i++)
+        {
+            interleaved.insert(interleaved.end(), renderMesh.vertices.begin() + (i * 3), renderMesh.vertices.begin() + (i * 3) + 3);
+            interleaved.insert(interleaved.end(), renderMesh.colors.begin() + (i * 3), renderMesh.colors.begin() + (i * 3) + 3);
+            interleaved.insert(interleaved.end(), renderMesh.texCoords.begin() + (i * 2), renderMesh.texCoords.begin() + (i * 2) + 2);
+        }
+
         glGenBuffers(1, &meshVboSet.vertices);
         glBindBuffer(GL_ARRAY_BUFFER, meshVboSet.vertices);
-        glBufferData(GL_ARRAY_BUFFER, renderMesh.vertices.size() * sizeof(float), renderMesh.vertices.data(), GL_STATIC_DRAW);
-
-        glGenBuffers(1, &meshVboSet.colors);
-        glBindBuffer(GL_ARRAY_BUFFER, meshVboSet.colors);
-        glBufferData(GL_ARRAY_BUFFER, renderMesh.colors.size() * sizeof(float), renderMesh.colors.data(), GL_STATIC_DRAW);
-
-        glGenBuffers(1, &meshVboSet.texCoords);
-        glBindBuffer(GL_ARRAY_BUFFER, meshVboSet.texCoords);
-        glBufferData(GL_ARRAY_BUFFER, renderMesh.texCoords.size() * sizeof(float), renderMesh.texCoords.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, interleaved.size() * sizeof(float), interleaved.data(), GL_STATIC_DRAW);
 
         glGenBuffers(1, &meshVboSet.indices);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshVboSet.indices);
@@ -205,7 +210,7 @@ private:
 
     static void deleteMesh(const MeshVboSet& mesh)
     {
-        const GLuint buffers[] = { mesh.vertices, mesh.colors, mesh.texCoords, mesh.indices };
+        const GLuint buffers[] = { mesh.vertices, mesh.indices };
         glDeleteBuffers(sizeof(buffers) / sizeof(buffers[0]), buffers);
     }
 
@@ -221,17 +226,13 @@ private:
         glBindTexture(GL_TEXTURE_2D, texture);
         glClientActiveTexture(GL_TEXTURE0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, mesh.texCoords);
-        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        glTexCoordPointer(2, GL_FLOAT, 0, nullptr);
-
-        glBindBuffer(GL_ARRAY_BUFFER, mesh.colors);
-        glEnableClientState(GL_COLOR_ARRAY);
-        glColorPointer(3, GL_FLOAT, 0, nullptr);
-
         glBindBuffer(GL_ARRAY_BUFFER, mesh.vertices);
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glTexCoordPointer(2, GL_FLOAT, VERTEX_STRIDE, reinterpret_cast<const void*>(TEXCOORD_OFFSET));
+        glEnableClientState(GL_COLOR_ARRAY);
+        glColorPointer(3, GL_FLOAT, VERTEX_STRIDE, reinterpret_cast<const void*>(COLOR_OFFSET));
         glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, nullptr);
+        glVertexPointer(3, GL_FLOAT, VERTEX_STRIDE, nullptr);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.indices);
         glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_SHORT, nullptr);
