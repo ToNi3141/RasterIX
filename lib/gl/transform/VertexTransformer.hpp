@@ -125,9 +125,9 @@ public:
     bool pushTriangle(const VertexParameter& p0, const VertexParameter& p1, const VertexParameter& p2)
     {
         std::array<TransformingVertexParameter, 3> tri;
-        tri[0] = { m_modelViewProjection.transform(p0.vertex),p0.color, p0.color, p0.tex, p0.pointSize };
-        tri[1] = { m_modelViewProjection.transform(p1.vertex),p1.color, p1.color, p1.tex, p1.pointSize };
-        tri[2] = { m_modelViewProjection.transform(p2.vertex),p2.color, p2.color, p2.tex, p2.pointSize };
+        tri[0] = { m_modelViewProjection.transform(p0.vertex), p0.color, p0.color, p0.tex, p0.pointSize };
+        tri[1] = { m_modelViewProjection.transform(p1.vertex), p1.color, p1.color, p1.tex, p1.pointSize };
+        tri[2] = { m_modelViewProjection.transform(p2.vertex), p2.color, p2.color, p2.tex, p2.pointSize };
 
         return drawPreClippedTriangle<false, false, false>({ tri.data(), 3 });
     }
@@ -420,7 +420,7 @@ private:
                 }
             }
         }
-        
+
         if constexpr (EnableFeatureTwoSideStencil)
         {
             if (m_data.stencil.enableTwoSideStencil)
@@ -474,24 +474,23 @@ private:
         return drawClippedTriangleList<EnableFeatureTwoSideModel, EnableFeatureTwoSideStencil, EnableFeaturePolygonOffset>(clippedVertexParameter);
     }
 
-
     template <bool EnableFeatureTwoSideModel = true, bool EnableFeatureTwoSideStencil = true, bool EnableFeaturePolygonOffset = true>
     bool drawPreClippedTriangle(const primitiveassembler::PrimitiveAssemblerCalc::Primitive& primitive)
     {
         const Clipper::Position pos = Clipper::isIntersecting(
-            primitive[0].vertex, 
-            primitive[1].vertex, 
+            primitive[0].vertex,
+            primitive[1].vertex,
             primitive[2].vertex);
-        
+
         if (pos == Clipper::Position::Outside)
         {
             return true;
         }
 
         if (culling::CullingCalc { m_data.culling }.cullClipSpace(
-            primitive[0].vertex, 
-            primitive[1].vertex, 
-            primitive[2].vertex))
+                primitive[0].vertex,
+                primitive[1].vertex,
+                primitive[2].vertex))
         {
             return true;
         }

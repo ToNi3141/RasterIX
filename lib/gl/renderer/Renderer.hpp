@@ -326,8 +326,8 @@ public:
 
 private:
     using DisplayListAssemblerType = displaylist::DisplayListAssembler<
-        RenderConfig::TMU_COUNT, 
-        displaylist::DisplayList, 
+        RenderConfig::TMU_COUNT,
+        displaylist::DisplayList,
         (RenderConfig::getDisplayLines() > 1)>;
     using TextureManagerType = TextureMemoryManager<RenderConfig>;
     using DisplayListDoubleBufferType = displaylist::DisplayListDoubleBuffer<DisplayListAssemblerType>;

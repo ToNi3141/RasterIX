@@ -22,6 +22,40 @@
 
 namespace rr
 {
+namespace
+{
+    // Linear interpolation of an attribute a over the triangle with barycentric weights w0..w2:
+    //   value = a0*w0 + a1*w1 + a2*w2
+    //   xInc  = a0*wx0 + a1*wx1 + a2*wx2   (same for y)
+    //
+    // The three edge functions always sum to the triangle area (they are affine in p and equal to the area at all
+    // three vertices). Normalized by the area this gives:
+    //   w0 + w1 + w2 = 1        ->  w2 = 1 - w0 - w1
+    // A constant sum does not change when moving one pixel, so the steps cancel:
+    //   wx0 + wx1 + wx2 = 0     ->  wx2 = -wx0 - wx1   (same for y)
+    //
+    // Inserting w2 and multiplying out:
+    //   value = a0*w0 + a1*w1 + a2*(1 - w0 - w1)
+    //         = a2 + (a0 - a2)*w0 + (a1 - a2)*w1
+    //   xInc  = a0*wx0 + a1*wx1 + a2*(-wx0 - wx1)
+    //         = (a0 - a2)*wx0 + (a1 - a2)*wx1
+    //
+    // With d0 = a0 - a2 and d1 = a1 - a2 this needs 6 instead of 9 multiplications per component, and only two
+    // weights have to be calculated.
+    template <std::size_t N>
+    inline void interpolate(
+        const Vec<N>& a0, const Vec<N>& a1, const Vec<N>& a2,
+        const Vec2& w, const Vec2& wXInc, const Vec2& wYInc,
+        Vec<N>& value, Vec<N>& xInc, Vec<N>& yInc)
+    {
+        const Vec<N> d0 = a0 - a2;
+        const Vec<N> d1 = a1 - a2;
+        value = a2 + (d0 * w[0]) + (d1 * w[1]);
+        xInc = (d0 * wXInc[0]) + (d1 * wXInc[1]);
+        yInc = (d0 * wYInc[0]) + (d1 * wYInc[1]);
+    }
+
+} // namespace
 
 bool Rasterizer::increment(TriangleStreamTypes::TriangleDesc& desc,
     const std::size_t lineStart,
@@ -168,15 +202,15 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
     wIncY[2] = (v0[0] - v1[0]) * EDGE_FUNC_ONE_P_ZERO;
     wIncY *= sign;
 
-    float areaInv = 1.0f / area;
+    const float areaInv = 1.0f / area;
 
-    Vec3 wNorm = { static_cast<float>(wi[0]), static_cast<float>(wi[1]), static_cast<float>(wi[2]) };
+    Vec2 wNorm = { static_cast<float>(wi[0]), static_cast<float>(wi[1]) };
     wNorm.mul(areaInv);
 
-    Vec3 wIncXNorm = { static_cast<float>(wIncX[0]), static_cast<float>(wIncX[1]), static_cast<float>(wIncX[2]) };
+    Vec2 wIncXNorm = { static_cast<float>(wIncX[0]), static_cast<float>(wIncX[1]) };
     wIncXNorm.mul(areaInv);
 
-    Vec3 wIncYNorm = { static_cast<float>(wIncY[0]), static_cast<float>(wIncY[1]), static_cast<float>(wIncY[2]) };
+    Vec2 wIncYNorm = { static_cast<float>(wIncY[0]), static_cast<float>(wIncY[1]) };
     wIncYNorm.mul(areaInv);
 
     Vec3 w = { triangle.vertex0[3], triangle.vertex1[3], triangle.vertex2[3] };
@@ -240,17 +274,7 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
 
             TriangleStreamTypes::Texture& t = desc.texture[i];
 
-            t.texStq = (tex0 * wNorm[0])
-                + (tex1 * wNorm[1])
-                + (tex2 * wNorm[2]);
-
-            t.texStqXInc = (tex0 * wIncXNorm[0])
-                + (tex1 * wIncXNorm[1])
-                + (tex2 * wIncXNorm[2]);
-
-            t.texStqYInc = (tex0 * wIncYNorm[0])
-                + (tex1 * wIncYNorm[1])
-                + (tex2 * wIncYNorm[2]);
+            interpolate(tex0, tex1, tex2, wNorm, wIncXNorm, wIncYNorm, t.texStq, t.texStqXInc, t.texStqYInc);
         }
     }
 
@@ -259,30 +283,10 @@ bool Rasterizer::rasterize(TriangleStreamTypes::TriangleDesc& __restrict desc,
     const Vec2 zw1 { triangle.vertex1[2], triangle.vertex1[3] };
     const Vec2 zw2 { triangle.vertex2[2], triangle.vertex2[3] };
 
-    params.depthZw = (zw0 * wNorm[0])
-        + (zw1 * wNorm[1])
-        + (zw2 * wNorm[2]);
-
-    params.depthZwXInc = (zw0 * wIncXNorm[0])
-        + (zw1 * wIncXNorm[1])
-        + (zw2 * wIncXNorm[2]);
-
-    params.depthZwYInc = (zw0 * wIncYNorm[0])
-        + (zw1 * wIncYNorm[1])
-        + (zw2 * wIncYNorm[2]);
+    interpolate(zw0, zw1, zw2, wNorm, wIncXNorm, wIncYNorm, params.depthZw, params.depthZwXInc, params.depthZwYInc);
 
     // Color
-    params.color = (triangle.color0 * wNorm[0])
-        + (triangle.color1 * wNorm[1])
-        + (triangle.color2 * wNorm[2]);
-
-    params.colorXInc = (triangle.color0 * wIncXNorm[0])
-        + (triangle.color1 * wIncXNorm[1])
-        + (triangle.color2 * wIncXNorm[2]);
-
-    params.colorYInc = (triangle.color0 * wIncYNorm[0])
-        + (triangle.color1 * wIncYNorm[1])
-        + (triangle.color2 * wIncYNorm[2]);
+    interpolate(triangle.color0, triangle.color1, triangle.color2, wNorm, wIncXNorm, wIncYNorm, params.color, params.colorXInc, params.colorYInc);
 
     return true;
 }
