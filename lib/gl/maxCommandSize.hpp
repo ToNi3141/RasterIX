@@ -21,14 +21,14 @@
 #include <variant>
 
 template <typename Variant, std::size_t... I>
-constexpr std::size_t maxVariantSizeImpl(std::index_sequence<I...>)
+constexpr std::size_t maxCommandSizeImpl(std::index_sequence<I...>)
 {
-    return std::max({ sizeof(std::variant_alternative_t<I, Variant>)... });
+    return std::max({ std::variant_alternative_t<I, Variant>::getCommandMaxSize()... });
 }
 
 template <typename Variant>
-constexpr std::size_t maxVariantAlternativeSize()
+constexpr std::size_t maxCommandSize()
 {
-    return maxVariantSizeImpl<Variant>(
+    return maxCommandSizeImpl<Variant>(
         std::make_index_sequence<std::variant_size_v<Variant>> {});
 }

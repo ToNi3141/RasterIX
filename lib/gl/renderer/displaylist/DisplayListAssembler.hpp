@@ -61,18 +61,6 @@ public:
     }
 
     template <typename TCommand>
-    std::size_t getCommandSize(std::size_t i) const
-    {
-        return m_rixDisplayListAssembler.template getCommandSize<TCommand>(i);
-    }
-
-    template <typename TCommand>
-    std::size_t getCommandSize(const TCommand& cmd) const
-    {
-        return m_rixDisplayListAssembler.getCommandSize(cmd);
-    }
-
-    template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
         if constexpr (Optimize)

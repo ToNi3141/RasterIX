@@ -271,11 +271,6 @@ private:
     bool addTriangleCmd(const TransformedTriangle& triangle)
     {
         TriangleStreamCmd triangleCmd { m_rasterizer, triangle };
-        if (!triangleCmd.isVisible())
-        {
-            return true;
-        }
-
         if constexpr (DisplayListDispatcherType::singleList())
         {
             return addCommand(triangleCmd);

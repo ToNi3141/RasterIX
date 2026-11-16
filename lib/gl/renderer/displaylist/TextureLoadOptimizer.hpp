@@ -81,7 +81,7 @@ private:
             }
             m_textureCommandFlag.set(tmu);
             m_texPosInDisplayList[tmu] = m_displayList.getCurrentWritePos();
-            m_texSizeInDisplayList[tmu] = RIXDisplayListAssembler<TDisplayList>::template getCommandSize(cmd);
+            m_texSizeInDisplayList[tmu] = cmd.getCommandSize();
         }
     }
 

@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <array>
 #include <stdint.h>
-#include <tcb/span.hpp>
 
 namespace rr::displaylist
 {
@@ -36,48 +35,42 @@ public:
     }
 
     template <typename TCommand>
-    static std::size_t getCommandSize(const TCommand& cmd)
-    {
-        using PayloadType = typename std::remove_const<typename std::remove_reference<decltype(TCommand {}.payload()[0])>::type>::type;
-        const std::size_t expectedSize = TDisplayList::template sizeOf<typename TCommand::CommandType>()
-            + (TDisplayList::template sizeOf<PayloadType>() * cmd.payload().size());
-        return expectedSize;
-    }
-
-    template <typename TCommand>
     bool addCommand(const TCommand& cmd)
     {
-        if (!canAddCommand(cmd))
+        using CommandType = typename TCommand::CommandType;
+        using SerializedPayloadType = typename TCommand::SerializedPayloadType;
+
+        const std::size_t writePos = m_displayList.getCurrentWritePos();
+
+        // Set op
+        CommandType* const op = m_displayList.template create<CommandType>();
+        if (op == nullptr)
         {
             return false;
         }
-        writeCommand(cmd);
+        *op = cmd.command();
+
+        // Set payload
+        const std::size_t numberOfElements = cmd.getNumberOfPayloadElements();
+        for (std::size_t i = 0; i < numberOfElements; i++)
+        {
+            SerializedPayloadType* const element = m_displayList.template create<SerializedPayloadType>();
+            if (element == nullptr)
+            {
+                m_displayList.setCurrentSize(writePos);
+                return false;
+            }
+            if (!cmd.serializePayload(*element, i))
+            {
+                // Drops the slot if it fails to serialize the payload
+                m_displayList.setCurrentSize(writePos);
+                return true;
+            }
+        }
         return true;
     }
 
 private:
-    template <typename TCommand>
-    bool canAddCommand(const TCommand& cmd) const
-    {
-        return getCommandSize<TCommand>(cmd) <= m_displayList.getFreeSpace();
-    }
-
-    template <typename TCommand>
-    void writeCommand(const TCommand& cmd)
-    {
-        writeCommand<typename TCommand::CommandType, typename TCommand::PayloadType>(cmd.command(), cmd.payload());
-    }
-
-    template <typename TCommandType, typename TPayloadType>
-    void writeCommand(const TCommandType& op, const TPayloadType& payload)
-    {
-        *(m_displayList.template create<TCommandType>()) = op;
-        for (auto& a : payload)
-        {
-            *(m_displayList.template create<typename TPayloadType::value_type>()) = a;
-        }
-    }
-
     TDisplayList& m_displayList;
 };
 

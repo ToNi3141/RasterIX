@@ -39,6 +39,7 @@ class TextureStreamCmd
 public:
     using PayloadType = tcb::span<const uint32_t>;
     using CommandType = uint32_t;
+    using SerializedPayloadType = uint32_t;
 
     TextureStreamCmd() = default;
     TextureStreamCmd(const TextureStreamCmd& rhs)
@@ -69,6 +70,17 @@ public:
 
     const PayloadType& payload() const { return m_payload; }
     CommandType command() const { return m_op; }
+    static constexpr std::size_t getOpSize() { return displaylist::DisplayList::template sizeOf<CommandType>(); }
+    static constexpr std::size_t getCommandMaxSize() { return getOpSize() + getMaxPayloadSize(); }
+    std::size_t getCommandSize() const { return getOpSize() + getPayloadSize(); }
+    std::size_t getPayloadSize() const { return displaylist::DisplayList::template sizeOf<uint32_t>() * m_payload.size(); }
+    std::size_t getNumberOfPayloadElements() const { return m_payload.size(); }
+    static constexpr std::size_t getMaxPayloadSize() { return displaylist::DisplayList::template sizeOf<uint32_t>() * RenderConfig::getMaxTexturePages(); }
+    bool serializePayload(SerializedPayloadType& buffer, const std::size_t index) const
+    {
+        buffer = m_payload[index];
+        return true;
+    }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t cmd) { return cmd & TEXTURE_STREAM_SIZE_MASK; }
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::TEXTURE_STREAM; }

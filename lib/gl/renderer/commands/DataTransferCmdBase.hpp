@@ -36,6 +36,7 @@ class DataTransferCmdBase
 {
 public:
     using PayloadType = tcb::span<const TDataToTransfer>;
+    using SerializedPayloadType = TDataToTransfer;
     using CommandType = uint32_t;
 
     DataTransferCmdBase() = default;
@@ -51,7 +52,18 @@ public:
     }
 
     PayloadType payload() const { return m_desc; }
-    static constexpr CommandType command() { return TOP | (displaylist::DisplayList::template sizeOf<TDataToTransfer>()); }
+    static constexpr CommandType command() { return TOP | getMaxPayloadSize(); }
+    static constexpr std::size_t getOpSize() { return displaylist::DisplayList::template sizeOf<CommandType>(); }
+    static constexpr std::size_t getCommandMaxSize() { return getOpSize() + getMaxPayloadSize(); }
+    static constexpr std::size_t getCommandSize() { return getCommandMaxSize(); }
+    static constexpr std::size_t getPayloadSize() { return getMaxPayloadSize(); }
+    static constexpr std::size_t getNumberOfPayloadElements() { return 1; }
+    static constexpr std::size_t getMaxPayloadSize() { return displaylist::DisplayList::template sizeOf<TDataToTransfer>(); }
+    bool serializePayload(SerializedPayloadType& buffer, const std::size_t index) const
+    {
+        buffer = m_desc[index];
+        return true;
+    }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return std::tuple_size<PayloadBuffer> {}; }
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == TOP; }

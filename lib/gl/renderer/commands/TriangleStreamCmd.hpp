@@ -41,12 +41,13 @@ public:
     using TrDesc = typename std::conditional<ENABLE_FLOAT_INTERPOLATION, TriangleStreamTypes::TriangleDesc, TriangleStreamTypes::TriangleDescX>::type;
     using PayloadType = tcb::span<const TrDesc>;
     using CommandType = uint32_t;
+    using SerializedPayloadType = TrDesc;
 
     TriangleStreamCmd() = default;
     TriangleStreamCmd(const Rasterizer& rasterizer, const TransformedTriangle& triangle)
+        : m_rasterizer { &rasterizer }
+        , m_triangle { &triangle }
     {
-        m_visible = rasterizer.rasterize(m_buffer[0], triangle);
-        m_desc = { m_buffer };
     }
 
     TriangleStreamCmd(const CommandType, const PayloadType& payload, const bool)
@@ -58,26 +59,53 @@ public:
 
     bool isInBounds(const std::size_t lineStart, const std::size_t lineEnd) const
     {
-        return Rasterizer::checkIfTriangleIsInBounds(m_desc[0].param, lineStart, lineEnd);
+        ensureRasterized();
+        return m_visible && Rasterizer::checkIfTriangleIsInBounds(m_desc[0].param, lineStart, lineEnd);
     }
 
     TriangleStreamCmd getIncremented(const std::size_t lineStart, const std::size_t lineEnd)
     {
+        ensureRasterized();
         TriangleStreamCmd cmd = *this;
         Rasterizer::increment(cmd.m_buffer[0], lineStart, lineEnd);
         return cmd;
     }
 
-    bool isVisible() const { return m_visible; };
-
-    PayloadType payload() const { return m_desc; }
+    PayloadType payload() const
+    {
+        ensureRasterized();
+        return m_desc;
+    }
     static constexpr CommandType command() { return op::TRIANGLE_STREAM | (displaylist::DisplayList::template sizeOf<TrDesc>()); }
+    static constexpr std::size_t getOpSize() { return displaylist::DisplayList::template sizeOf<CommandType>(); }
+    static constexpr std::size_t getCommandMaxSize() { return getOpSize() + getMaxPayloadSize(); }
+    static constexpr std::size_t getCommandSize() { return getCommandMaxSize(); }
+    static constexpr std::size_t getPayloadSize() { return displaylist::DisplayList::template sizeOf<TrDesc>(); }
+    static constexpr std::size_t getNumberOfPayloadElements() { return 1; }
+    static constexpr std::size_t getMaxPayloadSize() { return displaylist::DisplayList::template sizeOf<TrDesc>(); }
+
+    // Returns false if the triangle is invisible. The caller must then drop the slot.
+    bool serializePayload(SerializedPayloadType& buffer, const std::size_t) const
+    {
+        if (m_triangle != nullptr)
+        {
+            return m_rasterizer->rasterize(buffer, *m_triangle);
+        }
+        if (!m_visible)
+        {
+            return false;
+        }
+        buffer = m_desc[0];
+        return true;
+    }
 
     TriangleStreamCmd& operator=(const TriangleStreamCmd& rhs)
     {
         std::copy(rhs.m_desc.begin(), rhs.m_desc.end(), m_buffer.begin());
-        m_desc = { m_buffer };
+        m_desc = rhs.m_desc.empty() ? PayloadType {} : PayloadType { m_buffer };
         m_visible = rhs.m_visible;
+        m_rasterizer = rhs.m_rasterizer;
+        m_triangle = rhs.m_triangle;
         return *this;
     }
 
@@ -85,10 +113,23 @@ public:
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::TRIANGLE_STREAM; }
 
 private:
+    void ensureRasterized() const
+    {
+        if (m_triangle == nullptr)
+        {
+            return;
+        }
+        m_visible = m_rasterizer->rasterize(m_buffer[0], *m_triangle);
+        m_desc = { m_buffer };
+        m_triangle = nullptr;
+    }
+
     using PayloadBuffer = std::array<TrDesc, 1>;
-    PayloadBuffer m_buffer;
-    PayloadType m_desc {};
-    bool m_visible { false };
+    mutable PayloadBuffer m_buffer;
+    mutable PayloadType m_desc {};
+    mutable bool m_visible { true };
+    const Rasterizer* m_rasterizer { nullptr };
+    mutable const TransformedTriangle* m_triangle { nullptr };
 };
 
 } // namespace rr

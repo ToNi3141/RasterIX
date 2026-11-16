@@ -57,12 +57,7 @@ bool Renderer::addFence()
 
 bool Renderer::drawTriangle(const TransformedTriangle& triangle)
 {
-    TriangleStreamCmd triangleCmd { m_rasterizer, triangle };
-    if (!triangleCmd.isVisible())
-    {
-        return true;
-    }
-    return addCommand(triangleCmd);
+    return addCommand(TriangleStreamCmd { m_rasterizer, triangle });
 }
 
 void Renderer::setElementGlobalContext(const transform::ElementGlobalData& ctx)

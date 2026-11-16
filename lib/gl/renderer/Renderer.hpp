@@ -28,7 +28,7 @@
 #include "displaylist/DisplayListDoubleBuffer.hpp"
 #include "math/ColorTypes.hpp"
 #include "math/Vec.hpp"
-#include "maxVariantAlternativeSize.hpp"
+#include "maxCommandSize.hpp"
 #include "renderer/IDevice.hpp"
 #include "renderer/commands/TriangleStreamTypes.hpp"
 #include <algorithm>
@@ -349,7 +349,7 @@ private:
     bool addCommand(const Command& cmd)
     {
         // Keep enough space for a framebuffer command to store the current frame into the framebuffer
-        constexpr std::size_t minFreeSpace = (sizeof(FramebufferCmd) + maxVariantAlternativeSize<CommandVariant>());
+        constexpr std::size_t minFreeSpace = (FramebufferCmd::getCommandMaxSize() + maxCommandSize<CommandVariant>());
         if (m_displayListBuffer.getBack().getFreeSpace() <= minFreeSpace)
         {
             intermediateUpload();

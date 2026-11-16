@@ -20,6 +20,7 @@
 
 #include "Op.hpp"
 #include "RenderConfigs.hpp"
+#include "renderer/displaylist/DisplayList.hpp"
 #include <array>
 #include <cstdint>
 #include <tcb/span.hpp>
@@ -43,6 +44,7 @@ class FramebufferCmd
 public:
     using PayloadType = tcb::span<const uint8_t>;
     using CommandType = uint32_t;
+    using SerializedPayloadType = uint8_t;
 
     FramebufferCmd() = default;
     FramebufferCmd(const bool selColorBuffer,
@@ -147,6 +149,13 @@ public:
 
     PayloadType payload() const { return {}; }
     CommandType command() const { return m_op; }
+    static constexpr std::size_t getOpSize() { return displaylist::DisplayList::template sizeOf<CommandType>(); }
+    static constexpr std::size_t getCommandMaxSize() { return getOpSize() + getMaxPayloadSize(); }
+    static constexpr std::size_t getCommandSize() { return getCommandMaxSize(); }
+    static constexpr std::size_t getPayloadSize() { return getMaxPayloadSize(); }
+    static constexpr std::size_t getNumberOfPayloadElements() { return 0; }
+    static constexpr std::size_t getMaxPayloadSize() { return 0; }
+    bool serializePayload(SerializedPayloadType&, const std::size_t) const { return true; }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 0; }
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::FRAMEBUFFER; }

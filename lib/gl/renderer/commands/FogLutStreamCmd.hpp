@@ -37,6 +37,7 @@ public:
     using PayloadType = tcb::span<const int32_t>;
     using CommandType = uint32_t;
     using FogLutDesc = std::array<int32_t, LUT_SIZE>;
+    using SerializedPayloadType = int32_t;
 
     FogLutStreamCmd()
     {
@@ -80,6 +81,17 @@ public:
 
     const PayloadType& payload() const { return m_payload; }
     static constexpr CommandType command() { return op::FOG_LUT_STREAM | (static_cast<uint32_t>(LUT_SIZE) << 2); }
+    static constexpr std::size_t getOpSize() { return displaylist::DisplayList::template sizeOf<CommandType>(); }
+    static constexpr std::size_t getCommandMaxSize() { return getOpSize() + getMaxPayloadSize(); }
+    static constexpr std::size_t getCommandSize() { return getCommandMaxSize(); }
+    static constexpr std::size_t getPayloadSize() { return getMaxPayloadSize(); }
+    static constexpr std::size_t getNumberOfPayloadElements() { return LUT_SIZE; }
+    static constexpr std::size_t getMaxPayloadSize() { return displaylist::DisplayList::template sizeOf<int32_t>() * LUT_SIZE; }
+    bool serializePayload(SerializedPayloadType& buffer, const std::size_t index) const
+    {
+        buffer = m_payload[index];
+        return true;
+    }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const CommandType) { return LUT_SIZE; }
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::FOG_LUT_STREAM; }

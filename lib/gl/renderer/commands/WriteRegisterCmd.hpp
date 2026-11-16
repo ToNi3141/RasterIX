@@ -19,6 +19,7 @@
 #define _WRITE_REGISTER_CMD_HPP_
 
 #include "Op.hpp"
+#include "renderer/displaylist/DisplayList.hpp"
 #include "renderer/registers/RegisterVariant.hpp"
 #include <array>
 #include <cstdint>
@@ -32,6 +33,7 @@ class WriteRegisterCmd
 public:
     using PayloadType = tcb::span<const uint32_t>;
     using CommandType = uint32_t;
+    using SerializedPayloadType = uint32_t;
 
     WriteRegisterCmd() = default;
     WriteRegisterCmd(const RegisterVariant& reg)
@@ -62,6 +64,17 @@ public:
 
     const PayloadType& payload() const { return m_payload; }
     CommandType command() const { return m_op; }
+    static constexpr std::size_t getOpSize() { return displaylist::DisplayList::template sizeOf<CommandType>(); }
+    static constexpr std::size_t getCommandMaxSize() { return getOpSize() + getMaxPayloadSize(); }
+    static constexpr std::size_t getCommandSize() { return getCommandMaxSize(); }
+    static constexpr std::size_t getPayloadSize() { return getMaxPayloadSize(); }
+    static constexpr std::size_t getNumberOfPayloadElements() { return 1; }
+    static constexpr std::size_t getMaxPayloadSize() { return displaylist::DisplayList::template sizeOf<uint32_t>(); }
+    bool serializePayload(SerializedPayloadType& buffer, const std::size_t index) const
+    {
+        buffer = m_payload[index];
+        return true;
+    }
 
     static std::size_t getNumberOfElementsInPayloadByCommand(const uint32_t) { return 1; }
     static bool isThis(const CommandType cmd) { return (cmd & op::MASK) == op::RENDER_CONFIG; }
